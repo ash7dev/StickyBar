@@ -1,0 +1,26 @@
+# Environnement — NE JAMAIS COMMITTER
+.env
+.env.local
+.env.*.local
+
+# Dépendances
+node_modules/
+
+# Build
+dist/
+build/
+
+# Prisma
+prisma/migrations/
+
+# Logs
+*.log
+logs/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# IDE
+.vscode/
+.idea/

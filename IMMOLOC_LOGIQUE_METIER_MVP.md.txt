@@ -1,0 +1,1695 @@
+﻿📘 IMMOLOC — LOGIQUE MÉTIER COMPLÈTE MVP
+________________
+
+
+📋 TABLE DES MATIÈRES
+1. Vision et principes fondamentaux
+2. Les acteurs et leurs actions
+3. Logique métier principale
+   * 3.1 Gestion des rôles et authentification
+   * 3.2 Gestion du profil utilisateur et KYC
+   * 3.3 Gestion des annonces logement
+   * 3.4 Gestion des réservations
+   * 3.5 Gestion des paiements et wallet
+   * 3.6 Système de notation
+4. Cycle de vie d'un utilisateur
+5. Cycle de vie d'une annonce
+6. Cycle de vie d'une réservation
+7. Système de paiement et commission
+8. Politiques d'annulation complètes
+9. Matrice des notifications
+10. Règles métier critiques
+11. Architecture logique simplifiée
+12. Flux utilisateur détaillés
+13. Type d'hôte — Particulier vs Agence
+14. Tarification par nombre de personnes
+15. Gestion du dépassement de personnes au check-in
+16. Proprio injoignable jour J
+
+
+________________
+
+
+🎯 1. VISION ET PRINCIPES FONDAMENTAUX
+Nature du système
+ImmoLoc est une marketplace transactionnelle à séquestre logique pour la location de logements entre particuliers au Sénégal, sous forme de PWA (Progressive Web App).
+
+
+Cela signifie :
+
+
+* ✅ La plateforme orchestre toutes les transactions entre locataires et propriétaires
+* ✅ L'argent est contrôlé par la plateforme (système de séquestre)
+* ✅ La validation des étapes déclenche les flux financiers
+* ✅ Les règles métier sont strictes et automatisées
+* ✅ Aucune transaction hors plateforme n'est permise
+
+
+________________
+
+
+🎯 Objectif MVP
+Simplicité maximale, croissance rapide, friction minimale.
+
+
+________________
+
+
+🧠 Logique MVP — Règles du jeu
+* Toute transaction passe obligatoirement par la plateforme
+* Toute réservation doit être payée avant validation
+* Le locataire coche les CGU avant paiement — c'est sa signature
+* Le propriétaire clique "Confirmer la réservation" — c'est son accord
+* Le délai de confirmation est de 24h (ou 2h si check-in le jour même)
+* Toute location doit passer par un check-in validé (OBLIGATOIRE)
+* Le paiement propriétaire est déclenché IMMÉDIATEMENT après check-in validé
+* Les règles sont automatiques et non négociables
+
+
+________________
+
+
+✅ Choix MVP — Réduire la friction
+* Pas de caution en phase MVP
+* Double rôle : un utilisateur peut être locataire ET propriétaire (un seul compte)
+* Validation admin obligatoire avant toute publication d'annonce
+* Courte durée uniquement : le locataire choisit ses dates, paie le total, c'est tout
+* Pas de reconduction automatique : pour prolonger, le locataire refait une réservation
+
+
+________________
+
+
+👥 Persona cible principal
+ImmoLoc s'adresse avant tout aux touristes étrangers et à la diaspora / jeunes sénégalais qui souhaitent louer un appartement de qualité pour quelques jours — fêtes (Tabaski, Noël, Nouvel An), weekends, événements — sans risque d'arnaque, avec une expérience proche d'Airbnb adaptée au contexte local (Wave, Orange Money, WhatsApp).
+
+
+Problème résolu : trouver un logement fiable pour une occasion courte, sans payer un inconnu sur WhatsApp sans garantie aucune.
+
+
+________________
+
+
+💬 Communication WhatsApp — Coût maîtrisé
+* WhatsApp est utilisé de façon ciblée et intelligente
+* Les messages WhatsApp étant payants, le volume est maîtrisé
+* Règle d'or : 1 événement = maximum 1 message WhatsApp
+* Les notifications in-app (push, gratuites) couvrent tous les états intermédiaires
+
+
+________________
+
+
+👥 2. LES ACTEURS ET LEURS ACTIONS
+🏠 LOCATAIRE (Client)
+Peut faire :
+
+
+* ✅ Créer son compte (email/mot de passe ou social login Google)
+* ✅ Uploader sa CNI (recto/verso) + valider son numéro via OTP
+* ✅ Rechercher des logements (dates, ville, type, prix, filtres)
+* ✅ Consulter les fiches logement détaillées
+* ✅ Créer une réservation
+* ✅ Cocher les CGU avant paiement (équivaut à sa signature)
+* ✅ Payer en ligne (Wave / Orange Money / Carte bancaire)
+* ✅ Effectuer le check-in OBLIGATOIRE (photos état des lieux — entrée)
+* ✅ Effectuer le check-out RECOMMANDÉ (photos état des lieux — sortie, pas bloquant)
+* ✅ Refuser le check-in si logement non conforme (avec motif)
+* ✅ Déclarer un litige avant validation du check-in
+* ✅ Noter le propriétaire et le logement
+* ✅ Voir l'historique de ses locations
+* ✅ Annuler une réservation (selon politique d'annulation)
+* ✅ Contacter le propriétaire via messagerie in-app
+* ✅ Activer le mode propriétaire (double rôle — même compte)
+
+
+Ne peut PAS faire :
+
+
+* ❌ Réserver si profil non vérifié (KYC obligatoire)
+* ❌ Réserver sur des dates déjà bloquées
+* ❌ Modifier une réservation confirmée
+* ❌ Entrer dans le logement sans check-in validé
+* ❌ Déclarer un litige après validation du check-in
+* ❌ Effectuer des paiements hors plateforme
+
+
+________________
+
+
+🏡 PROPRIÉTAIRE (Hôte)
+Peut faire :
+
+
+* ✅ Activer le mode propriétaire depuis son compte locataire (double rôle)
+* ✅ Créer des annonces de logement (infos + photos + prix)
+* ✅ Uploader les documents du logement pour validation admin
+* ✅ Attendre la validation admin avant publication
+* ✅ Définir le prix par nuit
+* ✅ Définir les conditions de location :
+   * Nombre de nuits minimum
+   * Règles de la maison (animaux, fumeurs, etc.)
+   * Tarification progressive (ex : 5+ nuits → prix réduit)
+* ✅ Gérer le calendrier de disponibilités
+* ✅ Recevoir notifications de nouvelles réservations
+* ✅ Cliquer "Confirmer la réservation" (équivaut à son accord)
+* ✅ Valider le check-in OBLIGATOIRE
+* ✅ Consulter et valider le check-out RECOMMANDÉ
+* ✅ Déclarer un litige dans les 24h après fin de séjour
+* ✅ Noter le locataire
+* ✅ Voir ses revenus et historique wallet
+* ✅ Demander un retrait (minimum 10 000 FCFA)
+* ✅ Annuler une réservation (avec pénalités strictes)
+* ✅ Contacter le locataire via messagerie in-app
+* ✅ Continuer à louer des logements en tant que locataire (double rôle)
+
+
+Ne peut PAS faire :
+
+
+* ❌ Recevoir un paiement avant validation du check-in
+* ❌ Modifier le prix pendant une réservation en cours
+* ❌ Bloquer le calendrier sur des dates déjà réservées
+* ❌ Voir son annonce publiée avant validation admin
+* ❌ Effectuer des paiements hors plateforme
+
+
+________________
+
+
+🛠️ ADMINISTRATEUR (Plateforme)
+Peut faire :
+
+
+* ✅ Valider / Rejeter profils utilisateurs (KYC)
+* ✅ Signaler manuellement des documents expirés ou non conformes
+* ✅ Valider / Rejeter annonces de logement (OBLIGATOIRE avant publication)
+* ✅ Suspendre des comptes (locataires ou propriétaires)
+* ✅ Voir toutes les réservations en temps réel
+* ✅ Gérer litiges et remboursements manuels
+* ✅ Voir statistiques globales (revenus, transactions, taux de conversion)
+* ✅ Voir logs et historique d'actions
+* ✅ Envoyer notifications ciblées (via dashboard)
+* ✅ Arbitrer les litiges (comparaison photos check-in / check-out)
+* ✅ Valider ou refuser demandes de retrait
+* ✅ Appliquer pénalités en cas d'annulations abusives
+* ✅ Gérer le compteur de non-conformités par annonce et par compte
+
+
+Rôle principal : Modération · Arbitrage · Supervision
+
+
+________________
+
+
+🧩 3. LOGIQUE MÉTIER PRINCIPALE
+3.1 Gestion des rôles et authentification
+3 rôles :
+
+
+Rôle
+	Accès
+	Activation
+	Locataire
+	Routes : /recherche, /reservations, /mes-sejours
+	Par défaut à l'inscription
+	Propriétaire
+	Routes : /mes-annonces, /calendrier, /revenus, /wallet
+	Manuel via "Devenir propriétaire"
+	Admin
+	Routes : /validation-kyc, /validation-annonces, /litiges, /dashboard
+	Compte créé en interne
+	
+
+Authentification :
+
+
+* Email + mot de passe OU Social login (Google)
+* Vérification email obligatoire
+* Numéro de téléphone obligatoire (OTP SMS)
+* Un utilisateur peut être à la fois locataire ET propriétaire (double rôle, un seul compte)
+
+
+Flow post-social-login (Google) :
+
+
+1. OAuth réussi → compte créé (email + nom récupérés)
+2. Redirection vers page "Complète ton profil"
+3. Champ numéro de téléphone + indicatif (+221)
+4. Validation via SMS OTP
+5. Numéro enregistré → accès complet débloqué
+
+
+Sans numéro confirmé : ❌ Impossible de réserver · ❌ Impossible de publier · ❌ Pas de notifications WhatsApp
+
+
+________________
+
+
+3.2 Gestion du profil utilisateur et KYC
+Statuts de vérification :
+
+
+Statut
+	Description
+	NON_VERIFIE
+	Inscrit mais documents non uploadés ou incomplets
+	EN_ATTENTE
+	Documents uploadés, en attente de validation admin
+	VERIFIE
+	Documents validés par l'admin — accès complet
+	A_RENOUVELER
+	Admin signale documents expirés ou non conformes
+	REJETE
+	Documents refusés — raison fournie, re-soumission possible
+	SUSPENDU
+	Compte bloqué — 3 non-conformités confirmées ou abus
+	
+
+Documents requis (locataire ET propriétaire) :
+
+
+* CNI recto + verso
+* Numéro de téléphone vérifié (OTP)
+
+
+Pas de permis de conduire, pas de documents de véhicule.
+
+
+Documents requis pour l'annonce (vérifiés par l'admin) :
+
+
+* Photos du logement (minimum 5)
+* Tout document prouvant la légitimité du bien (titre de propriété, bail, etc.) — validé visuellement par l'admin
+
+
+Méthodes d'upload :
+
+
+1. Web : formulaire drag & drop
+2. WhatsApp : 1 message automatique si profil incomplet après inscription
+3. App mobile (PWA) : capture photo directe
+
+
+Règle WhatsApp : 1 seul message envoyé si documents manquants après inscription. Pas de relance. Le statut est visible dans l'app.
+
+
+________________
+
+
+3.3 Gestion des annonces logement
+Statuts possibles :
+
+
+Statut
+	Visibilité
+	Réservable
+	DRAFT
+	Non
+	Non
+	PENDING_REVIEW
+	Non
+	Non
+	PUBLISHED
+	Oui
+	Oui
+	PAUSED
+	Non
+	Non
+	REJECTED
+	Non
+	Non
+	SUSPENDED
+	Non
+	Non
+	
+
+Informations obligatoires :
+
+
+* Type de logement (appartement, studio, villa, chambre)
+* Nombre de pièces / chambres / salles de bain
+* Surface (m²)
+* Localisation complète (ville, quartier, adresse)
+* Prix par nuit (défini par le propriétaire — net)
+* Photos (minimum 5 : salon, chambre(s), cuisine, salle de bain, extérieur/vue)
+* Description détaillée
+* Équipements disponibles (climatisation, WiFi, cuisine équipée, parking, etc.)
+
+
+Informations optionnelles :
+
+
+* Nombre de nuits minimum
+* Règles de la maison
+* Tarification progressive (ex : 5+ nuits → -10%)
+* Adresse exacte de remise des clés
+
+
+Règle MVP :
+
+
+* Aucune publication immédiate — l'annonce est invisible jusqu'à validation admin
+* Admin valide sous 48h (file d'attente dans le backoffice)
+* Si annonce suspendue → toutes les réservations futures sont annulées automatiquement
+
+
+Calcul du prix affiché :
+
+
+Prix propriétaire  =  50 000 FCFA / nuit
+
+
+Commission         =  7%
+
+
+Prix affiché       =  50 000 × 1.07  =  53 500 FCFA / nuit
+
+
+Le propriétaire définit son prix net. ImmoLoc ajoute automatiquement 7% pour l'affichage côté client.
+
+
+________________
+
+
+3.4 Gestion des réservations
+Statuts possibles :
+
+
+Statut
+	Description
+	PENDING
+	Réservation créée, paiement non encore reçu (expire en 15 min)
+	PAID
+	Paiement confirmé, fonds en séquestre — confirmation proprio attendue
+	CONFIRMED
+	Proprio a confirmé — séjour acté
+	CHECKED_IN
+	Check-in validé — fonds libérés au proprio
+	COMPLETED
+	Séjour terminé, location clôturée
+	CANCELLED
+	Annulée (locataire, propriétaire ou système)
+	DISPUTED
+	Locataire a refusé le check-in — litige en cours
+	EXPIRED
+	Délai de confirmation dépassé — annulation auto + remboursement
+	
+
+Workflow complet :
+
+
+1. Création de la réservation
+
+
+   * Locataire sélectionne dates + logement
+   * Vérifications : KYC valide · annonce publiée · dates disponibles
+   * Calcul du prix total : prix/nuit × nb nuits + 7% commission
+   * Acceptation CGU (checkbox avant paiement = signature locataire)
+
+
+2. Paiement
+
+
+   * Wave / Orange Money / Carte bancaire
+   * Fonds placés en séquestre plateforme
+   * Statut : PAID
+   * Calendrier bloqué immédiatement
+   * Prix figé (aucun recalcul ultérieur)
+
+
+3. Confirmation propriétaire
+
+
+   * Propriétaire reçoit notification
+   * Clique "Confirmer la réservation" dans son dashboard
+   * Délai : 48h (réservation future) ou 2h (check-in le jour même)
+   * Si délai dépassé → annulation automatique + remboursement 100% + avertissement proprio
+
+
+4. Rappel J-1
+
+
+   * 1 message WhatsApp aux deux parties : "Ton séjour commence demain !"
+
+
+5. Check-in jour J (OBLIGATOIRE)
+
+
+   * Photos état des lieux entrée (minimum 4 : salon, chambre, cuisine, salle de bain)
+   * Locataire peut Confirmer ou Refuser (logement non conforme)
+   * Si refus → statut DISPUTED · fonds gelés · admin tranche · suggestion d'alternatives
+   * Si confirmation → statut CHECKED_IN · paiement propriétaire immédiat
+
+
+6. Séjour en cours
+
+
+   * Messagerie disponible entre les deux parties
+   * Support admin accessible
+
+
+7. Check-out (RECOMMANDÉ — pas bloquant)
+
+
+   * Photos état des lieux sortie
+   * Sert uniquement de preuve en cas de litige
+   * Si pas de check-out : auto-clôture 24h après la date de fin prévue
+
+
+8. Clôture
+
+
+   * Statut COMPLETED
+   * Les deux parties peuvent se noter (fenêtre 7 jours)
+
+
+Règles critiques :
+
+
+* Pas de modification de réservation active → annuler et recréer
+* Prix figé au moment de la réservation
+* Check-in validé = irréversible → fonds libérés définitivement
+* Aucun litige possible après validation du check-in
+
+
+________________
+
+
+3.5 Gestion des paiements et wallet
+Calcul détaillé :
+
+
+Exemple : séjour de 3 nuits à 50 000 FCFA / nuit
+
+
+Prix propriétaire / nuit  =  50 000 FCFA
+
+
+Commission ImmoLoc (7%)   =   3 500 FCFA
+
+
+Prix affiché / nuit       =  53 500 FCFA
+
+
+Total locataire paie      =  53 500 × 3  =  160 500 FCFA
+
+
+Net propriétaire reçoit   =  50 000 × 3  =  150 000 FCFA
+
+
+Commission ImmoLoc        =   3 500 × 3  =   10 500 FCFA
+
+
+États du séquestre :
+
+
+Statut
+	Description
+	INITIATED
+	Paiement initié par le locataire
+	HELD
+	Fonds bloqués sur le compte plateforme
+	RELEASED
+	Libérés au proprio après check-in validé
+	REFUNDED
+	Remboursés au locataire
+	FROZEN
+	Gelés pendant arbitrage d'un litige
+	FAILED
+	Paiement échoué
+	
+
+Wallet propriétaire :
+
+
+* Solde disponible : montants retirables immédiatement
+* Solde en attente : locations CHECKED_IN en transit (quasi instantané)
+* Historique transactions : logs complets
+
+
+Conditions de retrait :
+
+
+* Minimum : 10 000 FCFA
+* Délai de traitement : 24h maximum
+* Méthodes : Wave · Orange Money · Virement bancaire
+* Validation admin avant traitement
+
+
+________________
+
+
+3.6 Système de notation
+Notes échangées :
+
+
+* Locataire note : Logement (état, conformité aux photos, propreté) + Propriétaire (accueil, communication, réactivité)
+* Propriétaire note : Locataire (respect du logement, propreté, ponctualité)
+
+
+Règles :
+
+
+* Note de 1 à 5 étoiles
+* Commentaire optionnel (max 500 caractères)
+* Possible uniquement après statut COMPLETED
+* Fenêtre de notation : 7 jours après clôture
+* Notes visibles publiquement sur les profils et les annonces
+* Moyenne affichée — impact sur le classement dans les résultats de recherche
+
+
+________________
+
+
+👤 4. CYCLE DE VIE D'UN UTILISATEUR
+Inscription
+
+
+     │
+
+
+     ▼
+
+
+NON_VERIFIE  ──── Upload CNI + OTP ────►  EN_ATTENTE
+
+
+                                               │
+
+
+                               ┌───────────────┴──────────────┐
+
+
+                               ▼                               ▼
+
+
+                           VERIFIE                          REJETE
+
+
+                               │                    (re-soumission possible)
+
+
+                               │
+
+
+                    Admin signale doc invalide
+
+
+                               │
+
+
+                               ▼
+
+
+                         A_RENOUVELER
+
+
+                               │
+
+
+                    User re-uploade ses docs
+
+
+                               │
+
+
+                               ▼
+
+
+                           EN_ATTENTE ──► VERIFIE
+
+
+                    3 non-conformités confirmées
+
+
+                               │
+
+
+                               ▼
+
+
+                           SUSPENDU
+
+
+Activation mode propriétaire :
+
+
+1. Depuis les paramètres du compte → "Devenir propriétaire"
+2. Lecture + acceptation des conditions propriétaire
+3. Wallet créé automatiquement (solde = 0)
+4. Dashboard propriétaire activé
+5. Le compte reste locataire en parallèle — toggle "Mode locataire / Mode propriétaire"
+
+
+________________
+
+
+🏠 5. CYCLE DE VIE D'UNE ANNONCE
+Propriétaire crée l'annonce
+
+
+(infos + photos + prix + conditions)
+
+
+              │
+
+
+              ▼
+
+
+         DRAFT ──► Soumission ──► PENDING_REVIEW
+
+
+                                        │
+
+
+                                        │  Admin valide (48h max)
+
+
+                              ┌─────────┴────────┐
+
+
+                              ▼                  ▼
+
+
+                          PUBLISHED           REJECTED
+
+
+                         (visible,          (raison fournie,
+
+
+                         réservable)       re-soumission possible)
+
+
+                              │
+
+
+                    ┌─────────┴──────────┐
+
+
+                    │                    │
+
+
+                    ▼                    ▼
+
+
+                 PAUSED              SUSPENDED
+
+
+           (proprio désactive)  (3 non-conformités
+
+
+                                 check-in confirmées)
+
+
+Règles de transition :
+
+
+Transition
+	Déclencheur
+	Notification
+	Création → Pending
+	Proprio soumet
+	In-app : "Annonce en attente de validation"
+	Pending → Published
+	Admin valide
+	1 WhatsApp proprio : "Ton annonce est en ligne !"
+	Pending → Rejected
+	Admin rejette
+	1 WhatsApp proprio : "Annonce non publiée. Raison : [X]"
+	Published → Suspended
+	3 non-conformités
+	1 WhatsApp proprio : "Annonce suspendue. Raison : [X]"
+	Published → Paused
+	Proprio désactive
+	In-app uniquement
+	
+
+Règle critique : Annonce SUSPENDED → toutes les réservations futures sont annulées automatiquement et les locataires remboursés intégralement.
+
+
+________________
+
+
+📅 6. CYCLE DE VIE D'UNE RÉSERVATION
+Locataire sélectionne dates + logement
+
+
+Coche CGU + paie
+
+
+              │
+
+
+              ▼
+
+
+           PENDING ──── (expire en 15 min si non payé)
+
+
+              │
+
+
+         Paiement confirmé
+
+
+              │
+
+
+              ▼
+
+
+            PAID ──────────────────────────────────────────┐
+
+
+              │                                            │
+
+
+     Proprio confirme                            Délai expiré (48h / 2h)
+
+
+              │                                            │
+
+
+              ▼                                            ▼
+
+
+          CONFIRMED                                    EXPIRED
+
+
+              │                                   (remboursement 100%
+
+
+         Jour J check-in                           + avertissement proprio)
+
+
+              │
+
+
+      ┌───────┴──────────┐
+
+
+      │                  │
+
+
+      ▼                  ▼
+
+
+  CONFIRMED           DISPUTED
+
+
+  (check-in ok)   (locataire refuse)
+
+
+      │            Fonds gelés → Admin tranche
+
+
+      │            → Remboursement + suggestions
+
+
+      ▼
+
+
+  CHECKED_IN
+
+
+  (fonds libérés au proprio immédiatement)
+
+
+      │
+
+
+   Séjour en cours
+
+
+      │
+
+
+   Check-out (recommandé)
+
+
+      │
+
+
+      ▼
+
+
+  COMPLETED ──── Notes & avis (7 jours)
+
+
+Matrice des transitions :
+
+
+Transition
+	Déclencheur
+	Actions automatiques
+	Notification
+	Création → Paid
+	Paiement validé
+	Séquestre · Calendrier bloqué · Prix figé
+	WhatsApp locataire + proprio
+	Paid → Confirmed
+	Proprio confirme
+	Aucun changement financier
+	WhatsApp les deux : "Séjour confirmé !"
+	Paid → Expired
+	Délai dépassé (auto)
+	Remboursement · Calendrier libéré
+	WhatsApp les deux
+	Confirmed → Checked_In
+	Check-in validé
+	Paiement proprio IMMÉDIAT
+	WhatsApp les deux
+	Checked_In → Completed
+	Check-out validé OU auto 24h
+	Clôture location
+	WhatsApp les deux
+	Confirmed → Disputed
+	Locataire refuse check-in
+	Fonds gelés · Admin alerté
+	WhatsApp admin
+	
+
+________________
+
+
+💰 7. SYSTÈME DE PAIEMENT ET COMMISSION
+Principe
+* Le locataire paie en ligne (Wave / Orange Money / Carte)
+* L'argent est contrôlé par la plateforme (séquestre logique)
+* Le propriétaire est payé uniquement après check-in validé
+* La commission ne passe jamais par le propriétaire
+Calcul de la commission
+Prix propriétaire + 7%  =  Prix affiché au locataire
+
+
+Exemple :
+
+
+├── Proprio fixe : 50 000 FCFA / nuit
+
+
+├── Affiché : 50 000 × 1.07 = 53 500 FCFA / nuit
+
+
+├── Locataire paie : 53 500 FCFA
+
+
+├── Proprio reçoit : 50 000 FCFA
+
+
+└── ImmoLoc garde : 3 500 FCFA (7%)
+Timing du paiement propriétaire
+PAID / CONFIRMED  →  (séquestre)  →  CHECK-IN validé  →  PAIEMENT PROPRIO IMMÉDIAT
+
+
+Déclencheur unique : validation du check-in par le locataire ET le propriétaire.
+Commission — Règle de remboursement
+Situation
+	Commission remboursée ?
+	Annulation par le locataire (avant confirmation proprio)
+	✅ Oui
+	Expiration délai de confirmation
+	✅ Oui
+	Annulation par le proprio
+	✅ Oui
+	Non-conformité confirmée par l'admin
+	✅ Oui
+	Annulation par le locataire (après confirmation, avant check-in)
+	❌ Non
+	Check-in validé
+	❌ Non (location réalisée)
+	Wallet propriétaire
+Workflow de retrait :
+
+
+1. Proprio demande le retrait (montant + méthode + numéro/RIB)
+2. Admin valide (identité + cohérence du solde)
+3. Transfert effectué sous 24h
+4. WhatsApp confirmation + historique mis à jour
+
+
+________________
+
+
+🚫 8. POLITIQUES D'ANNULATION COMPLÈTES
+8.1 Annulation par le LOCATAIRE
+Délai avant check-in
+	Remboursement locataire
+	Proprio reçoit
+	Commission ImmoLoc
+	Plus de 7 jours
+	100%
+	Rien
+	Remboursée
+	Entre 3 et 7 jours
+	50%
+	50% du prix
+	Non remboursée
+	Entre 24h et 3 jours
+	25%
+	75% du prix
+	Non remboursée
+	Moins de 24h
+	0%
+	100% du prix
+	Non remboursée
+	8.2 Annulation par le PROPRIÉTAIRE (après confirmation)
+Le locataire est toujours remboursé à 100% si le proprio annule.
+
+
+Délai avant check-in
+	Remboursement locataire
+	Pénalité proprio
+	Conséquence
+	Plus de 7 jours
+	100%
+	Avertissement ×1
+	—
+	Entre 3 et 7 jours
+	100%
+	Avertissement ×1 + 5 000 FCFA
+	—
+	Moins de 3 jours
+	100%
+	Avertissement ×1 + 10 000 FCFA
+	—
+	3ème annulation
+	100%
+	Compte suspendu
+	Révision admin obligatoire
+	8.3 Cas automatiques (non-actions)
+Proprio ne confirme pas dans le délai (48h / 2h) :
+
+
+* Annulation automatique (job cron)
+* Remboursement 100% locataire
+* Avertissement proprio (pas de pénalité financière au 1er cas)
+
+
+Locataire refuse le check-in (non-conformité) :
+
+
+* Remboursement 100% + litige ouvert
+* Admin arbitre sur photos
+* Si confirmé → compteur non-conformité annonce +1
+
+
+No-show locataire (ne se présente pas) :
+
+
+* Passé 3h après l'heure de check-in prévue sans action
+* Proprio reçoit 100% — le locataire a payé, c'est son choix
+8.4 Délai de remboursement
+* Standard : 3 à 7 jours ouvrables
+* Méthode : même moyen de paiement utilisé à l'origine
+* Notification : WhatsApp + in-app
+
+
+________________
+
+
+🔔 9. MATRICE DES NOTIFICATIONS
+Hiérarchie des canaux
+1. WhatsApp (95% pénétration Sénégal) — événements critiques uniquement, payant
+2. SMS — backup si WhatsApp échoue
+3. Push notifications in-app — gratuites, sans limite, pour tous les états intermédiaires
+Tableau des notifications WhatsApp
+Événement
+	Destinataire
+	Timing
+	Inscription — docs manquants
+	User
+	1 seul message après inscription
+	KYC validé
+	User
+	À la décision admin
+	KYC rejeté
+	User
+	À la décision admin
+	Docs signalés invalides
+	User
+	Quand admin signale manuellement
+	Annonce validée
+	Proprio
+	À la validation admin
+	Annonce rejetée / suspendue
+	Proprio
+	À la décision admin
+	Nouvelle réservation
+	Proprio
+	Immédiat après paiement locataire
+	Réservation créée
+	Locataire
+	Immédiat après paiement
+	Rappel confirmation (T+24h)
+	Non-confirmant
+	1 seul rappel
+	Réservation confirmée
+	Les deux
+	Immédiat
+	Expiration — annulation auto
+	Les deux
+	À T+48h ou T+2h
+	Rappel J-1
+	Les deux
+	J-1 à 9h
+	Check-in validé
+	Les deux
+	Immédiat
+	Paiement disponible wallet
+	Proprio
+	Immédiat après check-in
+	Location auto-clôturée
+	Les deux
+	24h après fin si pas check-out ni litige
+	Check-out validé
+	Les deux
+	Immédiat si check-out réalisé
+	Litige déclaré
+	Admin
+	Immédiat
+	Litige résolu
+	Les deux
+	Après décision admin
+	Retrait effectué
+	Proprio
+	Après traitement
+	
+
+Règle d'or : 1 événement = maximum 1 message WhatsApp. Pas de relances en cascade.
+
+
+________________
+
+
+🔐 10. RÈGLES MÉTIER CRITIQUES
+10.1 Contraintes d'intégrité
+Règle
+	Description
+	Implémentation
+	KYC obligatoire
+	Impossible de réserver sans KYC validé
+	Middleware backend — blocage route /reservations
+	Numéro obligatoire
+	Requis pour toute action critique
+	Pop-up bloquante si numéro non renseigné
+	Double rôle autorisé
+	Un user peut être locataire ET proprio
+	Flag isProprietaire sur table users
+	Annonce vérifiée
+	Seules les annonces PUBLISHED sont visibles et réservables
+	Filtre recherche + validation backend
+	Validation avant publication
+	Annonce invisible jusqu'à validation admin
+	Statut PENDING_REVIEW par défaut à la création
+	Calendrier cohérent
+	Pas de double réservation
+	Transaction atomique PostgreSQL + lock optimiste
+	Délai de confirmation strict
+	Annulation auto si délai dépassé
+	Cron job toutes les heures
+	Prix figé
+	Prix sauvegardé à la réservation
+	Snapshot prix au moment de la création
+	Commission actée
+	7% sur chaque transaction
+	Calcul automatique backend — jamais modifiable frontend
+	Check-in obligatoire
+	Pas de paiement sans check-in validé
+	Validation double (locataire + proprio) + photos
+	Paiement immédiat
+	Dès check-in validé, pas de timer
+	Appel API synchrone à la validation
+	Check-in irréversible
+	Aucun litige possible après validation
+	Vérification statut backend
+	Auto-clôture
+	Clôture auto 24h après fin si pas de litige
+	Cron job quotidien
+	Retrait minimum
+	10 000 FCFA
+	Validation frontend + backend
+	WhatsApp maîtrisé
+	1 événement = max 1 message
+	Volume maîtrisé — messages payants
+	10.2 Système de non-conformité — Compteur automatique
+0 signalement → 1 signalement → 2 signalements → 3 signalements → SUSPENSION
+
+
+                (avertissement)  (avertissement)   (auto : annonce suspendue
+
+
+                                                    + compte proprio bloqué)
+
+
+* Chaque refus check-in confirmé par l'admin : compteur +1 sur l'annonce ET sur le compte proprio
+* Compteur visible uniquement par l'admin dans le backoffice
+* Pas affiché publiquement
+10.3 Limites métier MVP
+Limitation
+	Raison
+	Alternative
+	Pas de modification de réservation
+	Complexité technique
+	Annuler + recréer
+	Pas de remboursement partiel automatique
+	Cas trop variés
+	Gestion manuelle admin
+	Pas de paiement différé
+	Évite les no-show
+	Paiement intégral à la réservation
+	Pas de tarification dynamique
+	Complexité algorithmique
+	Proprio ajuste manuellement
+	Pas de caution
+	Supprime la friction
+	Phase 2
+	Check-in obligatoire
+	Sécurité transactionnelle
+	Non contournable
+	Check-out non bloquant
+	Évite les points de blocage UX
+	Auto-clôture 24h
+	Pas de relances WhatsApp multiples
+	Messages payants
+	Notifications in-app gratuites
+	10.4 Cas d'arbitrage admin
+Situation
+	Action admin
+	Critères de décision
+	Refus check-in — non-conformité
+	Compare photos soumises vs annonce
+	Preuves visuelles + description
+	Force majeure locataire
+	Valide justificatif + rembourse
+	Documents officiels requis
+	Proprio malveillant (annonces frauduleuses)
+	Suspend compte + rembourse locataires
+	Historique + gravité
+	Locataire malveillant
+	Bloque compte
+	Historique + récurrence
+	Documents frauduleux
+	Bloque compte définitivement
+	Preuve fraude avérée
+	Paiement échoué
+	Relance paiement ou annule
+	Nombre de tentatives
+	
+
+________________
+
+
+🏗️ 11. ARCHITECTURE LOGIQUE SIMPLIFIÉE
+11.1 Entités base de données (PostgreSQL)
+Table
+	Relations principales
+	Notes métier
+	users
+	1→N listings · 1→N bookings_locataire · 1→N bookings_proprio · 1→1 wallet
+	Flag isProprietaire + statut KYC
+	listings
+	N→1 user (proprio) · 1→N bookings · 1→N documents
+	Statut contrôle la réservabilité
+	bookings
+	N→1 user (locataire) · N→1 user (proprio) · N→1 listing · 1→2 checkins
+	États strictement contrôlés
+	documents
+	N→1 user · N→1 listing (si doc logement)
+	Type : CNI / ListingPhoto / ListingDoc
+	payments
+	N→1 booking
+	Séquestre — états HELD / RELEASED / REFUNDED / FROZEN
+	wallets
+	1→1 user (proprio)
+	Solde disponible + en attente
+	checkins
+	N→1 booking
+	Type : CHECK_IN / CHECK_OUT · Photos + statut
+	disputes
+	1→1 booking · N→1 admin
+	Litige + résolution
+	reviews
+	N→1 user (auteur) · N→1 user (cible) · N→1 booking
+	Locataire ↔ Propriétaire
+	notifications
+	N→1 user
+	Log WhatsApp / SMS / Push
+	withdrawals
+	N→1 wallet · N→1 admin
+	Demandes de retrait
+	11.2 State machines — Diagramme synthétique
+UTILISATEUR (KYC)
+
+
+NON_VERIFIE → EN_ATTENTE → VERIFIE / REJETE
+
+
+                                │
+
+
+                          A_RENOUVELER (admin)
+
+
+                                │
+
+
+                           SUSPENDU (3 non-conformités)
+
+
+ANNONCE (Listing)
+
+
+DRAFT → PENDING_REVIEW → PUBLISHED → PAUSED
+
+
+                      └→ REJECTED        └→ SUSPENDED
+
+
+RÉSERVATION (Booking)
+
+
+PENDING → PAID → CONFIRMED → CHECKED_IN → COMPLETED
+
+
+   │        │         │
+
+
+   │        │         └→ EXPIRED (délai dépassé)
+
+
+   │        └→ CANCELLED (annulation)
+
+
+   └→ CANCELLED (paiement non reçu)
+
+
+                    └→ DISPUTED (refus check-in)
+
+
+PAIEMENT (Séquestre)
+
+
+INITIATED → HELD → RELEASED
+
+
+              └→ REFUNDED
+
+
+              └→ FROZEN (litige)
+11.3 Workflows automatisés (Cron jobs)
+Fréquence
+	Tâche
+	Action
+	Toutes les 15 min
+	Expiration réservations PENDING
+	Si pas payé sous 15 min → CANCELLED
+	Toutes les heures
+	Vérification délais de confirmation
+	Si PAID depuis >48h (ou >2h jour J) → EXPIRED + remboursement
+	Tous les jours à 9h
+	Rappels J-1
+	1 WhatsApp aux deux parties pour séjours démarrant le lendemain
+	Toutes les heures
+	Auto-clôture séjours
+	Si CHECKED_IN et date_fin + 24h dépassée sans litige → COMPLETED
+	Toutes les semaines
+	Calcul KPIs plateforme
+	Stats dashboard admin
+	
+
+________________
+
+
+👣 12. FLUX UTILISATEUR DÉTAILLÉS
+12.1 Parcours LOCATAIRE complet
+Étape 1 — Inscription & KYC
+
+
+1. Inscription : email + mot de passe + téléphone OU Google OAuth
+2. Vérification email (lien) + téléphone (SMS OTP)
+3. Upload CNI recto/verso (web, WhatsApp ou PWA)
+4. Validation admin sous 48h → statut VERIFIE
+
+
+Étape 2 — Rechercher & réserver
+
+
+1. Recherche : ville, dates, type de logement, prix, équipements
+2. Résultats : uniquement annonces PUBLISHED + disponibles sur les dates choisies
+3. Fiche logement : photos, description, équipements, prix, avis, profil proprio
+4. Sélection des dates → calcul prix total (prix × nuits + 7%)
+5. Lecture + acceptation CGU (checkbox obligatoire avant paiement)
+6. Paiement : Wave / Orange Money / Carte bancaire
+7. Fonds en séquestre → statut PAID
+
+
+Étape 3 — Attente de confirmation
+
+
+1. WhatsApp immédiat : "Réservation créée ! Le propriétaire a 48h pour confirmer."
+2. Si proprio confirme → WhatsApp : "Séjour confirmé ! RDV le [Date]"
+3. Si délai dépassé → WhatsApp : "Annulation auto — remboursement en cours"
+
+
+Étape 4 — Check-in jour J (OBLIGATOIRE)
+
+
+1. Rappel J-1 à 9h : WhatsApp aux deux parties
+2. À l'arrivée : prendre les photos état des lieux (min 4)
+3. Choisir dans l'app :
+   * ✅ Confirmer check-in → fonds libérés au proprio, séjour démarre
+   * ❌ Refuser — logement non conforme → litige ouvert, remboursement enclenché, suggestions d'alternatives proposées
+
+
+Étape 5 — Séjour & check-out
+
+
+1. Messagerie disponible avec le proprio
+2. À la fin du séjour : check-out recommandé (photos état des lieux sortie)
+3. Si pas de check-out : auto-clôture 24h après la date de fin
+
+
+Étape 6 — Notation
+
+
+1. Invitation in-app à noter le logement et le propriétaire
+2. Fenêtre de 7 jours après clôture
+
+
+________________
+
+
+12.2 Parcours PROPRIÉTAIRE complet
+Étape 1 — Inscription & activation mode proprio
+
+
+1. Inscription identique au locataire (KYC CNI + OTP)
+2. Paramètres → "Devenir propriétaire"
+3. Acceptation conditions propriétaire
+4. Wallet créé (solde = 0)
+5. Toggle locataire / propriétaire disponible
+
+
+Étape 2 — Créer une annonce
+
+
+1. Formulaire : type de logement, surface, pièces, localisation
+2. Équipements, règles de la maison, conditions
+3. Prix/nuit (net proprio) → aperçu prix affiché (+7%)
+4. Photos (minimum 5)
+5. Upload documents logement
+6. Soumission → statut PENDING_REVIEW
+7. Admin valide sous 48h → WhatsApp : "Ton annonce est en ligne !"
+
+
+Étape 3 — Recevoir une réservation
+
+
+1. WhatsApp immédiat : "[Nom] veut réserver du [Date] au [Date]"
+2. Dashboard → "Réservations en attente"
+3. Cliquer "Confirmer la réservation" dans les 48h (ou 2h si jour J)
+4. Si pas de confirmation dans le délai → annulation auto + avertissement
+
+
+Étape 4 — Check-in & check-out
+
+
+1. Rappel J-1 à 9h
+2. Jour J : accueillir le locataire, vérifier identité
+3. Valider les photos check-in du locataire dans l'app
+4. Paiement crédité immédiatement dans le wallet
+5. Fin de séjour : check-out recommandé ou auto-clôture 24h
+
+
+Étape 5 — Litiges (si nécessaire)
+
+
+1. Fenêtre de 24h après la fin du séjour
+2. Bouton "Signaler un problème" → description + photos
+3. Admin arbitre sous 48h sur la base des photos check-in vs check-out
+4. Décision communiquée aux deux parties via WhatsApp
+
+
+Étape 6 — Retrait des revenus
+
+
+1. Dashboard → Wallet → "Demander un retrait"
+2. Minimum 10 000 FCFA · méthode : Wave / Orange Money / Virement
+3. Admin valide sous 24h
+4. WhatsApp confirmation : "Retrait effectué"
+
+
+________________
+
+
+✅ RÉSUMÉ FINAL
+Points clés du MVP
+Simplicité avant tout
+
+
+* Pas de signature séparée : checkbox CGU (locataire) + bouton Confirmer (proprio)
+* Pas de caution, pas de documents de véhicule
+* Check-in obligatoire, check-out recommandé (pas bloquant)
+* Double rôle sur un seul compte
+
+
+Sécurité transactionnelle
+
+
+* Séquestre logique — aucune transaction hors plateforme
+* Check-in validé = irréversible — aucun litige possible après
+* 3 non-conformités = suspension automatique de l'annonce et du compte proprio
+* Délais de confirmation stricts avec annulation automatique (cron jobs)
+
+
+Anti-scam garanti par le séquestre
+
+
+* Si le logement ne correspond pas aux photos → locataire refuse le check-in → fonds jamais libérés au proprio
+* Validation admin obligatoire avant toute publication
+
+
+Communication maîtrisée
+
+
+* WhatsApp uniquement pour les moments transactionnels critiques (payant)
+* Push notifications in-app gratuites pour le suivi quotidien
+* 1 événement = maximum 1 message WhatsApp
+
+
+Adapté au contexte sénégalais
+
+
+* Wave + Orange Money + Carte bancaire
+* PWA : pas de store, installation directe, fonctionne sur 3G/4G
+* Interface mobile-first
+* Social login Google avec récupération guidée du numéro
+
+
+________________
+
+
+🏢 13. TYPE D'HÔTE — PARTICULIER VS AGENCE
+À l'activation du mode propriétaire
+Quand un utilisateur clique "Devenir Hôte", la plateforme lui pose une question obligatoire :
+
+
+"Tu mets en location en tant que ?"
+
+
+* 👤 Particulier — c'est ton bien personnel
+* 🏢 Agence / Gestionnaire — tu gères des biens pour le compte de propriétaires
+Différences selon le type
+Critère
+	Particulier
+	Agence
+	Documents KYC
+	CNI + OTP
+	CNI + OTP + NINEA (registre commerce)
+	Nombre d'annonces
+	Limité (flag admin si >3)
+	Illimité
+	Badge sur les annonces
+	"Particulier"
+	"Géré par une agence"
+	Validation admin
+	Standard
+	Vérification NINEA en plus
+	Règle admin
+Un particulier avec plus de 3 annonces actives déclenche automatiquement un flag dans le backoffice pour vérification. Une agence enregistrée peut en avoir autant qu'elle veut.
+
+
+________________
+
+
+👥 14. TARIFICATION PAR NOMBRE DE PERSONNES
+Ce que le propriétaire configure à la création de l'annonce
+Le proprio définit :
+
+
+* Une capacité maximale (nombre de personnes autorisées dans le logement)
+* Un prix de base couvrant 1 à N personnes (il définit ce seuil)
+* Des plages de supplément dynamiques — autant qu'il veut
+
+
+Exemple de configuration :
+
+
+Plage de personnes
+	Supplément / nuit
+	Prix total / nuit
+	1 – 2 personnes
+	Prix de base
+	50 000 FCFA
+	3 – 4 personnes
+	+ 10 000 FCFA
+	60 000 FCFA
+	5 – 6 personnes
+	+ 20 000 FCFA
+	70 000 FCFA
+	7 – 10 personnes
+	+ 35 000 FCFA
+	85 000 FCFA
+	> 10 personnes
+	❌ Non autorisé
+	—
+	
+
+La dernière plage est toujours la capacité max. Au-delà, la réservation est impossible côté locataire.
+Ce que voit le locataire
+* Il saisit son nombre de personnes avant le paiement
+* Le prix s'ajuste automatiquement selon la plage correspondante
+* Si son nombre dépasse la capacité max → réservation impossible
+
+
+Exemple : logement configuré max 10 personnes
+
+
+Locataire saisit 4 personnes → 60 000 FCFA / nuit × 3 nuits = 180 000 + 7% = 192 600 FCFA
+
+
+Locataire saisit 11 personnes → ❌ Impossible — capacité dépassée
+Ce qui est figé dans le contrat
+Le nombre de personnes déclaré est figé dans le contrat généré automatiquement. C'est ce chiffre qui fait foi au check-in. Toute différence entre le nombre déclaré et le nombre réel constaté au check-in est une violation contractuelle.
+
+
+________________
+
+
+⚠️ 15. GESTION DU DÉPASSEMENT DE PERSONNES AU CHECK-IN
+Principe
+Arriver avec plus de personnes que déclaré dans le contrat = violation contractuelle = faute du locataire.
+
+
+* Le proprio a le droit de refuser le check-in via l'app
+* Ce refus ne compte pas comme une non-conformité du logement
+* L'Option A (supplément accepté en face à face) n'est pas gérée par la plateforme au MVP — ce qui se passe hors app ne nous regarde pas
+* V2 : bouton "Accepter avec supplément" → locataire paie la différence via l'app avant validation check-in
+Flow dans l'app — cas dépassement
+1. Proprio constate que le nombre de personnes présentes dépasse celui du contrat
+2. Il clique "Refuser le check-in" → motif : Nombre de personnes non conforme au contrat
+3. Système enregistre le motif, la date/heure
+4. Statut réservation → DISPUTED · fonds gelés · admin notifié
+5. Admin constate motif = faute locataire → applique pénalité → remboursement partiel ou nul
+6. Compteur fautes locataire +1 · WhatsApp locataire : "Check-in refusé — pénalité appliquée"
+Pénalités locataire — dépassement de personnes
+Occurrence
+	Remboursement locataire
+	Conséquence compte
+	1ère fois
+	25% remboursé — 75% perdu
+	Avertissement (visible admin uniquement)
+	2ème fois
+	0% remboursé
+	Avertissement sévère + flag "locataire à risque"
+	3ème fois
+	0% remboursé
+	Compte suspendu — révision admin obligatoire
+	Distinction critique des motifs de refus check-in
+Motif
+	Faute de
+	Compteur impacté
+	Remboursement locataire
+	Logement non conforme aux photos
+	Propriétaire
+	Compteur non-conformité annonce +1
+	100%
+	Nombre de personnes en excès
+	Locataire
+	Compteur fautes locataire +1
+	Pénalité progressive
+	
+
+________________
+
+
+🚪 16. PROPRIO INJOIGNABLE JOUR J
+Rappel — Logique check-in ImmoLoc
+* C'est le proprio qui uploade les photos de l'état des lieux (présence physique ou à distance via PWA)
+* Le locataire regarde les photos et confirme leur conformité → check-in validé → irréversible
+* Le proprio peut donc valider à distance — sa présence physique n'est pas obligatoire tant que le locataire a accès au logement
+Cas critique — Proprio injoignable, logement inaccessible
+Le locataire est sur place à l'heure prévue. Pas de photos uploadées. Pas d'accès au logement. Proprio ne répond ni sur l'app ni par téléphone.
+
+
+Flow dans l'app :
+
+
+Étape
+	Action
+	1
+	Locataire clique "Proprio injoignable" → saisit l'heure d'arrivée + photo optionnelle prouvant sa présence (façade du bâtiment)
+	2
+	Fenêtre d'attente : 2 heures à partir de l'heure de check-in prévue
+	3
+	Pendant ces 2h : notification push + WhatsApp au proprio toutes les 30 min : "Un locataire vous attend. Uploadez les photos du logement maintenant."
+	4
+	Si le proprio uploade dans ce délai → check-in normal · locataire confirme · séjour démarre
+	5
+	Passé 2h sans réponse → locataire clique "Confirmer l'absence du proprio" → admin notifié immédiatement → annulation automatique
+	
+
+Résultat pour le locataire : remboursement 100% — commission ImmoLoc incluse. Faute du proprio.
+Pénalités proprio — Absence jour J
+Occurrence
+	Pénalité financière
+	Conséquence compte
+	1ère fois
+	10 000 FCFA prélevés sur le wallet
+	Avertissement · flag admin
+	2ème fois
+	20 000 FCFA prélevés sur le wallet
+	Avertissement sévère · annonce mise en pause 7 jours
+	3ème fois
+	30 000 FCFA prélevés sur le wallet
+	Compte suspendu · toutes annonces désactivées · révision admin obligatoire
+	
+
+Si le wallet est insuffisant pour couvrir la pénalité → dette enregistrée et déduite du prochain paiement reçu. Incontournable.
+Les 3 compteurs distincts du propriétaire
+Type de faute
+	Compteur
+	Seuil de suspension
+	Logement non conforme aux photos
+	Non-conformité annonce
+	Suspension annonce à 3
+	Annulation après confirmation
+	Annulations proprio
+	Suspension compte à 3
+	Absent / injoignable jour J
+	Absence jour J
+	Suspension compte à 3 + pénalité financière
+	
+
+Tous les compteurs sont visibles uniquement par l'admin dans le backoffice. Jamais affichés publiquement. Réinitialisés après 12 mois sans incident.
+
+
+________________
+
+
+
+
+Document de référence ImmoLoc MVP — Version 1.1 Construit sur la base du modèle AutoLoc, adapté à la location de logements entre particuliers au Sénégal Dernière mise à jour : ajout type d'hôte, tarification par personnes, gestion dépassement, proprio injoignable

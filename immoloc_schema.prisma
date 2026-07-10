@@ -1,0 +1,835 @@
+// =============================================================================
+// ImmoLoc — Prisma Schema MVP v1.0
+// Domaine   : Location de logements entre particuliers au Sénégal
+// Stack     : NestJS + Prisma + PostgreSQL (Supabase) + Redis
+// Auth      : Supabase Auth (Google OAuth + OTP SMS)
+// Médias    : Cloudinary
+// Paiements : PayDunya + Stripe
+// =============================================================================
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// =============================================================================
+// PROFIL — Miroir Supabase Auth
+// Créé automatiquement via trigger Supabase à l'inscription
+// =============================================================================
+
+model Profile {
+  id       String   @id @default(uuid())
+  userId   String   @unique @map("user_id")
+  email    String?  @unique
+  phone    String?  @unique
+  typeHote TypeHote @default(PARTICULIER)
+  ninea    String?  // Obligatoire si typeHote = AGENCE (registre commerce)
+  creeLe   DateTime @default(now()) @map("created_at")
+
+  utilisateur Utilisateur?
+
+  @@index([userId])
+  @@map("profiles")
+}
+
+// =============================================================================
+// UTILISATEUR
+// =============================================================================
+
+model Utilisateur {
+  id     String @id @default(uuid())
+  userId String @unique // FK vers Supabase auth.users
+
+  // Identite
+  email         String    @unique
+  telephone     String    @unique
+  prenom        String
+  nom           String
+  avatarUrl     String?
+  dateNaissance DateTime?
+
+  // KYC
+  statutKyc           StatutKyc @default(NON_VERIFIE)
+  kycDocumentUrl      String?   // CNI recto/verso — Cloudinary prive
+  kycDocumentPublicId String?
+  kycRejectionReason  String?
+  phoneVerified       Boolean   @default(false)
+  profileCompleted    Boolean   @default(false)
+
+  // Compte
+  actif        Boolean   @default(true)
+  bloqueJusqua DateTime?
+
+  // Double role
+  estProprietaire Boolean @default(false)
+
+  // Notes agregees (denormalisees pour affichage rapide)
+  noteLocataire    Decimal @default(0) @db.Decimal(3, 2)
+  noteProprietaire Decimal @default(0) @db.Decimal(3, 2)
+  totalAvis        Int     @default(0)
+
+  // Compteurs de fautes PROPRIO (denormalises — detail dans CompteurFaute)
+  nbNonConformites Int @default(0) // Logement non conforme aux photos
+  nbAnnulations    Int @default(0) // Annulations apres confirmation
+  nbAbsencesJourJ  Int @default(0) // Absent/injoignable jour J
+
+  // Compteurs de fautes LOCATAIRE
+  nbDepassementsPersonnes Int @default(0) // Arrive avec plus de personnes
+
+  creeLe     DateTime @default(now())
+  misAJourLe DateTime @updatedAt
+
+  // Relations
+  profile                  Profile             @relation(fields: [userId], references: [userId])
+  logements                Logement[]
+  reservationsLocataire    Reservation[]       @relation("locataire")
+  reservationsProprietaire Reservation[]       @relation("proprietaire_res")
+  avisEnvoyes              Avis[]              @relation("auteur")
+  avisRecus                Avis[]              @relation("cible")
+  wallet                   Wallet?
+  pushSubscriptions        PushSubscription[]
+  compteursFautes          CompteurFaute[]
+  notificationLogs         NotificationLog[]
+
+  @@index([userId])
+  @@index([statutKyc])
+  @@index([estProprietaire])
+  @@index([actif, statutKyc])
+}
+
+// Audit trail des fautes — chaque faute est tracee individuellement
+model CompteurFaute {
+  id            String    @id @default(uuid())
+  utilisateurId String
+  type          TypeFaute
+  reservationId String?   // Reservation liee a la faute
+  description   String?
+  penalite      Decimal?  @db.Decimal(10, 2) // Montant preleve si applicable
+  traitee       Boolean   @default(false)
+  creeLe        DateTime  @default(now())
+
+  utilisateur Utilisateur @relation(fields: [utilisateurId], references: [id])
+
+  @@index([utilisateurId, type])
+  @@index([utilisateurId, creeLe(sort: Desc)])
+  @@index([traitee, creeLe])
+}
+
+// =============================================================================
+// LOGEMENT
+// =============================================================================
+
+model Logement {
+  id             String @id @default(uuid())
+  proprietaireId String
+
+  // Identite
+  titre       String
+  description String
+  type        TypeLogement
+
+  // Composition
+  surface          Decimal? @db.Decimal(6, 2) // m2
+  nombreChambres   Int      @default(1)
+  nombreSallesBain Int      @default(1)
+  nombrePieces     Int      @default(1)
+  capaciteMax      Int      @default(1) // Capacite absolue — jamais depassable
+
+  // Localisation
+  ville     String
+  quartier  String?
+  adresse   String
+  latitude  Decimal? @db.Decimal(10, 7)
+  longitude Decimal? @db.Decimal(10, 7)
+
+  // Tarification de base
+  prixBase      Decimal @db.Decimal(10, 2) // Prix / nuit pour personnesBase personnes
+  personnesBase Int     @default(1)         // Nb personnes couvert par prixBase
+
+  // Conditions
+  nuitesMinimum     Int     @default(1)
+  reglesMaison      String? // Animaux, fumeurs, fetes, etc.
+  instructionsAcces String? // Code, digicode, contact gardien, etc.
+
+  // Statut et moderation
+  statut          StatutLogement @default(DRAFT)
+  rejectionReason String?
+  valideLe        DateTime?
+  valideParAdminId String?
+
+  // Compteur non-conformite propre a l annonce
+  nbNonConformitesAnnonce Int @default(0)
+
+  // Mise en avant
+  isFeatured    Boolean   @default(false)
+  featuredUntil DateTime?
+
+  // Stats
+  note         Decimal @default(0) @db.Decimal(3, 2)
+  totalAvis    Int     @default(0)
+  totalSejours Int     @default(0)
+
+  creeLe     DateTime  @default(now())
+  misAJourLe DateTime  @updatedAt
+  archiveLe  DateTime?
+
+  // Relations
+  proprietaire     Utilisateur               @relation(fields: [proprietaireId], references: [id])
+  photos           PhotoLogement[]
+  equipements      LogementEquipement[]
+  tarifsPersonnes  TarifPersonnes[]
+  tarifsNuits      TarifNuits[]
+  indisponibilites IndisponibiliteLogement[]
+  reservations     Reservation[]
+
+  @@index([proprietaireId])
+  @@index([statut])
+  @@index([ville])
+  @@index([statut, ville])
+  @@index([statut, ville, prixBase])
+  @@index([ville, type])
+  @@index([isFeatured, featuredUntil])
+  @@index([statut, nbNonConformitesAnnonce])
+}
+
+// Tarification par plage de personnes
+// Ex: 1-2 pers → +0 FCFA | 3-4 → +10 000 | 5-6 → +20 000 | 7-10 → +35 000
+model TarifPersonnes {
+  id           String  @id @default(uuid())
+  logementId   String
+  personnesMin Int     // Borne inferieure incluse
+  personnesMax Int     // Borne superieure incluse
+  supplement   Decimal @db.Decimal(10, 2) // Supplement / nuit ajoute au prixBase
+  position     Int     @default(0)
+
+  logement Logement @relation(fields: [logementId], references: [id], onDelete: Cascade)
+
+  @@index([logementId])
+  @@map("tarifs_personnes")
+}
+
+// Tarification degressive par duree de sejour
+// Ex: 1-4 nuits → prixBase | 5-9 → prixBase-10% | 10+ → prixBase-20%
+model TarifNuits {
+  id         String  @id @default(uuid())
+  logementId String
+  nuitsMin   Int
+  nuitsMax   Int?    // null = illimite (derniere tranche)
+  prix       Decimal @db.Decimal(10, 2) // Prix / nuit effectif pour cette tranche
+  position   Int     @default(0)
+
+  logement Logement @relation(fields: [logementId], references: [id], onDelete: Cascade)
+
+  @@index([logementId])
+  @@map("tarifs_nuits")
+}
+
+// Referentiel des equipements
+model Equipement {
+  id        String              @id @default(uuid())
+  nom       String              @unique
+  categorie CategorieEquipement
+
+  logements LogementEquipement[]
+}
+
+model LogementEquipement {
+  logementId   String
+  equipementId String
+
+  logement   Logement   @relation(fields: [logementId], references: [id], onDelete: Cascade)
+  equipement Equipement @relation(fields: [equipementId], references: [id], onDelete: Cascade)
+
+  @@id([logementId, equipementId])
+}
+
+model PhotoLogement {
+  id            String                 @id @default(uuid())
+  logementId    String
+  url           String
+  publicId      String?
+  categorie     CategoriePhotoLogement
+  position      Int                    @default(0)
+  estPrincipale Boolean                @default(false)
+  creeLe        DateTime               @default(now())
+
+  logement Logement @relation(fields: [logementId], references: [id], onDelete: Cascade)
+
+  @@index([logementId])
+  @@index([logementId, estPrincipale])
+}
+
+model IndisponibiliteLogement {
+  id         String   @id @default(uuid())
+  logementId String
+  dateDebut  DateTime @db.Date
+  dateFin    DateTime @db.Date
+  motif      String?
+  creeLe     DateTime @default(now())
+
+  logement Logement @relation(fields: [logementId], references: [id], onDelete: Cascade)
+
+  @@index([logementId, dateDebut, dateFin])
+}
+
+// =============================================================================
+// RESERVATION
+// =============================================================================
+
+model Reservation {
+  id             String @id @default(uuid())
+  logementId     String
+  locataireId    String
+  proprietaireId String
+
+  // Dates
+  dateDebut DateTime
+  dateFin   DateTime
+  nbNuits   Int // Stocke pour eviter recalcul permanent
+
+  // Personnes — declare AVANT paiement, fige dans le contrat
+  nbPersonnes Int
+
+  // Snapshot tarifaire (fige au moment de la reservation — immuable)
+  prixBase            Decimal @db.Decimal(10, 2) // Prix / nuit de base du logement
+  supplementPersonnes Decimal @default(0) @db.Decimal(10, 2) // Supplement / nuit selon nbPersonnes
+  prixNuitEffectif    Decimal @db.Decimal(10, 2) // prixBase + supplementPersonnes
+  reductionNuits      Decimal @default(0) @db.Decimal(10, 2) // Reduction eventuelle (tarif degressif)
+  totalBase           Decimal @db.Decimal(10, 2) // prixNuitEffectif x nbNuits
+  tauxCommission      Decimal @db.Decimal(5, 4)  // 0.0700 = 7%
+  montantCommission   Decimal @db.Decimal(10, 2) // totalBase x tauxCommission
+  totalLocataire      Decimal @db.Decimal(10, 2) // totalBase + montantCommission
+  netProprietaire     Decimal @db.Decimal(10, 2) // totalBase (commission payee par locataire)
+
+  // Dette penalite (si wallet proprio insuffisant lors d une penalite)
+  dettePenalite Decimal @default(0) @db.Decimal(10, 2)
+
+  // Statut
+  statut StatutReservation @default(PENDING)
+
+  // Politique d annulation appliquee (si annulee)
+  politiqueAppliquee PolitiqueAnnulation?
+
+  // Confirmation proprio
+  delaiConfirmation DateTime // 48h future / 2h jour J
+  confirmeeLe       DateTime?
+
+  // Check-in
+  // FLOW : Proprio uploade photos → locataire valide → irreversible → paiement declenche
+  checkinProprioLe   DateTime? // Quand le proprio a uploade les photos
+  checkinLocataireLe DateTime? // Quand le locataire a confirme — DECLENCHE PAIEMENT
+
+  // Gestion absence proprio jour J
+  absenceSignaleeLe  DateTime? // Locataire clique Proprio injoignable
+  absenceConfirmeeLe DateTime? // Passe 2h sans reponse → annulation auto
+
+  // Check-out (recommande, non bloquant)
+  checkoutProprioLe   DateTime?
+  checkoutLocataireLe DateTime?
+
+  // Cloture
+  closeLe DateTime?
+
+  // Annulation
+  annuleParId      String?
+  annuleLe         DateTime?
+  raisonAnnulation String?
+
+  // Contrat PDF genere automatiquement
+  contratUrl      String?
+  contratPublicId String?
+
+  // Systeme
+  updatedBySystem Boolean  @default(false)
+  creeLe          DateTime @default(now())
+  misAJourLe      DateTime @updatedAt
+
+  // Relations
+  locataire      Utilisateur           @relation("locataire", fields: [locataireId], references: [id])
+  proprietaire   Utilisateur           @relation("proprietaire_res", fields: [proprietaireId], references: [id])
+  logement       Logement              @relation(fields: [logementId], references: [id])
+  paiement       Paiement?
+  photosEtatLieu PhotoEtatLieu[]
+  litige         Litige?
+  avis           Avis[]
+  historique     ReservationHistorique[]
+  idempotencyKey IdempotencyKey?
+
+  @@index([logementId, statut])
+  @@index([logementId, statut, dateDebut, dateFin])
+  @@index([locataireId])
+  @@index([locataireId, statut])
+  @@index([proprietaireId])
+  @@index([proprietaireId, statut])
+  @@index([statut])
+  @@index([statut, delaiConfirmation])  // Cron : expiration confirmation
+  @@index([statut, absenceSignaleeLe]) // Cron : suivi absence proprio 2h
+  @@index([statut, dateFin])           // Cron : auto-cloture sejours
+  @@index([statut, closeLe])           // Cron : fenetre avis 7 jours
+}
+
+// Photos etat des lieux
+// Check-in : uploadees par le PROPRIO, validees par le LOCATAIRE
+// Check-out : uploadees par le PROPRIO ou les deux
+model PhotoEtatLieu {
+  id            String                 @id @default(uuid())
+  reservationId String
+  type          TypeEtatLieu
+  uploadePar    RoleUpload
+  url           String
+  publicId      String?
+  categorie     CategoriePhotoEtatLieu
+  position      Int                    @default(0)
+  creeLe        DateTime               @default(now())
+
+  reservation Reservation @relation(fields: [reservationId], references: [id], onDelete: Cascade)
+
+  @@index([reservationId, type])
+  @@index([reservationId, uploadePar])
+}
+
+// Audit trail complet de tous les changements de statut
+model ReservationHistorique {
+  id            String             @id @default(uuid())
+  reservationId String
+  ancienStatut  StatutReservation?
+  nouveauStatut StatutReservation
+  modifiePar    String?            // userId ou SYSTEM
+  raison        String?
+  metadonnees   Json?              // Donnees contextuelles (montant penalite, etc.)
+  modifieLe     DateTime           @default(now())
+
+  reservation Reservation @relation(fields: [reservationId], references: [id], onDelete: Cascade)
+
+  @@index([reservationId])
+  @@index([modifieLe(sort: Desc)])
+}
+
+// =============================================================================
+// PAIEMENT & SEQUESTRE
+// =============================================================================
+
+model Paiement {
+  id                       String              @id @default(uuid())
+  reservationId            String              @unique
+  montant                  Decimal             @db.Decimal(10, 2)
+  devise                   Devise              @default(XOF)
+  fournisseur              FournisseurPaiement
+  idTransactionFournisseur String?             @unique
+  statut                   StatutPaiement      @default(EN_ATTENTE)
+  paymentUrl               String?
+  confirmeLeWebhook        DateTime?
+  rembourseLe              DateTime?
+  montantRembourse         Decimal?            @db.Decimal(10, 2)
+  creeLe                   DateTime            @default(now())
+
+  reservation Reservation @relation(fields: [reservationId], references: [id])
+
+  @@index([statut])
+  @@index([idTransactionFournisseur])
+  @@index([statut, creeLe])
+}
+
+model WebhookLog {
+  id                       String              @id @default(uuid())
+  provider                 FournisseurPaiement
+  payloadRaw               String
+  signatureReceived        String
+  signatureCalculated      String
+  isValid                  Boolean
+  statusCode               Int?
+  errorMessage             String?
+  durationMs               Int?
+  idTransactionFournisseur String?
+  reservationId            String?
+  creeLe                   DateTime            @default(now())
+
+  @@index([provider, creeLe(sort: Desc)])
+  @@index([idTransactionFournisseur])
+  @@index([reservationId])
+  @@index([isValid, creeLe])
+}
+
+model IdempotencyKey {
+  id            String   @id @default(uuid())
+  key           String   @unique
+  reservationId String   @unique
+  expiresAt     DateTime
+  paymentRef    String?
+  paymentUrl    String?
+  creeLe        DateTime @default(now())
+
+  reservation Reservation @relation(fields: [reservationId], references: [id], onDelete: Cascade)
+
+  @@index([expiresAt])
+}
+
+// =============================================================================
+// WALLET & FINANCE
+// =============================================================================
+
+model Wallet {
+  id              String   @id @default(uuid())
+  utilisateurId   String   @unique
+  soldeDisponible Decimal  @default(0) @db.Decimal(10, 2)
+  dettePenalites  Decimal  @default(0) @db.Decimal(10, 2)
+  creeLe          DateTime @default(now())
+  misAJourLe      DateTime @updatedAt
+
+  utilisateur  Utilisateur         @relation(fields: [utilisateurId], references: [id])
+  transactions TransactionWallet[]
+  retraits     Retrait[]
+
+  @@index([utilisateurId])
+}
+
+model TransactionWallet {
+  id            String                @id @default(uuid())
+  walletId      String
+  reservationId String?
+  type          TypeTransactionWallet
+  montant       Decimal               @db.Decimal(10, 2)
+  sens          SensTransaction
+  soldeApres    Decimal               @db.Decimal(10, 2)
+  description   String?
+  creeLe        DateTime              @default(now())
+
+  wallet Wallet @relation(fields: [walletId], references: [id], onDelete: Cascade)
+
+  @@unique([reservationId, type])
+  @@index([walletId])
+  @@index([walletId, creeLe(sort: Desc)])
+  @@index([reservationId])
+}
+
+model Retrait {
+  id           String         @id @default(uuid())
+  walletId     String
+  montant      Decimal        @db.Decimal(10, 2)
+  methode      MethodeRetrait
+  destinataire String
+  statut       StatutRetrait  @default(EN_ATTENTE)
+  raisonRejet  String?
+  demandeeLe   DateTime       @default(now())
+  traiteLe     DateTime?
+
+  wallet Wallet @relation(fields: [walletId], references: [id])
+
+  @@index([statut])
+  @@index([walletId, statut])
+  @@index([statut, demandeeLe])
+}
+
+// =============================================================================
+// LITIGE
+// =============================================================================
+
+model Litige {
+  id            String      @id @default(uuid())
+  reservationId String      @unique
+  declarePar    RoleLitige
+  motif         MotifLitige
+  description   String
+
+  coutEstime          Decimal?     @db.Decimal(10, 2)
+  statut              StatutLitige @default(EN_ATTENTE)
+  montantCompensation Decimal?     @db.Decimal(10, 2)
+  decisionAdmin       String?
+
+  creeLe           DateTime  @default(now())
+  resoluLe         DateTime?
+  resoluParAdminId String?
+
+  reservation Reservation @relation(fields: [reservationId], references: [id])
+
+  @@index([statut])
+  @@index([declarePar, statut])
+  @@index([creeLe(sort: Desc)])
+}
+
+// =============================================================================
+// AVIS & NOTATION
+// =============================================================================
+
+model Avis {
+  id            String   @id @default(uuid())
+  reservationId String
+  auteurId      String
+  cibleId       String
+  logementId    String?
+  note          Int
+  commentaire   String?
+  typeAvis      TypeAvis
+  creeLe        DateTime @default(now())
+
+  auteur      Utilisateur @relation("auteur", fields: [auteurId], references: [id])
+  cible       Utilisateur @relation("cible", fields: [cibleId], references: [id])
+  reservation Reservation @relation(fields: [reservationId], references: [id], onDelete: Cascade)
+
+  @@unique([reservationId, auteurId])
+  @@index([cibleId])
+  @@index([logementId])
+  @@index([creeLe(sort: Desc)])
+}
+
+// =============================================================================
+// NOTIFICATIONS
+// =============================================================================
+
+model PushSubscription {
+  id         String   @id @default(uuid())
+  userId     String
+  endpoint   String   @unique
+  p256dh     String
+  auth       String
+  userAgent  String?
+  deviceType String?
+  creeLe     DateTime @default(now()) @map("created_at")
+  misAJourLe DateTime @updatedAt @map("updated_at")
+
+  utilisateur Utilisateur @relation(fields: [userId], references: [userId], onDelete: Cascade)
+
+  @@index([userId])
+  @@map("push_subscriptions")
+}
+
+model NotificationLog {
+  id            String             @id @default(uuid())
+  utilisateurId String
+  canal         CanalNotification
+  type          TypeNotification
+  reservationId String?
+  contenu       String?
+  statut        StatutNotification @default(EN_ATTENTE)
+  erreur        String?
+  envoyeLe      DateTime?
+  creeLe        DateTime           @default(now())
+
+  utilisateur Utilisateur @relation(fields: [utilisateurId], references: [id])
+
+  @@index([utilisateurId, creeLe(sort: Desc)])
+  @@index([statut, creeLe])
+  @@index([reservationId])
+  @@index([canal, statut])
+}
+
+// =============================================================================
+// ENUMS
+// =============================================================================
+
+enum TypeHote {
+  PARTICULIER
+  AGENCE
+}
+
+enum StatutKyc {
+  NON_VERIFIE
+  EN_ATTENTE
+  VERIFIE
+  REJETE
+  A_RENOUVELER
+  SUSPENDU
+}
+
+enum TypeLogement {
+  APPARTEMENT
+  STUDIO
+  VILLA
+  CHAMBRE
+  DUPLEX
+  PENTHOUSE
+}
+
+enum StatutLogement {
+  DRAFT
+  PENDING_REVIEW
+  PUBLISHED
+  PAUSED
+  REJECTED
+  SUSPENDED
+}
+
+enum CategorieEquipement {
+  CONFORT
+  CUISINE
+  CONNECTIVITE
+  SECURITE
+  EXTERIEUR
+  ACCESSIBILITE
+}
+
+enum CategoriePhotoLogement {
+  SALON
+  CHAMBRE
+  CUISINE
+  SALLE_DE_BAIN
+  TERRASSE
+  VUE
+  ENTREE
+  PISCINE
+  AUTRE
+}
+
+enum StatutReservation {
+  PENDING
+  PAID
+  CONFIRMED
+  CHECKED_IN
+  COMPLETED
+  CANCELLED
+  DISPUTED
+  EXPIRED
+}
+
+enum PolitiqueAnnulation {
+  REMBOURSEMENT_100
+  REMBOURSEMENT_50
+  REMBOURSEMENT_25
+  REMBOURSEMENT_0
+  NO_SHOW
+  FAUTE_PROPRIO
+  ABSENCE_PROPRIO
+  NON_CONFORMITE
+  DEPASSEMENT_PERSONNES
+}
+
+enum TypeEtatLieu {
+  CHECKIN
+  CHECKOUT
+}
+
+enum RoleUpload {
+  PROPRIO
+  LOCATAIRE
+}
+
+enum CategoriePhotoEtatLieu {
+  SALON
+  CHAMBRE
+  CUISINE
+  SALLE_DE_BAIN
+  ENTREE
+  TERRASSE
+  AUTRE
+}
+
+enum TypeFaute {
+  NON_CONFORMITE_LOGEMENT
+  ANNULATION_APRES_CONFIRMATION
+  ABSENCE_JOUR_J
+  DEPASSEMENT_PERSONNES
+}
+
+enum RoleLitige {
+  LOCATAIRE
+  PROPRIETAIRE
+}
+
+enum MotifLitige {
+  LOGEMENT_NON_CONFORME
+  LOGEMENT_INACCESSIBLE
+  DEPASSEMENT_PERSONNES
+  DOMMAGES
+  AUTRE
+}
+
+enum StatutLitige {
+  EN_ATTENTE
+  FONDE
+  NON_FONDE
+}
+
+enum Devise {
+  XOF
+  EUR
+  USD
+}
+
+enum FournisseurPaiement {
+  PAYDUNYA
+  WAVE
+  ORANGE_MONEY
+  STRIPE
+}
+
+enum StatutPaiement {
+  EN_ATTENTE
+  CONFIRME
+  ECHOUE
+  REMBOURSE
+  GELE
+}
+
+enum TypeTransactionWallet {
+  CREDIT_LOCATION
+  DEBIT_PENALITE
+  DEBIT_RETRAIT
+  DEBIT_DETTE
+}
+
+enum SensTransaction {
+  CREDIT
+  DEBIT
+}
+
+enum MethodeRetrait {
+  WAVE
+  ORANGE_MONEY
+  VIREMENT
+}
+
+enum StatutRetrait {
+  EN_ATTENTE
+  VALIDE
+  EFFECTUE
+  REJETE
+}
+
+enum TypeAvis {
+  LOCATAIRE_NOTE_LOGEMENT_ET_PROPRIO
+  PROPRIO_NOTE_LOCATAIRE
+}
+
+enum CanalNotification {
+  WHATSAPP
+  SMS
+  PUSH
+  EMAIL
+}
+
+enum TypeNotification {
+  KYC_VALIDE
+  KYC_REJETE
+  KYC_A_RENOUVELER
+  ANNONCE_VALIDEE
+  ANNONCE_REJETEE
+  ANNONCE_SUSPENDUE
+  RESERVATION_CREEE_LOCATAIRE
+  RESERVATION_CREEE_PROPRIO
+  RESERVATION_CONFIRMEE
+  RESERVATION_EXPIREE
+  RESERVATION_ANNULEE
+  RAPPEL_CONFIRMATION
+  RAPPEL_JOUR_J
+  CHECKIN_PHOTOS_UPLOADEES
+  CHECKIN_VALIDE
+  CHECKOUT_VALIDE
+  ABSENCE_PROPRIO_ALERTE
+  ABSENCE_PROPRIO_CONFIRMEE
+  LITIGE_DECLARE
+  LITIGE_RESOLU
+  PAIEMENT_DISPONIBLE
+  PENALITE_APPLIQUEE
+  RETRAIT_EFFECTUE
+  RETRAIT_REJETE
+}
+
+enum StatutNotification {
+  EN_ATTENTE
+  ENVOYE
+  ECHOUE
+}
