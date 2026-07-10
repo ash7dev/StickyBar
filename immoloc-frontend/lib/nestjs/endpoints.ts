@@ -1,4 +1,7 @@
-const BASE = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:4000/api/v1';
+// Côté client (navigateur) : URL relative → passe par le proxy Vercel (rewrites)
+// Côté serveur (SSR / Server Components) : URL complète vers Render
+const SERVER_BASE = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:4000/api/v1';
+const BASE = typeof window !== 'undefined' ? '/api/v1' : SERVER_BASE;
 
 export const NEST_API = {
   AUTH: {

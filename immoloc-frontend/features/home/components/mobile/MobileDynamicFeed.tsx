@@ -56,7 +56,7 @@ function useFeed() {
         for (const s of res.sections) map[s.id] = s.listings;
         setPool(map);
       })
-      .catch(() => {})
+      .catch((err) => console.error('[MobileDynamicFeed] feed error:', err))
       .finally(() => { if (!cancelled) setLoading(false); });
     return () => { cancelled = true; };
   }, []);

@@ -1,7 +1,4 @@
-'use client';
-
-import { ReactNode, useEffect, useState } from 'react';
-import { useIsMobile } from '@/hooks/use-mobile';
+import { ReactNode } from 'react';
 
 interface Props {
   web: ReactNode;
@@ -9,25 +6,15 @@ interface Props {
 }
 
 /**
- * AdaptiveHomeClient - Wrapper client pour le switch d'interface.
- * Le rendu initial reste stable jusqu'à ce que le client soit monté,
- * ce qui évite les hydration mismatches causés par matchMedia.
+ * AdaptiveHomeClient — Affiche web ou mobile via CSS media queries.
+ * Zéro JS côté client = pas de flash, pas de hydration mismatch.
+ * Le breakpoint xl (1280 px) est identique à l'ancien useIsMobile(1280).
  */
 export function AdaptiveHomeClient({ web, mobile }: Props) {
-  const isMobile = useIsMobile(1280);
-  const [hasMounted, setHasMounted] = useState(false);
-
-  useEffect(() => {
-    setHasMounted(true);
-  }, []);
-
-  if (!hasMounted) {
-    return <div className="w-full">{web}</div>;
-  }
-
   return (
-    <div className="w-full">
-      {isMobile ? <>{mobile}</> : <>{web}</>}
-    </div>
+    <>
+      <div className="hidden xl:block w-full">{web}</div>
+      <div className="block xl:hidden w-full">{mobile}</div>
+    </>
   );
 }
