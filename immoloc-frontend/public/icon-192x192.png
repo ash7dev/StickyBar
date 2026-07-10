@@ -1,0 +1,46 @@
+<svg width="512" height="512" viewBox="0 0 512 512" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <!-- Background -->
+  <rect width="512" height="512" rx="128" fill="#166534"/>
+
+  <!-- Building icon -->
+  <g transform="translate(128, 96)">
+    <!-- Main building -->
+    <rect x="0" y="80" width="120" height="240" rx="12" fill="white" opacity="0.95"/>
+
+    <!-- Windows - Left column -->
+    <rect x="20" y="110" width="30" height="30" rx="6" fill="#166534"/>
+    <rect x="20" y="160" width="30" height="30" rx="6" fill="#166534"/>
+    <rect x="20" y="210" width="30" height="30" rx="6" fill="#166534"/>
+    <rect x="20" y="260" width="30" height="30" rx="6" fill="#166534"/>
+
+    <!-- Windows - Right column -->
+    <rect x="70" y="110" width="30" height="30" rx="6" fill="#166534"/>
+    <rect x="70" y="160" width="30" height="30" rx="6" fill="#166534"/>
+    <rect x="70" y="210" width="30" height="30" rx="6" fill="#166534"/>
+    <rect x="70" y="260" width="30" height="30" rx="6" fill="#166534"/>
+
+    <!-- Roof -->
+    <path d="M60 80 L0 20 L120 20 Z" fill="white" opacity="0.95"/>
+
+    <!-- Tower building (right) -->
+    <rect x="140" y="40" width="120" height="280" rx="12" fill="white" opacity="0.9"/>
+
+    <!-- Tower windows - 3 columns -->
+    <rect x="155" y="70" width="25" height="25" rx="5" fill="#166534"/>
+    <rect x="155" y="110" width="25" height="25" rx="5" fill="#166534"/>
+    <rect x="155" y="150" width="25" height="25" rx="5" fill="#166534"/>
+    <rect x="155" y="190" width="25" height="25" rx="5" fill="#166534"/>
+    <rect x="155" y="230" width="25" height="25" rx="5" fill="#166534"/>
+    <rect x="155" y="270" width="25" height="25" rx="5" fill="#166534"/>
+
+    <rect x="195" y="70" width="25" height="25" rx="5" fill="#166534"/>
+    <rect x="195" y="110" width="25" height="25" rx="5" fill="#166534"/>
+    <rect x="195" y="150" width="25" height="25" rx="5" fill="#166534"/>
+    <rect x="195" y="190" width="25" height="25" rx="5" fill="#166534"/>
+    <rect x="195" y="230" width="25" height="25" rx="5" fill="#166534"/>
+    <rect x="195" y="270" width="25" height="25" rx="5" fill="#166534"/>
+
+    <rect x="235" y="70" width="10" height="25" rx="5" fill="#FFD700" opacity="0.8"/>
+    <rect x="235" y="110" width="10" height="25" rx="5" fill="#FFD700" opacity="0.8"/>
+  </g>
+</svg>

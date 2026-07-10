@@ -1,0 +1,236 @@
+@import "tailwindcss";
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   ImmoLoc — Design System
+   Primaire : Vert Forêt #14654C · Accent : Terracotta #C75B23
+   Premium : Or #C9A24B · Neutres : Sable chaud
+   Typo : Fraunces (display) + Inter (interface)
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+/* ── Mode Clair (défaut) ──────────────────────────────────────────────────── */
+
+:root,
+.light {
+  /* Primaire — Vert Forêt (confiance, séquestre, navigation) */
+  --primary-50:  #E9F4EF;
+  --primary-100: #CFE7DC;
+  --primary-200: #A5D2BD;
+  --primary-300: #74B89A;
+  --primary-400: #439B77;
+  --primary-500: #1F7F5C;
+  --primary-600: #14654C;   /* ★ Couleur principale */
+  --primary-700: #0F503D;
+  --primary-800: #0B3D2E;
+  --primary-900: #072A20;
+  --primary-950: #041912;
+
+  /* Accent — Or Premium (CTA "Réserver", un seul par écran) */
+  --accent-50:  #FEF7E8;
+  --accent-100: #FDECC4;
+  --accent-200: #FBE09C;
+  --accent-300: #F9D474;
+  --accent-400: #F7CA56;
+  --accent-500: #F5C038;   /* ★ CTA principal */
+  --accent-600: #F3BA32;
+  --accent-700: #F1B22B;
+  --accent-800: #EFAA24;
+  --accent-900: #EC9C17;
+
+  /* Premium — Or (badge Vérifié, étoiles — usage rare) */
+  --gold-50:  #FBF5E6;
+  --gold-100: #F5E8C7;
+  --gold-200: #EAD394;
+  --gold-300: #DDBB65;
+  --gold-400: #C9A24B;   /* ★ Badge Vérifié ImmoLoc */
+  --gold-500: #A88336;
+  --gold-600: #856527;
+  --gold-700: #624A1B;
+  --gold-800: #423110;
+
+  /* Neutres — Sable chaud (remplace les gris verdâtres) */
+  --neutral-0:   #FFFFFF;
+  --neutral-50:  #FAF6F0;
+  --neutral-100: #F2ECE2;
+  --neutral-200: #E5DDD1;
+  --neutral-300: #D0C6B6;
+  --neutral-400: #A99F8F;
+  --neutral-500: #8A8072;
+  --neutral-600: #6B6255;
+  --neutral-700: #4F483E;
+  --neutral-800: #38332B;
+  --neutral-900: #26221C;
+  --neutral-950: #171410;
+
+  /* Sémantiques */
+  --success-500: #10b981;
+  --success-600: #059669;
+  --warning-500: #f59e0b;
+  --warning-600: #d97706;
+  --error-500:   #ef4444;
+  --error-600:   #dc2626;
+  --info-500:    #3b82f6;
+  --info-600:    #2563eb;
+
+  /* Abstractions (utilisées dans les composants) */
+  --background:       var(--neutral-50);   /* page sable, pas blanc pur */
+  --background-alt:   var(--neutral-100);
+  --background-card:  var(--neutral-0);    /* cartes BLANCHES sur fond sable */
+  --foreground:       var(--neutral-900);
+  --foreground-muted: var(--neutral-500);
+  --border:           var(--neutral-200);
+  --border-hover:     var(--neutral-300);
+  --ring:             var(--primary-500);
+  --overlay:          rgba(7, 42, 32, 0.5);
+
+  /* Ombres neutres chaudes, subtiles — pas de glow */
+  --shadow-sm: 0 1px 2px rgba(38, 34, 28, 0.05);
+  --shadow-md: 0 4px 6px -1px rgba(38, 34, 28, 0.07), 0 2px 4px -2px rgba(38, 34, 28, 0.05);
+  --shadow-lg: 0 10px 15px -3px rgba(38, 34, 28, 0.08), 0 4px 6px -4px rgba(38, 34, 28, 0.04);
+  --shadow-xl: 0 20px 25px -5px rgba(38, 34, 28, 0.10), 0 8px 10px -6px rgba(38, 34, 28, 0.05);
+}
+
+/* ── Mode Sombre — brun chaud cohérent avec le sable, pas de noir pur ────── */
+
+.dark {
+  --background:       var(--neutral-950);
+  --background-alt:   #1E1A15;
+  --background-card:  var(--neutral-900);
+  --foreground:       var(--neutral-100);
+  --foreground-muted: var(--neutral-400);
+  --border:           var(--neutral-800);
+  --border-hover:     var(--neutral-700);
+  --ring:             var(--primary-400);  /* vert éclairci pour rester visible */
+  --overlay:          rgba(0, 0, 0, 0.6);
+
+  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.3);
+  --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.4), 0 2px 4px -2px rgba(0, 0, 0, 0.3);
+  --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.4), 0 4px 6px -4px rgba(0, 0, 0, 0.2);
+  --shadow-xl: 0 20px 25px -5px rgba(0, 0, 0, 0.5), 0 8px 10px -6px rgba(0, 0, 0, 0.3);
+}
+
+/* ── Tailwind v4 @theme — tokens utilisables comme classes utilitaires ──── */
+
+@theme inline {
+  --color-primary-50:  var(--primary-50);
+  --color-primary-100: var(--primary-100);
+  --color-primary-200: var(--primary-200);
+  --color-primary-300: var(--primary-300);
+  --color-primary-400: var(--primary-400);
+  --color-primary-500: var(--primary-500);
+  --color-primary-600: var(--primary-600);
+  --color-primary-700: var(--primary-700);
+  --color-primary-800: var(--primary-800);
+  --color-primary-900: var(--primary-900);
+  --color-primary-950: var(--primary-950);
+
+  --color-accent-50:  var(--accent-50);
+  --color-accent-100: var(--accent-100);
+  --color-accent-200: var(--accent-200);
+  --color-accent-300: var(--accent-300);
+  --color-accent-400: var(--accent-400);
+  --color-accent-500: var(--accent-500);
+  --color-accent-600: var(--accent-600);
+  --color-accent-700: var(--accent-700);
+  --color-accent-800: var(--accent-800);
+  --color-accent-900: var(--accent-900);
+
+  --color-gold-50:  var(--gold-50);
+  --color-gold-100: var(--gold-100);
+  --color-gold-200: var(--gold-200);
+  --color-gold-300: var(--gold-300);
+  --color-gold-400: var(--gold-400);
+  --color-gold-500: var(--gold-500);
+  --color-gold-600: var(--gold-600);
+  --color-gold-700: var(--gold-700);
+  --color-gold-800: var(--gold-800);
+
+  --color-neutral-0:   var(--neutral-0);
+  --color-neutral-50:  var(--neutral-50);
+  --color-neutral-100: var(--neutral-100);
+  --color-neutral-200: var(--neutral-200);
+  --color-neutral-300: var(--neutral-300);
+  --color-neutral-400: var(--neutral-400);
+  --color-neutral-500: var(--neutral-500);
+  --color-neutral-600: var(--neutral-600);
+  --color-neutral-700: var(--neutral-700);
+  --color-neutral-800: var(--neutral-800);
+  --color-neutral-900: var(--neutral-900);
+  --color-neutral-950: var(--neutral-950);
+
+  --color-success-500: var(--success-500);
+  --color-success-600: var(--success-600);
+  --color-warning-500: var(--warning-500);
+  --color-warning-600: var(--warning-600);
+  --color-error-500:   var(--error-500);
+  --color-error-600:   var(--error-600);
+  --color-info-500:    var(--info-500);
+  --color-info-600:    var(--info-600);
+
+  --color-background:       var(--background);
+  --color-background-alt:   var(--background-alt);
+  --color-background-card:  var(--background-card);
+  --color-foreground:       var(--foreground);
+  --color-foreground-muted: var(--foreground-muted);
+  --color-border:           var(--border);
+  --color-border-hover:     var(--border-hover);
+  --color-ring:             var(--ring);
+
+  /* Typographie — Fraunces pour les titres, Inter pour l'interface */
+  --font-display: var(--font-fraunces), Georgia, serif;
+  --font-sans: var(--font-inter), ui-sans-serif, system-ui, sans-serif;
+  --font-mono: ui-monospace, 'Cascadia Code', 'Fira Code', monospace;
+
+  --shadow-sm: var(--shadow-sm);
+  --shadow-md: var(--shadow-md);
+  --shadow-lg: var(--shadow-lg);
+  --shadow-xl: var(--shadow-xl);
+}
+
+/* ── Base Reset & Typographie ─────────────────────────────────────────────── */
+
+@layer base {
+  body {
+    background: var(--background);
+    color: var(--foreground);
+    font-family: var(--font-sans);
+    transition: background-color 200ms ease, color 200ms ease;
+  }
+
+  /* Titres en Fraunces — 500/600 suffit, 700 est trop lourd en serif */
+  h1, h2, h3 {
+    font-family: var(--font-display);
+    letter-spacing: -0.01em;
+    font-weight: 600;
+    color: var(--foreground);
+  }
+
+  h4 {
+    font-family: var(--font-sans);
+    font-weight: 600;
+    color: var(--foreground);
+  }
+
+  h1 { font-size: 2.25rem; line-height: 1.15; }
+  h2 { font-size: 1.5rem;  line-height: 1.25; }
+  h3 { font-size: 1.25rem; line-height: 1.35; }
+  h4 { font-size: 1rem;    line-height: 1.5;  }
+
+  /* Prix et montants FCFA alignés */
+  .tabular-nums,
+  [data-price] {
+    font-variant-numeric: tabular-nums;
+  }
+
+  *:focus-visible {
+    outline: 2px solid var(--ring);
+    outline-offset: 2px;
+  }
+
+  ::-webkit-scrollbar       { width: 6px; height: 6px; }
+  ::-webkit-scrollbar-track { background: var(--background-alt); }
+  ::-webkit-scrollbar-thumb { background: var(--neutral-300); border-radius: 9999px; }
+  .dark ::-webkit-scrollbar-thumb { background: var(--border); }
+
+  ::selection       { background: var(--primary-100); color: var(--primary-900); }
+  .dark ::selection { background: rgba(67, 155, 119, 0.35); color: var(--primary-100); }
+}
