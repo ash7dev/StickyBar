@@ -67,7 +67,7 @@
   "rewrites": [
     {
       "source": "/api/v1/:path*",
-      "destination": "https://stickybar-m02s.onrender.com/api/v1/:path*"
+      "destination": "https://stickybar-w56o.onrender.com/api/v1/:path*"
     }
   ]
 }
