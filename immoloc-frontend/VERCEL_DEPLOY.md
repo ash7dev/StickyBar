@@ -90,7 +90,7 @@ NEXT_PUBLIC_SUPABASE_URL=https://lnrxtozuarfqlcfkwroa.supabase.co
 
 NEXT_PUBLIC_SUPABASE_ANON_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imxucnh0b3p1YXJmcWxjZmt3cm9hIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzc3OTM2MjcsImV4cCI6MjA5MzM2OTYyN30.SAvlPX0PfpHm6AhkfFcCPzK6pyK8f-hhv-Fnu-BDjCU
 
-NEXT_PUBLIC_API_URL=https://stickybar-m02s.onrender.com/api/v1
+NEXT_PUBLIC_API_URL=https://stickybar-rtq8.onrender.com/api/v1
 
 NEXT_PUBLIC_ENVIRONMENT=production
 
