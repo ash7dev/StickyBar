@@ -150,11 +150,11 @@ export function ListingCardItem({ listing }: { listing: ListingCard }) {
                   {listing.titre}
                 </h3>
 
-                <div className="flex items-baseline gap-1.5">
+                <div className="inline-flex items-baseline gap-1.5 px-3 py-1.5 bg-primary-600/95 backdrop-blur-sm rounded-lg">
                   <span className="font-sans text-xl font-bold text-white tracking-tight tabular-nums">
                     {formatFCFA(listing.prixBase)}
                   </span>
-                  <span className="text-[11px] font-semibold text-white/60">
+                  <span className="text-[11px] font-semibold text-white/90">
                     FCFA · nuit
                   </span>
                 </div>
@@ -308,11 +308,11 @@ export function ListingCardItem({ listing }: { listing: ListingCard }) {
             {listing.titre}
           </h3>
 
-          <div className="flex items-baseline gap-1.5 mb-4">
-            <span className="font-sans text-xl font-bold text-foreground tracking-tight tabular-nums">
+          <div className="inline-flex items-baseline gap-1.5 mb-4 px-3 py-2 bg-primary-600 rounded-xl">
+            <span className="font-sans text-xl font-bold text-white tracking-tight tabular-nums">
               {formatFCFA(listing.prixBase)}
             </span>
-            <span className="text-[11px] font-semibold text-foreground-muted">
+            <span className="text-[11px] font-semibold text-white/80">
               FCFA · nuit
             </span>
           </div>
