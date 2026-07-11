@@ -697,7 +697,7 @@ export class AuthService {
 
   // ── Validation token Supabase et génération tokens NestJS ────────────────────────
 
-  async validateSupabaseTokenAndGenerateTokens(supabaseToken: string) {
+  async validateSupabaseTokenAndGenerateTokens(supabaseToken: string, activeRoleHeader?: string) {
     // Valider le token Supabase
     const { data: { user }, error } = await this.supabase.getAnon().auth.getUser(supabaseToken);
     
@@ -848,7 +848,12 @@ export class AuthService {
     }
 
     // Générer les tokens NestJS avec le rôle intégré
-    const activeRole = utilisateur.estProprietaire ? Role.PROPRIETAIRE : Role.LOCATAIRE;
+    let activeRole = utilisateur.estProprietaire ? Role.PROPRIETAIRE : Role.LOCATAIRE;
+    if (activeRoleHeader && Object.values(Role).includes(activeRoleHeader as Role)) {
+      if (activeRoleHeader !== Role.PROPRIETAIRE || utilisateur.estProprietaire) {
+        activeRole = activeRoleHeader as Role;
+      }
+    }
     const tokens = await this.generateTokens({
       id: utilisateur.id,
       userId: utilisateur.userId,

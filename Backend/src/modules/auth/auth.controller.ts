@@ -172,12 +172,15 @@ export class AuthController {
   @Get('me/supabase')
   @Public()
   @ApiOperation({ summary: 'Validation du token Supabase et génération tokens NestJS' })
-  async meWithSupabase(@Headers('authorization') authHeader: string) {
+  async meWithSupabase(
+    @Headers('authorization') authHeader: string,
+    @Headers('x-active-role') activeRoleHeader?: string,
+  ) {
     if (!authHeader?.startsWith('Bearer ')) {
       throw new UnauthorizedException('Token Supabase manquant');
     }
 
     const supabaseToken = authHeader.substring(7);
-    return this.authService.validateSupabaseTokenAndGenerateTokens(supabaseToken);
+    return this.authService.validateSupabaseTokenAndGenerateTokens(supabaseToken, activeRoleHeader);
   }
 }

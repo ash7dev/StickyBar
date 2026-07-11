@@ -13,7 +13,10 @@ export default async function DashboardLayout({ children }: { children: ReactNod
   // Vérifie que l'utilisateur est bien PROPRIETAIRE côté NestJS
   try {
     const res = await fetch(buildApiUrl('/auth/me/supabase'), {
-      headers: { Authorization: `Bearer ${(await supabase.auth.getSession()).data.session?.access_token ?? ''}` },
+      headers: {
+        Authorization: `Bearer ${(await supabase.auth.getSession()).data.session?.access_token ?? ''}`,
+        'X-Active-Role': 'PROPRIETAIRE', // Le dashboard est toujours pour les propriétaires
+      },
       cache: 'no-store',
     });
 

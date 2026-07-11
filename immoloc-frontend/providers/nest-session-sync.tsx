@@ -1,13 +1,21 @@
 'use client';
 
 import { useEffect } from 'react';
+import { usePathname } from 'next/navigation';
 import { createClient } from '@/lib/supabase/client';
 import { authApi } from '@/lib/nestjs';
-import { useRoleStore } from '@/stores/role.store';
+import { useRoleStore, getPersistedActiveRole } from '@/stores/role.store';
 
 export function NestSessionSync() {
   const supabase = createClient();
-  const { setSession, clearSession, setNeedsOnboarding } = useRoleStore();
+  const { setSession, clearSession, setNeedsOnboarding, activeRole, setRole } = useRoleStore();
+  const pathname = usePathname();
+
+  useEffect(() => {
+    if (pathname?.startsWith('/dashboard') && activeRole !== 'PROPRIETAIRE') {
+      setRole('PROPRIETAIRE');
+    }
+  }, [pathname, activeRole, setRole]);
 
   useEffect(() => {
     const {
@@ -21,7 +29,9 @@ export function NestSessionSync() {
         // Si on a déjà un token NestJS et que c'est un simple event INITIAL_SESSION ou SIGNED_IN sans changement majeur,
         // on pourrait éviter le refetch, mais pour la solidité au refresh (F5), on fetch /auth/me.
         try {
-          const result = await authApi.meSupabase(session.access_token);
+          // Utiliser le rôle persisté si disponible, sinon laisser le backend décider
+          const persistedRole = getPersistedActiveRole();
+          const result = await authApi.meSupabase(session.access_token, persistedRole);
 
           if ('onboardingRequired' in result) {
             setNeedsOnboarding(true);

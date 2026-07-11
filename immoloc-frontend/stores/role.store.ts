@@ -25,6 +25,32 @@ export function isTokenFullyExpired(expiresAt: number | null): boolean {
   return Date.now() >= expiresAt;
 }
 
+// ── Persistance du rôle actif dans localStorage ─────────────────────────────
+// Le store utilise sessionStorage pour les tokens (sécurité),
+// mais le rôle actif doit survivre entre les sessions/onglets.
+const ACTIVE_ROLE_KEY = 'immoloc-active-role';
+
+export function getPersistedActiveRole(): Role | null {
+  if (typeof window === 'undefined') return null;
+  try {
+    const stored = localStorage.getItem(ACTIVE_ROLE_KEY);
+    if (stored === 'LOCATAIRE' || stored === 'PROPRIETAIRE' || stored === 'ADMIN') {
+      return stored;
+    }
+  } catch {}
+  return null;
+}
+
+function persistActiveRole(role: Role) {
+  if (typeof window === 'undefined') return;
+  try { localStorage.setItem(ACTIVE_ROLE_KEY, role); } catch {}
+}
+
+function clearPersistedActiveRole() {
+  if (typeof window === 'undefined') return;
+  try { localStorage.removeItem(ACTIVE_ROLE_KEY); } catch {}
+}
+
 export interface RoleState {
   // ── Tokens ──────────────────────────────────────────────
   nestToken: string | null;
@@ -103,7 +129,7 @@ export const useRoleStore = create<RoleState>()(
     (set) => ({
       ...INITIAL_STATE,
 
-      setSession: ({ token, refreshToken, expiresIn, role, estProprietaire, userId, hasAnnonce, profileCompleted, phoneVerified, statutKyc, dateNaissance, selfieFaceDetected, selfieMatchScore }) =>
+      setSession: ({ token, refreshToken, expiresIn, role, estProprietaire, userId, hasAnnonce, profileCompleted, phoneVerified, statutKyc, dateNaissance, selfieFaceDetected, selfieMatchScore }) => {
         set((prev) => ({
           nestToken: token,
           refreshToken,
@@ -120,46 +146,61 @@ export const useRoleStore = create<RoleState>()(
           selfieFaceDetected: selfieFaceDetected ?? prev.selfieFaceDetected,
           selfieMatchScore: selfieMatchScore !== undefined ? selfieMatchScore : prev.selfieMatchScore,
           onboardingDraft: null,
-        })),
+        }));
+        persistActiveRole(role);
+      },
 
-      setRole: (role) => set({ activeRole: role }),
+      setRole: (role) => { set({ activeRole: role }); persistActiveRole(role); },
 
       setHasAnnonce: (value) => set({ hasAnnonce: value }),
 
       setGateStatus: (patch) => set(patch),
 
-      setNeedsOnboarding: (value) => set((prev) => value
-        ? {
-            ...prev,
-            nestToken: null,
-            refreshToken: null,
-            tokenExpiresAt: null,
-            userId: null,
-            activeRole: 'LOCATAIRE',
-            estProprietaire: false,
-            hasAnnonce: false,
-            needsOnboarding: true,
-          }
-        : { needsOnboarding: false }),
+      setNeedsOnboarding: (value) => {
+        set((prev) => value
+          ? {
+              ...prev,
+              nestToken: null,
+              refreshToken: null,
+              tokenExpiresAt: null,
+              userId: null,
+              activeRole: 'LOCATAIRE',
+              estProprietaire: false,
+              hasAnnonce: false,
+              needsOnboarding: true,
+            }
+          : { needsOnboarding: false });
+        if (value) clearPersistedActiveRole();
+      },
 
       setOnboardingDraft: (draft) => set({ onboardingDraft: draft }),
 
       setHasHydrated: (value) => set({ hasHydrated: value }),
 
-      clearSession: () => set((state) => ({
-        ...INITIAL_STATE,
-        hasHydrated: state.hasHydrated,
-      })),
+      clearSession: () => {
+        set((state) => ({
+          ...INITIAL_STATE,
+          hasHydrated: state.hasHydrated,
+        }));
+        clearPersistedActiveRole();
+      },
     }),
     {
       name: 'immoloc-session',
       storage: createJSONStorage(() => sessionStorage),
       onRehydrateStorage: () => (state) => {
         state?.setHasHydrated(true);
+        // Sauvegarder le rôle persisté AVANT un éventuel clearSession
+        const persistedRole = getPersistedActiveRole();
         // Nettoyer les tokens expirés au rechargement
         if (state && isTokenFullyExpired(state.tokenExpiresAt)) {
           console.warn('[Role Store] Token expired on rehydration, clearing session');
           state.clearSession();
+        }
+        // Réappliquer le rôle persisté (même après clearSession)
+        // pour que NestSessionSync re-synchronise avec le bon rôle
+        if (persistedRole && state) {
+          state.setRole(persistedRole);
         }
       },
     },

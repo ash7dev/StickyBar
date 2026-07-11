@@ -14,19 +14,27 @@ export class ApiError extends Error {
 
 export async function nestFetch<T>(
   url: string,
-  options: RequestInit & { token?: string; skipAutoToken?: boolean; skipContentType?: boolean } = {},
+  options: RequestInit & {
+    token?: string;
+    skipAutoToken?: boolean;
+    skipContentType?: boolean;
+    preferredRole?: 'LOCATAIRE' | 'PROPRIETAIRE' | 'ADMIN' | null;
+  } = {},
 ): Promise<T> {
-  const { token, skipAutoToken, skipContentType, ...fetchOptions } = options;
+  const { token, skipAutoToken, skipContentType, preferredRole, ...fetchOptions } = options;
   const store = useRoleStore.getState();
 
   // Utiliser le token fourni ou celui du store
   const activeToken = token ?? (!skipAutoToken ? store.nestToken : null);
 
+  // Utiliser preferredRole si fourni, sinon le rôle du store
+  const roleToSend = preferredRole !== undefined ? preferredRole : store.activeRole;
+
   // skipContentType=true pour les uploads multipart (le browser gère le boundary)
   const headers: Record<string, string> = {
     ...(skipContentType ? {} : { 'Content-Type': 'application/json' }),
     ...(activeToken ? { Authorization: `Bearer ${activeToken}` } : {}),
-    ...(store.activeRole ? { 'X-Active-Role': store.activeRole } : {}),
+    ...(roleToSend ? { 'X-Active-Role': roleToSend } : {}),
     ...(fetchOptions.headers as Record<string, string> | undefined),
   };
 
