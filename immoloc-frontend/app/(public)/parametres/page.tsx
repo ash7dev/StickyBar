@@ -23,25 +23,23 @@ export default function TenantParametresPage() {
   const queryClient = useQueryClient();
   const gate = useActionGate();
 
-  const [supabaseUser, setSupabaseUser] = useState<{
-    id: string;
-    email?: string;
-    user_metadata?: Record<string, string>;
-  } | null>(null);
-  const [supabaseReady, setSupabaseReady] = useState(false);
+  const [supabaseEmail, setSupabaseEmail] = useState<string | null>(null);
+  const [supabaseId, setSupabaseId] = useState<string | null>(null);
   const [gateOpen, setGateOpen] = useState(false);
 
-  // 1. Session Supabase (toujours disponible)
+  // 1. Récupération rapide de Supabase en parallèle
   useEffect(() => {
     const supabase = createClient();
     supabase.auth.getUser().then(({ data }) => {
-      setSupabaseUser(data.user ?? null);
-      setSupabaseReady(true);
+      if (data.user) {
+        setSupabaseEmail(data.user.email ?? null);
+        setSupabaseId(data.user.id);
+      }
     });
   }, []);
 
-  // 2. API — se déclenche dès que le store est hydraté et qu'on a un token
-  const { data: apiUser } = useQuery<Partial<UserProfile>>({
+  // 2. API — optimisée avec React Query
+  const { data: apiUser, isLoading: apiLoading } = useQuery<Partial<UserProfile>>({
     queryKey: ['users', 'me'],
     queryFn: () => nestFetch<Partial<UserProfile>>(NEST_API.USERS.ME),
     enabled: store.hasHydrated && !!store.nestToken,
@@ -49,15 +47,13 @@ export default function TenantParametresPage() {
     staleTime: 60_000,
   });
 
-  // 3. Fusion des sources — API > Supabase metadata > RoleStore
-  const meta = supabaseUser?.user_metadata ?? {};
-
-  const user: UserProfile | null = supabaseReady && supabaseUser ? {
-    id:               apiUser?.id               ?? store.userId          ?? supabaseUser.id,
-    prenom:           apiUser?.prenom           ?? meta.prenom           ?? '',
-    nom:              apiUser?.nom              ?? meta.nom              ?? '',
-    email:            apiUser?.email            ?? supabaseUser.email    ?? null,
-    telephone:        apiUser?.telephone        ?? meta.telephone        ?? null,
+  // 3. Affichage immédiat avec données du store (pas d'attente)
+  const user: UserProfile | null = store.hasHydrated ? {
+    id:               apiUser?.id               ?? store.userId          ?? supabaseId ?? '',
+    prenom:           apiUser?.prenom           ?? '',
+    nom:              apiUser?.nom              ?? '',
+    email:            apiUser?.email            ?? supabaseEmail         ?? null,
+    telephone:        apiUser?.telephone        ?? null,
     dateNaissance:    apiUser?.dateNaissance    ?? store.dateNaissance   ?? null,
     activeRole:       apiUser?.activeRole       ?? store.activeRole,
     estProprietaire:  apiUser?.estProprietaire  ?? store.estProprietaire,
@@ -71,46 +67,26 @@ export default function TenantParametresPage() {
     queryClient.invalidateQueries({ queryKey: ['users', 'me'] });
   }
 
-  // ── 1. Attente de l'hydratation du store local ──
+  // ── Attente initiale uniquement de l'hydratation (très rapide) ──
   if (!store.hasHydrated) {
     return (
       <div className="max-w-2xl mx-auto px-4 py-12 pb-24 flex flex-col items-center text-center justify-center gap-4">
         <Loader2 className="w-8 h-8 animate-spin text-primary-600" />
-        <p className="text-sm text-neutral-400">Chargement de votre session...</p>
+        <p className="text-sm text-foreground-muted">Chargement...</p>
       </div>
     );
   }
 
-  // ── 2. Attente de la session Supabase ──
-  if (!supabaseReady) {
-    return (
-      <div className="max-w-2xl mx-auto px-4 py-12 pb-24 flex flex-col items-center text-center justify-center gap-4">
-        <Loader2 className="w-8 h-8 animate-spin text-primary-600" />
-        <p className="text-sm text-neutral-400">Vérification de la connexion...</p>
-      </div>
-    );
-  }
-
-  // ── 3. En cours de synchronisation avec le backend ──
-  if (supabaseUser && !store.nestToken) {
-    return (
-      <div className="max-w-2xl mx-auto px-4 py-12 pb-24 flex flex-col items-center text-center justify-center gap-4">
-        <Loader2 className="w-8 h-8 animate-spin text-primary-600" />
-        <p className="text-sm text-neutral-400">Synchronisation avec le serveur...</p>
-      </div>
-    );
-  }
-
-  // ── 4. Non connecté ──
-  if (!supabaseUser && !store.nestToken) {
+  // ── Non connecté ──
+  if (!store.nestToken && !supabaseEmail) {
     return (
       <div className="max-w-2xl mx-auto px-4 py-12 pb-24 flex flex-col items-center text-center gap-4">
-        <div className="w-14 h-14 rounded-2xl bg-neutral-100 flex items-center justify-center">
-          <User className="w-6 h-6 text-neutral-400" />
+        <div className="w-14 h-14 rounded-2xl bg-background-alt flex items-center justify-center">
+          <User className="w-6 h-6 text-foreground-muted" />
         </div>
         <div>
-          <p className="text-base font-bold text-neutral-900">Vous n&apos;êtes pas connecté</p>
-          <p className="text-sm text-neutral-400 mt-1">Connectez-vous pour accéder à vos paramètres.</p>
+          <p className="text-base font-bold text-foreground">Vous n&apos;êtes pas connecté</p>
+          <p className="text-sm text-foreground-muted mt-1">Connectez-vous pour accéder à vos paramètres.</p>
         </div>
         <Link
           href="/login"
@@ -127,11 +103,11 @@ export default function TenantParametresPage() {
 
       {/* ── En-tête ────────────────────────────────────────────────────────── */}
       <div className="pt-2 pb-1">
-        <h1 className="text-xl font-black text-neutral-900">Paramètres</h1>
-        <p className="text-sm text-neutral-400 mt-0.5">Gérez votre compte et vos préférences</p>
+        <h1 className="text-xl font-black text-foreground">Paramètres</h1>
+        <p className="text-sm text-foreground-muted mt-0.5">Gérez votre compte et vos préférences</p>
       </div>
 
-      {/* ── Profil complet (comme dans /dashboard/profil) ──────────────────── */}
+      {/* ── Profil (affichage immédiat avec données du store + API) ──────── */}
       {user && (
         <div className="space-y-5">
           <ProfileHero
@@ -150,6 +126,14 @@ export default function TenantParametresPage() {
             />
             <ProfileActionsCard user={user} />
           </div>
+        </div>
+      )}
+
+      {/* Indicateur de synchronisation en arrière-plan */}
+      {apiLoading && (
+        <div className="fixed bottom-20 left-1/2 -translate-x-1/2 bg-background-card border border-border rounded-full px-4 py-2 shadow-lg flex items-center gap-2 z-50">
+          <Loader2 className="w-4 h-4 animate-spin text-primary-600" />
+          <span className="text-xs font-medium text-foreground-muted">Mise à jour...</span>
         </div>
       )}
 

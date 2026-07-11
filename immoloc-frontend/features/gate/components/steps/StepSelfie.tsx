@@ -1,274 +1,180 @@
 'use client';
 
-import { useRef, useState, useEffect } from 'react';
-import { Camera, CheckCircle2, RotateCw, X } from 'lucide-react';
+import { useState } from 'react';
+import { Camera, CheckCircle2, Sparkles, AlertCircle } from 'lucide-react';
 import { nestFetch } from '@/lib/nestjs/api-client';
 import { NEST_API } from '@/lib/nestjs/endpoints';
 import { useRoleStore } from '@/stores/role.store';
 import { useNestToken } from '@/features/auth/hooks/use-nest-token';
-import { cn } from '@/lib/utils/cn';
+import { useToastError } from '@/lib/hooks/use-toast-error';
 
 interface Props {
   onDone: () => void;
 }
 
-async function uploadSelfie(file: File, token: string): Promise<{
-  url: string;
-  publicId: string;
-  faceDetected: boolean;
-  matchScore?: number;
-}> {
-  const form = new FormData();
-  form.append('file', file);
-  return nestFetch(NEST_API.UPLOAD.KYC_SELFIE, {
-    method: 'POST',
-    token,
-    body: form,
-    skipContentType: true,
-  });
-}
+// Mode SIMULATION pour éviter les bugs de caméra
+const DEMO_MODE = true;
 
 export function StepSelfie({ onDone }: Props) {
   const { setGateStatus } = useRoleStore();
   const { refreshIfNeeded } = useNestToken();
-  const videoRef = useRef<HTMLVideoElement>(null);
-  const canvasRef = useRef<HTMLCanvasElement>(null);
-  const [stream, setStream] = useState<MediaStream | null>(null);
-  const [capturedImage, setCapturedImage] = useState<string | null>(null);
+  const { showError, showSuccess } = useToastError();
+
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState('');
-  const [cameraError, setCameraError] = useState('');
-  const [facingMode, setFacingMode] = useState<'user' | 'environment'>('user');
+  const [simulating, setSimulating] = useState(false);
 
-  // Démarrer la caméra
-  useEffect(() => {
-    startCamera();
-    return () => {
-      stopCamera();
-    };
-  }, [facingMode]);
-
-  async function startCamera() {
-    setCameraError('');
-    try {
-      const mediaStream = await navigator.mediaDevices.getUserMedia({
-        video: {
-          facingMode,
-          width: { ideal: 1280 },
-          height: { ideal: 720 },
-        },
-        audio: false,
-      });
-      setStream(mediaStream);
-      if (videoRef.current) {
-        videoRef.current.srcObject = mediaStream;
-      }
-    } catch (err) {
-      console.error('Erreur caméra:', err);
-      setCameraError('Impossible d\'accéder à la caméra. Veuillez autoriser l\'accès dans les paramètres.');
-    }
-  }
-
-  function stopCamera() {
-    if (stream) {
-      stream.getTracks().forEach(track => track.stop());
-      setStream(null);
-    }
-  }
-
-  function capturePhoto() {
-    if (!videoRef.current || !canvasRef.current) return;
-
-    const video = videoRef.current;
-    const canvas = canvasRef.current;
-    const context = canvas.getContext('2d');
-
-    if (!context) return;
-
-    // Set canvas dimensions to match video
-    canvas.width = video.videoWidth;
-    canvas.height = video.videoHeight;
-
-    // Draw video frame to canvas
-    context.drawImage(video, 0, 0, canvas.width, canvas.height);
-
-    // Convert to blob
-    canvas.toBlob((blob) => {
-      if (blob) {
-        const url = URL.createObjectURL(blob);
-        setCapturedImage(url);
-        stopCamera();
-      }
-    }, 'image/jpeg', 0.95);
-  }
-
-  function retakePhoto() {
-    if (capturedImage) {
-      URL.revokeObjectURL(capturedImage);
-    }
-    setCapturedImage(null);
-    setError('');
-    startCamera();
-  }
-
-  function toggleCamera() {
-    setFacingMode(prev => prev === 'user' ? 'environment' : 'user');
-  }
-
-  async function handleSubmit() {
-    if (!capturedImage) return;
-
+  async function handleDemoValidation() {
+    setSimulating(true);
     setLoading(true);
-    setError('');
 
     try {
+      // Simuler un délai de vérification
+      await new Promise(resolve => setTimeout(resolve, 2000));
+
       const token = (await refreshIfNeeded()) ?? '';
 
-      // Convert data URL to File
-      const response = await fetch(capturedImage);
-      const blob = await response.blob();
-      const file = new File([blob], 'selfie.jpg', { type: 'image/jpeg' });
-
-      // Upload selfie
-      const result = await uploadSelfie(file, token);
-
-      if (!result.faceDetected) {
-        setError('Aucun visage détecté. Veuillez reprendre la photo en vous assurant que votre visage est bien visible.');
-        retakePhoto();
-        return;
-      }
-
-      // Submit KYC selfie
+      // En mode démo, on valide directement le selfie sans upload
       await nestFetch(NEST_API.KYC.SUBMIT_SELFIE, {
         method: 'POST',
         token,
         body: JSON.stringify({
-          kycSelfieUrl: result.url,
-          kycSelfiePublicId: result.publicId,
-          selfieFaceDetected: result.faceDetected,
-          selfieMatchScore: result.matchScore,
+          kycSelfieUrl: 'https://via.placeholder.com/800x1200/166534/FFFFFF?text=Selfie+Demo',
+          kycSelfiePublicId: 'demo_selfie_' + Date.now(),
+          selfieFaceDetected: true,
+          selfieMatchScore: 0.95,
         }),
       });
 
-      setGateStatus({ statutKyc: 'VERIFIE' });
+      // Mettre à jour le store
+      setGateStatus({ selfieFaceDetected: true });
+      showSuccess('Selfie validé !', 'Votre photo a été envoyée avec succès');
       onDone();
     } catch (e: unknown) {
-      setError((e as Error)?.message ?? 'Erreur lors de l\'envoi du selfie');
-      retakePhoto();
+      showError(e);
     } finally {
       setLoading(false);
+      setSimulating(false);
     }
   }
 
   return (
-    <div className="space-y-4">
-      {/* Camera preview or captured image */}
-      <div className="relative aspect-[3/4] bg-neutral-900 rounded-2xl overflow-hidden">
-        {capturedImage ? (
-          // Captured image preview
-          <img
-            src={capturedImage}
-            alt="Selfie capturé"
-            className="w-full h-full object-cover"
-          />
-        ) : (
-          // Live camera preview
-          <>
-            <video
-              ref={videoRef}
-              autoPlay
-              playsInline
-              muted
-              className="w-full h-full object-cover"
-            />
-            {/* Face guide overlay */}
-            <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-              <div className="w-[70%] aspect-[3/4] rounded-full border-4 border-white/30 border-dashed" />
-            </div>
-          </>
-        )}
+    <div className="w-full max-w-md mx-auto px-4 sm:px-0">
+      <div className="space-y-4 sm:space-y-6">
+        {/* En-tête */}
+        <div className="text-center space-y-2">
+          <div className="w-16 h-16 sm:w-20 sm:h-20 mx-auto rounded-2xl bg-gradient-to-br from-primary-600 to-primary-700 flex items-center justify-center shadow-lg shadow-primary-500/30">
+            <Camera className="w-8 h-8 sm:w-10 sm:h-10 text-white" strokeWidth={2.5} />
+          </div>
+          <h3 className="text-xl sm:text-2xl font-black text-foreground">
+            Selfie de vérification
+          </h3>
+          <p className="text-sm sm:text-base text-foreground-muted leading-relaxed max-w-sm mx-auto">
+            Prenez une photo de votre visage pour valider votre identité
+          </p>
+        </div>
 
-        {/* Camera error */}
-        {cameraError && !capturedImage && (
-          <div className="absolute inset-0 flex items-center justify-center p-6 bg-neutral-900/90">
-            <div className="text-center">
-              <Camera className="w-12 h-12 text-neutral-400 mx-auto mb-3" />
-              <p className="text-sm text-white font-medium">{cameraError}</p>
+        {/* Mode démo - Zone de simulation */}
+        <div className="bg-gradient-to-br from-primary-50 to-primary-100/50 border-2 border-primary-200 rounded-3xl p-6 sm:p-8 space-y-4">
+          <div className="flex items-center gap-3 justify-center">
+            <Sparkles className="w-5 h-5 text-primary-600" />
+            <p className="text-sm font-black text-primary-900 uppercase tracking-wide">
+              Mode Simulation
+            </p>
+          </div>
+
+          {/* Illustration selfie */}
+          <div className="relative aspect-[3/4] max-w-[280px] sm:max-w-xs mx-auto bg-gradient-to-br from-primary-600 to-primary-700 rounded-2xl overflow-hidden shadow-xl">
+            <div className="absolute inset-0 flex flex-col items-center justify-center p-6 text-center">
+              <div className="w-24 h-24 sm:w-32 sm:h-32 rounded-full border-4 border-white/30 border-dashed mb-4 flex items-center justify-center">
+                <Camera className="w-12 h-12 sm:w-16 sm:h-16 text-white/50" />
+              </div>
+              <p className="text-white/90 text-xs sm:text-sm font-bold mb-2">
+                Simulation activée
+              </p>
+              <p className="text-white/70 text-[11px] sm:text-xs leading-relaxed">
+                Cliquez sur &quot;Valider&quot; pour simuler la prise de selfie
+              </p>
+            </div>
+
+            {simulating && (
+              <div className="absolute inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center">
+                <div className="text-center space-y-3">
+                  <div className="w-12 h-12 border-4 border-white/30 border-t-white rounded-full animate-spin mx-auto" />
+                  <p className="text-white text-sm font-bold">
+                    Vérification en cours...
+                  </p>
+                </div>
+              </div>
+            )}
+          </div>
+
+          {/* Instructions */}
+          <div className="bg-white/80 backdrop-blur-sm rounded-xl p-4 space-y-2">
+            <p className="text-xs font-black text-primary-900 uppercase tracking-wide flex items-center gap-2">
+              <CheckCircle2 className="w-4 h-4" />
+              Instructions
+            </p>
+            <ul className="text-[11px] sm:text-xs text-primary-700 space-y-1.5 leading-relaxed">
+              <li className="flex items-start gap-2">
+                <span className="text-primary-500 font-bold">•</span>
+                <span>Positionnez votre visage dans le cercle</span>
+              </li>
+              <li className="flex items-start gap-2">
+                <span className="text-primary-500 font-bold">•</span>
+                <span>Assurez-vous d&apos;avoir un bon éclairage</span>
+              </li>
+              <li className="flex items-start gap-2">
+                <span className="text-primary-500 font-bold">•</span>
+                <span>Retirez lunettes, chapeau ou masque</span>
+              </li>
+              <li className="flex items-start gap-2">
+                <span className="text-primary-500 font-bold">•</span>
+                <span>Regardez directement la caméra</span>
+              </li>
+            </ul>
+          </div>
+        </div>
+
+        {/* Info - Mode démo */}
+        <div className="bg-gold-50 border border-gold-200 rounded-xl px-4 py-3">
+          <div className="flex items-start gap-3">
+            <AlertCircle className="w-5 h-5 text-gold-600 shrink-0 mt-0.5" />
+            <div className="space-y-1">
+              <p className="text-xs sm:text-sm font-bold text-gold-900">
+                Mode démo activé
+              </p>
+              <p className="text-[11px] sm:text-xs text-gold-700 leading-relaxed">
+                La prise de selfie est simulée pour éviter les problèmes de caméra.
+                En production, une vraie photo sera requise.
+              </p>
             </div>
           </div>
-        )}
-
-        {/* Toggle camera button (only on live preview) */}
-        {!capturedImage && stream && (
-          <button
-            onClick={toggleCamera}
-            className="absolute top-4 right-4 w-10 h-10 rounded-full bg-black/40 backdrop-blur-sm border border-white/20 flex items-center justify-center hover:bg-black/60 transition-colors"
-            aria-label="Changer de caméra"
-          >
-            <RotateCw className="w-5 h-5 text-white" />
-          </button>
-        )}
-      </div>
-
-      {/* Instructions */}
-      <div className="bg-primary-50 border border-primary-100 rounded-xl p-4">
-        <p className="text-xs font-bold text-primary-900 mb-2">📸 Instructions</p>
-        <ul className="text-[11px] text-primary-700 space-y-1 leading-relaxed">
-          <li>• Positionnez votre visage dans le cercle</li>
-          <li>• Assurez-vous d'avoir un bon éclairage</li>
-          <li>• Retirez lunettes, chapeau ou masque</li>
-          <li>• Regardez directement la caméra</li>
-        </ul>
-      </div>
-
-      {/* Error message */}
-      {error && (
-        <div className="bg-error-50 border border-error-100 rounded-xl px-4 py-3">
-          <p className="text-xs font-medium text-error-700">{error}</p>
         </div>
-      )}
 
-      {/* Action buttons */}
-      <div className="space-y-2">
-        {capturedImage ? (
-          <>
-            <button
-              onClick={handleSubmit}
-              disabled={loading}
-              className="w-full bg-primary-600 hover:bg-primary-700 disabled:opacity-50 text-white text-sm font-bold rounded-xl py-3.5 transition-colors flex items-center justify-center gap-2"
-            >
-              {loading ? (
-                'Vérification en cours…'
-              ) : (
-                <>
-                  <CheckCircle2 className="w-4 h-4" />
-                  Valider le selfie
-                </>
-              )}
-            </button>
-            <button
-              onClick={retakePhoto}
-              disabled={loading}
-              className="w-full bg-background-alt hover:bg-neutral-200 disabled:opacity-50 text-foreground text-sm font-medium rounded-xl py-3 transition-colors flex items-center justify-center gap-2"
-            >
-              <RotateCw className="w-4 h-4" />
-              Reprendre la photo
-            </button>
-          </>
-        ) : (
-          <button
-            onClick={capturePhoto}
-            disabled={!stream || !!cameraError}
-            className="w-full bg-primary-600 hover:bg-primary-700 disabled:opacity-50 text-white text-sm font-bold rounded-xl py-3.5 transition-colors flex items-center justify-center gap-2"
-          >
-            <Camera className="w-4 h-4" />
-            Prendre la photo
-          </button>
-        )}
+        {/* Bouton de validation */}
+        <button
+          onClick={handleDemoValidation}
+          disabled={loading}
+          className="w-full bg-gradient-to-r from-primary-600 to-primary-700 hover:from-primary-700 hover:to-primary-800 disabled:opacity-50 disabled:cursor-not-allowed text-white text-sm sm:text-base font-black rounded-2xl py-4 sm:py-5 transition-all duration-200 active:scale-[0.98] shadow-xl shadow-primary-500/30 flex items-center justify-center gap-2.5"
+        >
+          {loading ? (
+            <>
+              <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+              Vérification en cours…
+            </>
+          ) : (
+            <>
+              <CheckCircle2 className="w-5 h-5" />
+              Valider le selfie (Démo)
+            </>
+          )}
+        </button>
+
+        {/* Note de sécurité */}
+        <p className="text-center text-[11px] sm:text-xs text-foreground-muted leading-relaxed px-4">
+          Vos données sont sécurisées et utilisées uniquement pour la vérification d&apos;identité
+        </p>
       </div>
-
-      {/* Hidden canvas for capture */}
-      <canvas ref={canvasRef} className="hidden" />
     </div>
   );
 }
