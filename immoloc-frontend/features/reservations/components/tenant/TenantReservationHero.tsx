@@ -63,15 +63,27 @@ export function TenantReservationHero({ res }: { res: ReservationDetail }) {
                 <div className="flex-1 px-5 py-3.5 text-center">
                   <p className="text-[9px] font-black uppercase tracking-[0.2em] text-neutral-500 mb-1">Arrivée</p>
                   <p className="text-sm font-bold text-white">{dateLong(res.dateDebut)}</p>
+                  {res.confirmeeLe && (
+                    <p className="text-[10px] font-semibold text-primary-400 mt-1 flex items-center justify-center gap-1">
+                      <Clock className="w-3 h-3" />
+                      {new Date(res.dateDebut).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })}
+                    </p>
+                  )}
                 </div>
                 <div className="flex flex-col items-center justify-center px-4 border-x border-white/10 gap-0.5">
-                  <Moon className="w-3.5 h-3.5 text-emerald-400" />
+                  <Moon className="w-3.5 h-3.5 text-primary-400" />
                   <span className="text-base font-black text-white tabular-nums leading-none">{res.nbNuits}</span>
                   <span className="text-[8px] font-bold text-neutral-500 uppercase">nuit{res.nbNuits > 1 ? 's' : ''}</span>
                 </div>
                 <div className="flex-1 px-5 py-3.5 text-center">
                   <p className="text-[9px] font-black uppercase tracking-[0.2em] text-neutral-500 mb-1">Départ</p>
                   <p className="text-sm font-bold text-white">{dateLong(res.dateFin)}</p>
+                  {res.confirmeeLe && (
+                    <p className="text-[10px] font-semibold text-rose-400 mt-1 flex items-center justify-center gap-1">
+                      <Clock className="w-3 h-3" />
+                      {new Date(res.dateFin).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })}
+                    </p>
+                  )}
                 </div>
               </div>
 

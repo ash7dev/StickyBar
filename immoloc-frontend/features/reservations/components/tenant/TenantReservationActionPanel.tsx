@@ -103,7 +103,10 @@ export function TenantReservationActionPanel({ id, res, onRefetch }: Props) {
   const checkinPhotos   = photosEtatLieu.filter((p) => p.type === 'CHECKIN');
   const hasOwnerCheckin = !!res.checkinProprioLe;
   const hasPhotos       = checkinPhotos.length > 0;
-  const isCheckinDay    = new Date(dateDebut).getTime() <= now;
+  const checkinTime     = new Date(dateDebut).getTime();
+  const isCheckinDay    = checkinTime <= now;
+  // L'heure de check-in est passée si on est après l'heure prévue + 30 min de tolérance
+  const isCheckinTimePassed = now > checkinTime + (30 * 60 * 1000);
   const alreadyReported = !!absenceSignaleeLe;
 
   /* CONFIRMED et COMPLETED nécessitent des actions locataire */
@@ -175,24 +178,24 @@ export function TenantReservationActionPanel({ id, res, onRefetch }: Props) {
    * owner-ready      → checkinProprioLe set : proprio a confirmé → locataire peut valider/refuser
    * photos-pending   → photos en DB mais checkinProprioLe absent (upload partiel) → galerie visible, pas de confirm
    * absent-reported  → locataire a déjà signalé l'absence, attente du délai 2h
-   * absent-day       → jour J, pas de checkin proprio, pas encore signalé → bouton absent disponible
-   * waiting          → avant le jour J, rien à faire
+   * absent-time      → l'heure de check-in est passée (+ 30 min), pas de checkin proprio, pas encore signalé → bouton absent disponible
+   * waiting          → avant l'heure de check-in, rien à faire
    */
-  type SubState = 'owner-ready' | 'photos-pending' | 'absent-reported' | 'absent-day' | 'waiting';
+  type SubState = 'owner-ready' | 'photos-pending' | 'absent-reported' | 'absent-time' | 'waiting';
 
   const subState: SubState = hasOwnerCheckin
     ? 'owner-ready'
     : hasPhotos
       ? 'photos-pending'
-      : isCheckinDay
-        ? alreadyReported ? 'absent-reported' : 'absent-day'
+      : isCheckinTimePassed
+        ? alreadyReported ? 'absent-reported' : 'absent-time'
         : 'waiting';
 
   const subtitleMap: Record<SubState, string> = {
     'owner-ready':     "Inspectez l'état des lieux et validez votre arrivée",
     'photos-pending':  "L'hôte finalise l'état des lieux — confirmation en cours",
     'absent-reported': "Signalement envoyé — en attente du propriétaire (2h)",
-    'absent-day':      "L'hôte n'a pas encore effectué l'état des lieux",
+    'absent-time':     "L'hôte n'a pas encore effectué l'état des lieux",
     'waiting':         "En attente de votre arrivée",
   };
 
@@ -420,8 +423,8 @@ export function TenantReservationActionPanel({ id, res, onRefetch }: Props) {
             </div>
           )}
 
-          {/* ══ ABSENT-DAY : jour J, proprio pas là, pas encore signalé ══ */}
-          {subState === 'absent-day' && (
+          {/* ══ ABSENT-TIME : heure de check-in passée, proprio pas là, pas encore signalé ══ */}
+          {subState === 'absent-time' && (
             <>
               <div className="flex items-start gap-3 bg-amber-50 border border-amber-200 rounded-2xl p-4">
                 <div className="w-8 h-8 rounded-xl bg-amber-100 border border-amber-200 flex items-center justify-center shrink-0">

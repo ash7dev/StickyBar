@@ -14,6 +14,7 @@ import { TenantHostCard }             from '@/features/reservations/components/t
 import { TenantPropertyCard }         from '@/features/reservations/components/tenant/TenantPropertyCard';
 import { TenantFinancialCard }        from '@/features/reservations/components/tenant/TenantFinancialCard';
 import { TenantReservationActionPanel } from '@/features/reservations/components/tenant/TenantReservationActionPanel';
+import { CheckInTimeCard }            from '@/features/reservations/components/tenant/CheckInTimeCard';
 import { ReservationPaymentCard }     from '@/features/reservations/components/shared/ReservationPaymentCard';
 import { ReservationPhotos }          from '@/features/reservations/components/shared/ReservationPhotos';
 import { ReservationLitige }          from '@/features/reservations/components/shared/ReservationLitige';
@@ -67,6 +68,9 @@ export default function TenantReservationDetailPage({ params }: { params: Promis
 
       {/* Hero */}
       <TenantReservationHero res={res} />
+
+      {/* Card horaires (uniquement si confirmé) */}
+      <CheckInTimeCard res={res} />
 
       {/* Actions locataire (contextuel — uniquement CONFIRMED) */}
       <TenantReservationActionPanel id={id} res={res} onRefetch={onRefetch} />
