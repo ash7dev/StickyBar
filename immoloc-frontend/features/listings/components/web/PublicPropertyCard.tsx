@@ -96,7 +96,7 @@ export function PublicPropertyCard({ listing }: Props) {
         <div className="mt-auto">
           <div
             className="flex items-center justify-between px-4 py-3.5 rounded-[1.4rem] shadow-sm group-hover:shadow-md transition-shadow"
-            style={{ background: 'linear-gradient(135deg, var(--emerald-600) 0%, var(--emerald-500) 100%)' }}
+            style={{ background: 'linear-gradient(135deg, var(--primary-600) 0%, var(--primary-500) 100%)' }}
           >
             <div className="flex flex-col gap-1">
               <span className="text-[22px] font-black text-white leading-none tracking-tight">{price}</span>

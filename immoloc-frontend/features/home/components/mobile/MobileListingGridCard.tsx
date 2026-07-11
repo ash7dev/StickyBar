@@ -93,11 +93,11 @@ export function MobileListingGridCard({ listing }: { listing: Listing }) {
           {listing.titre}
         </h3>
 
-        {/* Prix — bloc gradient vert identique desktop */}
+        {/* Prix — bloc gradient vert forêt identique desktop */}
         <div className="mt-auto">
           <div
             className="flex items-center justify-between px-3 py-2.5 rounded-xl shadow-sm group-hover:shadow-md transition-shadow"
-            style={{ background: 'linear-gradient(135deg, var(--emerald-600) 0%, var(--emerald-500) 100%)' }}
+            style={{ background: 'linear-gradient(135deg, var(--primary-600) 0%, var(--primary-500) 100%)' }}
           >
             <div className="flex flex-col gap-0.5">
               <span className="text-[16px] font-black text-white leading-none tracking-tight">{price}</span>
