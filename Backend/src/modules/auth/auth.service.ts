@@ -629,9 +629,16 @@ export class AuthService {
 
     // Mise à jour Profile + Utilisateur + création Wallet en transaction
     await this.prisma.$transaction([
-      this.prisma.profile.update({
+      this.prisma.profile.upsert({
         where: { userId: utilisateur.userId },
-        data: {
+        create: {
+          userId: utilisateur.userId,
+          email: utilisateur.email,
+          phone: utilisateur.telephone,
+          typeHote: dto.typeHote,
+          ...(dto.ninea !== undefined && { ninea: dto.ninea }),
+        },
+        update: {
           typeHote: dto.typeHote,
           ...(dto.ninea !== undefined && { ninea: dto.ninea }),
         },

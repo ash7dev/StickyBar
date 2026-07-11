@@ -142,7 +142,10 @@ export const useRoleStore = create<RoleState>()(
 
       setHasHydrated: (value) => set({ hasHydrated: value }),
 
-      clearSession: () => set(INITIAL_STATE),
+      clearSession: () => set((state) => ({
+        ...INITIAL_STATE,
+        hasHydrated: state.hasHydrated,
+      })),
     }),
     {
       name: 'immoloc-session',

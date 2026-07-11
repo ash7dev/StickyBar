@@ -97,13 +97,13 @@ apps/auto-loc-backend
 
 ```bash
 # 1. Health check
-curl https://stickybar-m02s.onrender.com/api/v1/health
+curl https://stickybar-w56o.onrender.com/api/v1/health
 
 # 2. Si ça fonctionne, devrait retourner:
 {"status":"ok","timestamp":"2026-07-10T..."}
 
 # 3. Test endpoint listings
-curl https://stickybar-m02s.onrender.com/api/v1/listings
+curl https://stickybar-w56o.onrender.com/api/v1/listings
 ```
 
 ---
@@ -127,4 +127,4 @@ Ou dans le Dashboard: **Logs** → Voir les erreurs en temps réel
 ✅ Frontend pourra se connecter à l'API
 ✅ Vous pourrez déployer sur Vercel
 
-**Prochaine étape**: Une fois que `curl https://stickybar-m02s.onrender.com/api/v1/health` fonctionne, on déploie le frontend sur Vercel ! 🚀
+**Prochaine étape**: Une fois que `curl https://stickybar-w56o.onrender.com/api/v1/health` fonctionne, on déploie le frontend sur Vercel ! 🚀

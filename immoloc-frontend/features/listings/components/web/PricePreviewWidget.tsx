@@ -15,6 +15,7 @@ import { useNestToken } from '@/features/auth/hooks/use-nest-token';
 import { useGatedAction } from '@/features/gate/hooks/use-gated-action';
 import { ActionGateModal } from '@/features/gate/components/ActionGateModal';
 import { AvailabilityCalendar } from './AvailabilityCalendar';
+import { useToastError } from '@/lib/hooks/use-toast-error';
 
 interface Props {
   listingId: string;
@@ -42,6 +43,7 @@ export function PricePreviewWidget({
   const router = useRouter();
   const { nestToken, dateNaissance, hasHydrated, needsOnboarding } = useRoleStore();
   const { syncFromSupabaseSession } = useNestToken();
+  const { showError, showInfo } = useToastError();
 
   const [nbPersonnes, setNbPersonnes] = useState(1);
   const [range, setRange] = useState<DateRange | undefined>();
@@ -107,51 +109,56 @@ export function PricePreviewWidget({
 
     if (!hasHydrated) return;
 
-    let activeNestToken = nestToken;
+    try {
+      let activeNestToken = nestToken;
 
-    if (!activeNestToken) {
-      activeNestToken = await syncFromSupabaseSession();
-    }
+      if (!activeNestToken) {
+        activeNestToken = await syncFromSupabaseSession();
+      }
 
-    const onboardingPending = useRoleStore.getState().needsOnboarding;
+      const onboardingPending = useRoleStore.getState().needsOnboarding;
 
-    if (!activeNestToken && onboardingPending) {
+      if (!activeNestToken && onboardingPending) {
+        triggerGate();
+        return;
+      }
+
+      if (!activeNestToken) {
+        if (!range?.from || !range?.to) return;
+        const reserverUrl = `/reserver?listingId=${listingId}&dateDebut=${range.from.toISOString().split('T')[0]}&dateFin=${range.to.toISOString().split('T')[0]}&personnes=${nbPersonnes}`;
+        router.push(`/login?next=${encodeURIComponent(reserverUrl)}`);
+        return;
+      }
+
+      if (ageMin && ageMin > 0) {
+        // dateNaissance peut être null si l'utilisateur a complété son profil après connexion
+        // → forcer un sync pour récupérer la valeur fraîche depuis le backend
+        let currentDateNaissance = useRoleStore.getState().dateNaissance;
+        if (!currentDateNaissance) {
+          await syncFromSupabaseSession();
+          currentDateNaissance = useRoleStore.getState().dateNaissance;
+        }
+
+        if (!currentDateNaissance) {
+          setAgeError(`Ce logement est réservé aux personnes de ${ageMin} ans et plus. Veuillez compléter votre profil.`);
+          return;
+        }
+        const dob = new Date(currentDateNaissance);
+        const today = new Date();
+        let age = today.getFullYear() - dob.getFullYear();
+        const m = today.getMonth() - dob.getMonth();
+        if (m < 0 || (m === 0 && today.getDate() < dob.getDate())) age--;
+        if (age < ageMin) {
+          setAgeError(`Ce logement est réservé aux personnes de ${ageMin} ans et plus. Vous avez ${age} ans.`);
+          return;
+        }
+      }
+
       triggerGate();
-      return;
+    } catch (error) {
+      console.error('[PricePreviewWidget] Erreur lors de la vérification:', error);
+      showError(error);
     }
-
-    if (!activeNestToken) {
-      if (!range?.from || !range?.to) return;
-      const reserverUrl = `/reserver?listingId=${listingId}&dateDebut=${range.from.toISOString().split('T')[0]}&dateFin=${range.to.toISOString().split('T')[0]}&personnes=${nbPersonnes}`;
-      router.push(`/login?next=${encodeURIComponent(reserverUrl)}`);
-      return;
-    }
-
-    if (ageMin && ageMin > 0) {
-      // dateNaissance peut être null si l'utilisateur a complété son profil après connexion
-      // → forcer un sync pour récupérer la valeur fraîche depuis le backend
-      let currentDateNaissance = useRoleStore.getState().dateNaissance;
-      if (!currentDateNaissance) {
-        await syncFromSupabaseSession();
-        currentDateNaissance = useRoleStore.getState().dateNaissance;
-      }
-
-      if (!currentDateNaissance) {
-        setAgeError(`Ce logement est réservé aux personnes de ${ageMin} ans et plus. Veuillez compléter votre profil.`);
-        return;
-      }
-      const dob = new Date(currentDateNaissance);
-      const today = new Date();
-      let age = today.getFullYear() - dob.getFullYear();
-      const m = today.getMonth() - dob.getMonth();
-      if (m < 0 || (m === 0 && today.getDate() < dob.getDate())) age--;
-      if (age < ageMin) {
-        setAgeError(`Ce logement est réservé aux personnes de ${ageMin} ans et plus. Vous avez ${age} ans.`);
-        return;
-      }
-    }
-
-    triggerGate();
   }
 
   return (

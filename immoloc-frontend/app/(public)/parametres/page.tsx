@@ -14,7 +14,7 @@ import { ProfileKycCard }     from '@/features/profile/components/ProfileKycCard
 import { ProfileActionsCard } from '@/features/profile/components/ProfileActionsCard';
 import { createClient } from '@/lib/supabase/client';
 import Link from 'next/link';
-import { User } from 'lucide-react';
+import { User, Loader2 } from 'lucide-react';
 
 /* ─── Page ────────────────────────────────────────────────────────────────── */
 
@@ -40,11 +40,11 @@ export default function TenantParametresPage() {
     });
   }, []);
 
-  // 2. API — se déclenche dès que le store est hydraté
+  // 2. API — se déclenche dès que le store est hydraté et qu'on a un token
   const { data: apiUser } = useQuery<Partial<UserProfile>>({
     queryKey: ['users', 'me'],
     queryFn: () => nestFetch<Partial<UserProfile>>(NEST_API.USERS.ME),
-    enabled: store.hasHydrated,
+    enabled: store.hasHydrated && !!store.nestToken,
     retry: false,
     staleTime: 60_000,
   });
@@ -71,8 +71,38 @@ export default function TenantParametresPage() {
     queryClient.invalidateQueries({ queryKey: ['users', 'me'] });
   }
 
-  /* ── Non connecté ── */
-  if (!store.nestToken) {
+  // ── 1. Attente de l'hydratation du store local ──
+  if (!store.hasHydrated) {
+    return (
+      <div className="max-w-2xl mx-auto px-4 py-12 pb-24 flex flex-col items-center text-center justify-center gap-4">
+        <Loader2 className="w-8 h-8 animate-spin text-primary-600" />
+        <p className="text-sm text-neutral-400">Chargement de votre session...</p>
+      </div>
+    );
+  }
+
+  // ── 2. Attente de la session Supabase ──
+  if (!supabaseReady) {
+    return (
+      <div className="max-w-2xl mx-auto px-4 py-12 pb-24 flex flex-col items-center text-center justify-center gap-4">
+        <Loader2 className="w-8 h-8 animate-spin text-primary-600" />
+        <p className="text-sm text-neutral-400">Vérification de la connexion...</p>
+      </div>
+    );
+  }
+
+  // ── 3. En cours de synchronisation avec le backend ──
+  if (supabaseUser && !store.nestToken) {
+    return (
+      <div className="max-w-2xl mx-auto px-4 py-12 pb-24 flex flex-col items-center text-center justify-center gap-4">
+        <Loader2 className="w-8 h-8 animate-spin text-primary-600" />
+        <p className="text-sm text-neutral-400">Synchronisation avec le serveur...</p>
+      </div>
+    );
+  }
+
+  // ── 4. Non connecté ──
+  if (!supabaseUser && !store.nestToken) {
     return (
       <div className="max-w-2xl mx-auto px-4 py-12 pb-24 flex flex-col items-center text-center gap-4">
         <div className="w-14 h-14 rounded-2xl bg-neutral-100 flex items-center justify-center">

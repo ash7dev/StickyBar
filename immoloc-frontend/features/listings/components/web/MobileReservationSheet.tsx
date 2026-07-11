@@ -18,6 +18,7 @@ import { useGatedAction } from '@/features/gate/hooks/use-gated-action';
 import { ActionGateModal } from '@/features/gate/components/ActionGateModal';
 import { AvailabilityCalendar } from './AvailabilityCalendar';
 import { cn } from '@/lib/utils/cn';
+import { useToastError } from '@/lib/hooks/use-toast-error';
 
 interface Props {
   listingId: string;
@@ -50,6 +51,7 @@ export function MobileReservationSheet({
   const router = useRouter();
   const { nestToken, activeRole, hasHydrated } = useRoleStore();
   const { syncFromSupabaseSession } = useNestToken();
+  const { showError, showInfo } = useToastError();
 
   const [open, setOpen] = useState(false);
   const [showCalendar, setShowCalendar] = useState(false);
@@ -118,41 +120,46 @@ export function MobileReservationSheet({
     setAgeError('');
     if (!hasHydrated) return;
 
-    let activeNestToken = nestToken;
-    if (!activeNestToken) activeNestToken = await syncFromSupabaseSession();
-    const onboardingPending = useRoleStore.getState().needsOnboarding;
+    try {
+      let activeNestToken = nestToken;
+      if (!activeNestToken) activeNestToken = await syncFromSupabaseSession();
+      const onboardingPending = useRoleStore.getState().needsOnboarding;
 
-    if (!activeNestToken && onboardingPending) { triggerGate(); return; }
-    if (!activeNestToken) {
-      if (!range?.from || !range?.to) return;
-      const reserverUrl = `/reserver?listingId=${listingId}&dateDebut=${range.from.toISOString().split('T')[0]}&dateFin=${range.to.toISOString().split('T')[0]}&personnes=${nbPersonnes}`;
-      router.push(`/login?next=${encodeURIComponent(reserverUrl)}`);
-      return;
-    }
-
-    if (ageMin && ageMin > 0) {
-      let currentDateNaissance = useRoleStore.getState().dateNaissance;
-      if (!currentDateNaissance) {
-        await syncFromSupabaseSession();
-        currentDateNaissance = useRoleStore.getState().dateNaissance;
-      }
-
-      if (!currentDateNaissance) {
-        setAgeError(`Ce logement est réservé aux personnes de ${ageMin} ans et plus. Veuillez compléter votre profil.`);
+      if (!activeNestToken && onboardingPending) { triggerGate(); return; }
+      if (!activeNestToken) {
+        if (!range?.from || !range?.to) return;
+        const reserverUrl = `/reserver?listingId=${listingId}&dateDebut=${range.from.toISOString().split('T')[0]}&dateFin=${range.to.toISOString().split('T')[0]}&personnes=${nbPersonnes}`;
+        router.push(`/login?next=${encodeURIComponent(reserverUrl)}`);
         return;
       }
-      const dob = new Date(currentDateNaissance);
-      const today = new Date();
-      let age = today.getFullYear() - dob.getFullYear();
-      const m = today.getMonth() - dob.getMonth();
-      if (m < 0 || (m === 0 && today.getDate() < dob.getDate())) age--;
-      if (age < ageMin) {
-        setAgeError(`Ce logement est réservé aux personnes de ${ageMin} ans et plus. Vous avez ${age} ans.`);
-        return;
-      }
-    }
 
-    triggerGate();
+      if (ageMin && ageMin > 0) {
+        let currentDateNaissance = useRoleStore.getState().dateNaissance;
+        if (!currentDateNaissance) {
+          await syncFromSupabaseSession();
+          currentDateNaissance = useRoleStore.getState().dateNaissance;
+        }
+
+        if (!currentDateNaissance) {
+          setAgeError(`Ce logement est réservé aux personnes de ${ageMin} ans et plus. Veuillez compléter votre profil.`);
+          return;
+        }
+        const dob = new Date(currentDateNaissance);
+        const today = new Date();
+        let age = today.getFullYear() - dob.getFullYear();
+        const m = today.getMonth() - dob.getMonth();
+        if (m < 0 || (m === 0 && today.getDate() < dob.getDate())) age--;
+        if (age < ageMin) {
+          setAgeError(`Ce logement est réservé aux personnes de ${ageMin} ans et plus. Vous avez ${age} ans.`);
+          return;
+        }
+      }
+
+      triggerGate();
+    } catch (error) {
+      console.error('[MobileReservationSheet] Erreur lors de la vérification:', error);
+      showError(error);
+    }
   }
 
   return (

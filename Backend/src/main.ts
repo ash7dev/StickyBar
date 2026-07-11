@@ -20,7 +20,7 @@ async function bootstrap() {
     origin: (origin, callback) => {
       // Autoriser les requêtes sans origin (ex: Swagger, curl, mobile natif)
       if (!origin) return callback(null, true);
-      if (allowedOrigins.includes(origin)) return callback(null, true);
+      if (allowedOrigins.includes(origin) || origin.endsWith('.vercel.app')) return callback(null, true);
       callback(new Error(`CORS bloqué pour l'origine : ${origin}`));
     },
     methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],

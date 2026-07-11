@@ -8,26 +8,61 @@ import {
   CheckCircle2,
   BarChart3,
   Shield,
-  Clock
+  Clock,
+  Loader2
 } from 'lucide-react';
 import { useRoleStore } from '@/stores/role.store';
 import { nestFetch } from '@/lib/nestjs/api-client';
 import { NEST_API } from '@/lib/nestjs/endpoints';
 import { cn } from '@/lib/utils/cn';
+import { useToastError } from '@/lib/hooks/use-toast-error';
+import { createClient } from '@/lib/supabase/client';
 
 export default function BecomeHostPage() {
   const router = useRouter();
   const [loading, setLoading] = useState(false);
-  const { estProprietaire, setSession, nestToken, refreshToken, tokenExpiresAt, activeRole, userId, hasAnnonce } = useRoleStore();
+  const { estProprietaire, setSession, nestToken, refreshToken, tokenExpiresAt, activeRole, userId, hasAnnonce, hasHydrated } = useRoleStore();
+  const { showError, showSuccess } = useToastError();
 
-  // Si déjà propriétaire, rediriger vers le dashboard
+  const [supabaseReady, setSupabaseReady] = useState(false);
+  const [supabaseUser, setSupabaseUser] = useState<any>(null);
+
+  // 1. Session Supabase
   useEffect(() => {
+    const supabase = createClient();
+    supabase.auth.getUser().then(({ data }) => {
+      setSupabaseUser(data.user ?? null);
+      setSupabaseReady(true);
+    });
+  }, []);
+
+  // 2. Gestion des redirections
+  useEffect(() => {
+    if (!hasHydrated || !supabaseReady) return;
+
+    if (!supabaseUser && !nestToken) {
+      router.replace(`/login?next=${encodeURIComponent('/become-host')}`);
+      return;
+    }
+
     if (estProprietaire) {
       router.replace('/dashboard');
     }
-  }, [estProprietaire, router]);
+  }, [hasHydrated, supabaseReady, supabaseUser, nestToken, estProprietaire, router]);
 
-  if (estProprietaire) {
+  // Écran d'attente pendant que la session se synchronise ou s'hydrate
+  if (!hasHydrated || !supabaseReady || (supabaseUser && !nestToken)) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <div className="flex flex-col items-center gap-4">
+          <Loader2 className="w-8 h-8 animate-spin text-primary-600" />
+          <p className="text-sm text-neutral-400">Vérification de votre session...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (estProprietaire || (!supabaseUser && !nestToken)) {
     return null;
   }
 
@@ -60,10 +95,16 @@ export default function BecomeHostPage() {
         hasAnnonce: result.user.hasAnnonce,
       });
 
+      showSuccess(
+        'Espace propriétaire activé !',
+        'Vous pouvez maintenant ajouter vos logements'
+      );
+
       router.push('/dashboard');
       router.refresh();
     } catch (error) {
       console.error('[BecomeHost] Activation failed:', error);
+      showError(error);
     } finally {
       setLoading(false);
     }
