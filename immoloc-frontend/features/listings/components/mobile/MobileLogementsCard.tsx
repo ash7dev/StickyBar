@@ -84,7 +84,7 @@ export function MobileLogementsCard({ listing }: { listing: Listing }) {
         {/* Prix - design amélioré */}
         <div
           className="flex items-center justify-between mt-3 px-3.5 py-2.5 rounded-[1rem] shadow-sm"
-          style={{ background: 'linear-gradient(135deg, #1260DC 0%, #2076F5 100%)' }}
+          style={{ background: 'linear-gradient(135deg, var(--primary-600) 0%, var(--primary-500) 100%)' }}
         >
           <div className="flex flex-col gap-0.5">
             <span className="text-[16px] font-black text-white leading-none tracking-tight">{price}</span>
