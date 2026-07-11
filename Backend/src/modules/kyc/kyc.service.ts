@@ -9,7 +9,7 @@ import {
 import { PrismaService } from '../../infrastructure/prisma/prisma.service';
 import { CloudinaryService } from '../../infrastructure/cloudinary/cloudinary.service';
 import { StatutKyc } from '@prisma/client';
-import { SubmitKycDto, RejectKycDto } from './dto/kyc.dto';
+import { SubmitKycDto, RejectKycDto, SubmitSelfieDto } from './dto/kyc.dto';
 
 @Injectable()
 export class KycService {
@@ -53,6 +53,46 @@ export class KycService {
     return { 
       message: 'Dossier KYC soumis avec succès, en attente de validation',
       statut: updated.statutKyc 
+    };
+  }
+
+  /**
+   * Soumission du selfie KYC par l'utilisateur
+   */
+  async submitSelfie(userId: string, dto: SubmitSelfieDto) {
+    const utilisateur = await this.prisma.utilisateur.findUnique({
+      where: { userId },
+      select: { statutKyc: true },
+    });
+
+    if (!utilisateur) {
+      throw new NotFoundException('Utilisateur introuvable');
+    }
+
+    if (utilisateur.statutKyc === StatutKyc.VERIFIE) {
+      throw new ConflictException('Votre compte est déjà vérifié');
+    }
+
+    if (utilisateur.statutKyc !== StatutKyc.EN_ATTENTE) {
+      throw new ConflictException('Veuillez d\'abord soumettre vos documents CNI');
+    }
+
+    const updated = await this.prisma.utilisateur.update({
+      where: { userId },
+      data: {
+        kycSelfieUrl: dto.kycSelfieUrl,
+        kycSelfiePublicId: dto.kycSelfiePublicId,
+        selfieFaceDetected: dto.selfieFaceDetected,
+        selfieMatchScore: dto.selfieMatchScore ?? null,
+        selfieVerifiedAt: new Date(),
+        statutKyc: StatutKyc.VERIFIE,
+      },
+    });
+
+    this.logger.log(`Selfie KYC soumis et validé pour l'utilisateur [${userId}]`);
+    return {
+      message: 'Selfie KYC validé avec succès, votre compte est maintenant vérifié',
+      statut: updated.statutKyc,
     };
   }
 

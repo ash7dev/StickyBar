@@ -49,6 +49,17 @@ export class UploadController {
     return this.uploadService.uploadKycDocument(file);
   }
 
+  @Post('kyc-selfie')
+  @ApiOperation({ summary: 'Upload selfie KYC avec détection faciale (dossier privé Cloudinary)' })
+  @ApiConsumes('multipart/form-data')
+  @ApiBody({ schema: { type: 'object', properties: { file: { type: 'string', format: 'binary' } } } })
+  @UseInterceptors(FileInterceptor('file', multerMemory))
+  async uploadKycSelfie(
+    @UploadedFile(new ParseFilePipe({ validators: fileValidators })) file: Express.Multer.File,
+  ) {
+    return this.uploadService.uploadKycSelfie(file);
+  }
+
   @Post('checkin-photo')
   @ApiOperation({ summary: 'Upload photo état des lieux (tagué par reservationId)' })
   @ApiConsumes('multipart/form-data')

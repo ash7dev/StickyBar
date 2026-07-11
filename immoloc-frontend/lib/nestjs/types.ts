@@ -54,6 +54,8 @@ export interface AuthUser {
   profileCompleted: boolean;
   phoneVerified: boolean;
   statutKyc: StatutKyc;
+  selfieFaceDetected?: boolean;
+  selfieMatchScore?: number | null;
 }
 
 /** Réponse commune à login email, login OTP et refresh */

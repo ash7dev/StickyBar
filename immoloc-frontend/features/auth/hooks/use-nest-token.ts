@@ -97,6 +97,8 @@ export function useNestToken() {
         phoneVerified: result.user.phoneVerified,
         statutKyc: result.user.statutKyc,
         dateNaissance: result.user.dateNaissance,
+        selfieFaceDetected: result.user.selfieFaceDetected,
+        selfieMatchScore: result.user.selfieMatchScore,
       });
 
       return result.accessToken;

@@ -35,9 +35,9 @@ const NAV = {
   ],
   legal: [
     { label: 'Conditions générales',         href: '/cgu'     },
-    { label: 'Confidentialité',              href: '/privacy' },
-    { label: 'Politique de cookies',         href: '/cookies' },
-    { label: 'Mentions légales',             href: '/legal'   },
+    { label: 'Confidentialité',              href: '/legal/privacy' },
+    { label: 'Politique de cookies',         href: '/legal/privacy#cookies' },
+    { label: 'Mentions légales',             href: '/cgu'   },
   ],
 };
 

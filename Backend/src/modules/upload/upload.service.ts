@@ -18,6 +18,11 @@ export class UploadService {
     return this.cloudinary.uploadKycDocument(file.buffer, file.originalname);
   }
 
+  async uploadKycSelfie(file: Express.Multer.File): Promise<UploadResult & { faceDetected: boolean }> {
+    this.validateFile(file);
+    return this.cloudinary.uploadKycSelfie(file.buffer, file.originalname);
+  }
+
   async uploadCheckinPhoto(file: Express.Multer.File, reservationId: string): Promise<UploadResult> {
     this.validateFile(file);
     return this.cloudinary.uploadCheckinPhoto(file.buffer, reservationId);

@@ -59,6 +59,11 @@ model Utilisateur {
   kycVersoUrl         String?   // Verso
   kycVersoPublicId    String?
   kycRejectionReason  String?
+  kycSelfieUrl        String?
+  kycSelfiePublicId   String?
+  selfieFaceDetected  Boolean   @default(false)
+  selfieMatchScore    Float?
+  selfieVerifiedAt    DateTime?
   phoneVerified       Boolean   @default(false)
   profileCompleted    Boolean   @default(false)
 

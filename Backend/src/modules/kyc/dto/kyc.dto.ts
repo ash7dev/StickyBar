@@ -23,3 +23,19 @@ export class RejectKycDto {
   @IsString()
   reason!: string;
 }
+
+export class SubmitSelfieDto {
+  @IsNotEmpty({ message: "L'URL du selfie est requise" })
+  @IsString()
+  kycSelfieUrl!: string;
+
+  @IsNotEmpty({ message: "Le Public ID du selfie est requis" })
+  @IsString()
+  kycSelfiePublicId!: string;
+
+  @IsNotEmpty()
+  selfieFaceDetected!: boolean;
+
+  @IsOptional()
+  selfieMatchScore?: number;
+}

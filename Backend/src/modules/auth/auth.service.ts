@@ -724,6 +724,8 @@ export class AuthService {
         profileCompleted: true,
         phoneVerified: true,
         statutKyc: true,
+        selfieFaceDetected: true,
+        selfieMatchScore: true,
         logements: {
           where: { statut: 'PUBLISHED', archiveLe: null },
           select: { id: true },
@@ -750,34 +752,95 @@ export class AuthService {
           : null,
       ]);
 
-      if (existingProfileByEmail && existingProfileByEmail.userId !== user.id) {
-        throw new ConflictException('Un profil existe déjà avec cet email');
+      const conflictingProfile = existingProfileByEmail || existingProfileByPhone;
+      if (conflictingProfile && conflictingProfile.userId !== user.id) {
+        const oldUserId = conflictingProfile.userId;
+        const newUserId = user.id;
+        this.logger.warn(`Conflit d'UID détecté pour l'email ${email}. Migration de l'ancien UID [${oldUserId}] vers le nouvel UID Supabase [${newUserId}].`);
+        
+        await this.prisma.$transaction(async (tx) => {
+          const oldProfile = await tx.profile.findUnique({ where: { userId: oldUserId } });
+          if (oldProfile) {
+            // Créer le profil temporaire avec le nouvel UID
+            await tx.profile.create({
+              data: {
+                userId: newUserId,
+                email: oldProfile.email,
+                phone: oldProfile.phone,
+                typeHote: oldProfile.typeHote,
+                ninea: oldProfile.ninea,
+                creeLe: oldProfile.creeLe,
+              },
+            });
+
+            // Mettre à jour l'utilisateur si existant
+            const oldUser = await tx.utilisateur.findUnique({ where: { userId: oldUserId } });
+            if (oldUser) {
+              await tx.utilisateur.update({
+                where: { userId: oldUserId },
+                data: { userId: newUserId },
+              });
+              
+              // Mettre à jour les push subscriptions
+              await tx.pushSubscription.updateMany({
+                where: { userId: oldUserId },
+                data: { userId: newUserId },
+              });
+            }
+
+            // Supprimer l'ancien profil
+            await tx.profile.delete({ where: { userId: oldUserId } });
+          }
+        });
+
+        // Recharger l'utilisateur migré
+        utilisateur = await this.prisma.utilisateur.findUnique({
+          where: { userId: newUserId },
+          select: {
+            id: true,
+            userId: true,
+            email: true,
+            telephone: true,
+            prenom: true,
+            nom: true,
+            dateNaissance: true,
+            estProprietaire: true,
+            actif: true,
+            profileCompleted: true,
+            phoneVerified: true,
+            statutKyc: true,
+            selfieFaceDetected: true,
+            selfieMatchScore: true,
+            logements: {
+              where: { statut: 'PUBLISHED', archiveLe: null },
+              select: { id: true },
+            },
+          },
+        });
       }
 
-      if (existingProfileByPhone && existingProfileByPhone.userId !== user.id) {
-        throw new ConflictException('Un profil existe déjà avec ce numéro de téléphone');
+      if (!utilisateur) {
+        await this.prisma.profile.upsert({
+          where: { userId: user.id },
+          create: {
+            userId: user.id,
+            email,
+            phone,
+          },
+          update: {
+            email,
+            phone,
+          },
+        });
+
+        return {
+          onboardingRequired: true,
+          profile: {
+            email,
+            phone,
+          },
+        };
       }
-
-      await this.prisma.profile.upsert({
-        where: { userId: user.id },
-        create: {
-          userId: user.id,
-          email,
-          phone,
-        },
-        update: {
-          email,
-          phone,
-        },
-      });
-
-      return {
-        onboardingRequired: true,
-        profile: {
-          email,
-          phone,
-        },
-      };
     }
 
     if (!utilisateur.actif) {
@@ -807,6 +870,8 @@ export class AuthService {
         profileCompleted: utilisateur.profileCompleted,
         phoneVerified: utilisateur.phoneVerified,
         statutKyc: utilisateur.statutKyc,
+        selfieFaceDetected: utilisateur.selfieFaceDetected,
+        selfieMatchScore: utilisateur.selfieMatchScore,
         dateNaissance: utilisateur.dateNaissance?.toISOString() ?? null,
       },
     };

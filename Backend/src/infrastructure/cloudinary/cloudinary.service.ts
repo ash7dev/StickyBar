@@ -40,6 +40,27 @@ export class CloudinaryService {
     return { url: result.secure_url, publicId: result.public_id };
   }
 
+  async uploadKycSelfie(buffer: Buffer, originalName: string): Promise<UploadResult & { faceDetected: boolean }> {
+    const result = await this.uploadStream(buffer, {
+      folder: 'immoloc/kyc/selfies',
+      access_mode: 'authenticated',
+      resource_type: 'image',
+      type: 'authenticated',
+      detection: 'adv_face',
+    });
+
+    const standardFaces = (result as any).faces ?? [];
+    const advFaces = (result as any).info?.detection?.adv_face?.data ?? [];
+    const faceDetected = standardFaces.length > 0 || advFaces.length > 0;
+
+    this.logger.debug(`KYC selfie uploadé → ${result.public_id}. Visage détecté : ${faceDetected}`);
+    return { 
+      url: result.secure_url, 
+      publicId: result.public_id,
+      faceDetected 
+    };
+  }
+
   async uploadCheckinPhoto(buffer: Buffer, reservationId: string): Promise<UploadResult> {
     const result = await this.uploadStream(buffer, {
       folder: `immoloc/checkin/${reservationId}`,

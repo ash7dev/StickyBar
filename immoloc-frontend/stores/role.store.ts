@@ -66,6 +66,8 @@ export interface RoleState {
     phoneVerified?: boolean;
     statutKyc?: StatutKyc;
     dateNaissance?: string | null;
+    selfieFaceDetected?: boolean;
+    selfieMatchScore?: number | null;
   }) => void;
   setRole: (role: Role) => void;
   setHasAnnonce: (value: boolean) => void;
@@ -101,7 +103,7 @@ export const useRoleStore = create<RoleState>()(
     (set) => ({
       ...INITIAL_STATE,
 
-      setSession: ({ token, refreshToken, expiresIn, role, estProprietaire, userId, hasAnnonce, profileCompleted, phoneVerified, statutKyc, dateNaissance }) =>
+      setSession: ({ token, refreshToken, expiresIn, role, estProprietaire, userId, hasAnnonce, profileCompleted, phoneVerified, statutKyc, dateNaissance, selfieFaceDetected, selfieMatchScore }) =>
         set((prev) => ({
           nestToken: token,
           refreshToken,
@@ -115,6 +117,8 @@ export const useRoleStore = create<RoleState>()(
           phoneVerified: phoneVerified ?? prev.phoneVerified,
           statutKyc: statutKyc ?? prev.statutKyc,
           dateNaissance: dateNaissance !== undefined ? dateNaissance : prev.dateNaissance,
+          selfieFaceDetected: selfieFaceDetected ?? prev.selfieFaceDetected,
+          selfieMatchScore: selfieMatchScore !== undefined ? selfieMatchScore : prev.selfieMatchScore,
           onboardingDraft: null,
         })),
 
