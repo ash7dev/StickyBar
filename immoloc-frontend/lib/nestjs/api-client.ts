@@ -51,6 +51,7 @@ export async function nestFetch<T>(
 
       if (refreshRes.ok) {
         const result = await refreshRes.json();
+        // Préserver tous les champs du store pendant le refresh
         store.setSession({
           token: result.accessToken,
           refreshToken: result.refreshToken,
@@ -59,6 +60,12 @@ export async function nestFetch<T>(
           estProprietaire: store.estProprietaire,
           userId: store.userId ?? '',
           hasAnnonce: store.hasAnnonce,
+          profileCompleted: store.profileCompleted,
+          phoneVerified: store.phoneVerified,
+          statutKyc: store.statutKyc,
+          dateNaissance: store.dateNaissance,
+          selfieFaceDetected: store.selfieFaceDetected,
+          selfieMatchScore: store.selfieMatchScore,
         });
 
         const retryHeaders = { ...headers, Authorization: `Bearer ${result.accessToken}` };

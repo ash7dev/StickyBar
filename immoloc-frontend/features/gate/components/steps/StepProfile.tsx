@@ -34,7 +34,7 @@ const inputCls = cn(
   'w-full rounded-xl border border-border px-4 py-3 text-sm text-neutral-900',
   'placeholder:text-neutral-300',
   'outline-none transition-all',
-  'focus:border-primary-400 focus:ring-2 focus:ring-primary-100',
+  'focus:border-emerald-400 focus:ring-2 focus:ring-emerald-100',
 );
 
 export function StepProfile({ onDone }: Props) {
@@ -117,7 +117,7 @@ export function StepProfile({ onDone }: Props) {
       <button
         type="submit"
         disabled={isSubmitting}
-        className="w-full bg-primary-600 hover:bg-primary-700 disabled:opacity-50 text-white text-sm font-bold rounded-xl py-3 transition-colors"
+        className="w-full bg-emerald-600 hover:bg-emerald-700 disabled:opacity-50 text-white text-sm font-bold rounded-xl py-3 transition-colors"
       >
         {isSubmitting ? 'Enregistrement…' : 'Continuer'}
       </button>

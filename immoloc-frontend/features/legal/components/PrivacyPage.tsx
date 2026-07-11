@@ -57,7 +57,7 @@ function InfoBox({ type = 'info', children }: {
   const cfg = {
     info:    { bg: 'bg-violet-50 border-violet-200/60',   icon: '💡', text: 'text-violet-900' },
     warning: { bg: 'bg-amber-50 border-amber-200/60',     icon: '⚠️',  text: 'text-amber-900' },
-    key:     { bg: 'bg-primary-50 border-primary-200/60', icon: '🔑',  text: 'text-primary-900' },
+    key:     { bg: 'bg-emerald-50 border-emerald-200/60', icon: '🔑',  text: 'text-emerald-900' },
     success: { bg: 'bg-emerald-50 border-emerald-200/60', icon: '✅',  text: 'text-emerald-900' },
   }[type];
   return (
@@ -164,7 +164,7 @@ export function PrivacyPage() {
       <div className="relative overflow-hidden bg-[#0d0714]">
         <div className="absolute inset-0">
           <div className="absolute top-0 left-[15%] w-[500px] h-[400px] rounded-full bg-violet-600/25 blur-[130px]" />
-          <div className="absolute bottom-0 right-[5%] w-[350px] h-[300px] rounded-full bg-primary-500/15 blur-[100px]" />
+          <div className="absolute bottom-0 right-[5%] w-[350px] h-[300px] rounded-full bg-emerald-500/15 blur-[100px]" />
           <div className="absolute top-[40%] left-[60%] w-[200px] h-[200px] rounded-full bg-accent-400/10 blur-[80px]" />
           <div className="absolute inset-0 bg-[url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNDAiIGhlaWdodD0iNDAiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+PGNpcmNsZSBjeD0iMSIgY3k9IjEiIHI9IjEiIGZpbGw9InJnYmEoMjU1LDI1NSwyNTUsMC4wMykiLz48L3N2Zz4=')] opacity-70" />
         </div>
@@ -187,7 +187,7 @@ export function PrivacyPage() {
 
             <h1 className="text-4xl sm:text-5xl lg:text-6xl font-black text-white leading-[1.05] tracking-tight mb-6">
               Politique de<br />
-              <span className="text-transparent bg-clip-text bg-gradient-to-r from-violet-400 to-primary-400">
+              <span className="text-transparent bg-clip-text bg-gradient-to-r from-violet-400 to-emerald-400">
                 Confidentialité
               </span>
             </h1>

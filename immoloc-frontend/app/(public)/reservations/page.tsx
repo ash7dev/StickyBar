@@ -67,7 +67,7 @@ export default function TenantReservationsPage() {
           <select
             value={activeTab}
             onChange={(e) => setActiveTab(e.target.value)}
-            className="w-full appearance-none bg-gradient-to-br from-background-card to-neutral-50/50 border-2 border-border rounded-2xl px-5 py-4 pr-12 text-base font-bold text-foreground cursor-pointer transition-all duration-300 hover:border-primary-400 hover:shadow-lg hover:shadow-primary-500/10 focus:outline-none focus:ring-4 focus:ring-primary-500/10 focus:border-primary-400 focus:shadow-xl focus:shadow-primary-500/20 active:scale-[0.99]"
+            className="w-full appearance-none bg-gradient-to-br from-background-card to-neutral-50/50 border-2 border-border rounded-2xl px-5 py-4 pr-12 text-base font-bold text-foreground cursor-pointer transition-all duration-300 hover:border-emerald-400 hover:shadow-lg hover:shadow-emerald-500/10 focus:outline-none focus:ring-4 focus:ring-emerald-500/10 focus:border-emerald-400 focus:shadow-xl focus:shadow-emerald-500/20 active:scale-[0.99]"
           >
             {TABS.map((tab) => {
               const count = tab.id !== 'ALL' ? countFor(tab.id) : null;
@@ -82,15 +82,15 @@ export default function TenantReservationsPage() {
 
           {/* Icône avec animation */}
           <div className="absolute right-5 top-1/2 -translate-y-1/2 pointer-events-none transition-transform duration-300 group-hover:scale-110">
-            <div className="w-8 h-8 rounded-full bg-primary-500/10 flex items-center justify-center">
-              <ChevronDown className="w-4 h-4 text-primary-500" strokeWidth={3} />
+            <div className="w-8 h-8 rounded-full bg-emerald-500/10 flex items-center justify-center">
+              <ChevronDown className="w-4 h-4 text-emerald-500" strokeWidth={3} />
             </div>
           </div>
         </div>
 
         {/* Indicateur de filtre actif */}
         {activeTab !== 'ALL' && (
-          <div className="absolute -top-1 -right-1 w-3 h-3 bg-primary-500 rounded-full border-2 border-background-card shadow-sm animate-pulse" />
+          <div className="absolute -top-1 -right-1 w-3 h-3 bg-emerald-500 rounded-full border-2 border-background-card shadow-sm animate-pulse" />
         )}
       </div>
 

@@ -15,7 +15,7 @@ import { BRAND } from '@/lib/config';
 /* ─── Data ─────────────────────────────────────────────────────────────── */
 const TENANT_STEPS = [
   {
-    id: '01', icon: Search, title: 'Cherchez', tag: 'Filtres intelligents', color: 'primary' as const,
+    id: '01', icon: Search, title: 'Cherchez', tag: 'Filtres intelligents', color: 'emerald' as const,
     desc: "Explorez des centaines de logements vérifiés avec des photos réelles, des descriptions précises et les avis d'autres locataires.",
     details: ['Filtrez par ville, prix, capacité, type de logement', 'Photos réelles prises par notre équipe', 'Carte interactive pour visualiser les quartiers', 'Disponibilités en temps réel'],
   },
@@ -32,13 +32,13 @@ const TENANT_STEPS = [
 ];
 
 const COLOR = {
-  primary: { grid: 'var(--primary-500)', glow: 'bg-primary-500/10 group-hover:bg-primary-500/18', iconBg: 'bg-primary-500/10 border-primary-400/20 group-hover:bg-primary-500/20', iconText: 'text-primary-400', numBg: 'bg-primary-500', tagText: 'text-primary-400', bullet: 'bg-primary-400', liseré: 'bg-primary-500 shadow-[0_0_12px_var(--primary-500)]' },
+  emerald: { grid: 'var(--emerald-500)', glow: 'bg-emerald-500/10 group-hover:bg-emerald-500/18', iconBg: 'bg-emerald-500/10 border-emerald-400/20 group-hover:bg-emerald-500/20', iconText: 'text-emerald-400', numBg: 'bg-emerald-500', tagText: 'text-emerald-400', bullet: 'bg-emerald-400', liseré: 'bg-emerald-500 shadow-[0_0_12px_var(--emerald-500)]' },
   amber: { grid: 'var(--amber-500)', glow: 'bg-amber-400/8 group-hover:bg-amber-400/15', iconBg: 'bg-amber-400/10 border-amber-400/20 group-hover:bg-amber-400/20', iconText: 'text-amber-400', numBg: 'bg-amber-500', tagText: 'text-amber-400', bullet: 'bg-amber-400', liseré: 'bg-amber-400 shadow-[0_0_12px_var(--amber-500)]' },
   emerald: { grid: 'var(--emerald-500)', glow: 'bg-emerald-400/6 group-hover:bg-emerald-400/14', iconBg: 'bg-emerald-400/10 border-emerald-400/20 group-hover:bg-emerald-400/20', iconText: 'text-emerald-400', numBg: 'bg-emerald-500', tagText: 'text-emerald-400', bullet: 'bg-emerald-400', liseré: 'bg-emerald-500 shadow-[0_0_12px_var(--emerald-500)]' },
 };
 
 const TRUST_FEATURES = [
-  { icon: FileCheck, title: 'Annonces vérifiées', desc: 'Chaque logement est inspecté avant publication. Photos réelles garanties.', span: 4, dark: true, accent: { bg: 'bg-primary-500/10', border: 'border-primary-400/20', text: 'text-primary-400', glow: 'bg-primary-500/8', gridColor: 'var(--primary-500)', hoverShadow: 'hover:shadow-[0_20px_60px_var(--primary-500)]' } },
+  { icon: FileCheck, title: 'Annonces vérifiées', desc: 'Chaque logement est inspecté avant publication. Photos réelles garanties.', span: 4, dark: true, accent: { bg: 'bg-emerald-500/10', border: 'border-emerald-400/20', text: 'text-emerald-400', glow: 'bg-emerald-500/8', gridColor: 'var(--emerald-500)', hoverShadow: 'hover:shadow-[0_20px_60px_var(--emerald-500)]' } },
   { icon: BadgeCheck, title: 'KYC obligatoire', desc: "Propriétaires et locataires vérifiés par pièce d'identité officielle.", span: 2, dark: false, accent: { bg: 'bg-emerald-50', border: 'border-emerald-100', text: 'text-emerald-500', glow: 'bg-emerald-400/8', gridColor: '', hoverShadow: 'hover:shadow-[0_16px_48px_rgba(0,0,0,0.06)]' } },
   { icon: Headphones, title: 'Support 7j/7', desc: 'WhatsApp et téléphone, à tout moment.', span: 2, dark: false, accent: { bg: 'bg-violet-50', border: 'border-violet-100', text: 'text-violet-500', glow: 'bg-violet-400/8', gridColor: '', hoverShadow: 'hover:shadow-[0_16px_48px_rgba(0,0,0,0.06)]' } },
   { icon: Lock, title: 'Séquestre garanti', desc: 'Votre argent est bloqué jusqu\'à la confirmation du séjour. Aucun risque.', span: 4, dark: true, accent: { bg: 'bg-amber-400/10', border: 'border-amber-400/20', text: 'text-amber-400', glow: 'bg-amber-400/8', gridColor: 'var(--amber-500)', hoverShadow: 'hover:shadow-[0_20px_60px_var(--amber-500)]' } },
@@ -47,7 +47,7 @@ const TRUST_FEATURES = [
 ];
 
 const ESCROW_STEPS = [
-  { label: 'Locataire paie', sub: 'Wave / OM / Carte', icon: CreditCard, bg: 'bg-primary-500/10', border: 'border-primary-400/20', text: 'text-primary-400', num: 'bg-primary-500' },
+  { label: 'Locataire paie', sub: 'Wave / OM / Carte', icon: CreditCard, bg: 'bg-emerald-500/10', border: 'border-emerald-400/20', text: 'text-emerald-400', num: 'bg-emerald-500' },
   { label: 'Séquestre bloqué', sub: 'Chez ImmoLoc', icon: Lock, bg: 'bg-amber-500/10', border: 'border-amber-400/20', text: 'text-amber-400', num: 'bg-amber-500' },
   { label: 'Séjour confirmé', sub: 'Check-in validé', icon: CheckCircle2, bg: 'bg-emerald-500/10', border: 'border-emerald-400/20', text: 'text-emerald-400', num: 'bg-emerald-500' },
   { label: 'Propriétaire payé', sub: 'Sous 48 h', icon: Banknote, bg: 'bg-violet-500/10', border: 'border-violet-400/20', text: 'text-violet-400', num: 'bg-violet-500' },
@@ -68,7 +68,7 @@ function StepCard({ step, index, total }: { step: typeof TENANT_STEPS[0]; index:
   const Icon = step.icon;
   return (
     <div className="relative z-10 group">
-      <div className={`relative bg-primary-800 border border-white/5 rounded-[2rem] p-8 sm:p-10 transition-all duration-500 hover:border-white/10 hover:-translate-y-1.5 hover:shadow-[0_24px_80px_rgba(0,0,0,0.3)] overflow-hidden`}>
+      <div className={`relative bg-emerald-800 border border-white/5 rounded-[2rem] p-8 sm:p-10 transition-all duration-500 hover:border-white/10 hover:-translate-y-1.5 hover:shadow-[0_24px_80px_rgba(0,0,0,0.3)] overflow-hidden`}>
         {/* Ambient glow — appears on hover */}
         <div className={`absolute -top-20 -right-20 w-56 h-56 rounded-full blur-[80px] pointer-events-none transition-colors duration-700 ${c.glow}`} />
         {/* Colored grid */}
@@ -119,17 +119,17 @@ export function HowItWorksPage() {
   const [openFaq, setOpenFaq] = useState<number>(0);
 
   return (
-    <div className="bg-primary-800 min-h-screen">
+    <div className="bg-emerald-800 min-h-screen">
 
       {/* ══ HERO ════════════════════════════════════════════════════════ */}
       <section className="relative pt-16 lg:pt-20 pb-12 lg:pb-16 overflow-hidden rounded-b-[4rem] lg:rounded-b-[5rem]">
         {/* Premium gradient background */}
-        <div className="absolute inset-0 bg-gradient-to-br from-primary-900/40 via-primary-800 to-primary-900/30 rounded-b-[4rem] lg:rounded-b-[5rem]" />
+        <div className="absolute inset-0 bg-gradient-to-br from-emerald-900/40 via-emerald-800 to-emerald-900/30 rounded-b-[4rem] lg:rounded-b-[5rem]" />
         
         {/* Animated gradient orbs */}
-        <div className="absolute top-0 right-0 w-[60%] h-[60%] bg-gradient-to-br from-primary-500/15 via-primary-600/10 to-transparent blur-[180px] rounded-full pointer-events-none animate-pulse" />
-        <div className="absolute bottom-0 left-0 w-[50%] h-[50%] bg-gradient-to-tr from-emerald-500/10 via-primary-500/8 to-transparent blur-[160px] rounded-full pointer-events-none" />
-        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[80%] h-[80%] bg-primary-400/5 blur-[200px] rounded-full pointer-events-none" />
+        <div className="absolute top-0 right-0 w-[60%] h-[60%] bg-gradient-to-br from-emerald-500/15 via-emerald-600/10 to-transparent blur-[180px] rounded-full pointer-events-none animate-pulse" />
+        <div className="absolute bottom-0 left-0 w-[50%] h-[50%] bg-gradient-to-tr from-emerald-500/10 via-emerald-500/8 to-transparent blur-[160px] rounded-full pointer-events-none" />
+        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[80%] h-[80%] bg-emerald-400/5 blur-[200px] rounded-full pointer-events-none" />
         
         {/* Grid pattern overlay */}
         <div className="absolute inset-0 opacity-[0.03]" style={{ backgroundImage: 'radial-gradient(circle, rgba(255,255,255,0.3) 1px, transparent 1px)', backgroundSize: '32px 32px' }} />
@@ -146,12 +146,12 @@ export function HowItWorksPage() {
           </div>
 
           {/* Premium badge */}
-          <div className="inline-flex items-center gap-2.5 px-5 py-2.5 rounded-full bg-gradient-to-r from-primary-500/20 via-primary-400/20 to-emerald-500/20 backdrop-blur-xl border border-primary-400/30 shadow-[0_0_30px_rgba(16,185,129,0.3)] mb-8">
+          <div className="inline-flex items-center gap-2.5 px-5 py-2.5 rounded-full bg-gradient-to-r from-emerald-500/20 via-emerald-400/20 to-emerald-500/20 backdrop-blur-xl border border-emerald-400/30 shadow-[0_0_30px_rgba(16,185,129,0.3)] mb-8">
             <span className="relative flex h-2.5 w-2.5">
-              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-primary-400 opacity-75" />
-              <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-primary-400" />
+              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75" />
+              <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-emerald-400" />
             </span>
-            <span className="text-[10px] font-black text-primary-200 uppercase tracking-[0.25em]">Guide ImmoLoc</span>
+            <span className="text-[10px] font-black text-emerald-200 uppercase tracking-[0.25em]">Guide ImmoLoc</span>
           </div>
 
           {/* Premium heading with gradient text */}
@@ -159,11 +159,11 @@ export function HowItWorksPage() {
             <h1 className="text-6xl sm:text-7xl lg:text-8xl font-black text-transparent bg-clip-text bg-gradient-to-br from-white via-white/95 to-white/70 tracking-tighter leading-[0.95] mb-3">
               Comment ça
             </h1>
-            <h1 className="text-6xl sm:text-7xl lg:text-8xl font-black text-transparent bg-clip-text bg-gradient-to-r from-primary-400 via-primary-300 to-emerald-400 tracking-tighter leading-[0.95]">
+            <h1 className="text-6xl sm:text-7xl lg:text-8xl font-black text-transparent bg-clip-text bg-gradient-to-r from-emerald-400 via-emerald-300 to-emerald-400 tracking-tighter leading-[0.95]">
               marche
             </h1>
             {/* Glow effect behind text */}
-            <div className="absolute inset-0 bg-primary-500/20 blur-[100px] -z-10" />
+            <div className="absolute inset-0 bg-emerald-500/20 blur-[100px] -z-10" />
           </div>
           
           <p className="text-base lg:text-lg text-white/50 max-w-2xl mx-auto leading-relaxed font-medium mb-10">
@@ -174,7 +174,7 @@ export function HowItWorksPage() {
           <div className="flex flex-wrap items-center justify-center gap-4 mb-12">
             {[
               { icon: ShieldCheck, text: 'Séquestre 100% garanti', color: 'from-emerald-400/20 to-emerald-500/20', iconColor: 'text-emerald-400', border: 'border-emerald-400/30' },
-              { icon: BadgeCheck, text: 'Propriétaires KYC', color: 'from-primary-400/20 to-primary-500/20', iconColor: 'text-primary-400', border: 'border-primary-400/30' },
+              { icon: BadgeCheck, text: 'Propriétaires KYC', color: 'from-emerald-400/20 to-emerald-500/20', iconColor: 'text-emerald-400', border: 'border-emerald-400/30' },
               { icon: Star, text: 'Note 4.8/5', color: 'from-amber-400/20 to-amber-500/20', iconColor: 'text-amber-400', border: 'border-amber-400/30' },
             ].map(({ icon: Icon, text, color, iconColor, border }, i) => (
               <div key={i} className="flex items-center gap-3 bg-gradient-to-br from-white/10 to-white/5 backdrop-blur-xl px-6 py-3 rounded-2xl border border-white/10 shadow-xl hover:shadow-2xl hover:scale-105 transition-all duration-300">
@@ -210,20 +210,20 @@ export function HowItWorksPage() {
       {/* ══ LOCATAIRES ══════════════════════════════════════════════════ */}
       <section id="locataires" className="bg-background-card py-8 px-4 sm:px-6">
         <div className="max-w-7xl mx-auto">
-          <div className="relative bg-primary-800 overflow-hidden rounded-[3rem] py-20 px-8 sm:px-12 lg:px-16">
-            <div className="absolute top-0 left-1/4 w-[500px] h-[300px] bg-primary-500/6 rounded-full blur-[120px] pointer-events-none" />
+          <div className="relative bg-emerald-800 overflow-hidden rounded-[3rem] py-20 px-8 sm:px-12 lg:px-16">
+            <div className="absolute top-0 left-1/4 w-[500px] h-[300px] bg-emerald-500/6 rounded-full blur-[120px] pointer-events-none" />
             <div className="absolute bottom-0 right-1/4 w-[400px] h-[250px] bg-emerald-500/4 rounded-full blur-[100px] pointer-events-none" />
             <div className="absolute inset-0 opacity-[0.025]" style={{ backgroundImage: 'radial-gradient(rgba(255,255,255,1) 1px, transparent 1px)', backgroundSize: '20px 20px' }} />
 
             <div className="relative z-10">
               <div className="text-center mb-16">
                 <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-black/50 backdrop-blur-xl border border-white/10 shadow-[inset_0_1px_0_rgba(255,255,255,0.06)] mb-6">
-                  <User className="w-3.5 h-3.5 text-primary-400" />
-                  <span className="text-[10px] font-black text-primary-200 uppercase tracking-[0.25em]">Pour les locataires</span>
+                  <User className="w-3.5 h-3.5 text-emerald-400" />
+                  <span className="text-[10px] font-black text-emerald-200 uppercase tracking-[0.25em]">Pour les locataires</span>
                 </div>
                 <h2 className="text-4xl sm:text-5xl font-black text-white tracking-tight">
                   Trouvez et réservez{' '}
-                  <span className="text-primary-400">en 3 étapes</span>
+                  <span className="text-emerald-400">en 3 étapes</span>
                 </h2>
                 <p className="text-white/30 text-sm font-medium mt-4 max-w-xl mx-auto leading-relaxed">
                   Cherchez le logement idéal, payez en sécurité et séjournez l&apos;esprit tranquille.
@@ -233,7 +233,7 @@ export function HowItWorksPage() {
               <div className="relative grid md:grid-cols-3 gap-6 lg:gap-8">
                 {/* Desktop connector */}
                 <div className="hidden md:block absolute top-[7.5rem] left-[16.66%] right-[16.66%] h-px z-0">
-                  <div className="w-full h-full bg-gradient-to-r from-primary-500/30 via-amber-400/30 to-emerald-400/30" />
+                  <div className="w-full h-full bg-gradient-to-r from-emerald-500/30 via-amber-400/30 to-emerald-400/30" />
                 </div>
                 {TENANT_STEPS.map((step, i) => (
                   <StepCard key={step.id} step={step} index={i} total={TENANT_STEPS.length} />
@@ -243,7 +243,7 @@ export function HowItWorksPage() {
               <div className="text-center mt-14">
                 <Link
                   href="/logements"
-                  className="inline-flex items-center gap-2.5 px-8 py-4 bg-primary-500 text-white text-sm font-black rounded-full hover:bg-primary-400 transition-all duration-300 shadow-[0_0_30px_var(--primary-500)] hover:shadow-[0_0_50px_var(--primary-500)] hover:scale-[1.02] active:scale-[0.98]"
+                  className="inline-flex items-center gap-2.5 px-8 py-4 bg-emerald-500 text-white text-sm font-black rounded-full hover:bg-emerald-400 transition-all duration-300 shadow-[0_0_30px_var(--emerald-500)] hover:shadow-[0_0_50px_var(--emerald-500)] hover:scale-[1.02] active:scale-[0.98]"
                 >
                   Explorer les logements <ArrowRight className="w-4 h-4" />
                 </Link>
@@ -259,7 +259,7 @@ export function HowItWorksPage() {
           <div className="grid md:grid-cols-2 gap-6">
 
             {/* ── Bloc 1 : Publiez ── */}
-            <div className="group relative bg-primary-800 p-10 sm:p-12 overflow-hidden cursor-pointer transition-all duration-500 hover:scale-[1.01] rounded-[2rem]">
+            <div className="group relative bg-emerald-800 p-10 sm:p-12 overflow-hidden cursor-pointer transition-all duration-500 hover:scale-[1.01] rounded-[2rem]">
               <div className="absolute -top-20 -left-20 w-80 h-80 bg-violet-500/10 rounded-full blur-[80px] pointer-events-none transition-colors duration-700 group-hover:bg-violet-500/18" />
               <div className="absolute inset-0 opacity-[0.04] rounded-[2rem]" style={{ backgroundImage: 'linear-gradient(var(--violet-500) 0.5px, transparent 0.5px), linear-gradient(90deg, var(--violet-500) 0.5px, transparent 0.5px)', backgroundSize: '30px 30px' }} />
               <span className="absolute -bottom-8 -right-4 text-[160px] font-black leading-none select-none" style={{ color: 'var(--violet-500)', opacity: 0.05 }}>01</span>
@@ -289,7 +289,7 @@ export function HowItWorksPage() {
             </div>
 
             {/* ── Bloc 2 : Confirmez ── */}
-            <div className="group relative bg-primary-800 p-10 sm:p-12 overflow-hidden cursor-pointer transition-all duration-500 hover:scale-[1.01] rounded-[2rem]">
+            <div className="group relative bg-emerald-800 p-10 sm:p-12 overflow-hidden cursor-pointer transition-all duration-500 hover:scale-[1.01] rounded-[2rem]">
               <div className="absolute -top-20 -right-20 w-80 h-80 bg-sky-400/8 rounded-full blur-[80px] pointer-events-none transition-colors duration-700 group-hover:bg-sky-400/15" />
               <div className="absolute inset-0 opacity-[0.04] rounded-[2rem]" style={{ backgroundImage: 'linear-gradient(var(--sky-400) 0.5px, transparent 0.5px), linear-gradient(90deg, var(--sky-400) 0.5px, transparent 0.5px)', backgroundSize: '30px 30px' }} />
               <span className="absolute -bottom-8 -right-4 text-[160px] font-black leading-none select-none" style={{ color: 'var(--sky-400)', opacity: 0.05 }}>02</span>
@@ -321,7 +321,7 @@ export function HowItWorksPage() {
             {/* ── Bloc 3 : Encaissez + stat centrale ── */}
             <div className="md:col-span-2 group relative bg-surface-dark p-10 sm:p-12 overflow-hidden cursor-pointer transition-all duration-500 hover:scale-[1.005] rounded-[2rem]">
               <div className="absolute top-0 right-1/4 w-[500px] h-[300px] bg-emerald-500/6 rounded-full blur-[120px] pointer-events-none" />
-              <div className="absolute bottom-0 left-1/4 w-[400px] h-[250px] bg-primary-500/5 rounded-full blur-[100px] pointer-events-none" />
+              <div className="absolute bottom-0 left-1/4 w-[400px] h-[250px] bg-emerald-500/5 rounded-full blur-[100px] pointer-events-none" />
               <div className="absolute inset-0 opacity-[0.025]" style={{ backgroundImage: 'radial-gradient(rgba(255,255,255,1) 1px, transparent 1px)', backgroundSize: '20px 20px' }} />
               <span className="absolute -bottom-8 -right-4 text-[160px] font-black leading-none select-none" style={{ color: 'var(--emerald-500)', opacity: 0.04 }}>03</span>
 
@@ -372,7 +372,7 @@ export function HowItWorksPage() {
       {/* ══ SÉQUESTRE ═══════════════════════════════════════════════════ */}
       <section id="sequestre" className="bg-background-card py-8 px-4 sm:px-6">
         <div className="max-w-7xl mx-auto">
-          <div className="relative bg-primary-800 overflow-hidden rounded-[3rem] py-20 px-8 sm:px-12 lg:px-16">
+          <div className="relative bg-emerald-800 overflow-hidden rounded-[3rem] py-20 px-8 sm:px-12 lg:px-16">
             <div className="absolute top-0 left-1/4 w-[500px] h-[300px] bg-amber-400/5 rounded-full blur-[120px] pointer-events-none" />
             <div className="absolute bottom-0 right-1/4 w-[400px] h-[250px] bg-emerald-500/4 rounded-full blur-[100px] pointer-events-none" />
             <div className="absolute inset-0 opacity-[0.025]" style={{ backgroundImage: 'radial-gradient(rgba(255,255,255,1) 1px, transparent 1px)', backgroundSize: '20px 20px' }} />
@@ -425,10 +425,10 @@ export function HowItWorksPage() {
                   </div>
                 </div>
                 <div className="group relative bg-background-card/[0.02] border border-white/[0.06] rounded-2xl p-7 overflow-hidden hover:border-white/[0.10] transition-all duration-500">
-                  <div className="absolute -top-12 -left-12 w-40 h-40 bg-primary-400/6 rounded-full blur-[60px] pointer-events-none opacity-0 group-hover:opacity-100 transition-opacity duration-700" />
+                  <div className="absolute -top-12 -left-12 w-40 h-40 bg-emerald-400/6 rounded-full blur-[60px] pointer-events-none opacity-0 group-hover:opacity-100 transition-opacity duration-700" />
                   <div className="relative z-10">
-                    <div className="w-10 h-10 rounded-xl bg-primary-400/10 border border-primary-400/20 flex items-center justify-center mb-4">
-                      <Banknote className="w-5 h-5 text-primary-400" />
+                    <div className="w-10 h-10 rounded-xl bg-emerald-400/10 border border-emerald-400/20 flex items-center justify-center mb-4">
+                      <Banknote className="w-5 h-5 text-emerald-400" />
                     </div>
                     <h4 className="text-base font-black text-white mb-2">Pour le propriétaire</h4>
                     <p className="text-white/35 text-sm font-medium leading-relaxed">Dès que le locataire confirme son arrivée, le montant est libéré et viré sur votre compte Wave ou bancaire sous 48 h ouvrées.</p>
@@ -444,13 +444,13 @@ export function HowItWorksPage() {
       <section id="garanties" className="bg-neutral-50 py-28 px-6">
         <div className="max-w-7xl mx-auto">
           <div className="text-center mb-16">
-            <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full border border-primary-200 bg-primary-50 mb-5">
-              <ShieldCheck className="w-3.5 h-3.5 text-primary-500" />
-              <span className="text-[10px] font-black text-primary-700 uppercase tracking-[0.2em]">Nos engagements</span>
+            <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full border border-emerald-200 bg-emerald-50 mb-5">
+              <ShieldCheck className="w-3.5 h-3.5 text-emerald-500" />
+              <span className="text-[10px] font-black text-emerald-700 uppercase tracking-[0.2em]">Nos engagements</span>
             </div>
             <h2 className="text-4xl sm:text-5xl font-black text-foreground tracking-tight">
               La sécurité,{' '}
-              <span className="text-primary-500">à chaque étape</span>
+              <span className="text-emerald-500">à chaque étape</span>
             </h2>
           </div>
 
@@ -498,24 +498,24 @@ export function HowItWorksPage() {
         <div className="max-w-7xl mx-auto">
           <div className="grid lg:grid-cols-[38%_1fr] gap-12 lg:gap-20 items-start">
             <div className="lg:sticky lg:top-32">
-              <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full border border-primary-200 bg-primary-50 mb-6">
-                <HelpCircle className="w-3.5 h-3.5 text-primary-500" />
-                <span className="text-[10px] font-black text-primary-600 uppercase tracking-[0.2em]">Questions fréquentes</span>
+              <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full border border-emerald-200 bg-emerald-50 mb-6">
+                <HelpCircle className="w-3.5 h-3.5 text-emerald-500" />
+                <span className="text-[10px] font-black text-emerald-600 uppercase tracking-[0.2em]">Questions fréquentes</span>
               </div>
               <h2 className="text-4xl sm:text-5xl font-black text-foreground tracking-tight leading-[1.1] mb-4">
                 Vous avez des{' '}
-                <span className="text-primary-500">questions ?</span>
+                <span className="text-emerald-500">questions ?</span>
               </h2>
               <p className="text-foreground-muted text-sm font-medium leading-relaxed mb-10 max-w-sm">
                 Tout ce que vous devez savoir sur le fonctionnement d&apos;ImmoLoc. Sinon, notre support est là.
               </p>
-              <div className="relative bg-primary-800 rounded-[2rem] p-8 border border-white/5 overflow-hidden">
-                <div className="absolute -top-12 -right-12 w-40 h-40 bg-primary-500/10 rounded-full blur-[60px] pointer-events-none" />
+              <div className="relative bg-emerald-800 rounded-[2rem] p-8 border border-white/5 overflow-hidden">
+                <div className="absolute -top-12 -right-12 w-40 h-40 bg-emerald-500/10 rounded-full blur-[60px] pointer-events-none" />
                 <div className="relative z-10">
                   <p className="text-white font-black text-base mb-1.5">Besoin d&apos;aide directe ?</p>
                   <p className="text-white/30 text-xs font-medium mb-6 leading-relaxed">Notre équipe support est disponible 7j/7.</p>
                   <div className="flex flex-col sm:flex-row gap-3">
-                    <a href="https://wa.me/221338001234" className="inline-flex items-center justify-center gap-2 px-5 py-3 bg-primary-500 text-white text-xs font-black rounded-full hover:bg-primary-400 transition-all shadow-[0_0_20px_var(--primary-500)] hover:shadow-[0_0_30px_var(--primary-500)]">
+                    <a href="https://wa.me/221338001234" className="inline-flex items-center justify-center gap-2 px-5 py-3 bg-emerald-500 text-white text-xs font-black rounded-full hover:bg-emerald-400 transition-all shadow-[0_0_20px_var(--emerald-500)] hover:shadow-[0_0_30px_var(--emerald-500)]">
                       <MessageCircle className="w-3.5 h-3.5" /> WhatsApp
                     </a>
                     <a href={`mailto:support@${BRAND.domain}`} className="inline-flex items-center justify-center gap-2 px-5 py-3 bg-background-card/[0.04] border border-white/[0.08] text-white/70 text-xs font-black rounded-full hover:bg-background-card/[0.08] transition-all">
@@ -532,7 +532,7 @@ export function HowItWorksPage() {
                 return (
                   <div key={i} className={`rounded-[1.5rem] border overflow-hidden transition-all duration-500 ${isOpen ? 'bg-surface-dark border-white/[0.08] shadow-[0_16px_48px_rgba(0,0,0,0.1)]' : 'bg-background-card border-neutral-100 hover:border-border hover:shadow-sm'}`}>
                     <button onClick={() => setOpenFaq(isOpen ? -1 : i)} className="w-full flex items-center gap-4 px-7 py-6 text-left">
-                      <span className={`w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 text-xs font-black transition-colors duration-300 ${isOpen ? 'bg-primary-500 text-white' : 'bg-neutral-100 text-foreground-muted'}`}>
+                      <span className={`w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 text-xs font-black transition-colors duration-300 ${isOpen ? 'bg-emerald-500 text-white' : 'bg-neutral-100 text-foreground-muted'}`}>
                         {String(i + 1).padStart(2, '0')}
                       </span>
                       <span className={`flex-1 text-sm font-black leading-snug transition-colors duration-300 ${isOpen ? 'text-white' : 'text-neutral-800'}`}>{faq.q}</span>
@@ -543,7 +543,7 @@ export function HowItWorksPage() {
                     <div className={`grid transition-all duration-500 ease-in-out ${isOpen ? 'grid-rows-[1fr] opacity-100' : 'grid-rows-[0fr] opacity-0'}`}>
                       <div className="overflow-hidden">
                         <div className="px-7 pb-7 pl-[4.75rem]">
-                          <div className="w-10 h-px bg-primary-500/20 mb-4" />
+                          <div className="w-10 h-px bg-emerald-500/20 mb-4" />
                           <p className="text-white/40 text-sm font-medium leading-relaxed">{faq.a}</p>
                         </div>
                       </div>
@@ -559,24 +559,24 @@ export function HowItWorksPage() {
       {/* ══ CTA FINAL ══════════════════════════════════════════════════ */}
       <section className="bg-background-card py-8 px-4 sm:px-6 pb-24">
         <div className="max-w-7xl mx-auto">
-          <div className="relative bg-primary-800 overflow-hidden rounded-[3rem]">
-            <div className="absolute top-0 right-1/4 w-[500px] h-[350px] bg-primary-500/8 rounded-full blur-[120px] pointer-events-none" />
+          <div className="relative bg-emerald-800 overflow-hidden rounded-[3rem]">
+            <div className="absolute top-0 right-1/4 w-[500px] h-[350px] bg-emerald-500/8 rounded-full blur-[120px] pointer-events-none" />
             <div className="absolute bottom-0 left-1/3 w-[400px] h-[300px] bg-accent-400/5 rounded-full blur-[100px] pointer-events-none" />
             <div className="absolute inset-0 opacity-[0.025]" style={{ backgroundImage: 'radial-gradient(rgba(255,255,255,1) 1px, transparent 1px)', backgroundSize: '20px 20px' }} />
 
             <div className="relative z-10 grid lg:grid-cols-2 divide-y lg:divide-y-0 lg:divide-x divide-white/[0.04]">
               <div className="p-12 sm:p-16 flex flex-col gap-6">
                 <div className="inline-flex w-fit items-center gap-2 px-4 py-2 rounded-full bg-black/40 backdrop-blur-xl border border-white/10">
-                  <Search className="w-3.5 h-3.5 text-primary-400" />
-                  <span className="text-[10px] font-black text-primary-300 uppercase tracking-[0.2em]">Locataires</span>
+                  <Search className="w-3.5 h-3.5 text-emerald-400" />
+                  <span className="text-[10px] font-black text-emerald-300 uppercase tracking-[0.2em]">Locataires</span>
                 </div>
                 <h3 className="text-3xl sm:text-4xl font-black text-white leading-[1.1] tracking-tight">
                   Trouvez votre logement{' '}
-                  <span className="text-primary-400">dès maintenant</span>
+                  <span className="text-emerald-400">dès maintenant</span>
                 </h3>
                 <p className="text-white/30 text-sm font-medium leading-relaxed max-w-sm">Des centaines de logements vérifiés à Dakar, Saly, Saint-Louis et dans tout le Sénégal.</p>
                 <div className="flex flex-wrap gap-3">
-                  <Link href="/logements" className="inline-flex items-center gap-2.5 px-7 py-3.5 bg-primary-500 text-white text-sm font-black rounded-full hover:bg-primary-400 transition-all duration-300 shadow-[0_0_25px_var(--primary-500)] hover:shadow-[0_0_40px_var(--primary-500)] hover:scale-[1.02]">
+                  <Link href="/logements" className="inline-flex items-center gap-2.5 px-7 py-3.5 bg-emerald-500 text-white text-sm font-black rounded-full hover:bg-emerald-400 transition-all duration-300 shadow-[0_0_25px_var(--emerald-500)] hover:shadow-[0_0_40px_var(--emerald-500)] hover:scale-[1.02]">
                     Explorer les logements <ArrowRight className="w-4 h-4" />
                   </Link>
                 </div>

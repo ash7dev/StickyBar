@@ -62,7 +62,7 @@ export function StepSelfie({ onDone }: Props) {
       <div className="space-y-4 sm:space-y-6">
         {/* En-tête */}
         <div className="text-center space-y-2">
-          <div className="w-16 h-16 sm:w-20 sm:h-20 mx-auto rounded-2xl bg-gradient-to-br from-primary-600 to-primary-700 flex items-center justify-center shadow-lg shadow-primary-500/30">
+          <div className="w-16 h-16 sm:w-20 sm:h-20 mx-auto rounded-2xl bg-gradient-to-br from-emerald-600 to-emerald-700 flex items-center justify-center shadow-lg shadow-emerald-500/30">
             <Camera className="w-8 h-8 sm:w-10 sm:h-10 text-white" strokeWidth={2.5} />
           </div>
           <h3 className="text-xl sm:text-2xl font-black text-foreground">
@@ -74,16 +74,16 @@ export function StepSelfie({ onDone }: Props) {
         </div>
 
         {/* Mode démo - Zone de simulation */}
-        <div className="bg-gradient-to-br from-primary-50 to-primary-100/50 border-2 border-primary-200 rounded-3xl p-6 sm:p-8 space-y-4">
+        <div className="bg-gradient-to-br from-emerald-50 to-emerald-100/50 border-2 border-emerald-200 rounded-3xl p-6 sm:p-8 space-y-4">
           <div className="flex items-center gap-3 justify-center">
-            <Sparkles className="w-5 h-5 text-primary-600" />
-            <p className="text-sm font-black text-primary-900 uppercase tracking-wide">
+            <Sparkles className="w-5 h-5 text-emerald-600" />
+            <p className="text-sm font-black text-emerald-900 uppercase tracking-wide">
               Mode Simulation
             </p>
           </div>
 
           {/* Illustration selfie */}
-          <div className="relative aspect-[3/4] max-w-[280px] sm:max-w-xs mx-auto bg-gradient-to-br from-primary-600 to-primary-700 rounded-2xl overflow-hidden shadow-xl">
+          <div className="relative aspect-[3/4] max-w-[280px] sm:max-w-xs mx-auto bg-gradient-to-br from-emerald-600 to-emerald-700 rounded-2xl overflow-hidden shadow-xl">
             <div className="absolute inset-0 flex flex-col items-center justify-center p-6 text-center">
               <div className="w-24 h-24 sm:w-32 sm:h-32 rounded-full border-4 border-white/30 border-dashed mb-4 flex items-center justify-center">
                 <Camera className="w-12 h-12 sm:w-16 sm:h-16 text-white/50" />
@@ -110,25 +110,25 @@ export function StepSelfie({ onDone }: Props) {
 
           {/* Instructions */}
           <div className="bg-white/80 backdrop-blur-sm rounded-xl p-4 space-y-2">
-            <p className="text-xs font-black text-primary-900 uppercase tracking-wide flex items-center gap-2">
+            <p className="text-xs font-black text-emerald-900 uppercase tracking-wide flex items-center gap-2">
               <CheckCircle2 className="w-4 h-4" />
               Instructions
             </p>
-            <ul className="text-[11px] sm:text-xs text-primary-700 space-y-1.5 leading-relaxed">
+            <ul className="text-[11px] sm:text-xs text-emerald-700 space-y-1.5 leading-relaxed">
               <li className="flex items-start gap-2">
-                <span className="text-primary-500 font-bold">•</span>
+                <span className="text-emerald-500 font-bold">•</span>
                 <span>Positionnez votre visage dans le cercle</span>
               </li>
               <li className="flex items-start gap-2">
-                <span className="text-primary-500 font-bold">•</span>
+                <span className="text-emerald-500 font-bold">•</span>
                 <span>Assurez-vous d&apos;avoir un bon éclairage</span>
               </li>
               <li className="flex items-start gap-2">
-                <span className="text-primary-500 font-bold">•</span>
+                <span className="text-emerald-500 font-bold">•</span>
                 <span>Retirez lunettes, chapeau ou masque</span>
               </li>
               <li className="flex items-start gap-2">
-                <span className="text-primary-500 font-bold">•</span>
+                <span className="text-emerald-500 font-bold">•</span>
                 <span>Regardez directement la caméra</span>
               </li>
             </ul>
@@ -155,7 +155,7 @@ export function StepSelfie({ onDone }: Props) {
         <button
           onClick={handleDemoValidation}
           disabled={loading}
-          className="w-full bg-gradient-to-r from-primary-600 to-primary-700 hover:from-primary-700 hover:to-primary-800 disabled:opacity-50 disabled:cursor-not-allowed text-white text-sm sm:text-base font-black rounded-2xl py-4 sm:py-5 transition-all duration-200 active:scale-[0.98] shadow-xl shadow-primary-500/30 flex items-center justify-center gap-2.5"
+          className="w-full bg-gradient-to-r from-emerald-600 to-emerald-700 hover:from-emerald-700 hover:to-emerald-800 disabled:opacity-50 disabled:cursor-not-allowed text-white text-sm sm:text-base font-black rounded-2xl py-4 sm:py-5 transition-all duration-200 active:scale-[0.98] shadow-xl shadow-emerald-500/30 flex items-center justify-center gap-2.5"
         >
           {loading ? (
             <>

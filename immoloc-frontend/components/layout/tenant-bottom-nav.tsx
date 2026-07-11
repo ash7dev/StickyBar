@@ -40,8 +40,8 @@ export function TenantBottomNav() {
               href={item.href}
               className="flex-1 flex flex-col items-center justify-center gap-1 py-3 transition-colors"
             >
-              <item.icon className={cn('h-5 w-5', active ? 'text-primary-700' : 'text-foreground-muted')} />
-              <span className={cn('text-[10px] font-bold tracking-tight', active ? 'text-primary-700' : 'text-foreground-muted')}>
+              <item.icon className={cn('h-5 w-5', active ? 'text-emerald-700' : 'text-foreground-muted')} />
+              <span className={cn('text-[10px] font-bold tracking-tight', active ? 'text-emerald-700' : 'text-foreground-muted')}>
                 {item.label}
               </span>
             </Link>

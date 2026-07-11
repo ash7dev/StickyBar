@@ -20,8 +20,8 @@ export function WalletSnapshot({ available, pending, processing }: Props) {
     <div className="bg-[#0a0a0a] rounded-2xl p-6 border border-white/[0.06] relative overflow-hidden group h-full min-h-[420px] flex flex-col hover:shadow-2xl hover:shadow-black/30 hover:-translate-y-1 transition-all duration-500">
 
       {/* ── Ambient glows ───────────────────────────────────────── */}
-      <div className="absolute -top-20 -right-20 w-56 h-56 bg-primary-500/8 rounded-full blur-[80px] group-hover:bg-primary-500/12 transition-all duration-700 pointer-events-none" />
-      <div className="absolute -bottom-16 -left-16 w-40 h-40 bg-primary-400/5 rounded-full blur-[60px] pointer-events-none" />
+      <div className="absolute -top-20 -right-20 w-56 h-56 bg-emerald-500/8 rounded-full blur-[80px] group-hover:bg-emerald-500/12 transition-all duration-700 pointer-events-none" />
+      <div className="absolute -bottom-16 -left-16 w-40 h-40 bg-emerald-400/5 rounded-full blur-[60px] pointer-events-none" />
 
       {/* ── Grid pattern overlay ────────────────────────────────── */}
       <div
@@ -38,7 +38,7 @@ export function WalletSnapshot({ available, pending, processing }: Props) {
         <div className="flex items-center justify-between mb-8">
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 rounded-2xl bg-background-card/[0.08] backdrop-blur-sm flex items-center justify-center border border-white/[0.08] group-hover:scale-110 transition-transform duration-500">
-              <Wallet className="w-[18px] h-[18px] text-primary-400" />
+              <Wallet className="w-[18px] h-[18px] text-emerald-400" />
             </div>
             <div>
               <p className="text-[10px] font-bold text-white/40 uppercase tracking-[0.12em]">Mon portefeuille</p>
@@ -70,11 +70,11 @@ export function WalletSnapshot({ available, pending, processing }: Props) {
         <div className="mb-6">
           <div className="flex items-center justify-between mb-2">
             <span className="text-[10px] font-bold text-white/30 uppercase tracking-wider">Répartition</span>
-            <span className="text-[10px] font-bold text-primary-400">{availPct}% disponible</span>
+            <span className="text-[10px] font-bold text-emerald-400">{availPct}% disponible</span>
           </div>
           <div className="h-1.5 rounded-full bg-background-card/[0.06] overflow-hidden">
             <div
-              className="h-full rounded-full bg-gradient-to-r from-primary-400 to-primary-500 transition-all duration-1000 ease-out"
+              className="h-full rounded-full bg-gradient-to-r from-emerald-400 to-emerald-500 transition-all duration-1000 ease-out"
               style={{ width: `${availPct}%` }}
             />
           </div>
@@ -94,8 +94,8 @@ export function WalletSnapshot({ available, pending, processing }: Props) {
           </div>
           <div className="p-4 rounded-xl bg-background-card/[0.04] border border-white/[0.06] hover:bg-background-card/[0.06] transition-colors">
             <div className="flex items-center gap-2 mb-2.5">
-              <div className="w-7 h-7 rounded-lg bg-primary-500/10 flex items-center justify-center">
-                <Landmark className="w-3.5 h-3.5 text-primary-400" />
+              <div className="w-7 h-7 rounded-lg bg-emerald-500/10 flex items-center justify-center">
+                <Landmark className="w-3.5 h-3.5 text-emerald-400" />
               </div>
               <span className="text-[10px] font-bold text-white/40 uppercase">Traitement</span>
             </div>
@@ -109,11 +109,11 @@ export function WalletSnapshot({ available, pending, processing }: Props) {
         <Link
           href="/dashboard/wallet"
           className="w-full flex items-center justify-center gap-2.5 py-3.5 rounded-xl
-                     bg-gradient-to-r from-primary-500 to-primary-600
+                     bg-gradient-to-r from-emerald-500 to-emerald-600
                      text-white text-sm font-bold
-                     shadow-lg shadow-primary-500/20
-                     hover:shadow-xl hover:shadow-primary-500/30
-                     hover:from-primary-400 hover:to-primary-500
+                     shadow-lg shadow-emerald-500/20
+                     hover:shadow-xl hover:shadow-emerald-500/30
+                     hover:from-emerald-400 hover:to-emerald-500
                      active:scale-[0.98]
                      transition-all duration-300"
         >

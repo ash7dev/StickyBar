@@ -98,7 +98,7 @@ export function DesktopHeader({ onMenuToggle }: DesktopHeaderProps) {
                 <div className="absolute right-0 top-full mt-2 w-80 rounded-2xl border border-border bg-background-card shadow-xl overflow-hidden z-50 animate-in fade-in slide-in-from-top-2 duration-200">
                   <div className="px-4 py-3 border-b border-border flex justify-between items-center">
                     <p className="text-sm font-bold text-foreground">Notifications</p>
-                    <button className="text-xs font-semibold text-primary-600 hover:text-primary-700 transition-colors">
+                    <button className="text-xs font-semibold text-emerald-600 hover:text-emerald-700 transition-colors">
                       Tout marquer lu
                     </button>
                   </div>
@@ -117,7 +117,7 @@ export function DesktopHeader({ onMenuToggle }: DesktopHeaderProps) {
             {/* Bouton Créer une annonce */}
             <Link
               href="/dashboard/annonces/nouvelle"
-              className="flex items-center gap-2 h-10 px-4 rounded-xl bg-primary-600 hover:bg-primary-700 text-white text-sm font-semibold shadow-sm transition-all active:scale-95"
+              className="flex items-center gap-2 h-10 px-4 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-sm font-semibold shadow-sm transition-all active:scale-95"
             >
               <Plus className="h-4 w-4" />
               <span>Créer une annonce</span>
@@ -129,7 +129,7 @@ export function DesktopHeader({ onMenuToggle }: DesktopHeaderProps) {
                 onClick={() => setDropdownOpen((v) => !v)}
                 className="flex items-center h-10 gap-2 pl-1 pr-3 rounded-full bg-background-alt hover:bg-neutral-200 border border-border transition-all"
               >
-                <div className="w-8 h-8 rounded-full bg-primary-600 flex items-center justify-center text-white text-sm font-bold">
+                <div className="w-8 h-8 rounded-full bg-emerald-600 flex items-center justify-center text-white text-sm font-bold">
                   {initials}
                 </div>
                 <ChevronDown className={cn('h-4 w-4 text-foreground-muted transition-transform', dropdownOpen && 'rotate-180')} />

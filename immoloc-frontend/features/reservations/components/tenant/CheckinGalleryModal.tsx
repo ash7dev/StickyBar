@@ -267,8 +267,8 @@ export function CheckinGalleryModal({ photos, onClose }: Props) {
           <div className="shrink-0 px-6 pt-6 pb-5 border-b border-white/8">
             <div className="flex items-start justify-between gap-4">
               <div className="flex items-center gap-3.5">
-                <div className="w-11 h-11 rounded-2xl bg-primary-500/15 border border-primary-400/25 flex items-center justify-center shrink-0">
-                  <Eye className="w-5 h-5 text-primary-400" />
+                <div className="w-11 h-11 rounded-2xl bg-emerald-500/15 border border-emerald-400/25 flex items-center justify-center shrink-0">
+                  <Eye className="w-5 h-5 text-emerald-400" />
                 </div>
                 <div>
                   <h2 className="text-sm font-black text-white leading-tight">
@@ -288,13 +288,13 @@ export function CheckinGalleryModal({ photos, onClose }: Props) {
             </div>
 
             {/* Bandeau de vérification */}
-            <div className="mt-4 flex items-start gap-3 bg-primary-500/10 border border-primary-400/20 rounded-2xl px-4 py-3.5">
-              <ShieldCheck className="w-4 h-4 text-primary-400 shrink-0 mt-0.5" />
+            <div className="mt-4 flex items-start gap-3 bg-emerald-500/10 border border-emerald-400/20 rounded-2xl px-4 py-3.5">
+              <ShieldCheck className="w-4 h-4 text-emerald-400 shrink-0 mt-0.5" />
               <div>
-                <p className="text-xs font-bold text-primary-200 leading-snug">
+                <p className="text-xs font-bold text-emerald-200 leading-snug">
                   Vérifiez chaque pièce attentivement
                 </p>
-                <p className="text-[11px] text-primary-400/80 mt-0.5 leading-relaxed">
+                <p className="text-[11px] text-emerald-400/80 mt-0.5 leading-relaxed">
                   Ces photos font foi en cas de litige. Si vous constatez une non-conformité,
                   refusez le check-in depuis l&apos;écran précédent.
                 </p>

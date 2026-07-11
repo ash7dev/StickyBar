@@ -29,7 +29,7 @@ function SummaryRow({ icon: Icon, label, value, accent = false, iconBg }: {
       {Icon && (
         <div className={cn(
           'w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0 transition-colors',
-          iconBg ?? 'bg-white/50 text-neutral-400 group-hover:bg-primary-50 group-hover:text-primary-500'
+          iconBg ?? 'bg-white/50 text-neutral-400 group-hover:bg-emerald-50 group-hover:text-emerald-500'
         )}>
           <Icon className="w-5 h-5" />
         </div>
@@ -38,7 +38,7 @@ function SummaryRow({ icon: Icon, label, value, accent = false, iconBg }: {
         <p className="text-[10px] font-black uppercase tracking-widest text-neutral-400 mb-0.5">{label}</p>
         <p className={cn(
           'text-[13px] font-bold truncate leading-tight', 
-          accent ? 'text-primary-600' : 'text-neutral-900'
+          accent ? 'text-emerald-600' : 'text-neutral-900'
         )}>
           {value}
         </p>
@@ -56,7 +56,7 @@ export function StepConfirmation({ onSubmit, isSubmitting, submitRef }: Props) {
     <div className="space-y-6 animate-in fade-in zoom-in-95 duration-700">
 
       {/* ── Recap Card (Glass) ──────────────────────────────── */}
-      <div className="bg-white/60 backdrop-blur-xl rounded-[32px] border border-white shadow-2xl shadow-primary-500/5 overflow-hidden">
+      <div className="bg-white/60 backdrop-blur-xl rounded-[32px] border border-white shadow-2xl shadow-emerald-500/5 overflow-hidden">
         
         {/* Hero Section */}
         {principalPhoto ? (
@@ -70,14 +70,14 @@ export function StepConfirmation({ onSubmit, isSubmitting, submitRef }: Props) {
             
             <div className="absolute top-4 right-4">
               <div className="px-3 py-1.5 rounded-xl bg-white/20 backdrop-blur-md border border-white/20 text-white text-[10px] font-black uppercase tracking-widest flex items-center gap-2">
-                <Sparkles className="w-3 h-3 text-primary-300" />
+                <Sparkles className="w-3 h-3 text-emerald-300" />
                 Aperçu final
               </div>
             </div>
 
             <div className="absolute bottom-6 left-6 right-6">
               <div className="flex items-center gap-2 mb-2">
-                <div className="px-2 py-0.5 rounded-lg bg-primary-500 text-white text-[9px] font-black uppercase tracking-wider">
+                <div className="px-2 py-0.5 rounded-lg bg-emerald-500 text-white text-[9px] font-black uppercase tracking-wider">
                   {bien.sousType ?? TYPE_LABELS[bien.type ?? ''] ?? 'Bien'}
                 </div>
                 <div className="flex items-center gap-1 text-white/80 text-[10px] font-bold">
@@ -137,12 +137,12 @@ export function StepConfirmation({ onSubmit, isSubmitting, submitRef }: Props) {
 
       {/* ── Status Banner (Glass) ─────────────────────────── */}
       <div className="relative group">
-        <div className="absolute inset-0 bg-primary-500/10 blur-xl opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
+        <div className="absolute inset-0 bg-emerald-500/10 blur-xl opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
         <div className="relative flex gap-4 p-5 bg-white/40 backdrop-blur-md rounded-3xl border border-white shadow-sm overflow-hidden">
           <div className="absolute top-0 right-0 p-1">
-             <div className="w-1.5 h-1.5 rounded-full bg-primary-500 animate-ping" />
+             <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-ping" />
           </div>
-          <div className="w-12 h-12 rounded-2xl bg-primary-500 text-white flex items-center justify-center flex-shrink-0 shadow-lg shadow-primary-500/20">
+          <div className="w-12 h-12 rounded-2xl bg-emerald-500 text-white flex items-center justify-center flex-shrink-0 shadow-lg shadow-emerald-500/20">
             <ShieldCheck className="w-6 h-6" />
           </div>
           <div>
@@ -164,14 +164,14 @@ export function StepConfirmation({ onSubmit, isSubmitting, submitRef }: Props) {
           'relative w-full flex items-center justify-center gap-3 py-5 rounded-[24px] text-white font-black text-base transition-all duration-500 overflow-hidden group',
           isSubmitting
             ? 'bg-neutral-200 cursor-not-allowed text-neutral-400'
-            : 'bg-primary-500 hover:bg-primary-600 shadow-[0_12px_40px_rgba(77,150,255,0.3)] hover:shadow-[0_15px_50px_rgba(77,150,255,0.4)] hover:-translate-y-1 active:scale-[0.98]',
+            : 'bg-emerald-500 hover:bg-emerald-600 shadow-[0_12px_40px_rgba(77,150,255,0.3)] hover:shadow-[0_15px_50px_rgba(77,150,255,0.4)] hover:-translate-y-1 active:scale-[0.98]',
         )}
       >
         <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/10 to-transparent -translate-x-full group-hover:animate-[shimmer_2s_infinite]" />
         
         {isSubmitting ? (
           <>
-            <span className="w-5 h-5 rounded-full border-3 border-neutral-300 border-t-primary-500 animate-spin" />
+            <span className="w-5 h-5 rounded-full border-3 border-neutral-300 border-t-emerald-500 animate-spin" />
             <span>Enregistrement...</span>
           </>
         ) : (

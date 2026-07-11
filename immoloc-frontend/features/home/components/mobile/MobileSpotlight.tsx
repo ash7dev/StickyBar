@@ -114,7 +114,7 @@ export function MobileSpotlight() {
                 {photo ? (
                   <Image src={photo} alt={listing.titre} fill className="object-cover" sizes="100vw" />
                 ) : (
-                  <div className="absolute inset-0 bg-primary-950 flex items-center justify-center">
+                  <div className="absolute inset-0 bg-emerald-950 flex items-center justify-center">
                     <Building2 className="w-10 h-10 text-white/20" />
                   </div>
                 )}
@@ -162,7 +162,7 @@ export function MobileSpotlight() {
                       <span className="font-sans text-xl font-black text-white tracking-tight tabular-nums">{price}</span>
                       <span className="text-[10px] font-semibold text-white/55">FCFA · nuit</span>
                     </div>
-                    <div className="flex items-center gap-1.5 px-4 py-2.5 rounded-xl text-xs font-bold text-background-card bg-primary-600 hover:bg-primary-700 shadow-lg shadow-primary-600/30 transition-colors">
+                    <div className="flex items-center gap-1.5 px-4 py-2.5 rounded-xl text-xs font-bold text-background-card bg-emerald-600 hover:bg-emerald-700 shadow-lg shadow-emerald-600/30 transition-colors">
                       Réserver
                       <ArrowRight className="w-3.5 h-3.5" />
                     </div>

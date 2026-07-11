@@ -198,7 +198,7 @@ export function StepEquipements({ onNext, submitRef }: Props) {
                         className={cn(
                           'flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold border transition-all',
                           active
-                            ? 'bg-primary-500 border-primary-500 text-white shadow-sm shadow-primary-500/20'
+                            ? 'bg-emerald-500 border-emerald-500 text-white shadow-sm shadow-emerald-500/20'
                             : 'bg-neutral-50 border-neutral-200 text-neutral-600 hover:bg-white hover:border-neutral-300',
                         )}>
                         {active && <Check className="w-3 h-3" />}

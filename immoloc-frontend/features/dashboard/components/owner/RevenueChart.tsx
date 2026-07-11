@@ -42,8 +42,8 @@ function PeakyChart({ data }: { data: number[] }) {
     <svg viewBox={`0 0 ${W} ${H}`} className="w-full h-48 overflow-visible" preserveAspectRatio="none">
       <defs>
         <linearGradient id="peakyGrad" x1="0" y1="0" x2="0" y2="1">
-          <stop offset="0%" stopColor="var(--primary-500)" stopOpacity="0.2" />
-          <stop offset="100%" stopColor="var(--primary-500)" stopOpacity="0" />
+          <stop offset="0%" stopColor="var(--emerald-500)" stopOpacity="0.2" />
+          <stop offset="100%" stopColor="var(--emerald-500)" stopOpacity="0" />
         </linearGradient>
       </defs>
 
@@ -67,7 +67,7 @@ function PeakyChart({ data }: { data: number[] }) {
       <path
         d={linePath}
         fill="none"
-        stroke="var(--primary-500)"
+        stroke="var(--emerald-500)"
         strokeWidth="2.5"
         strokeLinejoin="round"
         strokeLinecap="round"
@@ -86,8 +86,8 @@ function PeakyChart({ data }: { data: number[] }) {
           cx={p.x}
           cy={p.y}
           r={i === points.length - 1 ? 4 : 2}
-          fill={i === points.length - 1 ? 'var(--primary-500)' : 'white'}
-          stroke="var(--primary-500)"
+          fill={i === points.length - 1 ? 'var(--emerald-500)' : 'white'}
+          stroke="var(--emerald-500)"
           strokeWidth="2"
           className="transition-all duration-500"
           style={{ 
@@ -108,11 +108,11 @@ export function RevenueChart({ revenue, totalBookings }: Props) {
   const currentMonth = new Date().toLocaleDateString('fr-FR', { month: 'long' });
 
   return (
-    <div className="bg-background-card rounded-2xl border border-border/80 h-full min-h-[420px] flex flex-col overflow-hidden group hover:shadow-2xl hover:shadow-primary-500/5 hover:-translate-y-1 transition-all duration-500">
+    <div className="bg-background-card rounded-2xl border border-border/80 h-full min-h-[420px] flex flex-col overflow-hidden group hover:shadow-2xl hover:shadow-emerald-500/5 hover:-translate-y-1 transition-all duration-500">
       <div className="p-6 pb-0">
         <div className="flex items-center justify-between mb-6">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-2xl bg-primary-500 flex items-center justify-center shadow-lg shadow-primary-500/20 group-hover:rotate-6 transition-transform">
+            <div className="w-10 h-10 rounded-2xl bg-emerald-500 flex items-center justify-center shadow-lg shadow-emerald-500/20 group-hover:rotate-6 transition-transform">
               <Activity className="w-5 h-5 text-white" />
             </div>
             <div>
@@ -133,7 +133,7 @@ export function RevenueChart({ revenue, totalBookings }: Props) {
         </div>
         
         <div className="flex items-center gap-2 mb-6">
-          <div className="flex items-center gap-1 text-primary-500 font-black text-[11px] bg-primary-50 px-2 py-0.5 rounded-full">
+          <div className="flex items-center gap-1 text-emerald-500 font-black text-[11px] bg-emerald-50 px-2 py-0.5 rounded-full">
             <TrendingUp className="w-3 h-3" />
             +12.4%
           </div>
@@ -153,7 +153,7 @@ export function RevenueChart({ revenue, totalBookings }: Props) {
               key={`${m}-${i}`}
               className={`text-[10px] font-semibold ${
                 i === arr.length - 1
-                  ? 'text-primary-500 font-bold'
+                  ? 'text-emerald-500 font-bold'
                   : 'text-neutral-300'
               }`}
             >

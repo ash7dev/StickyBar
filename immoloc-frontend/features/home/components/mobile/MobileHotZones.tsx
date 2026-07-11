@@ -122,7 +122,7 @@ export function MobileHotZones() {
   return (
     <section className="space-y-3">
       <div className="px-4">
-        <p className="text-[8px] font-black uppercase tracking-[0.3em] text-primary-600 mb-0.5">
+        <p className="text-[8px] font-black uppercase tracking-[0.3em] text-emerald-600 mb-0.5">
           Où séjourner
         </p>
         <h2 className="text-[15px] font-black text-foreground leading-none">

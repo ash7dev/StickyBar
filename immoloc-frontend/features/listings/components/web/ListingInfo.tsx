@@ -37,19 +37,19 @@ const CATEGORIE_LABELS: Record<string, string> = {
 };
 
 const CATEGORIE_COLORS: Record<string, { bg: string; border: string; text: string }> = {
-  CONFORT:       { bg: 'bg-primary-50',  border: 'border-primary-100',  text: 'text-primary-500'  },
+  CONFORT:       { bg: 'bg-emerald-50',  border: 'border-emerald-100',  text: 'text-emerald-500'  },
   CUISINE:       { bg: 'bg-gold-50',     border: 'border-gold-100',     text: 'text-gold-500'     },
-  CONNECTIVITE:  { bg: 'bg-primary-50',  border: 'border-primary-100',  text: 'text-primary-500'  },
-  SECURITE:      { bg: 'bg-primary-50',  border: 'border-primary-100',  text: 'text-primary-500'  },
-  EXTERIEUR:     { bg: 'bg-primary-50',  border: 'border-primary-100',  text: 'text-primary-600'    },
+  CONNECTIVITE:  { bg: 'bg-emerald-50',  border: 'border-emerald-100',  text: 'text-emerald-500'  },
+  SECURITE:      { bg: 'bg-emerald-50',  border: 'border-emerald-100',  text: 'text-emerald-500'  },
+  EXTERIEUR:     { bg: 'bg-emerald-50',  border: 'border-emerald-100',  text: 'text-emerald-600'    },
   ACCESSIBILITE: { bg: 'bg-accent-50',   border: 'border-accent-100',   text: 'text-accent-500'    },
 };
 
 function SectionTitle({ icon: Icon, label }: { icon: React.ElementType; label: string }) {
   return (
     <div className="flex items-center gap-2 md:gap-3 mb-4 md:mb-6">
-      <div className="w-7 h-7 md:w-8 md:h-8 rounded-xl bg-primary-50 border border-primary-200 flex items-center justify-center flex-shrink-0">
-        <Icon className="w-3.5 h-3.5 md:w-4 md:h-4 text-primary-500" />
+      <div className="w-7 h-7 md:w-8 md:h-8 rounded-xl bg-emerald-50 border border-emerald-200 flex items-center justify-center flex-shrink-0">
+        <Icon className="w-3.5 h-3.5 md:w-4 md:h-4 text-emerald-500" />
       </div>
       <h2 className="text-xs md:text-sm font-black text-foreground uppercase tracking-wider">{label}</h2>
       <div className="flex-1 h-px bg-border" />
@@ -74,18 +74,18 @@ function NightTierBar({ tier, isBase, maxPrix }: { tier: TarifNuit; isBase?: boo
   const saving = maxPrix > 0 && !isBase ? Math.round(((maxPrix - tier.prix) / maxPrix) * 100) : 0;
 
   const containerClass = isBase
-    ? 'bg-gradient-to-r from-primary-50 to-background-card border-primary-200 shadow-[0_4px_20px_rgba(20,101,76,0.08)]'
+    ? 'bg-gradient-to-r from-emerald-50 to-background-card border-emerald-200 shadow-[0_4px_20px_rgba(20,101,76,0.08)]'
     : 'bg-background-card border-border hover:border-border-hover hover:shadow-sm';
 
-  const iconBgClass = isBase ? 'bg-primary-100' : 'bg-background-alt';
-  const iconColorClass = isBase ? 'text-primary-500' : 'text-foreground-muted';
-  const labelColorClass = isBase ? 'text-primary-600' : 'text-foreground';
-  const priceColorClass = isBase ? 'text-primary-600' : 'text-foreground';
+  const iconBgClass = isBase ? 'bg-emerald-100' : 'bg-background-alt';
+  const iconColorClass = isBase ? 'text-emerald-500' : 'text-foreground-muted';
+  const labelColorClass = isBase ? 'text-emerald-600' : 'text-foreground';
+  const priceColorClass = isBase ? 'text-emerald-600' : 'text-foreground';
   const progressClass = isBase
-    ? 'bg-gradient-to-r from-primary-400 to-primary-500'
+    ? 'bg-gradient-to-r from-emerald-400 to-emerald-500'
     : saving > 15
-      ? 'bg-gradient-to-r from-primary-400 to-primary-500'
-      : 'bg-gradient-to-r from-primary-300 to-primary-400';
+      ? 'bg-gradient-to-r from-emerald-400 to-emerald-500'
+      : 'bg-gradient-to-r from-emerald-300 to-emerald-400';
 
   return (
     <div className={`relative p-3.5 md:p-4 rounded-xl md:rounded-2xl border transition-all duration-300 overflow-hidden ${containerClass}`}>
@@ -97,7 +97,7 @@ function NightTierBar({ tier, isBase, maxPrix }: { tier: TarifNuit; isBase?: boo
           <div>
             <span className={`text-sm md:text-base font-bold ${labelColorClass}`}>{label}</span>
             {isBase && (
-              <span className="ml-1.5 md:ml-2 text-[9px] md:text-[10px] font-black text-primary-600 uppercase tracking-wider bg-primary-100 px-2 py-0.5 rounded-md">TARIF DE BASE</span>
+              <span className="ml-1.5 md:ml-2 text-[9px] md:text-[10px] font-black text-emerald-600 uppercase tracking-wider bg-emerald-100 px-2 py-0.5 rounded-md">TARIF DE BASE</span>
             )}
           </div>
         </div>
@@ -110,7 +110,7 @@ function NightTierBar({ tier, isBase, maxPrix }: { tier: TarifNuit; isBase?: boo
           </div>
           <span className="text-[10px] md:text-xs font-medium text-foreground-muted">/ nuit</span>
           {saving > 0 && (
-            <p className="text-[10px] md:text-xs font-black text-primary-500 mt-0.5">-{saving}% d&apos;économie</p>
+            <p className="text-[10px] md:text-xs font-black text-emerald-500 mt-0.5">-{saving}% d&apos;économie</p>
           )}
         </div>
       </div>
@@ -137,14 +137,14 @@ function PersonTierBar({ tier, personnesBase, maxSupplement }: { tier: TarifPers
   const pct = maxSupplement > 0 && !isIncluded ? Math.round((tier.supplement / maxSupplement) * 100) : isBase || isIncluded ? 100 : 0;
 
   const containerClass = isBase
-    ? 'bg-gradient-to-r from-primary-50 to-background-card border-primary-200 shadow-[0_4px_20px_rgba(20,101,76,0.08)]'
+    ? 'bg-gradient-to-r from-emerald-50 to-background-card border-emerald-200 shadow-[0_4px_20px_rgba(20,101,76,0.08)]'
     : 'bg-background-card border-border hover:border-border-hover hover:shadow-sm';
 
-  const iconBgClass = isBase ? 'bg-primary-100' : 'bg-background-alt';
-  const iconColorClass = isBase ? 'text-primary-500' : 'text-foreground-muted';
-  const labelColorClass = isBase ? 'text-primary-600' : 'text-foreground';
+  const iconBgClass = isBase ? 'bg-emerald-100' : 'bg-background-alt';
+  const iconColorClass = isBase ? 'text-emerald-500' : 'text-foreground-muted';
+  const labelColorClass = isBase ? 'text-emerald-600' : 'text-foreground';
   const progressClass = isBase || isIncluded
-    ? 'bg-gradient-to-r from-primary-400 to-primary-500'
+    ? 'bg-gradient-to-r from-emerald-400 to-emerald-500'
     : 'bg-gradient-to-r from-accent-400 to-accent-500';
 
   return (
@@ -157,13 +157,13 @@ function PersonTierBar({ tier, personnesBase, maxSupplement }: { tier: TarifPers
           <div>
             <span className={`text-sm md:text-base font-bold ${labelColorClass}`}>{label}</span>
             {isBase && (
-              <span className="ml-1.5 md:ml-2 text-[9px] md:text-[10px] font-black text-primary-600 uppercase tracking-wider bg-primary-100 px-2 py-0.5 rounded-md">INCLUS</span>
+              <span className="ml-1.5 md:ml-2 text-[9px] md:text-[10px] font-black text-emerald-600 uppercase tracking-wider bg-emerald-100 px-2 py-0.5 rounded-md">INCLUS</span>
             )}
           </div>
         </div>
         <div className="text-right">
           {isIncluded || isBase ? (
-            <span className="text-sm md:text-base font-black text-primary-600 flex items-center gap-1">
+            <span className="text-sm md:text-base font-black text-emerald-600 flex items-center gap-1">
               <ShieldCheck className="w-3.5 h-3.5 md:w-4 md:h-4" /> Inclus
             </span>
           ) : (
@@ -205,7 +205,7 @@ export function ListingInfo({ listing }: Props) {
   );
 
   const specs = [
-    listing.nombreChambres   && { icon: BedDouble, label: `${listing.nombreChambres} chambre${listing.nombreChambres > 1 ? 's' : ''}`,               accent: 'primary'  },
+    listing.nombreChambres   && { icon: BedDouble, label: `${listing.nombreChambres} chambre${listing.nombreChambres > 1 ? 's' : ''}`,               accent: 'emerald'  },
     listing.nombreSallesBain && { icon: Bath,      label: `${listing.nombreSallesBain} salle${listing.nombreSallesBain > 1 ? 's' : ''} de bain`,      accent: 'violet'   },
     listing.nombrePieces     && { icon: Home,      label: `${listing.nombrePieces} pièce${listing.nombrePieces > 1 ? 's' : ''}`,                       accent: 'emerald'  },
     listing.surface          && { icon: Maximize2, label: `${listing.surface} m²`,                                                                      accent: 'sky'      },
@@ -213,10 +213,10 @@ export function ListingInfo({ listing }: Props) {
   ].filter(Boolean) as { icon: React.ElementType; label: string; accent: string }[];
 
   const accentMap: Record<string, { bg: string; border: string; text: string; iconBg: string; glow: string }> = {
-    primary: { bg: 'bg-primary-50',  border: 'border-primary-100',  text: 'text-primary-600',  iconBg: 'bg-background-card border-white', glow: 'hover:shadow-[0_4px_20px_rgba(20,101,76,0.12)]'  },
-    violet:  { bg: 'bg-primary-50',   border: 'border-primary-100',   text: 'text-primary-600',   iconBg: 'bg-background-card border-white', glow: 'hover:shadow-[0_4px_20px_rgba(20,101,76,0.12)]'  },
-    emerald: { bg: 'bg-primary-50',  border: 'border-primary-100',  text: 'text-primary-600',  iconBg: 'bg-background-card border-white', glow: 'hover:shadow-[0_4px_20px_rgba(20,101,76,0.12)]'  },
-    sky:     { bg: 'bg-primary-50',      border: 'border-primary-100',      text: 'text-primary-600',      iconBg: 'bg-background-card border-white', glow: 'hover:shadow-[0_4px_20px_rgba(20,101,76,0.12)]'  },
+    emerald: { bg: 'bg-emerald-50',  border: 'border-emerald-100',  text: 'text-emerald-600',  iconBg: 'bg-background-card border-white', glow: 'hover:shadow-[0_4px_20px_rgba(20,101,76,0.12)]'  },
+    violet:  { bg: 'bg-emerald-50',   border: 'border-emerald-100',   text: 'text-emerald-600',   iconBg: 'bg-background-card border-white', glow: 'hover:shadow-[0_4px_20px_rgba(20,101,76,0.12)]'  },
+    emerald: { bg: 'bg-emerald-50',  border: 'border-emerald-100',  text: 'text-emerald-600',  iconBg: 'bg-background-card border-white', glow: 'hover:shadow-[0_4px_20px_rgba(20,101,76,0.12)]'  },
+    sky:     { bg: 'bg-emerald-50',      border: 'border-emerald-100',      text: 'text-emerald-600',      iconBg: 'bg-background-card border-white', glow: 'hover:shadow-[0_4px_20px_rgba(20,101,76,0.12)]'  },
     accent:  { bg: 'bg-gold-50',    border: 'border-gold-100',    text: 'text-gold-600',    iconBg: 'bg-background-card border-white', glow: 'hover:shadow-[0_4px_20px_rgba(201,162,75,0.12)]'  },
   };
 
@@ -230,15 +230,15 @@ export function ListingInfo({ listing }: Props) {
           <span className="px-3.5 py-1.5 bg-neutral-900 text-white text-[10px] font-black uppercase tracking-[0.18em] rounded-lg">
             {listing.sousType ?? TYPE_LABELS[listing.type] ?? listing.type}
           </span>
-          <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-primary-50 border border-primary-100">
-            <MapPin className="w-3.5 h-3.5 text-primary-500" />
-            <span className="text-xs font-bold text-primary-700">
+          <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-emerald-50 border border-emerald-100">
+            <MapPin className="w-3.5 h-3.5 text-emerald-500" />
+            <span className="text-xs font-bold text-emerald-700">
               {listing.quartier ? `${listing.quartier}, ` : ''}{listing.ville}
             </span>
           </div>
-          <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-primary-50 border border-primary-100">
-            <ShieldCheck className="w-3.5 h-3.5 text-primary-500" />
-            <span className="text-xs font-bold text-primary-700">Annonce vérifiée</span>
+          <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-emerald-50 border border-emerald-100">
+            <ShieldCheck className="w-3.5 h-3.5 text-emerald-500" />
+            <span className="text-xs font-bold text-emerald-700">Annonce vérifiée</span>
           </div>
           {hasRating && (
             <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-amber-50 border border-amber-100">
@@ -261,7 +261,7 @@ export function ListingInfo({ listing }: Props) {
         {/* Prix + contraintes */}
         <div className="flex flex-wrap items-center gap-2.5">
           <div className="flex items-baseline gap-1.5">
-            <span className="text-3xl font-black text-primary-600">{fmt(listing.prixBase)}</span>
+            <span className="text-3xl font-black text-emerald-600">{fmt(listing.prixBase)}</span>
             <span className="text-sm font-bold text-neutral-400">FCFA&nbsp;/ nuit</span>
           </div>
           {listing.nuitesMinimum > 1 && (
@@ -270,7 +270,7 @@ export function ListingInfo({ listing }: Props) {
             </span>
           )}
           {listing.personnesBase && (
-            <span className="text-xs font-semibold text-primary-700 bg-primary-50 border border-primary-100 px-2.5 py-1 rounded-lg">
+            <span className="text-xs font-semibold text-emerald-700 bg-emerald-50 border border-emerald-100 px-2.5 py-1 rounded-lg">
               {listing.personnesBase} pers. incluse{listing.personnesBase > 1 ? 's' : ''}
             </span>
           )}
@@ -286,7 +286,7 @@ export function ListingInfo({ listing }: Props) {
       <div className="border-t border-border pt-6 md:pt-10">
         <SectionTitle icon={BookOpen} label="À propos de ce logement" />
         <div className="relative">
-          <div className="absolute left-0 top-1 bottom-1 w-0.5 bg-gradient-to-b from-primary-500/30 via-primary-500/10 to-transparent rounded-full" />
+          <div className="absolute left-0 top-1 bottom-1 w-0.5 bg-gradient-to-b from-emerald-500/30 via-emerald-500/10 to-transparent rounded-full" />
           <p className="pl-4 md:pl-5 text-sm md:text-[15px] font-medium text-foreground-muted leading-[1.7] md:leading-[1.8] whitespace-pre-line">
             {listing.description}
           </p>
@@ -303,15 +303,15 @@ export function ListingInfo({ listing }: Props) {
               return (
                 <div
                   key={i}
-                  className="group relative flex items-center gap-2.5 md:gap-3 p-3 md:p-4 rounded-xl md:rounded-2xl bg-gradient-to-br from-background-card to-primary-50/50 border-2 border-primary-500/30 transition-all duration-300 hover:scale-[1.02] hover:border-primary-500 hover:shadow-lg hover:shadow-primary-500/15 cursor-pointer"
+                  className="group relative flex items-center gap-2.5 md:gap-3 p-3 md:p-4 rounded-xl md:rounded-2xl bg-gradient-to-br from-background-card to-emerald-50/50 border-2 border-emerald-500/30 transition-all duration-300 hover:scale-[1.02] hover:border-emerald-500 hover:shadow-lg hover:shadow-emerald-500/15 cursor-pointer"
                 >
                   {/* Glow effect */}
-                  <div className="absolute inset-0 rounded-xl md:rounded-2xl bg-gradient-to-br from-primary-500/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+                  <div className="absolute inset-0 rounded-xl md:rounded-2xl bg-gradient-to-br from-emerald-500/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
 
-                  <div className="relative w-9 h-9 md:w-10 md:h-10 rounded-lg md:rounded-xl bg-gradient-to-br from-primary-500 to-primary-600 flex items-center justify-center flex-shrink-0 shadow-md shadow-primary-500/25 group-hover:shadow-lg group-hover:shadow-primary-500/35 transition-all duration-300">
+                  <div className="relative w-9 h-9 md:w-10 md:h-10 rounded-lg md:rounded-xl bg-gradient-to-br from-emerald-500 to-emerald-600 flex items-center justify-center flex-shrink-0 shadow-md shadow-emerald-500/25 group-hover:shadow-lg group-hover:shadow-emerald-500/35 transition-all duration-300">
                     <Icon className="w-4 h-4 md:w-5 md:h-5 text-white" strokeWidth={2.5} />
                   </div>
-                  <span className="relative text-xs md:text-sm font-black text-foreground group-hover:text-primary-500 transition-colors">{spec.label}</span>
+                  <span className="relative text-xs md:text-sm font-black text-foreground group-hover:text-emerald-500 transition-colors">{spec.label}</span>
                 </div>
               );
             })}
@@ -324,8 +324,8 @@ export function ListingInfo({ listing }: Props) {
         <SectionTitle icon={CalendarDays} label="Conditions de séjour" />
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 md:gap-4">
           {/* Min nuits */}
-          <div className="group relative flex items-center gap-3 md:gap-3.5 p-3 md:p-4 rounded-xl md:rounded-2xl bg-gradient-to-br from-background-card to-primary-50/50 border-2 border-primary-500/30 hover:border-primary-500 hover:shadow-lg hover:shadow-primary-500/15 transition-all duration-300">
-            <div className="w-10 h-10 md:w-11 md:h-11 rounded-lg md:rounded-xl bg-gradient-to-br from-primary-500 to-primary-600 flex items-center justify-center flex-shrink-0 shadow-md shadow-primary-500/25">
+          <div className="group relative flex items-center gap-3 md:gap-3.5 p-3 md:p-4 rounded-xl md:rounded-2xl bg-gradient-to-br from-background-card to-emerald-50/50 border-2 border-emerald-500/30 hover:border-emerald-500 hover:shadow-lg hover:shadow-emerald-500/15 transition-all duration-300">
+            <div className="w-10 h-10 md:w-11 md:h-11 rounded-lg md:rounded-xl bg-gradient-to-br from-emerald-500 to-emerald-600 flex items-center justify-center flex-shrink-0 shadow-md shadow-emerald-500/25">
               <Moon className="w-5 h-5 md:w-5.5 md:h-5.5 text-white" strokeWidth={2.5} />
             </div>
             <div>
@@ -337,8 +337,8 @@ export function ListingInfo({ listing }: Props) {
           </div>
 
           {/* Capacité max */}
-          <div className="group relative flex items-center gap-3 md:gap-3.5 p-3 md:p-4 rounded-xl md:rounded-2xl bg-gradient-to-br from-background-card to-primary-50/50 border-2 border-primary-500/30 hover:border-primary-500 hover:shadow-lg hover:shadow-primary-500/15 transition-all duration-300">
-            <div className="w-10 h-10 md:w-11 md:h-11 rounded-lg md:rounded-xl bg-gradient-to-br from-primary-500 to-primary-600 flex items-center justify-center flex-shrink-0 shadow-md shadow-primary-500/25">
+          <div className="group relative flex items-center gap-3 md:gap-3.5 p-3 md:p-4 rounded-xl md:rounded-2xl bg-gradient-to-br from-background-card to-emerald-50/50 border-2 border-emerald-500/30 hover:border-emerald-500 hover:shadow-lg hover:shadow-emerald-500/15 transition-all duration-300">
+            <div className="w-10 h-10 md:w-11 md:h-11 rounded-lg md:rounded-xl bg-gradient-to-br from-emerald-500 to-emerald-600 flex items-center justify-center flex-shrink-0 shadow-md shadow-emerald-500/25">
               <Users className="w-5 h-5 md:w-5.5 md:h-5.5 text-white" strokeWidth={2.5} />
             </div>
             <div>
@@ -351,8 +351,8 @@ export function ListingInfo({ listing }: Props) {
 
           {/* Personnes incluses */}
           {listing.personnesBase && (
-            <div className="group relative flex items-center gap-3 md:gap-3.5 p-3 md:p-4 rounded-xl md:rounded-2xl bg-gradient-to-br from-background-card to-primary-50/50 border-2 border-primary-300 hover:border-primary-500 hover:shadow-lg hover:shadow-primary-500/15 transition-all duration-300">
-              <div className="w-10 h-10 md:w-11 md:h-11 rounded-lg md:rounded-xl bg-gradient-to-br from-primary-400 to-primary-500 flex items-center justify-center flex-shrink-0 shadow-md shadow-primary-500/25">
+            <div className="group relative flex items-center gap-3 md:gap-3.5 p-3 md:p-4 rounded-xl md:rounded-2xl bg-gradient-to-br from-background-card to-emerald-50/50 border-2 border-emerald-300 hover:border-emerald-500 hover:shadow-lg hover:shadow-emerald-500/15 transition-all duration-300">
+              <div className="w-10 h-10 md:w-11 md:h-11 rounded-lg md:rounded-xl bg-gradient-to-br from-emerald-400 to-emerald-500 flex items-center justify-center flex-shrink-0 shadow-md shadow-emerald-500/25">
                 <ShieldCheck className="w-5 h-5 md:w-5.5 md:h-5.5 text-white" strokeWidth={2.5} />
               </div>
               <div>
@@ -365,8 +365,8 @@ export function ListingInfo({ listing }: Props) {
           )}
 
           {/* Type de logement */}
-          <div className="group relative flex items-center gap-3 md:gap-3.5 p-3 md:p-4 rounded-xl md:rounded-2xl bg-gradient-to-br from-background-card to-primary-50/50 border-2 border-primary-500/30 hover:border-primary-500 hover:shadow-lg hover:shadow-primary-500/15 transition-all duration-300">
-            <div className="w-10 h-10 md:w-11 md:h-11 rounded-lg md:rounded-xl bg-gradient-to-br from-primary-500 to-primary-600 flex items-center justify-center flex-shrink-0 shadow-md shadow-primary-500/25">
+          <div className="group relative flex items-center gap-3 md:gap-3.5 p-3 md:p-4 rounded-xl md:rounded-2xl bg-gradient-to-br from-background-card to-emerald-50/50 border-2 border-emerald-500/30 hover:border-emerald-500 hover:shadow-lg hover:shadow-emerald-500/15 transition-all duration-300">
+            <div className="w-10 h-10 md:w-11 md:h-11 rounded-lg md:rounded-xl bg-gradient-to-br from-emerald-500 to-emerald-600 flex items-center justify-center flex-shrink-0 shadow-md shadow-emerald-500/25">
               <Home className="w-5 h-5 md:w-5.5 md:h-5.5 text-white" strokeWidth={2.5} />
             </div>
             <div className="flex-1">
@@ -399,11 +399,11 @@ export function ListingInfo({ listing }: Props) {
                 const label = CATEGORIE_LABELS[cat] ?? cat;
 
                 return (
-                  <div key={cat} className="rounded-2xl border border-primary-500/20 overflow-hidden bg-background-card hover:border-primary-500/40 transition-all duration-200">
-                    <div className="flex items-center gap-3 px-5 py-3.5 bg-primary-50">
-                      <CatIcon className="w-4 h-4 text-primary-500" />
+                  <div key={cat} className="rounded-2xl border border-emerald-500/20 overflow-hidden bg-background-card hover:border-emerald-500/40 transition-all duration-200">
+                    <div className="flex items-center gap-3 px-5 py-3.5 bg-emerald-50">
+                      <CatIcon className="w-4 h-4 text-emerald-500" />
                       <span className="text-xs font-black text-foreground uppercase tracking-wider">{label}</span>
-                      <span className="ml-auto text-[10px] font-bold text-primary-500 bg-background-card/80 px-2 py-0.5 rounded-full">
+                      <span className="ml-auto text-[10px] font-bold text-emerald-500 bg-background-card/80 px-2 py-0.5 rounded-full">
                         {items.length}
                       </span>
                     </div>
@@ -411,9 +411,9 @@ export function ListingInfo({ listing }: Props) {
                       {items.map((eq) => (
                         <div
                           key={eq.id}
-                          className="flex items-center gap-2.5 px-3 py-2.5 rounded-xl bg-primary-50/30 border border-primary-500/10 hover:border-primary-500/30 hover:bg-primary-50/50 transition-all duration-200"
+                          className="flex items-center gap-2.5 px-3 py-2.5 rounded-xl bg-emerald-50/30 border border-emerald-500/10 hover:border-emerald-500/30 hover:bg-emerald-50/50 transition-all duration-200"
                         >
-                          <span className="text-base flex-shrink-0 w-5 text-center text-primary-500">✓</span>
+                          <span className="text-base flex-shrink-0 w-5 text-center text-emerald-500">✓</span>
                           <span className="text-[13px] font-medium text-foreground leading-snug">{eq.nom}</span>
                         </div>
                       ))}
@@ -435,8 +435,8 @@ export function ListingInfo({ listing }: Props) {
           {hasTarifsNuits && (
             <div className="mb-5 md:mb-6">
               <div className="flex items-center gap-2 mb-3 md:mb-3">
-                <Moon className="w-3.5 h-3.5 md:w-4 md:h-4 text-primary-500" />
-                <p className="text-xs md:text-sm font-black text-primary-600 uppercase tracking-wider">Tarif selon la durée</p>
+                <Moon className="w-3.5 h-3.5 md:w-4 md:h-4 text-emerald-500" />
+                <p className="text-xs md:text-sm font-black text-emerald-600 uppercase tracking-wider">Tarif selon la durée</p>
               </div>
               <div className="flex flex-col gap-2">
                 {listing.tarifsNuits!.map((tier, i) => (
@@ -465,9 +465,9 @@ export function ListingInfo({ listing }: Props) {
                 </p>
               </div>
               {listing.personnesBase && (
-                <div className="flex items-start gap-2 mb-2.5 md:mb-3 px-2.5 md:px-3 py-2 md:py-2.5 bg-primary-50 border border-primary-100 rounded-xl">
-                  <ShieldCheck className="w-3 h-3 md:w-3.5 md:h-3.5 text-primary-500 flex-shrink-0 mt-0.5" />
-                  <p className="text-[10px] md:text-xs font-medium text-primary-700">
+                <div className="flex items-start gap-2 mb-2.5 md:mb-3 px-2.5 md:px-3 py-2 md:py-2.5 bg-emerald-50 border border-emerald-100 rounded-xl">
+                  <ShieldCheck className="w-3 h-3 md:w-3.5 md:h-3.5 text-emerald-500 flex-shrink-0 mt-0.5" />
+                  <p className="text-[10px] md:text-xs font-medium text-emerald-700">
                     <strong>{listing.personnesBase} voyageur{listing.personnesBase > 1 ? 's' : ''} inclus{listing.personnesBase > 1 ? '' : 'e'}</strong> dans le tarif de base — aucun supplément jusqu&apos;à ce seuil.
                   </p>
                 </div>
@@ -495,12 +495,12 @@ export function ListingInfo({ listing }: Props) {
       {(listing.ville || listing.quartier || listing.adresse) && (
         <div className="border-t border-border pt-6 md:pt-10">
           <SectionTitle icon={Navigation} label="Localisation" />
-          <div className="relative bg-gradient-to-br from-primary-50 to-primary-50/30 rounded-2xl p-6 border border-primary-100/80 overflow-hidden">
-            <div className="absolute top-0 right-0 w-32 h-32 bg-primary-100/30 rounded-full -translate-y-1/2 translate-x-1/2 blur-2xl pointer-events-none" />
+          <div className="relative bg-gradient-to-br from-emerald-50 to-emerald-50/30 rounded-2xl p-6 border border-emerald-100/80 overflow-hidden">
+            <div className="absolute top-0 right-0 w-32 h-32 bg-emerald-100/30 rounded-full -translate-y-1/2 translate-x-1/2 blur-2xl pointer-events-none" />
             <div className="relative z-10 space-y-3">
               <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-xl bg-background-card border border-primary-100 flex items-center justify-center shadow-sm flex-shrink-0">
-                  <MapPin className="w-4.5 h-4.5 text-primary-500" />
+                <div className="w-10 h-10 rounded-xl bg-background-card border border-emerald-100 flex items-center justify-center shadow-sm flex-shrink-0">
+                  <MapPin className="w-4.5 h-4.5 text-emerald-500" />
                 </div>
                 <div>
                   <p className="text-base font-black text-foreground">

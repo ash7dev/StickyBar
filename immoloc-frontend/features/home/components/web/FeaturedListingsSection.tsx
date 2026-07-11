@@ -21,9 +21,9 @@ export function FeaturedListingsSection() {
     <section className="max-w-7xl mx-auto px-6 py-16">
       <div className="flex items-end justify-between mb-12">
         <div>
-          <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-primary-50 border border-primary-100 mb-4">
-            <Sparkles className="w-3.5 h-3.5 text-primary-500" />
-            <span className="text-[10px] font-black text-primary-600 uppercase tracking-widest">Sélection vérifiée</span>
+          <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-emerald-50 border border-emerald-100 mb-4">
+            <Sparkles className="w-3.5 h-3.5 text-emerald-500" />
+            <span className="text-[10px] font-black text-emerald-600 uppercase tracking-widest">Sélection vérifiée</span>
           </div>
           <h2 className="text-4xl font-black text-foreground tracking-tight">Biens à la une</h2>
         </div>

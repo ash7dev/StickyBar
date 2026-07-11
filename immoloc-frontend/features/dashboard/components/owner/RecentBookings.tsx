@@ -20,10 +20,10 @@ interface Props {
   bookings: Booking[];
 }
 
-const STATUT_CONFIG: Record<string, { label: string; theme: 'neutral' | 'primary' | 'success' | 'warning' | 'error' }> = {
+const STATUT_CONFIG: Record<string, { label: string; theme: 'neutral' | 'emerald' | 'success' | 'warning' | 'error' }> = {
   COMPLETED:  { label: 'Terminée',   theme: 'neutral' },
   CHECKED_IN: { label: 'En cours',   theme: 'success' },
-  CONFIRMED:  { label: 'Confirmée',  theme: 'primary' },
+  CONFIRMED:  { label: 'Confirmée',  theme: 'emerald' },
   PENDING:    { label: 'En attente', theme: 'warning' },
   CANCELLED:  { label: 'Annulée',    theme: 'error' },
   DISPUTED:   { label: 'Litige',     theme: 'error' },
@@ -32,7 +32,7 @@ const STATUT_CONFIG: Record<string, { label: string; theme: 'neutral' | 'primary
 
 const THEMES = {
   neutral: { bg: 'bg-neutral-100',  text: 'text-neutral-600',  dot: 'bg-neutral-400',  border: 'border-border',  avatar: 'bg-neutral-100 text-neutral-600' },
-  primary: { bg: 'bg-primary-50',   text: 'text-primary-600',  dot: 'bg-primary-500',  border: 'border-primary-100',  avatar: 'bg-primary-100 text-primary-700' },
+  emerald: { bg: 'bg-emerald-50',   text: 'text-emerald-600',  dot: 'bg-emerald-500',  border: 'border-emerald-100',  avatar: 'bg-emerald-100 text-emerald-700' },
   success: { bg: 'bg-emerald-50',   text: 'text-emerald-600',  dot: 'bg-emerald-500',  border: 'border-emerald-100',  avatar: 'bg-emerald-100 text-emerald-700' },
   warning: { bg: 'bg-amber-50',     text: 'text-amber-600',    dot: 'bg-amber-500',    border: 'border-amber-100',    avatar: 'bg-amber-100 text-amber-700' },
   error:   { bg: 'bg-rose-50',      text: 'text-rose-600',     dot: 'bg-rose-500',     border: 'border-rose-100',     avatar: 'bg-rose-100 text-rose-700' },
@@ -105,7 +105,7 @@ function BookingRow({ booking }: { booking: Booking }) {
             {fmt(booking.totalLocataire)}
             <span className="text-[10px] font-bold text-foreground-muted ml-1">FCFA</span>
           </span>
-          <div className="flex items-center gap-1 text-xs font-bold text-primary-600">
+          <div className="flex items-center gap-1 text-xs font-bold text-emerald-600">
             Voir le détail
             <ChevronRight className="w-3.5 h-3.5" />
           </div>
@@ -114,7 +114,7 @@ function BookingRow({ booking }: { booking: Booking }) {
 
       {/* ── Desktop row ─────────────────────────────────────────────── */}
       <div className="hidden lg:flex items-center gap-4 p-3 group rounded-2xl hover:bg-background-card hover:shadow-lg hover:shadow-md/40 hover:-translate-y-0.5 border border-transparent hover:border-neutral-200/60 transition-all duration-300">
-        <div className="relative w-14 h-14 rounded-xl overflow-hidden bg-neutral-100 flex-shrink-0 shadow-inner group-hover:ring-2 group-hover:ring-primary-500/20 transition-all">
+        <div className="relative w-14 h-14 rounded-xl overflow-hidden bg-neutral-100 flex-shrink-0 shadow-inner group-hover:ring-2 group-hover:ring-emerald-500/20 transition-all">
           {booking.logement.photos?.[0]?.url ? (
             <Image src={booking.logement.photos[0].url} alt={booking.logement.titre} fill className="object-cover" sizes="56px" />
           ) : (
@@ -146,7 +146,7 @@ function BookingRow({ booking }: { booking: Booking }) {
           </div>
         </div>
 
-        <div className="w-8 h-8 rounded-full bg-neutral-50 flex items-center justify-center border border-neutral-100 group-hover:bg-primary-500 group-hover:border-primary-500 transition-colors shrink-0 ml-1">
+        <div className="w-8 h-8 rounded-full bg-neutral-50 flex items-center justify-center border border-neutral-100 group-hover:bg-emerald-500 group-hover:border-emerald-500 transition-colors shrink-0 ml-1">
           <ChevronRight className="w-4 h-4 text-foreground-muted group-hover:text-white transition-colors" />
         </div>
       </div>
@@ -202,8 +202,8 @@ export function RecentBookings({ bookings }: Props) {
       {/* ── Header ── */}
       <div className="flex items-center justify-between mb-4 lg:mb-6">
         <div className="flex items-center gap-3">
-          <div className="w-9 h-9 lg:w-10 lg:h-10 rounded-xl bg-primary-50 flex items-center justify-center border border-primary-100 shadow-sm shrink-0">
-            <Bookmark className="w-[16px] h-[16px] lg:w-[18px] lg:h-[18px] text-primary-600" />
+          <div className="w-9 h-9 lg:w-10 lg:h-10 rounded-xl bg-emerald-50 flex items-center justify-center border border-emerald-100 shadow-sm shrink-0">
+            <Bookmark className="w-[16px] h-[16px] lg:w-[18px] lg:h-[18px] text-emerald-600" />
           </div>
           <div>
             <p className="text-[10px] font-black text-foreground-muted uppercase tracking-widest">Activité</p>
@@ -212,7 +212,7 @@ export function RecentBookings({ bookings }: Props) {
         </div>
 
         <Link href="/dashboard/reservations"
-          className="px-3 py-1.5 rounded-lg bg-neutral-50 hover:bg-primary-50 text-[10px] font-bold text-foreground-muted hover:text-primary-600 border border-neutral-100 hover:border-primary-100 transition-colors flex items-center gap-1.5">
+          className="px-3 py-1.5 rounded-lg bg-neutral-50 hover:bg-emerald-50 text-[10px] font-bold text-foreground-muted hover:text-emerald-600 border border-neutral-100 hover:border-emerald-100 transition-colors flex items-center gap-1.5">
           Historique
           <ArrowRight className="w-3 h-3" />
         </Link>

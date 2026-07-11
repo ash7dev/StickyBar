@@ -211,7 +211,7 @@ export function ListingCardItem({ listing }: { listing: ListingCard }) {
             {(isDraft || isRejected) && (
               <Link
                 href={`/dashboard/annonces/${listing.id}/soumettre`}
-                className="flex-1 flex items-center justify-center gap-1.5 h-10 text-xs font-bold text-white bg-primary-600 rounded-xl shadow-sm shadow-primary-600/25 active:bg-primary-700 transition-colors"
+                className="flex-1 flex items-center justify-center gap-1.5 h-10 text-xs font-bold text-white bg-emerald-600 rounded-xl shadow-sm shadow-emerald-600/25 active:bg-emerald-700 transition-colors"
               >
                 <Send className="w-3.5 h-3.5" />
                 Soumettre
@@ -221,7 +221,7 @@ export function ListingCardItem({ listing }: { listing: ListingCard }) {
             {isActive && (
               <Link
                 href={`/dashboard/reservations?logement=${listing.id}`}
-                className="flex-1 flex items-center justify-center gap-1.5 h-10 text-xs font-bold text-primary-700 bg-primary-50 border border-primary-100 rounded-xl active:bg-primary-100 transition-colors"
+                className="flex-1 flex items-center justify-center gap-1.5 h-10 text-xs font-bold text-emerald-700 bg-emerald-50 border border-emerald-100 rounded-xl active:bg-emerald-100 transition-colors"
               >
                 <CalendarCheck className="w-3.5 h-3.5" />
                 Réservations
@@ -304,7 +304,7 @@ export function ListingCardItem({ listing }: { listing: ListingCard }) {
             <span className="truncate">{listing.type}</span>
           </div>
 
-          <h3 className="font-display text-[17px] font-semibold text-foreground leading-snug line-clamp-2 group-hover:text-primary-600 transition-colors duration-300 mb-3">
+          <h3 className="font-display text-[17px] font-semibold text-foreground leading-snug line-clamp-2 group-hover:text-emerald-600 transition-colors duration-300 mb-3">
             {listing.titre}
           </h3>
 
@@ -336,7 +336,7 @@ export function ListingCardItem({ listing }: { listing: ListingCard }) {
               {(isDraft || isRejected) && (
                 <Link
                   href={`/dashboard/annonces/${listing.id}/soumettre`}
-                  className="flex items-center gap-1.5 px-3 py-1.5 text-[10px] font-bold text-white bg-primary-600 hover:bg-primary-700 rounded-lg shadow-sm shadow-primary-600/25 transition-all"
+                  className="flex items-center gap-1.5 px-3 py-1.5 text-[10px] font-bold text-white bg-emerald-600 hover:bg-emerald-700 rounded-lg shadow-sm shadow-emerald-600/25 transition-all"
                 >
                   <Send className="w-3 h-3" />
                   Soumettre
@@ -346,7 +346,7 @@ export function ListingCardItem({ listing }: { listing: ListingCard }) {
               {isActive && (
                 <Link
                   href={`/dashboard/reservations?logement=${listing.id}`}
-                  className="flex items-center gap-1.5 px-3 py-1.5 text-[10px] font-bold text-primary-700 bg-primary-50 border border-primary-100 hover:bg-primary-100 rounded-lg transition-colors"
+                  className="flex items-center gap-1.5 px-3 py-1.5 text-[10px] font-bold text-emerald-700 bg-emerald-50 border border-emerald-100 hover:bg-emerald-100 rounded-lg transition-colors"
                 >
                   <CalendarCheck className="w-3 h-3" />
                   Réservations
@@ -388,7 +388,7 @@ export function ListingsEmptyState() {
       </p>
       <Link
         href="/dashboard/annonces/nouvelle"
-        className="flex items-center gap-2 px-6 py-3 bg-primary-600 hover:bg-primary-700 text-white text-sm font-bold rounded-xl shadow-lg shadow-primary-600/25 hover:shadow-xl transition-all active:scale-[0.98]"
+        className="flex items-center gap-2 px-6 py-3 bg-emerald-600 hover:bg-emerald-700 text-white text-sm font-bold rounded-xl shadow-lg shadow-emerald-600/25 hover:shadow-xl transition-all active:scale-[0.98]"
       >
         <Plus className="w-4 h-4" />
         Créer ma première annonce

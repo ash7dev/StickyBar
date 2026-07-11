@@ -27,7 +27,7 @@ function ErrorState({ onRetry }: { onRetry: () => void }) {
       <div className="flex items-center gap-3">
         <button
           onClick={onRetry}
-          className="flex items-center gap-2 px-4 py-2.5 bg-primary-500 hover:bg-primary-600 rounded-xl text-sm font-bold text-white transition-all shadow-lg shadow-primary-500/20"
+          className="flex items-center gap-2 px-4 py-2.5 bg-emerald-500 hover:bg-emerald-600 rounded-xl text-sm font-bold text-white transition-all shadow-lg shadow-emerald-500/20"
         >
           <RefreshCw className="w-4 h-4" />
           Réessayer

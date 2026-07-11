@@ -36,7 +36,7 @@ function phonesVisible(dateDebut: string): boolean {
 
 const STATUT_BANNER: Record<string, { label: string; bg: string; border: string; text: string; icon: typeof CheckCircle2 }> = {
   PENDING:    { label: 'En attente de confirmation propriétaire', bg: 'bg-amber-50',   border: 'border-amber-200',  text: 'text-amber-700',  icon: Clock },
-  PAID:       { label: 'Paiement confirmé — en attente de confirmation', bg: 'bg-primary-50', border: 'border-primary-200', text: 'text-primary-700', icon: Clock },
+  PAID:       { label: 'Paiement confirmé — en attente de confirmation', bg: 'bg-emerald-50', border: 'border-emerald-200', text: 'text-emerald-700', icon: Clock },
   CONFIRMED:  { label: 'Contrat actif — réservation confirmée',   bg: 'bg-emerald-50', border: 'border-emerald-200', text: 'text-emerald-700', icon: CheckCircle2 },
   CHECKED_IN: { label: 'Séjour en cours — fonds en séquestre',   bg: 'bg-emerald-50', border: 'border-emerald-200', text: 'text-emerald-700', icon: CheckCircle2 },
   COMPLETED:  { label: 'Séjour terminé — fonds libérés',         bg: 'bg-neutral-50', border: 'border-neutral-200', text: 'text-neutral-600', icon: CheckCircle2 },
@@ -171,7 +171,7 @@ export default function ContratPage({ params }: { params: Promise<{ id: string }
         {/* ── Header ── */}
         <div className="flex items-start justify-between p-6 pb-5 border-b border-neutral-100">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl bg-primary-600 flex items-center justify-center">
+            <div className="w-10 h-10 rounded-xl bg-emerald-600 flex items-center justify-center">
               <FileText className="w-5 h-5 text-white" />
             </div>
             <div>
@@ -269,10 +269,10 @@ export default function ContratPage({ params }: { params: Promise<{ id: string }
           </div>
 
           {/* ── Séquestre (ImmoLoc-specific) ── */}
-          <div className="rounded-xl border border-primary-100 bg-primary-50/40 overflow-hidden">
-            <div className="flex items-center gap-2 px-4 py-3 bg-primary-50 border-b border-primary-100">
-              <Shield className="w-4 h-4 text-primary-600" />
-              <p className="text-[10px] font-black uppercase tracking-[0.2em] text-primary-700">Séquestre ImmoLoc</p>
+          <div className="rounded-xl border border-emerald-100 bg-emerald-50/40 overflow-hidden">
+            <div className="flex items-center gap-2 px-4 py-3 bg-emerald-50 border-b border-emerald-100">
+              <Shield className="w-4 h-4 text-emerald-600" />
+              <p className="text-[10px] font-black uppercase tracking-[0.2em] text-emerald-700">Séquestre ImmoLoc</p>
             </div>
             <table className="w-full text-sm">
               <tbody>
@@ -283,7 +283,7 @@ export default function ContratPage({ params }: { params: Promise<{ id: string }
                   ["En cas de litige", "Fonds bloqués jusqu'à résolution par ImmoLoc"],
                   ['Référence séquestre', `SEQ-${ref}`],
                 ].map(([label, value]) => (
-                  <tr key={label} className="border-b border-primary-100/60 last:border-0">
+                  <tr key={label} className="border-b border-emerald-100/60 last:border-0">
                     <td className="px-4 py-2.5 text-xs font-semibold text-neutral-600">{label}</td>
                     <td className="px-4 py-2.5 text-xs font-bold text-neutral-900 text-right">{value}</td>
                   </tr>
@@ -318,7 +318,7 @@ export default function ContratPage({ params }: { params: Promise<{ id: string }
 
           {/* ── Totaux ── */}
           <div className="space-y-2">
-            <div className="flex items-center justify-between bg-primary-600 text-white px-4 py-3.5 rounded-xl">
+            <div className="flex items-center justify-between bg-emerald-600 text-white px-4 py-3.5 rounded-xl">
               <p className="text-sm font-black uppercase tracking-wider">Total réglé par le locataire</p>
               <p className="text-lg font-black">{fcfa(res.totalLocataire)} FCFA</p>
             </div>
@@ -361,7 +361,7 @@ export default function ContratPage({ params }: { params: Promise<{ id: string }
           <div>
             <div className="flex items-center justify-between mb-4">
               <p className="text-[10px] font-black uppercase tracking-[0.2em] text-neutral-400">Conditions générales</p>
-              <Link href="/cgu" className="text-[10px] font-bold text-primary-600 hover:underline">
+              <Link href="/cgu" className="text-[10px] font-bold text-emerald-600 hover:underline">
                 Voir les CGU complètes →
               </Link>
             </div>
@@ -434,7 +434,7 @@ export default function ContratPage({ params }: { params: Promise<{ id: string }
               href={res.contratUrl}
               target="_blank"
               rel="noopener noreferrer"
-              className="inline-flex items-center gap-2 px-5 py-3 bg-primary-600 text-white text-sm font-black rounded-xl hover:bg-primary-700 transition-colors shadow-sm shadow-primary-600/20 active:scale-[0.98]"
+              className="inline-flex items-center gap-2 px-5 py-3 bg-emerald-600 text-white text-sm font-black rounded-xl hover:bg-emerald-700 transition-colors shadow-sm shadow-emerald-600/20 active:scale-[0.98]"
             >
               <Download className="w-4 h-4" /> Télécharger le PDF
             </a>

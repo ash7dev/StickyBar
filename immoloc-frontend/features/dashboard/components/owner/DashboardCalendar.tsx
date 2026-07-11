@@ -113,7 +113,7 @@ export function DashboardCalendar({ checkins, checkouts }: Props) {
                   <span>{day}</span>
                   {hasEvent && !isToday && (
                     <div className="flex gap-0.5 mt-0.5">
-                      {hasCheckin && <div className="w-1 h-1 rounded-full bg-primary-500" />}
+                      {hasCheckin && <div className="w-1 h-1 rounded-full bg-emerald-500" />}
                       {hasCheckout && <div className="w-1 h-1 rounded-full bg-warning-500" />}
                     </div>
                   )}
@@ -153,7 +153,7 @@ export function DashboardCalendar({ checkins, checkouts }: Props) {
           {/* Retours */}
           <div>
             <div className="flex items-center gap-1.5 mb-1.5">
-              <LogIn className="w-3.5 h-3.5 text-primary-500" />
+              <LogIn className="w-3.5 h-3.5 text-emerald-500" />
               <span className="text-[10px] font-black text-foreground-muted uppercase tracking-wider">
                 Retours ({todayEvents.filter(e => e.type === 'IN').length})
               </span>

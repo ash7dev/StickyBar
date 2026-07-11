@@ -25,7 +25,7 @@ export function ProfileHero({ user, onKycClick }: Props) {
   return (
     <div className="relative bg-[#0a0a0a] rounded-2xl border border-white/[0.06] overflow-hidden">
       {/* Ambient glows */}
-      <div className="absolute -top-16 -left-16 w-64 h-64 bg-primary-500/10 rounded-full blur-[80px] pointer-events-none" />
+      <div className="absolute -top-16 -left-16 w-64 h-64 bg-emerald-500/10 rounded-full blur-[80px] pointer-events-none" />
       <div className="absolute -bottom-8 -right-8 w-48 h-48 bg-violet-500/10 rounded-full blur-[60px] pointer-events-none" />
 
       <div className="relative z-10 p-5 sm:p-8">
@@ -35,7 +35,7 @@ export function ProfileHero({ user, onKycClick }: Props) {
           <div className="flex items-center gap-4 mb-4">
             {/* Avatar */}
             <div className="relative shrink-0">
-              <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-primary-400 to-violet-500 flex items-center justify-center shadow-xl shadow-primary-500/20">
+              <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-emerald-400 to-violet-500 flex items-center justify-center shadow-xl shadow-emerald-500/20">
                 <span className="text-xl font-black text-white tracking-tight">{initials}</span>
               </div>
               {isVerified && (
@@ -52,7 +52,7 @@ export function ProfileHero({ user, onKycClick }: Props) {
                 <p className="text-xs text-white/40 font-medium truncate mt-0.5">{user.email}</p>
               )}
               <div className="flex items-center gap-1.5 mt-1.5">
-                <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-primary-500/15 border border-primary-500/25 text-[10px] font-black text-primary-400 uppercase tracking-wider">
+                <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-emerald-500/15 border border-emerald-500/25 text-[10px] font-black text-emerald-400 uppercase tracking-wider">
                   <Home className="w-2.5 h-2.5" />
                   {ROLE_LABELS[user.activeRole] ?? user.activeRole}
                 </span>
@@ -80,7 +80,7 @@ export function ProfileHero({ user, onKycClick }: Props) {
         <div className="hidden lg:flex items-center gap-6">
           {/* Avatar */}
           <div className="relative shrink-0">
-            <div className="w-24 h-24 rounded-2xl bg-gradient-to-br from-primary-400 to-violet-500 flex items-center justify-center shadow-2xl shadow-primary-500/30">
+            <div className="w-24 h-24 rounded-2xl bg-gradient-to-br from-emerald-400 to-violet-500 flex items-center justify-center shadow-2xl shadow-emerald-500/30">
               <span className="text-3xl font-black text-white tracking-tight">{initials}</span>
             </div>
             {isVerified && (
@@ -105,7 +105,7 @@ export function ProfileHero({ user, onKycClick }: Props) {
               <p className="text-sm text-white/40 font-medium mb-3">{user.email}</p>
             )}
             <div className="flex items-center gap-2 flex-wrap">
-              <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-primary-500/15 border border-primary-500/25 text-[11px] font-black text-primary-400 uppercase tracking-wider">
+              <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-500/15 border border-emerald-500/25 text-[11px] font-black text-emerald-400 uppercase tracking-wider">
                 <Home className="w-3 h-3" />
                 {ROLE_LABELS[user.activeRole] ?? user.activeRole}
               </span>

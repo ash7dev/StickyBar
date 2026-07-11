@@ -39,14 +39,22 @@ export function useSwitchRole() {
       });
 
       // Stocker les nouveaux tokens (le rôle est maintenant intégré dans le JWT)
+      const currentStore = useRoleStore.getState();
       setSession({
         token: result.accessToken,
         refreshToken: result.refreshToken,
         expiresIn: result.expiresIn,
         role: result.activeRole,
-        estProprietaire,
+        estProprietaire: estProprietaire,
         userId: userId!,
-        hasAnnonce,
+        hasAnnonce: hasAnnonce,
+        // Préserver les données gate/KYC existantes
+        profileCompleted: currentStore.profileCompleted,
+        phoneVerified: currentStore.phoneVerified,
+        statutKyc: currentStore.statutKyc,
+        dateNaissance: currentStore.dateNaissance,
+        selfieFaceDetected: currentStore.selfieFaceDetected,
+        selfieMatchScore: currentStore.selfieMatchScore,
       });
 
       // ── Redirection selon le rôle ──────────────────────────────────────────

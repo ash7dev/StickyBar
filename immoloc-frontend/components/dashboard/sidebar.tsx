@@ -48,16 +48,16 @@ function NavLink({ item, onClose }: { item: NavItem; onClose: () => void }) {
       className={cn(
         'flex items-center gap-3 px-5 py-3.5 rounded-xl text-sm font-medium transition-all duration-300 group relative overflow-hidden',
         active
-          ? 'bg-primary-600 text-background-card shadow-lg'
-          : 'text-foreground-muted hover:bg-primary-50 hover:text-primary-700',
+          ? 'bg-emerald-600 text-background-card shadow-lg'
+          : 'text-foreground-muted hover:bg-emerald-50 hover:text-emerald-700',
       )}
     >
       {/* Glow effect on active */}
       {active && (
-        <div className="absolute inset-0 bg-gradient-to-r from-primary-500/20 to-transparent pointer-events-none" />
+        <div className="absolute inset-0 bg-gradient-to-r from-emerald-500/20 to-transparent pointer-events-none" />
       )}
 
-      <item.icon className={cn('h-4 w-4 flex-shrink-0 transition-all duration-300 relative z-10', active ? 'text-background-card' : 'text-foreground-muted group-hover:text-primary-700')} />
+      <item.icon className={cn('h-4 w-4 flex-shrink-0 transition-all duration-300 relative z-10', active ? 'text-background-card' : 'text-foreground-muted group-hover:text-emerald-700')} />
       <span className="truncate relative z-10">{item.label}</span>
     </Link>
   );
@@ -138,7 +138,7 @@ export function DashboardSidebar({ isOpen, onClose }: SidebarProps) {
           {/* ── User Profile Card ─────────────────────────────── */}
           <div className="bg-background-alt rounded-xl p-3 border border-border">
             <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-full bg-gradient-to-br from-primary-500 to-primary-700 flex items-center justify-center flex-shrink-0 shadow-lg">
+              <div className="w-10 h-10 rounded-full bg-gradient-to-br from-emerald-500 to-emerald-700 flex items-center justify-center flex-shrink-0 shadow-lg">
                 <span className="text-background-card font-bold text-sm">{userInitials}</span>
               </div>
               <div className="flex-1 min-w-0">
@@ -175,11 +175,11 @@ export function DashboardSidebar({ isOpen, onClose }: SidebarProps) {
             disabled={isSwitching}
             className={cn(
               'w-full flex items-center gap-3 px-5 py-3.5 rounded-xl text-sm font-medium transition-all duration-300 group',
-              'bg-background-alt text-foreground hover:bg-primary-50 hover:text-primary-700 border border-border',
+              'bg-background-alt text-foreground hover:bg-emerald-50 hover:text-emerald-700 border border-border',
               isSwitching && 'opacity-50 cursor-not-allowed'
             )}
           >
-            <ArrowLeftRight className="h-4 w-4 flex-shrink-0 text-primary-600 transition-transform group-hover:rotate-180 duration-300" />
+            <ArrowLeftRight className="h-4 w-4 flex-shrink-0 text-emerald-600 transition-transform group-hover:rotate-180 duration-300" />
             <span className="truncate">Mode locataire</span>
           </button>
 

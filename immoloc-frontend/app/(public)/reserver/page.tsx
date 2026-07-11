@@ -109,7 +109,7 @@ export default function ReserverPage({ searchParams }: Props) {
     return (
       <div className="max-w-lg mx-auto px-4 py-16 text-center space-y-3">
         <p className="text-sm text-neutral-400">Paramètres de réservation manquants.</p>
-        <Link href="/logements" className="text-sm font-bold text-primary-600 hover:underline">
+        <Link href="/logements" className="text-sm font-bold text-emerald-600 hover:underline">
           Retour aux logements
         </Link>
       </div>
@@ -289,7 +289,7 @@ export default function ReserverPage({ searchParams }: Props) {
               className={cn(
                 'w-full flex items-center gap-4 p-4 rounded-xl border-2 transition-all duration-200 text-left',
                 fournisseur === 'WAVE'
-                  ? 'border-primary-500 bg-primary-50/50'
+                  ? 'border-emerald-500 bg-emerald-50/50'
                   : 'border-border bg-background-card hover:bg-background-alt',
               )}
             >
@@ -302,7 +302,7 @@ export default function ReserverPage({ searchParams }: Props) {
               </div>
               <div className={cn(
                 'w-5 h-5 rounded-full border-2 flex items-center justify-center shrink-0 transition-all',
-                fournisseur === 'WAVE' ? 'border-primary-500 bg-primary-500' : 'border-border-hover',
+                fournisseur === 'WAVE' ? 'border-emerald-500 bg-emerald-500' : 'border-border-hover',
               )}>
                 {fournisseur === 'WAVE' && <CheckCircle2 className="w-3 h-3 text-white fill-white" />}
               </div>
@@ -315,7 +315,7 @@ export default function ReserverPage({ searchParams }: Props) {
               className={cn(
                 'w-full flex items-center gap-4 p-4 rounded-xl border-2 transition-all duration-200 text-left',
                 fournisseur === 'ORANGE_MONEY'
-                  ? 'border-primary-500 bg-primary-50/50'
+                  ? 'border-emerald-500 bg-emerald-50/50'
                   : 'border-border bg-background-card hover:bg-background-alt',
               )}
             >
@@ -328,7 +328,7 @@ export default function ReserverPage({ searchParams }: Props) {
               </div>
               <div className={cn(
                 'w-5 h-5 rounded-full border-2 flex items-center justify-center shrink-0 transition-all',
-                fournisseur === 'ORANGE_MONEY' ? 'border-primary-500 bg-primary-500' : 'border-border-hover',
+                fournisseur === 'ORANGE_MONEY' ? 'border-emerald-500 bg-emerald-500' : 'border-border-hover',
               )}>
                 {fournisseur === 'ORANGE_MONEY' && <CheckCircle2 className="w-3 h-3 text-white fill-white" />}
               </div>
@@ -350,8 +350,8 @@ export default function ReserverPage({ searchParams }: Props) {
             className={cn(
               'w-5 h-5 rounded border-2 shrink-0 mt-0.5 flex items-center justify-center transition-all duration-200',
               cguAccepted
-                ? 'bg-primary-500 border-primary-500'
-                : 'border-border-hover bg-background-card group-hover:border-primary-400',
+                ? 'bg-emerald-500 border-emerald-500'
+                : 'border-border-hover bg-background-card group-hover:border-emerald-400',
             )}
           >
             {cguAccepted && <CheckCircle2 className="w-3 h-3 text-white fill-white" />}
@@ -361,11 +361,11 @@ export default function ReserverPage({ searchParams }: Props) {
             <br />
             <span className="text-xs text-foreground-muted">
               J&apos;accepte les{' '}
-              <Link href="/cgu" target="_blank" className="text-primary-600 font-semibold hover:underline">
+              <Link href="/cgu" target="_blank" className="text-emerald-600 font-semibold hover:underline">
                 conditions générales
               </Link>{' '}
               et le{' '}
-              <span className="text-primary-600 font-semibold">contrat de réservation</span>
+              <span className="text-emerald-600 font-semibold">contrat de réservation</span>
               . Je comprends que l&apos;annulation est soumise à la politique en vigueur.
             </span>
           </p>
@@ -386,7 +386,7 @@ export default function ReserverPage({ searchParams }: Props) {
           className={cn(
             'w-full flex items-center justify-center gap-3 py-4 rounded-2xl text-sm font-black transition-all duration-200 active:scale-[0.98]',
             cguAccepted && !loading
-              ? 'bg-primary-600 hover:bg-primary-700 text-white shadow-xl shadow-primary-500/30'
+              ? 'bg-emerald-600 hover:bg-emerald-700 text-white shadow-xl shadow-emerald-500/30'
               : 'bg-background-alt text-foreground-muted cursor-not-allowed',
           )}
         >

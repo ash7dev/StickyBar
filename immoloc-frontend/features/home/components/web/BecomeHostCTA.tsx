@@ -34,10 +34,10 @@ export function BecomeHostCTA() {
   return (
     <section className="bg-background py-8 px-4 sm:px-6 pb-24">
       <div className="max-w-7xl mx-auto">
-        <div className="relative bg-primary-900 overflow-hidden rounded-[3rem]">
+        <div className="relative bg-emerald-900 overflow-hidden rounded-[3rem]">
 
           {/* Ambient Glows */}
-          <div className="absolute top-0 right-1/4 w-[500px] h-[350px] bg-primary-500/8 rounded-full blur-[120px] pointer-events-none" />
+          <div className="absolute top-0 right-1/4 w-[500px] h-[350px] bg-emerald-500/8 rounded-full blur-[120px] pointer-events-none" />
           <div className="absolute bottom-0 left-1/3 w-[400px] h-[300px] bg-accent-500/5 rounded-full blur-[100px] pointer-events-none" />
 
           {/* Dot pattern */}
@@ -60,8 +60,8 @@ export function BecomeHostCTA() {
                 <div className="absolute inset-0 rounded-full border border-white/[0.06]" />
                 <div className="absolute inset-4 rounded-full border border-white/[0.04]" />
                 <div className="absolute inset-0 flex items-center justify-center">
-                  <div className="w-20 h-20 rounded-full bg-primary-500/10 border border-primary-400/20 flex items-center justify-center">
-                    <TrendingUp className="w-9 h-9 text-primary-400" />
+                  <div className="w-20 h-20 rounded-full bg-emerald-500/10 border border-emerald-400/20 flex items-center justify-center">
+                    <TrendingUp className="w-9 h-9 text-emerald-400" />
                   </div>
                 </div>
                 {/* Floating mini-icons */}
@@ -74,13 +74,13 @@ export function BecomeHostCTA() {
                 <div className="absolute -bottom-2 left-1/2 -translate-x-1/2 w-9 h-9 rounded-xl bg-info-500/15 border border-info-500/20 flex items-center justify-center shadow-lg">
                   <Users className="w-4 h-4 text-info-500" />
                 </div>
-                <div className="absolute top-1/2 -left-2 -translate-y-1/2 w-9 h-9 rounded-xl bg-primary-500/15 border border-primary-500/20 flex items-center justify-center shadow-lg">
-                  <LayoutDashboard className="w-4 h-4 text-primary-500" />
+                <div className="absolute top-1/2 -left-2 -translate-y-1/2 w-9 h-9 rounded-xl bg-emerald-500/15 border border-emerald-500/20 flex items-center justify-center shadow-lg">
+                  <LayoutDashboard className="w-4 h-4 text-emerald-500" />
                 </div>
               </div>
 
               {/* Big stat */}
-              <div className="text-7xl lg:text-8xl font-black text-primary-400 tracking-tighter leading-none mb-2">
+              <div className="text-7xl lg:text-8xl font-black text-emerald-400 tracking-tighter leading-none mb-2">
                 +30%
               </div>
               <p className="text-white/30 text-sm font-medium max-w-[200px]">
@@ -119,7 +119,7 @@ export function BecomeHostCTA() {
               <div>
                 <h2 className="text-3xl lg:text-5xl font-black text-white leading-[1.1] tracking-tight">
                   Votre logement dort ?<br />
-                  <span className="text-primary-400">Faites-le travailler.</span>
+                  <span className="text-emerald-400">Faites-le travailler.</span>
                 </h2>
                 <p className="text-white/30 text-sm font-medium mt-4 max-w-md leading-relaxed">
                   Rejoignez des centaines de propriétaires qui rentabilisent leur bien avec ImmoLoc. Inscription gratuite, 0 commission à l&apos;inscription.
@@ -132,8 +132,8 @@ export function BecomeHostCTA() {
                   const Icon = b.icon;
                   return (
                     <div key={i} className="flex items-start gap-3 p-3.5 rounded-xl bg-background-card/[0.02] border border-white/[0.04] hover:bg-background-card/[0.04] hover:border-white/[0.08] transition-all duration-300">
-                      <div className="w-7 h-7 rounded-lg bg-primary-500/10 border border-primary-400/15 flex items-center justify-center flex-shrink-0 mt-0.5">
-                        <Icon className="w-3.5 h-3.5 text-primary-400" />
+                      <div className="w-7 h-7 rounded-lg bg-emerald-500/10 border border-emerald-400/15 flex items-center justify-center flex-shrink-0 mt-0.5">
+                        <Icon className="w-3.5 h-3.5 text-emerald-400" />
                       </div>
                       <span className="text-xs font-medium text-white/50 leading-relaxed">{b.text}</span>
                     </div>
@@ -145,7 +145,7 @@ export function BecomeHostCTA() {
               <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4 pt-2">
                 <Link
                   href={ctaHref}
-                  className="inline-flex items-center gap-2.5 px-8 py-4 bg-primary-600 text-white text-sm font-black rounded-full hover:bg-primary-700 transition-all duration-300 shadow-[0_0_30px_rgba(20,101,76,0.25)] hover:shadow-[0_0_50px_rgba(20,101,76,0.4)] hover:scale-[1.02] active:scale-[0.98]"
+                  className="inline-flex items-center gap-2.5 px-8 py-4 bg-emerald-600 text-white text-sm font-black rounded-full hover:bg-emerald-700 transition-all duration-300 shadow-[0_0_30px_rgba(20,101,76,0.25)] hover:shadow-[0_0_50px_rgba(20,101,76,0.4)] hover:scale-[1.02] active:scale-[0.98]"
                 >
                   {ctaLabel} <ArrowRight className="w-4 h-4" />
                 </Link>

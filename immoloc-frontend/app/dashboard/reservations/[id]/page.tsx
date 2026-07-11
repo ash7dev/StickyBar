@@ -53,8 +53,8 @@ const STATUT_CFG: Record<string, {
 }> = {
   PENDING:    { label: 'En attente',      gradient: 'from-amber-400 to-amber-500',     badge: 'bg-amber-400/15 text-amber-300 border-amber-400/30',       dot: 'bg-amber-400',   glow: 'shadow-amber-500/20',    icon: Clock         },
   PAID:       { label: 'Paiement reçu',   gradient: 'from-emerald-400 to-emerald-500', badge: 'bg-emerald-400/15 text-emerald-300 border-emerald-400/30', dot: 'bg-emerald-400', glow: 'shadow-emerald-500/20',  icon: CheckCircle2  },
-  CONFIRMED:  { label: 'Confirmée',       gradient: 'from-primary-400 to-primary-500', badge: 'bg-primary-400/15 text-primary-300 border-primary-400/30', dot: 'bg-primary-400', glow: 'shadow-primary-500/20',  icon: CheckCircle2  },
-  CHECKED_IN: { label: 'Séjour en cours', gradient: 'from-emerald-400 to-teal-500',    badge: 'bg-emerald-400/15 text-emerald-300 border-emerald-400/30', dot: 'bg-emerald-400', glow: 'shadow-emerald-500/20',  icon: CheckCircle2  },
+  CONFIRMED:  { label: 'Confirmée',       gradient: 'from-emerald-400 to-emerald-500', badge: 'bg-emerald-400/15 text-emerald-300 border-emerald-400/30', dot: 'bg-emerald-400', glow: 'shadow-emerald-500/20',  icon: CheckCircle2  },
+  CHECKED_IN: { label: 'Séjour en cours', gradient: 'from-emerald-500 to-emerald-600', badge: 'bg-emerald-400/15 text-emerald-300 border-emerald-400/30', dot: 'bg-emerald-400', glow: 'shadow-emerald-500/20',  icon: CheckCircle2  },
   COMPLETED:  { label: 'Terminée',        gradient: 'from-neutral-500 to-neutral-600', badge: 'bg-neutral-400/10 text-neutral-400 border-neutral-400/20', dot: 'bg-neutral-400', glow: 'shadow-neutral-500/10',  icon: CheckCircle2  },
   CANCELLED:  { label: 'Annulée',         gradient: 'from-rose-500 to-rose-600',       badge: 'bg-rose-400/15 text-rose-300 border-rose-400/30',          dot: 'bg-rose-400',    glow: 'shadow-rose-500/20',     icon: AlertTriangle },
   DISPUTED:   { label: 'Litige',          gradient: 'from-rose-600 to-red-700',        badge: 'bg-rose-500/15 text-rose-300 border-rose-500/30',          dot: 'bg-rose-500',    glow: 'shadow-rose-600/30',     icon: AlertTriangle },
@@ -64,7 +64,7 @@ const STATUT_CFG: Record<string, {
 const HISTORIQUE_CFG: Record<string, { label: string; icon: typeof CheckCircle2; accent: string }> = {
   PENDING:    { label: 'Réservation créée',     icon: Clock,         accent: 'text-amber-400 bg-amber-400/10 border-amber-400/20'    },
   PAID:       { label: 'Paiement confirmé',     icon: Banknote,      accent: 'text-emerald-400 bg-emerald-400/10 border-emerald-400/20' },
-  CONFIRMED:  { label: 'Réservation confirmée', icon: CheckCircle2,  accent: 'text-primary-400 bg-primary-400/10 border-primary-400/20' },
+  CONFIRMED:  { label: 'Réservation confirmée', icon: CheckCircle2,  accent: 'text-emerald-400 bg-emerald-400/10 border-emerald-400/20' },
   CHECKED_IN: { label: 'Check-in effectué',     icon: CheckCircle2,  accent: 'text-emerald-400 bg-emerald-400/10 border-emerald-400/20' },
   COMPLETED:  { label: 'Séjour terminé',        icon: CheckCircle2,  accent: 'text-neutral-400 bg-neutral-400/10 border-neutral-400/20' },
   CANCELLED:  { label: 'Annulée',               icon: AlertTriangle, accent: 'text-rose-400 bg-rose-400/10 border-rose-400/20'          },
@@ -79,7 +79,7 @@ const FOURNISSEUR_LABEL: Record<string, string> = {
 const FOURNISSEUR_BADGE: Record<string, string> = {
   WAVE:         'bg-sky-400/10 text-sky-300 border-sky-400/20',
   ORANGE_MONEY: 'bg-orange-400/10 text-orange-300 border-orange-400/20',
-  PAYDUNYA:     'bg-primary-400/10 text-primary-300 border-primary-400/20',
+  PAYDUNYA:     'bg-emerald-400/10 text-emerald-300 border-emerald-400/20',
   STRIPE:       'bg-violet-400/10 text-violet-300 border-violet-400/20',
 };
 
@@ -282,14 +282,14 @@ export default function ReservationDetailPage({ params }: { params: Promise<{ id
   const OWNER_PANEL_CTA: Record<string, { label: string; btnLabel: string; btnCls: string; chipBg: string; chipIcon: string }> = {
     PENDING:    { label: 'En attente du paiement', btnLabel: 'Voir',    btnCls: 'bg-white/10 text-white border border-white/20',                          chipBg: 'bg-amber-400/10 border-amber-400/20',   chipIcon: 'text-amber-400'   },
     PAID:       { label: 'Décision requise',        btnLabel: 'Décider', btnCls: 'bg-amber-500 text-white shadow-lg shadow-amber-500/40',                  chipBg: 'bg-amber-400/10 border-amber-400/20',   chipIcon: 'text-amber-400'   },
-    CONFIRMED:  { label: 'Check-in à gérer',        btnLabel: 'Gérer',   btnCls: 'bg-emerald-500 text-white shadow-lg shadow-emerald-500/40',              chipBg: 'bg-emerald-400/10 border-emerald-400/20', chipIcon: 'text-emerald-400' },
+    CONFIRMED:  { label: 'Check-in à gérer',        btnLabel: 'Gérer',   btnCls: 'bg-emerald-600 text-white shadow-lg shadow-emerald-500/40',              chipBg: 'bg-emerald-400/10 border-emerald-400/20', chipIcon: 'text-emerald-400' },
     CHECKED_IN: { label: 'Check-out à gérer',       btnLabel: 'Gérer',   btnCls: 'bg-rose-500 text-white shadow-lg shadow-rose-500/40',                   chipBg: 'bg-rose-400/10 border-rose-400/20',     chipIcon: 'text-rose-400'    },
-    COMPLETED:  { label: 'Noter votre expérience',  btnLabel: 'Noter',   btnCls: 'bg-gradient-to-r from-primary-500 to-primary-700 text-white shadow-lg shadow-primary-500/40', chipBg: 'bg-emerald-400/10 border-emerald-400/20', chipIcon: 'text-emerald-400' },
+    COMPLETED:  { label: 'Noter votre expérience',  btnLabel: 'Noter',   btnCls: 'bg-gradient-to-r from-emerald-500 to-emerald-700 text-white shadow-lg shadow-emerald-500/40', chipBg: 'bg-emerald-400/10 border-emerald-400/20', chipIcon: 'text-emerald-400' },
     DISPUTED:   { label: 'Litige en cours',         btnLabel: 'Voir',    btnCls: 'bg-rose-600 text-white shadow-lg shadow-rose-600/40',                    chipBg: 'bg-rose-400/10 border-rose-400/20',     chipIcon: 'text-rose-400'    },
   };
   const TENANT_PANEL_CTA: Record<string, { label: string; btnLabel: string; btnCls: string; chipBg: string; chipIcon: string }> = {
-    CONFIRMED:  { label: 'Check-in à valider',       btnLabel: 'Valider', btnCls: 'bg-emerald-500 text-white shadow-lg shadow-emerald-500/40',              chipBg: 'bg-primary-400/10 border-primary-400/20', chipIcon: 'text-primary-400' },
-    COMPLETED:  { label: 'Noter votre séjour',       btnLabel: 'Noter',   btnCls: 'bg-gradient-to-r from-primary-500 to-primary-700 text-white shadow-lg shadow-primary-500/40', chipBg: 'bg-emerald-400/10 border-emerald-400/20', chipIcon: 'text-emerald-400' },
+    CONFIRMED:  { label: 'Check-in à valider',       btnLabel: 'Valider', btnCls: 'bg-emerald-600 text-white shadow-lg shadow-emerald-500/40',              chipBg: 'bg-emerald-400/10 border-emerald-400/20', chipIcon: 'text-emerald-400' },
+    COMPLETED:  { label: 'Noter votre séjour',       btnLabel: 'Noter',   btnCls: 'bg-gradient-to-r from-emerald-500 to-emerald-700 text-white shadow-lg shadow-emerald-500/40', chipBg: 'bg-emerald-400/10 border-emerald-400/20', chipIcon: 'text-emerald-400' },
   };
   const cta = (isOwner ? OWNER_PANEL_CTA[res.statut] : TENANT_PANEL_CTA[res.statut]) ?? { label: cfg.label, btnLabel: 'Voir', btnCls: 'bg-white/10 text-white border border-white/20', chipBg: 'bg-white/6 border-white/10', chipIcon: 'text-white/50' };
 
@@ -340,14 +340,14 @@ export default function ReservationDetailPage({ params }: { params: Promise<{ id
                     <p className="text-[9px] font-black uppercase tracking-[0.2em] text-neutral-500 mb-1">Arrivée</p>
                     <p className="text-sm font-bold text-white">{dateLong(res.dateDebut)}</p>
                     {res.confirmeeLe && (
-                      <p className="text-[10px] font-semibold text-primary-400 mt-1 flex items-center justify-center gap-1">
+                      <p className="text-[10px] font-semibold text-emerald-400 mt-1 flex items-center justify-center gap-1">
                         <Clock className="w-3 h-3" />
                         {new Date(res.dateDebut).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })}
                       </p>
                     )}
                   </div>
                   <div className="flex flex-col items-center justify-center px-4 border-x border-white/10 gap-0.5">
-                    <Moon className="w-3.5 h-3.5 text-primary-400" />
+                    <Moon className="w-3.5 h-3.5 text-emerald-400" />
                     <span className="text-base font-black text-white tabular-nums leading-none">{res.nbNuits}</span>
                     <span className="text-[8px] font-bold text-neutral-500 uppercase">nuit{res.nbNuits > 1 ? 's' : ''}</span>
                   </div>
@@ -403,8 +403,8 @@ export default function ReservationDetailPage({ params }: { params: Promise<{ id
       <GlassCard>
         <div className="flex items-center justify-between p-5">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-2xl bg-primary-50 border border-primary-100 flex items-center justify-center">
-              <FileText className="w-4 h-4 text-primary-600" />
+            <div className="w-10 h-10 rounded-2xl bg-emerald-50 border border-emerald-100 flex items-center justify-center">
+              <FileText className="w-4 h-4 text-emerald-600" />
             </div>
             <div>
               <p className="text-sm font-bold text-neutral-900">Contrat de location</p>
@@ -427,7 +427,7 @@ export default function ReservationDetailPage({ params }: { params: Promise<{ id
           <GlassCardHeader icon={<User className="w-4 h-4 text-neutral-600" />} title="Locataire" />
           <div className="p-5 space-y-4">
             <div className="flex items-center gap-3">
-              <div className="w-12 h-12 rounded-2xl bg-primary-100 flex items-center justify-center text-sm font-black text-primary-700 shrink-0 overflow-hidden border border-primary-200/50">
+              <div className="w-12 h-12 rounded-2xl bg-emerald-100 flex items-center justify-center text-sm font-black text-emerald-700 shrink-0 overflow-hidden border border-emerald-200/50">
                 {res.locataire.avatarUrl
                   ? <Image src={res.locataire.avatarUrl} alt="" width={48} height={48} className="object-cover w-full h-full" />
                   : `${res.locataire.prenom[0]}${res.locataire.nom[0]}`}
@@ -453,7 +453,7 @@ export default function ReservationDetailPage({ params }: { params: Promise<{ id
                   <Phone className="w-3.5 h-3.5 text-neutral-500" />
                 </div>
                 {canSeePhone && res.locataire.telephone ? (
-                  <a href={`tel:${res.locataire.telephone}`} className="text-sm font-semibold text-neutral-800 hover:text-primary-600 transition-colors">
+                  <a href={`tel:${res.locataire.telephone}`} className="text-sm font-semibold text-neutral-800 hover:text-emerald-700 transition-colors">
                     {res.locataire.telephone}
                   </a>
                 ) : (
@@ -464,8 +464,8 @@ export default function ReservationDetailPage({ params }: { params: Promise<{ id
                 )}
               </div>
               <div className="flex items-center gap-2.5">
-                <div className="w-7 h-7 rounded-lg bg-amber-50 border border-amber-100 flex items-center justify-center shrink-0">
-                  <Star className="w-3.5 h-3.5 text-amber-500 fill-amber-500" />
+                <div className="w-7 h-7 rounded-lg bg-gold-50 border border-gold-100 flex items-center justify-center shrink-0">
+                  <Star className="w-3.5 h-3.5 text-gold-500 fill-gold-500" />
                 </div>
                 <span className="text-sm font-bold text-neutral-900">{res.locataire.noteLocataire?.toFixed(1) ?? '—'}</span>
                 <span className="text-xs text-neutral-400">/ 5</span>
@@ -547,9 +547,9 @@ export default function ReservationDetailPage({ params }: { params: Promise<{ id
           </div>
 
           {/* Info séquestre */}
-          <div className="flex items-start gap-3 bg-primary-500/8 border border-primary-400/15 rounded-xl p-4">
-            <Shield className="w-4 h-4 text-primary-400 shrink-0 mt-0.5" />
-            <p className="text-xs text-primary-300 font-medium leading-relaxed">
+          <div className="flex items-start gap-3 bg-emerald-500/8 border border-emerald-400/15 rounded-xl p-4">
+            <Shield className="w-4 h-4 text-emerald-400 shrink-0 mt-0.5" />
+            <p className="text-xs text-emerald-300 font-medium leading-relaxed">
               La commission de {commissionPct}% couvre le système de séquestre, la protection des deux parties et le support ImmoLoc.
             </p>
           </div>
@@ -728,9 +728,9 @@ export default function ReservationDetailPage({ params }: { params: Promise<{ id
 
             {/* Alert fonds gelés */}
             {res.litige.statut === 'EN_ATTENTE' && (
-              <div className="flex items-start gap-3 bg-primary-500/8 border border-primary-400/15 rounded-xl p-4">
-                <Shield className="w-4 h-4 text-primary-400 shrink-0 mt-0.5" />
-                <p className="text-xs text-primary-300 leading-relaxed">
+              <div className="flex items-start gap-3 bg-emerald-500/8 border border-emerald-400/15 rounded-xl p-4">
+                <Shield className="w-4 h-4 text-emerald-400 shrink-0 mt-0.5" />
+                <p className="text-xs text-emerald-300 leading-relaxed">
                   Les fonds restent gelés en séquestre jusqu'à la résolution du litige par notre équipe support.
                 </p>
               </div>

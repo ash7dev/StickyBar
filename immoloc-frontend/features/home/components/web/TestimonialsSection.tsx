@@ -61,7 +61,7 @@ export function TestimonialsSection() {
           </div>
           <h2 className="text-4xl font-black text-foreground tracking-tight">
             Ils nous font{' '}
-            <span className="text-primary-600">confiance</span>
+            <span className="text-emerald-600">confiance</span>
           </h2>
         </div>
 
@@ -71,7 +71,7 @@ export function TestimonialsSection() {
             {['MD', 'AN', 'OS', 'FS'].map((i) => (
               <div
                 key={i}
-                className="w-8 h-8 rounded-full bg-primary-500 border-2 border-white flex items-center justify-center text-[9px] font-black text-white"
+                className="w-8 h-8 rounded-full bg-emerald-500 border-2 border-white flex items-center justify-center text-[9px] font-black text-white"
               >
                 {i}
               </div>
@@ -90,8 +90,8 @@ export function TestimonialsSection() {
               className={`
                 group relative rounded-[1.75rem] p-7 flex flex-col justify-between gap-6 transition-all duration-300 hover:-translate-y-1
                 ${t.dark
-                  ? 'bg-primary-900 border border-white/5 hover:border-primary-500/20 hover:shadow-[0_12px_40px_rgba(20,101,76,0.1)]'
-                  : 'bg-background-card border border-border hover:border-primary-200 hover:shadow-[0_12px_40px_rgba(20,101,76,0.07)]'}
+                  ? 'bg-emerald-900 border border-white/5 hover:border-emerald-500/20 hover:shadow-[0_12px_40px_rgba(20,101,76,0.1)]'
+                  : 'bg-background-card border border-border hover:border-emerald-200 hover:shadow-[0_12px_40px_rgba(20,101,76,0.07)]'}
               `}
             >
               {/* Guillemet décoratif */}
@@ -107,7 +107,7 @@ export function TestimonialsSection() {
               </div>
 
               <div className={`flex items-center gap-3 pt-5 border-t ${t.dark ? 'border-white/8' : 'border-border'}`}>
-                <div className="w-9 h-9 rounded-full bg-primary-500 flex items-center justify-center text-[10px] font-black text-white flex-shrink-0">
+                <div className="w-9 h-9 rounded-full bg-emerald-500 flex items-center justify-center text-[10px] font-black text-white flex-shrink-0">
                   {t.initials}
                 </div>
                 <div>

@@ -101,9 +101,9 @@ export function OtpForm() {
             onKeyDown={(e) => handleKeyDown(i, e)}
             className={`w-12 h-14 text-center text-xl font-bold border-2 rounded-xl transition-all duration-200 focus:outline-none focus:ring-0 ${
               digit
-                ? 'border-primary-500 bg-primary-500/10 text-primary-700'
+                ? 'border-emerald-500 bg-emerald-500/10 text-emerald-700'
                 : 'border-border text-foreground'
-            } focus:border-primary-500 shadow-sm`}
+            } focus:border-emerald-500 shadow-sm`}
           />
         ))}
       </div>
@@ -118,7 +118,7 @@ export function OtpForm() {
         type="button"
         onClick={handleVerify}
         disabled={!isFilled || loading}
-        className="w-full flex items-center justify-center gap-2 py-2.5 bg-primary-700 hover:bg-primary-800 disabled:bg-primary-500 text-white rounded-lg text-sm font-medium transition-all duration-200 active:scale-[0.98] shadow-md hover:shadow-lg"
+        className="w-full flex items-center justify-center gap-2 py-2.5 bg-emerald-700 hover:bg-emerald-800 disabled:bg-emerald-500 text-white rounded-lg text-sm font-medium transition-all duration-200 active:scale-[0.98] shadow-md hover:shadow-lg"
       >
         {loading && <Loader2 className="h-4 w-4 animate-spin" />}
         {loading ? 'Vérification...' : 'Confirmer'}
@@ -135,7 +135,7 @@ export function OtpForm() {
           <button
             type="button"
             onClick={handleResend}
-            className="flex items-center gap-1.5 mx-auto text-sm text-primary-600 hover:text-primary-800 font-medium transition-colors"
+            className="flex items-center gap-1.5 mx-auto text-sm text-emerald-600 hover:text-emerald-800 font-medium transition-colors"
           >
             <RefreshCw className="h-3.5 w-3.5" />
             Renvoyer le code

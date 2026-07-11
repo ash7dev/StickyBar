@@ -91,7 +91,7 @@ function FiltersPanel({ onClose }: { onClose?: () => void }) {
   const pill = (isActive: boolean) =>
     `px-3 py-1.5 rounded-full text-xs font-bold transition-all active:scale-95 ${
       isActive
-        ? 'bg-primary-900 text-white shadow-sm'
+        ? 'bg-emerald-900 text-white shadow-sm'
         : 'bg-background-alt text-foreground-muted hover:bg-border'
     }`;
 
@@ -104,7 +104,7 @@ function FiltersPanel({ onClose }: { onClose?: () => void }) {
           <SlidersHorizontal className="w-4 h-4 text-foreground" />
           <span className="text-sm font-black text-foreground">Filtres</span>
           {active > 0 && (
-            <span className="w-5 h-5 rounded-full bg-primary-600 text-white text-[10px] font-black flex items-center justify-center leading-none">
+            <span className="w-5 h-5 rounded-full bg-emerald-600 text-white text-[10px] font-black flex items-center justify-center leading-none">
               {active}
             </span>
           )}
@@ -139,7 +139,7 @@ function FiltersPanel({ onClose }: { onClose?: () => void }) {
           <select
             value={filters.ville}
             onChange={(e) => setFilters({ ville: e.target.value })}
-            className="w-full pl-8.5 pr-8 py-2.5 rounded-xl bg-background-alt border border-border text-sm font-semibold text-foreground appearance-none focus:outline-none focus:border-primary-400 focus:ring-2 focus:ring-primary-100 transition-all"
+            className="w-full pl-8.5 pr-8 py-2.5 rounded-xl bg-background-alt border border-border text-sm font-semibold text-foreground appearance-none focus:outline-none focus:border-emerald-400 focus:ring-2 focus:ring-emerald-100 transition-all"
           >
             <option value="">Toutes les zones</option>
             {VILLES.map((v) => <option key={v} value={v}>{v}</option>)}
@@ -177,7 +177,7 @@ function FiltersPanel({ onClose }: { onClose?: () => void }) {
             placeholder="Min"
             value={filters.prixMin ?? ''}
             onChange={(e) => setFilters({ prixMin: e.target.value ? parseInt(e.target.value) : null })}
-            className="flex-1 min-w-0 px-3 py-2.5 rounded-xl bg-background-alt border border-border text-sm font-semibold text-foreground focus:outline-none focus:border-primary-400 focus:ring-2 focus:ring-primary-100 transition-all"
+            className="flex-1 min-w-0 px-3 py-2.5 rounded-xl bg-background-alt border border-border text-sm font-semibold text-foreground focus:outline-none focus:border-emerald-400 focus:ring-2 focus:ring-emerald-100 transition-all"
           />
           <span className="text-foreground-muted font-bold shrink-0">—</span>
           <input
@@ -185,7 +185,7 @@ function FiltersPanel({ onClose }: { onClose?: () => void }) {
             placeholder="Max"
             value={filters.prixMax ?? ''}
             onChange={(e) => setFilters({ prixMax: e.target.value ? parseInt(e.target.value) : null })}
-            className="flex-1 min-w-0 px-3 py-2.5 rounded-xl bg-background-alt border border-border text-sm font-semibold text-foreground focus:outline-none focus:border-primary-400 focus:ring-2 focus:ring-primary-100 transition-all"
+            className="flex-1 min-w-0 px-3 py-2.5 rounded-xl bg-background-alt border border-border text-sm font-semibold text-foreground focus:outline-none focus:border-emerald-400 focus:ring-2 focus:ring-emerald-100 transition-all"
           />
         </div>
         <div className="flex flex-wrap gap-1.5">
@@ -219,7 +219,7 @@ function FiltersPanel({ onClose }: { onClose?: () => void }) {
               value={filters.dateDebut?.toISOString().split('T')[0] ?? ''}
               min={new Date().toISOString().split('T')[0]}
               onChange={(e) => setFilters({ dateDebut: e.target.value ? new Date(e.target.value) : null })}
-              className="w-full px-2.5 py-2 rounded-xl bg-background-alt border border-border text-xs font-semibold text-foreground focus:outline-none focus:border-primary-400 focus:ring-2 focus:ring-primary-100 transition-all"
+              className="w-full px-2.5 py-2 rounded-xl bg-background-alt border border-border text-xs font-semibold text-foreground focus:outline-none focus:border-emerald-400 focus:ring-2 focus:ring-emerald-100 transition-all"
             />
           </div>
           <div>
@@ -231,7 +231,7 @@ function FiltersPanel({ onClose }: { onClose?: () => void }) {
               value={filters.dateFin?.toISOString().split('T')[0] ?? ''}
               min={filters.dateDebut?.toISOString().split('T')[0] ?? new Date().toISOString().split('T')[0]}
               onChange={(e) => setFilters({ dateFin: e.target.value ? new Date(e.target.value) : null })}
-              className="w-full px-2.5 py-2 rounded-xl bg-background-alt border border-border text-xs font-semibold text-foreground focus:outline-none focus:border-primary-400 focus:ring-2 focus:ring-primary-100 transition-all"
+              className="w-full px-2.5 py-2 rounded-xl bg-background-alt border border-border text-xs font-semibold text-foreground focus:outline-none focus:border-emerald-400 focus:ring-2 focus:ring-emerald-100 transition-all"
             />
           </div>
         </div>
@@ -246,7 +246,7 @@ function FiltersPanel({ onClose }: { onClose?: () => void }) {
           <button
             onClick={() => setFilters({ nbPersonnes: Math.max(1, filters.nbPersonnes - 1) })}
             disabled={filters.nbPersonnes <= 1}
-            className="w-9 h-9 rounded-full border border-border bg-background-alt flex items-center justify-center text-foreground-muted hover:border-primary-900 hover:bg-primary-900 hover:text-white disabled:opacity-30 disabled:pointer-events-none transition-all"
+            className="w-9 h-9 rounded-full border border-border bg-background-alt flex items-center justify-center text-foreground-muted hover:border-emerald-900 hover:bg-emerald-900 hover:text-white disabled:opacity-30 disabled:pointer-events-none transition-all"
           >
             <Minus className="w-3.5 h-3.5" />
           </button>
@@ -258,7 +258,7 @@ function FiltersPanel({ onClose }: { onClose?: () => void }) {
           </div>
           <button
             onClick={() => setFilters({ nbPersonnes: filters.nbPersonnes + 1 })}
-            className="w-9 h-9 rounded-full border border-border bg-background-alt flex items-center justify-center text-foreground-muted hover:border-primary-900 hover:bg-primary-900 hover:text-white transition-all"
+            className="w-9 h-9 rounded-full border border-border bg-background-alt flex items-center justify-center text-foreground-muted hover:border-emerald-900 hover:bg-emerald-900 hover:text-white transition-all"
           >
             <Plus className="w-3.5 h-3.5" />
           </button>
@@ -290,8 +290,8 @@ export function ListingFiltersMobile() {
     <>
       <button className={`inline-flex items-center gap-2 px-4 py-2.5 rounded-xl border text-sm font-bold transition-all active:scale-95 ${
           active > 0
-            ? 'bg-primary-900 border-primary-900 text-white shadow-sm'
-            : 'bg-background-card border-border text-foreground hover:border-primary-400'
+            ? 'bg-emerald-900 border-emerald-900 text-white shadow-sm'
+            : 'bg-background-card border-border text-foreground hover:border-emerald-400'
         }`}>
         <SlidersHorizontal className="w-4 h-4" />
         Filtres

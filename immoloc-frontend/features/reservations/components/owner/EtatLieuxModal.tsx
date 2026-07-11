@@ -61,11 +61,11 @@ const CFG = {
     subtitle:     'Photographiez l\'état du logement après le départ du locataire.',
     confirmLabel: 'Confirmer le check-out',
     icon:         LogOut,
-    iconBg:       'bg-primary-50 border-primary-100',
-    iconColor:    'text-primary-600',
-    btn:          'bg-primary-600 hover:bg-primary-700 shadow-primary-600/20',
-    bar:          'bg-primary-500',
-    dot:          'bg-primary-500',
+    iconBg:       'bg-emerald-50 border-emerald-100',
+    iconColor:    'text-emerald-600',
+    btn:          'bg-emerald-600 hover:bg-emerald-700 shadow-emerald-600/20',
+    bar:          'bg-emerald-500',
+    dot:          'bg-emerald-500',
   },
 } as const;
 
@@ -296,7 +296,7 @@ function EtatLieuxModal({ reservationId, type, onSuccess, onCancel }: Props) {
                   <select
                     value={entry.categorie}
                     onChange={(e) => changeCategorie(entry.localId, e.target.value as PhotoCategorie)}
-                    className="w-full text-[10px] font-bold text-neutral-600 bg-neutral-50 border border-border rounded-lg px-2 py-1.5 outline-none focus:border-primary-400 cursor-pointer"
+                    className="w-full text-[10px] font-bold text-neutral-600 bg-neutral-50 border border-border rounded-lg px-2 py-1.5 outline-none focus:border-emerald-400 cursor-pointer"
                   >
                     {CATEGORIES.map((c) => (
                       <option key={c.value} value={c.value}>{c.label}</option>
@@ -309,12 +309,12 @@ function EtatLieuxModal({ reservationId, type, onSuccess, onCancel }: Props) {
               <button
                 type="button"
                 onClick={() => fileInputRef.current?.click()}
-                className="flex flex-col items-center justify-center aspect-square rounded-xl border-2 border-dashed border-border hover:border-primary-300 bg-neutral-50 hover:bg-primary-50 transition-all duration-200 group"
+                className="flex flex-col items-center justify-center aspect-square rounded-xl border-2 border-dashed border-border hover:border-emerald-300 bg-neutral-50 hover:bg-emerald-50 transition-all duration-200 group"
               >
-                <div className="w-8 h-8 rounded-full bg-white border border-border group-hover:border-primary-200 group-hover:bg-primary-50 flex items-center justify-center transition-all duration-200 mb-1.5 shadow-sm">
-                  <Plus className="w-3.5 h-3.5 text-neutral-400 group-hover:text-primary-500 transition-colors" />
+                <div className="w-8 h-8 rounded-full bg-white border border-border group-hover:border-emerald-200 group-hover:bg-emerald-50 flex items-center justify-center transition-all duration-200 mb-1.5 shadow-sm">
+                  <Plus className="w-3.5 h-3.5 text-neutral-400 group-hover:text-emerald-500 transition-colors" />
                 </div>
-                <span className="text-[10px] font-bold text-neutral-400 group-hover:text-primary-500 transition-colors">
+                <span className="text-[10px] font-bold text-neutral-400 group-hover:text-emerald-500 transition-colors">
                   Ajouter
                 </span>
               </button>
@@ -335,13 +335,13 @@ function EtatLieuxModal({ reservationId, type, onSuccess, onCancel }: Props) {
             <button
               type="button"
               onClick={() => fileInputRef.current?.click()}
-              className="w-full flex flex-col items-center justify-center gap-3 py-10 rounded-2xl border-2 border-dashed border-border hover:border-primary-300 bg-neutral-50 hover:bg-primary-50 transition-all duration-200 group"
+              className="w-full flex flex-col items-center justify-center gap-3 py-10 rounded-2xl border-2 border-dashed border-border hover:border-emerald-300 bg-neutral-50 hover:bg-emerald-50 transition-all duration-200 group"
             >
-              <div className="w-12 h-12 rounded-2xl bg-white border border-border group-hover:border-primary-200 flex items-center justify-center shadow-sm transition-colors">
-                <ImageIcon className="w-5 h-5 text-neutral-300 group-hover:text-primary-400 transition-colors" />
+              <div className="w-12 h-12 rounded-2xl bg-white border border-border group-hover:border-emerald-200 flex items-center justify-center shadow-sm transition-colors">
+                <ImageIcon className="w-5 h-5 text-neutral-300 group-hover:text-emerald-400 transition-colors" />
               </div>
               <div className="text-center">
-                <p className="text-sm font-bold text-neutral-500 group-hover:text-primary-600 transition-colors">
+                <p className="text-sm font-bold text-neutral-500 group-hover:text-emerald-600 transition-colors">
                   Ajouter des photos
                 </p>
                 <p className="text-xs text-neutral-400 mt-0.5">JPG, PNG, WebP · Plusieurs fichiers acceptés</p>

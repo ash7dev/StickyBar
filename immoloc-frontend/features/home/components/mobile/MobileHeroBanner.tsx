@@ -7,7 +7,7 @@ export function MobileHeroBanner({ showCta = true }: { showCta?: boolean }) {
   return (
     <section className="px-4 pt-4 pb-2">
       <div
-        className="relative overflow-hidden rounded-[2rem] bg-primary-900"
+        className="relative overflow-hidden rounded-[2rem] bg-emerald-900"
       >
         {/* Dot pattern */}
         <div
@@ -20,7 +20,7 @@ export function MobileHeroBanner({ showCta = true }: { showCta?: boolean }) {
 
         {/* Primary glow top-right */}
         <div
-          className="absolute -top-12 -right-12 w-52 h-52 rounded-full blur-[80px] pointer-events-none bg-primary-500/6"
+          className="absolute -top-12 -right-12 w-52 h-52 rounded-full blur-[80px] pointer-events-none bg-emerald-500/6"
         />
 
         {/* Accent glow bottom-left */}
@@ -31,9 +31,9 @@ export function MobileHeroBanner({ showCta = true }: { showCta?: boolean }) {
         <div className="relative z-10 px-5 pt-10 pb-10">
 
           {/* Eyebrow */}
-          <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full mb-3 bg-primary-500/10 border border-primary-400/20">
-            <ShieldCheck className="w-2.5 h-2.5 text-primary-400" />
-            <span className="text-[8px] font-black uppercase tracking-[0.22em] text-primary-400">
+          <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full mb-3 bg-emerald-500/10 border border-emerald-400/20">
+            <ShieldCheck className="w-2.5 h-2.5 text-emerald-400" />
+            <span className="text-[8px] font-black uppercase tracking-[0.22em] text-emerald-400">
               Logements vérifiés
             </span>
           </div>
@@ -43,7 +43,7 @@ export function MobileHeroBanner({ showCta = true }: { showCta?: boolean }) {
             Réservez des{' '}
             <span
               style={{
-                background: 'linear-gradient(90deg, var(--primary-300) 0%, var(--primary-500) 100%)',
+                background: 'linear-gradient(90deg, var(--emerald-300) 0%, var(--emerald-500) 100%)',
                 WebkitBackgroundClip: 'text',
                 WebkitTextFillColor: 'transparent',
               }}
@@ -64,7 +64,7 @@ export function MobileHeroBanner({ showCta = true }: { showCta?: boolean }) {
               href="/logements"
               className="flex items-center justify-center gap-2 w-full py-3.5 text-[12px] font-black text-white rounded-xl active:scale-[0.97] transition-transform duration-200"
               style={{
-                background: 'linear-gradient(135deg, var(--primary-700) 0%, var(--primary-500) 100%)',
+                background: 'linear-gradient(135deg, var(--emerald-700) 0%, var(--emerald-500) 100%)',
                 boxShadow: '0 6px 24px rgba(20,101,76,0.28), 0 2px 6px rgba(20,101,76,0.18)',
               }}
             >

@@ -23,7 +23,7 @@ export function TenantHostCard({ proprietaire, statut, dateDebut }: Props) {
         {/* Avatar + identité */}
         <div className="flex items-center gap-4">
           <div className="relative shrink-0">
-            <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-primary-400 to-primary-600 flex items-center justify-center text-lg font-black text-white shadow-lg shadow-primary-500/25 overflow-hidden">
+            <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-emerald-400 to-emerald-600 flex items-center justify-center text-lg font-black text-white shadow-lg shadow-emerald-500/25 overflow-hidden">
               {proprietaire.avatarUrl
                 ? <Image src={proprietaire.avatarUrl} alt="" fill className="object-cover" />
                 : initiales}
@@ -37,7 +37,7 @@ export function TenantHostCard({ proprietaire, statut, dateDebut }: Props) {
             <p className="text-base font-black text-neutral-900 leading-tight truncate">
               {proprietaire.prenom} {proprietaire.nom}
             </p>
-            <span className="inline-flex items-center gap-1 mt-1 text-[10px] font-bold text-primary-600 bg-primary-50 border border-primary-100 px-2 py-0.5 rounded-full">
+            <span className="inline-flex items-center gap-1 mt-1 text-[10px] font-bold text-emerald-600 bg-emerald-50 border border-emerald-100 px-2 py-0.5 rounded-full">
               Propriétaire vérifié
             </span>
           </div>

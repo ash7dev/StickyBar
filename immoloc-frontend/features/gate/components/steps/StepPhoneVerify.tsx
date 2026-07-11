@@ -14,7 +14,7 @@ const inputCls = cn(
   'w-full rounded-xl border border-border px-4 py-3 text-sm text-neutral-900',
   'placeholder:text-neutral-300',
   'outline-none transition-all',
-  'focus:border-primary-400 focus:ring-2 focus:ring-primary-100',
+  'focus:border-emerald-400 focus:ring-2 focus:ring-emerald-100',
 );
 
 export function StepPhoneVerify({ onDone }: Props) {
@@ -123,7 +123,7 @@ export function StepPhoneVerify({ onDone }: Props) {
         <button
           onClick={sendOtp}
           disabled={loading || !phone.trim()}
-          className="w-full bg-primary-600 hover:bg-primary-700 disabled:opacity-50 text-white text-sm font-bold rounded-xl py-3 transition-colors"
+          className="w-full bg-emerald-600 hover:bg-emerald-700 disabled:opacity-50 text-white text-sm font-bold rounded-xl py-3 transition-colors"
         >
           {loading ? 'Envoi…' : 'Recevoir le code SMS'}
         </button>
@@ -165,7 +165,7 @@ export function StepPhoneVerify({ onDone }: Props) {
         <button
           onClick={verifyOtp}
         disabled={loading || code.length < 6}
-          className="w-full bg-primary-600 hover:bg-primary-700 disabled:opacity-50 text-white text-sm font-bold rounded-xl py-3 transition-colors"
+          className="w-full bg-emerald-600 hover:bg-emerald-700 disabled:opacity-50 text-white text-sm font-bold rounded-xl py-3 transition-colors"
         >
         {loading ? 'Vérification…' : 'Confirmer le code'}
       </button>
@@ -173,7 +173,7 @@ export function StepPhoneVerify({ onDone }: Props) {
       <div className="flex justify-center">
         <button
           onClick={() => { setSent(false); setCode(''); setError(''); }}
-          className="text-xs font-medium text-neutral-400 hover:text-primary-600 transition-colors"
+          className="text-xs font-medium text-neutral-400 hover:text-emerald-600 transition-colors"
         >
           Renvoyer le code
         </button>

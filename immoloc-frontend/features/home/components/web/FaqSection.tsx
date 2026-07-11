@@ -37,22 +37,22 @@ export function FaqSection() {
 
           {/* ── Left — Sticky sidebar ── */}
           <div className="lg:sticky lg:top-32">
-            <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full border border-primary-200 bg-primary-50 mb-6">
-              <HelpCircle className="w-3.5 h-3.5 text-primary-500" />
-              <span className="text-[10px] font-black text-primary-600 uppercase tracking-[0.2em]">Questions fréquentes</span>
+            <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full border border-emerald-200 bg-emerald-50 mb-6">
+              <HelpCircle className="w-3.5 h-3.5 text-emerald-500" />
+              <span className="text-[10px] font-black text-emerald-600 uppercase tracking-[0.2em]">Questions fréquentes</span>
             </div>
 
             <h2 className="text-4xl sm:text-5xl font-black text-foreground tracking-tight leading-[1.1] mb-4">
               Tout savoir sur{' '}
-              <span className="text-primary-600">ImmoLoc</span>
+              <span className="text-emerald-600">ImmoLoc</span>
             </h2>
             <p className="text-foreground-muted text-sm font-medium leading-relaxed mb-10 max-w-sm">
               Vous avez des questions ? Nous avons les réponses. Sinon, notre support est là pour vous.
             </p>
 
             {/* Contact card — glassmorphism dark */}
-            <div className="relative bg-primary-900 rounded-[2rem] p-8 border border-white/5 overflow-hidden">
-              <div className="absolute -top-12 -right-12 w-40 h-40 bg-primary-500/10 rounded-full blur-[60px] pointer-events-none" />
+            <div className="relative bg-emerald-900 rounded-[2rem] p-8 border border-white/5 overflow-hidden">
+              <div className="absolute -top-12 -right-12 w-40 h-40 bg-emerald-500/10 rounded-full blur-[60px] pointer-events-none" />
               <div className="relative z-10">
                 <p className="text-white font-black text-base mb-1.5">Besoin d&apos;aide directe ?</p>
                 <p className="text-white/30 text-xs font-medium mb-6 leading-relaxed">
@@ -61,7 +61,7 @@ export function FaqSection() {
                 <div className="flex flex-col sm:flex-row gap-3">
                   <Link
                     href="/contact"
-                    className="inline-flex items-center justify-center gap-2 px-5 py-3 bg-primary-600 text-white text-xs font-black rounded-full hover:bg-primary-500 transition-all shadow-[0_0_20px_rgba(20,101,76,0.2)] hover:shadow-[0_0_30px_rgba(20,101,76,0.35)]"
+                    className="inline-flex items-center justify-center gap-2 px-5 py-3 bg-emerald-600 text-white text-xs font-black rounded-full hover:bg-emerald-500 transition-all shadow-[0_0_20px_rgba(20,101,76,0.2)] hover:shadow-[0_0_30px_rgba(20,101,76,0.35)]"
                   >
                     <MessageCircle className="w-3.5 h-3.5" />
                     WhatsApp
@@ -88,7 +88,7 @@ export function FaqSection() {
                   className={`
                     rounded-[1.5rem] border overflow-hidden transition-all duration-500
                     ${isOpen
-                      ? 'bg-primary-900 border-white/[0.08] shadow-[0_16px_48px_rgba(0,0,0,0.1)]'
+                      ? 'bg-emerald-900 border-white/[0.08] shadow-[0_16px_48px_rgba(0,0,0,0.1)]'
                       : 'bg-background-card border-border hover:border-border-hover hover:shadow-sm'}
                   `}
                 >
@@ -97,7 +97,7 @@ export function FaqSection() {
                     className="w-full flex items-center gap-4 px-7 py-6 text-left"
                   >
                     {/* Number badge */}
-                    <span className={`w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 text-xs font-black transition-colors duration-300 ${isOpen ? 'bg-primary-600 text-white' : 'bg-background-alt text-foreground-muted'}`}>
+                    <span className={`w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 text-xs font-black transition-colors duration-300 ${isOpen ? 'bg-emerald-600 text-white' : 'bg-background-alt text-foreground-muted'}`}>
                       {String(i + 1).padStart(2, '0')}
                     </span>
 
@@ -115,7 +115,7 @@ export function FaqSection() {
                   >
                     <div className="overflow-hidden">
                       <div className="px-7 pb-7 pl-[4.75rem]">
-                        <div className="w-10 h-px bg-primary-500/20 mb-4" />
+                        <div className="w-10 h-px bg-emerald-500/20 mb-4" />
                         <p className="text-white/40 text-sm font-medium leading-relaxed">{faq.a}</p>
                       </div>
                     </div>

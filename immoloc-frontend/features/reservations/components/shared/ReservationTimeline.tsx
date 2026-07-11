@@ -9,7 +9,7 @@ type Historique = ReservationDetail['historique'];
 const CFG: Record<string, { label: string; icon: typeof CheckCircle2; accent: string }> = {
   PENDING:    { label: 'Réservation créée',     icon: Clock,         accent: 'text-amber-400 bg-amber-400/10 border-amber-400/20'      },
   PAID:       { label: 'Paiement confirmé',     icon: Banknote,      accent: 'text-emerald-400 bg-emerald-400/10 border-emerald-400/20' },
-  CONFIRMED:  { label: 'Réservation confirmée', icon: CheckCircle2,  accent: 'text-primary-400 bg-primary-400/10 border-primary-400/20' },
+  CONFIRMED:  { label: 'Réservation confirmée', icon: CheckCircle2,  accent: 'text-emerald-400 bg-emerald-400/10 border-emerald-400/20' },
   CHECKED_IN: { label: 'Check-in effectué',     icon: CheckCircle2,  accent: 'text-emerald-400 bg-emerald-400/10 border-emerald-400/20' },
   COMPLETED:  { label: 'Séjour terminé',        icon: CheckCircle2,  accent: 'text-neutral-400 bg-neutral-400/10 border-neutral-400/20' },
   CANCELLED:  { label: 'Annulée',               icon: AlertTriangle, accent: 'text-rose-400 bg-rose-400/10 border-rose-400/20'          },

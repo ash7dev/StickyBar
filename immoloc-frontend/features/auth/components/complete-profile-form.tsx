@@ -62,7 +62,7 @@ export function CompleteProfileForm({ accessToken, userEmail, next }: CompletePr
               <input
                 {...register('prenom')}
                 placeholder="Amadou"
-                className="w-full pl-9 pr-3 py-2.5 border border-border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary-500"
+                className="w-full pl-9 pr-3 py-2.5 border border-border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500"
               />
             </div>
             {errors.prenom && <p className="text-error-500 text-xs mt-1">{errors.prenom.message}</p>}
@@ -72,7 +72,7 @@ export function CompleteProfileForm({ accessToken, userEmail, next }: CompletePr
             <input
               {...register('nom')}
               placeholder="Diallo"
-              className="w-full px-3 py-2.5 border border-border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary-500"
+              className="w-full px-3 py-2.5 border border-border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500"
             />
             {errors.nom && <p className="text-error-500 text-xs mt-1">{errors.nom.message}</p>}
           </div>
@@ -86,7 +86,7 @@ export function CompleteProfileForm({ accessToken, userEmail, next }: CompletePr
               {...register('telephone')}
               type="tel"
               placeholder="+221771234567"
-              className="w-full pl-10 pr-3 py-2.5 border border-border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary-500"
+              className="w-full pl-10 pr-3 py-2.5 border border-border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500"
             />
           </div>
           <p className="text-neutral-400 text-xs mt-1">Format international : +221 Sénégal, +33 France…</p>
@@ -102,7 +102,7 @@ export function CompleteProfileForm({ accessToken, userEmail, next }: CompletePr
         <button
           type="submit"
           disabled={isSubmitting}
-          className="w-full flex items-center justify-center gap-2 py-2.5 bg-primary-700 hover:bg-primary-800 disabled:bg-primary-500 text-white rounded-lg text-sm font-medium transition-all duration-200 active:scale-[0.98]"
+          className="w-full flex items-center justify-center gap-2 py-2.5 bg-emerald-700 hover:bg-emerald-800 disabled:bg-emerald-500 text-white rounded-lg text-sm font-medium transition-all duration-200 active:scale-[0.98]"
         >
           {isSubmitting && <Loader2 className="h-4 w-4 animate-spin" />}
           {isSubmitting ? 'Enregistrement...' : 'Terminer l\'inscription'}

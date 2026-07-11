@@ -89,7 +89,7 @@ export function MobileListingGridCard({ listing }: { listing: Listing }) {
         </div>
 
         {/* Titre */}
-        <h3 className="text-[13px] font-black text-foreground leading-snug line-clamp-2 mb-3 group-hover:text-primary-600 transition-colors">
+        <h3 className="text-[13px] font-black text-foreground leading-snug line-clamp-2 mb-3 group-hover:text-emerald-600 transition-colors">
           {listing.titre}
         </h3>
 
@@ -97,7 +97,7 @@ export function MobileListingGridCard({ listing }: { listing: Listing }) {
         <div className="mt-auto">
           <div
             className="flex items-center justify-between px-3 py-2.5 rounded-xl shadow-sm group-hover:shadow-md transition-shadow"
-            style={{ background: 'linear-gradient(135deg, var(--primary-600) 0%, var(--primary-500) 100%)' }}
+            style={{ background: 'linear-gradient(135deg, var(--emerald-600) 0%, var(--emerald-500) 100%)' }}
           >
             <div className="flex flex-col gap-0.5">
               <span className="text-[16px] font-black text-white leading-none tracking-tight">{price}</span>

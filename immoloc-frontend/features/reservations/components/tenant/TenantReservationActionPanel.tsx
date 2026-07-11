@@ -211,12 +211,12 @@ export function TenantReservationActionPanel({ id, res, onRefetch }: Props) {
         subtitle: 'Partagez votre expérience avec la communauté',
       }
     : {
-        gradient: 'from-primary-500 to-primary-700',
-        iconBg: 'bg-primary-50 border-primary-100',
-        iconColor: 'text-primary-600',
+        gradient: 'from-emerald-500 to-emerald-700',
+        iconBg: 'bg-emerald-50 border-emerald-100',
+        iconColor: 'text-emerald-600',
         icon: LogIn,
         label: 'Check-in',
-        badge: 'bg-primary-100 text-primary-700 border-primary-200',
+        badge: 'bg-emerald-100 text-emerald-700 border-emerald-200',
         badgeText: 'Étape 3/4',
         subtitle: subtitleMap[subState],
       };
@@ -263,15 +263,15 @@ export function TenantReservationActionPanel({ id, res, onRefetch }: Props) {
           {/* ══ OWNER-READY : proprio a confirmé → galerie + valider + refuser ══ */}
           {subState === 'owner-ready' && (
             <>
-              <div className="flex items-start gap-3 bg-primary-50 border border-primary-100 rounded-2xl p-4">
-                <div className="w-8 h-8 rounded-xl bg-primary-100 border border-primary-200 flex items-center justify-center shrink-0">
-                  <CheckCircle2 className="w-4 h-4 text-primary-600" />
+              <div className="flex items-start gap-3 bg-emerald-50 border border-emerald-100 rounded-2xl p-4">
+                <div className="w-8 h-8 rounded-xl bg-emerald-100 border border-emerald-200 flex items-center justify-center shrink-0">
+                  <CheckCircle2 className="w-4 h-4 text-emerald-600" />
                 </div>
                 <div>
-                  <p className="text-xs font-black text-primary-800">
+                  <p className="text-xs font-black text-emerald-800">
                     {checkinPhotos.length} photo{checkinPhotos.length > 1 ? 's' : ''} de check-in disponible{checkinPhotos.length > 1 ? 's' : ''}
                   </p>
-                  <p className="text-xs text-primary-700 mt-0.5 leading-relaxed">
+                  <p className="text-xs text-emerald-700 mt-0.5 leading-relaxed">
                     L&apos;hôte a documenté l&apos;état du logement. Vérifiez les photos puis validez votre arrivée.
                   </p>
                 </div>
@@ -283,7 +283,7 @@ export function TenantReservationActionPanel({ id, res, onRefetch }: Props) {
                 onClick={() => setShowGallery(true)}
                 className="w-full group flex items-center gap-4 p-4 rounded-2xl border border-neutral-200/80 bg-white hover:bg-neutral-50 hover:border-neutral-300 hover:shadow-md hover:shadow-neutral-200/60 transition-all duration-200 text-left overflow-hidden relative"
               >
-                <div className="absolute left-0 top-0 bottom-0 w-1 rounded-l-2xl bg-primary-500" />
+                <div className="absolute left-0 top-0 bottom-0 w-1 rounded-l-2xl bg-emerald-500" />
                 <div className="flex items-center ml-1 shrink-0">
                   {checkinPhotos.slice(0, 3).map((p, i) => (
                     <div
@@ -307,8 +307,8 @@ export function TenantReservationActionPanel({ id, res, onRefetch }: Props) {
                   <p className="text-sm font-black text-neutral-900 leading-tight">Voir l&apos;état des lieux</p>
                   <p className="text-xs text-neutral-400 mt-0.5">Inspectez chaque pièce avant de confirmer</p>
                 </div>
-                <div className="w-8 h-8 rounded-xl bg-primary-50 group-hover:bg-primary-100 border border-primary-100 flex items-center justify-center transition-colors shrink-0">
-                  <Images className="w-4 h-4 text-primary-500" />
+                <div className="w-8 h-8 rounded-xl bg-emerald-50 group-hover:bg-emerald-100 border border-emerald-100 flex items-center justify-center transition-colors shrink-0">
+                  <Images className="w-4 h-4 text-emerald-500" />
                 </div>
               </button>
 
@@ -552,7 +552,7 @@ export function TenantReservationActionPanel({ id, res, onRefetch }: Props) {
                   </label>
                   <textarea
                     rows={3}
-                    className="w-full text-xs bg-white border border-neutral-200 text-neutral-900 placeholder:text-neutral-400 rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-primary-400/40 focus:border-primary-400 resize-none transition-all"
+                    className="w-full text-xs bg-white border border-neutral-200 text-neutral-900 placeholder:text-neutral-400 rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-emerald-400/40 focus:border-emerald-400 resize-none transition-all"
                     placeholder="Partagez votre expérience : propreté, conformité, accueil..."
                     value={ratingComment}
                     onChange={(e) => setRatingComment(e.target.value)}
@@ -563,7 +563,7 @@ export function TenantReservationActionPanel({ id, res, onRefetch }: Props) {
                 <button
                   onClick={handleSubmitRating}
                   disabled={isSubmitting || rating === 0}
-                  className="w-full flex items-center justify-center gap-2.5 py-3.5 text-sm font-black text-white rounded-2xl bg-gradient-to-r from-primary-500 to-primary-700 hover:from-primary-600 hover:to-primary-800 disabled:from-neutral-200 disabled:to-neutral-200 disabled:text-neutral-400 shadow-md shadow-primary-500/25 disabled:shadow-none transition-all"
+                  className="w-full flex items-center justify-center gap-2.5 py-3.5 text-sm font-black text-white rounded-2xl bg-gradient-to-r from-emerald-500 to-emerald-700 hover:from-emerald-600 hover:to-emerald-800 disabled:from-neutral-200 disabled:to-neutral-200 disabled:text-neutral-400 shadow-md shadow-emerald-500/25 disabled:shadow-none transition-all"
                 >
                   {isSubmitting
                     ? <><Loader2 className="w-4 h-4 animate-spin" />Envoi en cours…</>
@@ -599,9 +599,9 @@ export function TenantReservationActionPanel({ id, res, onRefetch }: Props) {
           <button
             type="button"
             onClick={() => setShowRulesModal(true)}
-            className="flex items-center gap-2 text-xs font-bold text-primary-600 hover:text-primary-700 transition-colors"
+            className="flex items-center gap-2 text-xs font-bold text-emerald-600 hover:text-emerald-700 transition-colors"
           >
-            <HelpCircle className="w-4 h-4 text-primary-500 shrink-0" />
+            <HelpCircle className="w-4 h-4 text-emerald-500 shrink-0" />
             Comprendre les règles (séquestre, auto-checkin, remboursement…)
           </button>
         </div>
@@ -752,13 +752,13 @@ export function TenantReservationActionPanel({ id, res, onRefetch }: Props) {
 
             {/* 1. Séquestre */}
             <div className="flex gap-3.5 items-start p-3.5 rounded-2xl bg-white/5 border border-white/5">
-              <div className="w-9 h-9 rounded-xl bg-primary-500/10 border border-primary-500/20 flex items-center justify-center shrink-0">
-                <Lock className="w-4 h-4 text-primary-400" />
+              <div className="w-9 h-9 rounded-xl bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center shrink-0">
+                <Lock className="w-4 h-4 text-emerald-400" />
               </div>
               <div className="space-y-1">
                 <h4 className="text-xs font-bold text-white">1. Votre paiement est sécurisé</h4>
                 <p className="text-[11px] text-neutral-400 leading-relaxed">
-                  Les fonds sont conservés en <strong className="text-primary-400 font-bold">séquestre sécurisé</strong> et ne sont reversés à l&apos;hôte qu&apos;après votre confirmation de check-in. Vous avez le contrôle.
+                  Les fonds sont conservés en <strong className="text-emerald-400 font-bold">séquestre sécurisé</strong> et ne sont reversés à l&apos;hôte qu&apos;après votre confirmation de check-in. Vous avez le contrôle.
                 </p>
               </div>
             </div>
@@ -804,7 +804,7 @@ export function TenantReservationActionPanel({ id, res, onRefetch }: Props) {
 
             <button
               onClick={() => setShowRulesModal(false)}
-              className="w-full mt-2 py-3 text-xs font-bold text-white bg-primary-600 hover:bg-primary-700 rounded-xl transition-all shadow-md shadow-primary-500/10 cursor-pointer"
+              className="w-full mt-2 py-3 text-xs font-bold text-white bg-emerald-600 hover:bg-emerald-700 rounded-xl transition-all shadow-md shadow-emerald-500/10 cursor-pointer"
             >
               J&apos;ai compris mes droits
             </button>

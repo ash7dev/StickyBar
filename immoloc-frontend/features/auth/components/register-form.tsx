@@ -62,7 +62,7 @@ export function RegisterForm({ next }: Props) {
         <p className="text-foreground-muted text-sm">{success}</p>
         <button
           onClick={() => router.push(next ? `/login?next=${encodeURIComponent(next)}` : '/login')}
-          className="w-full py-2.5 px-4 bg-primary-700 hover:bg-primary-800 text-white rounded-lg text-sm font-medium transition-all duration-200 active:scale-[0.98]"
+          className="w-full py-2.5 px-4 bg-emerald-700 hover:bg-emerald-800 text-white rounded-lg text-sm font-medium transition-all duration-200 active:scale-[0.98]"
         >
           Aller à la connexion
         </button>
@@ -87,7 +87,7 @@ export function RegisterForm({ next }: Props) {
               <input
                 {...register('prenom')}
                 placeholder="Amadou"
-                className="w-full pl-9 pr-3 py-2.5 border border-border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary-500"
+                className="w-full pl-9 pr-3 py-2.5 border border-border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500"
               />
             </div>
             {errors.prenom && <p className="text-error-500 text-xs mt-1">{errors.prenom.message}</p>}
@@ -97,7 +97,7 @@ export function RegisterForm({ next }: Props) {
             <input
               {...register('nom')}
               placeholder="Diallo"
-              className="w-full px-3 py-2.5 border border-border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary-500"
+              className="w-full px-3 py-2.5 border border-border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500"
             />
             {errors.nom && <p className="text-error-500 text-xs mt-1">{errors.nom.message}</p>}
           </div>
@@ -112,7 +112,7 @@ export function RegisterForm({ next }: Props) {
               {...register('telephone')}
               type="tel"
               placeholder="+221771234567"
-              className="w-full pl-10 pr-3 py-2.5 border border-border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary-500"
+              className="w-full pl-10 pr-3 py-2.5 border border-border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500"
             />
           </div>
           <p className="text-neutral-400 text-xs mt-1">Format international : +221 pour le Sénégal, +33 pour la France…</p>
@@ -129,7 +129,7 @@ export function RegisterForm({ next }: Props) {
               type="email"
               autoComplete="email"
               placeholder="vous@example.com"
-              className="w-full pl-10 pr-3 py-2.5 border border-border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary-500"
+              className="w-full pl-10 pr-3 py-2.5 border border-border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500"
             />
           </div>
           {errors.email && <p className="text-error-500 text-xs mt-1">{errors.email.message}</p>}
@@ -145,7 +145,7 @@ export function RegisterForm({ next }: Props) {
               type="password"
               autoComplete="new-password"
               placeholder="8 caractères minimum"
-              className="w-full pl-10 pr-3 py-2.5 border border-border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary-500"
+              className="w-full pl-10 pr-3 py-2.5 border border-border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500"
             />
           </div>
           {errors.password && <p className="text-error-500 text-xs mt-1">{errors.password.message}</p>}
@@ -160,7 +160,7 @@ export function RegisterForm({ next }: Props) {
         <button
           type="submit"
           disabled={isSubmitting}
-          className="w-full flex items-center justify-center gap-2 py-2.5 bg-primary-700 hover:bg-primary-800 disabled:bg-primary-500 text-white rounded-lg text-sm font-medium transition-all duration-200 active:scale-[0.98]"
+          className="w-full flex items-center justify-center gap-2 py-2.5 bg-emerald-700 hover:bg-emerald-800 disabled:bg-emerald-500 text-white rounded-lg text-sm font-medium transition-all duration-200 active:scale-[0.98]"
         >
           {isSubmitting && <Loader2 className="h-4 w-4 animate-spin" />}
           {isSubmitting ? 'Création...' : 'Créer mon compte'}
@@ -204,7 +204,7 @@ export function RegisterForm({ next }: Props) {
         Déjà un compte ?{' '}
         <Link
           href={next ? `/login?next=${encodeURIComponent(next)}` : '/login'}
-          className="text-primary-600 font-medium hover:underline"
+          className="text-emerald-600 font-medium hover:underline"
         >
           Se connecter
         </Link>

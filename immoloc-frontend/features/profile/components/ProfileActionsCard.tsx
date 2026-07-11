@@ -60,12 +60,12 @@ export function ProfileActionsCard({ user }: Props) {
     <div className="bg-white rounded-2xl border border-neutral-200/80 shadow-sm hover:shadow-lg hover:shadow-neutral-200/40 transition-all duration-300">
 
       {/* ── Header — bleu uniforme ──────────────────────────── */}
-      <div className="flex items-center gap-3 px-5 py-4 border-b border-primary-100 bg-primary-50 rounded-t-2xl">
-        <div className="w-9 h-9 rounded-xl bg-primary-100 flex items-center justify-center border border-primary-200 shrink-0">
-          <Lock className="w-[17px] h-[17px] text-primary-600" />
+      <div className="flex items-center gap-3 px-5 py-4 border-b border-emerald-100 bg-emerald-50 rounded-t-2xl">
+        <div className="w-9 h-9 rounded-xl bg-emerald-100 flex items-center justify-center border border-emerald-200 shrink-0">
+          <Lock className="w-[17px] h-[17px] text-emerald-600" />
         </div>
         <div>
-          <p className="text-[10px] font-black text-primary-400 uppercase tracking-widest">Compte</p>
+          <p className="text-[10px] font-black text-emerald-400 uppercase tracking-widest">Compte</p>
           <h3 className="text-sm font-bold text-neutral-900">Sécurité & actions</h3>
         </div>
       </div>
@@ -97,7 +97,7 @@ export function ProfileActionsCard({ user }: Props) {
         {/* Paramètres */}
         <ActionRow
           icon={Settings}
-          iconCls="text-primary-500" bgCls="bg-primary-50" borderCls="border-primary-100"
+          iconCls="text-emerald-500" bgCls="bg-emerald-50" borderCls="border-emerald-100"
           label="Paramètres"
           description="Préférences et notifications"
         >
@@ -120,7 +120,7 @@ export function ProfileActionsCard({ user }: Props) {
             <button
               onClick={() => switchRole('LOCATAIRE')}
               disabled={isSwitching}
-              className="px-3 py-1.5 rounded-lg bg-primary-50 hover:bg-primary-100 border border-primary-100 text-[10px] font-bold text-primary-600 transition-colors shrink-0 disabled:opacity-50"
+              className="px-3 py-1.5 rounded-lg bg-emerald-50 hover:bg-emerald-100 border border-emerald-100 text-[10px] font-bold text-emerald-600 transition-colors shrink-0 disabled:opacity-50"
             >
               {isSwitching ? 'Chargement…' : 'Basculer'}
             </button>

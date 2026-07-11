@@ -32,7 +32,7 @@ export function FilterBar() {
               onClick={() => navigate(filter.type)}
               className="relative flex items-center gap-2 px-5 py-2.5 rounded-full font-bold text-[13px] sm:text-sm transition-all duration-300 whitespace-nowrap text-white/60 hover:text-white hover:bg-background-card/10 active:scale-95"
             >
-              <Icon className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-primary-400" />
+              <Icon className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-emerald-400" />
               {filter.label}
             </button>
           );

@@ -17,7 +17,7 @@ function CompactMonthCaption({ calendarMonth }: MonthCaptionProps) {
         type="button"
         onClick={() => previousMonth && goToMonth(previousMonth)}
         disabled={!previousMonth}
-        className="w-8 h-8 rounded-full border-2 border-border flex items-center justify-center text-foreground-muted hover:border-primary-400 hover:text-primary-600 hover:bg-primary-50 disabled:opacity-25 disabled:cursor-not-allowed transition-all"
+        className="w-8 h-8 rounded-full border-2 border-border flex items-center justify-center text-foreground-muted hover:border-emerald-400 hover:text-emerald-600 hover:bg-emerald-50 disabled:opacity-25 disabled:cursor-not-allowed transition-all"
         aria-label="Mois précédent"
       >
         <ChevronLeft className="w-4 h-4" />
@@ -29,7 +29,7 @@ function CompactMonthCaption({ calendarMonth }: MonthCaptionProps) {
         type="button"
         onClick={() => nextMonth && goToMonth(nextMonth)}
         disabled={!nextMonth}
-        className="w-8 h-8 rounded-full border-2 border-border flex items-center justify-center text-foreground-muted hover:border-primary-400 hover:text-primary-600 hover:bg-primary-50 disabled:opacity-25 disabled:cursor-not-allowed transition-all"
+        className="w-8 h-8 rounded-full border-2 border-border flex items-center justify-center text-foreground-muted hover:border-emerald-400 hover:text-emerald-600 hover:bg-emerald-50 disabled:opacity-25 disabled:cursor-not-allowed transition-all"
         aria-label="Mois suivant"
       >
         <ChevronRight className="w-4 h-4" />
@@ -82,13 +82,13 @@ export function AvailabilityCalendar({
         <div className="flex items-center gap-2 mb-3">
           <div className={`flex-1 flex items-center gap-2.5 px-4 py-3 rounded-2xl border-2 transition-colors ${
             range?.from
-              ? 'bg-primary-50 border-primary-300'
+              ? 'bg-emerald-50 border-emerald-300'
               : 'bg-background-alt border-border'
           }`}>
-            <CalendarDays className={`w-4 h-4 shrink-0 ${range?.from ? 'text-primary-500' : 'text-foreground-muted'}`} />
+            <CalendarDays className={`w-4 h-4 shrink-0 ${range?.from ? 'text-emerald-500' : 'text-foreground-muted'}`} />
             <div>
               <p className="text-[9px] font-black uppercase tracking-widest text-foreground-muted leading-none mb-0.5">DÉPART</p>
-              <p className={`text-sm font-bold leading-none ${range?.from ? 'text-primary-800' : 'text-foreground-muted'}`}>
+              <p className={`text-sm font-bold leading-none ${range?.from ? 'text-emerald-800' : 'text-foreground-muted'}`}>
                 {range?.from ? fmtShort(range.from) : '—'}
               </p>
             </div>
@@ -98,13 +98,13 @@ export function AvailabilityCalendar({
 
           <div className={`flex-1 flex items-center gap-2.5 px-4 py-3 rounded-2xl border-2 transition-colors ${
             range?.to
-              ? 'bg-primary-50 border-primary-300'
+              ? 'bg-emerald-50 border-emerald-300'
               : 'bg-neutral-50 border-neutral-200'
           }`}>
-            <CalendarDays className={`w-4 h-4 shrink-0 ${range?.to ? 'text-primary-500' : 'text-foreground-muted'}`} />
+            <CalendarDays className={`w-4 h-4 shrink-0 ${range?.to ? 'text-emerald-500' : 'text-foreground-muted'}`} />
             <div>
               <p className="text-[9px] font-black uppercase tracking-widest text-foreground-muted leading-none mb-0.5">RETOUR</p>
-              <p className={`text-sm font-bold leading-none ${range?.to ? 'text-primary-800' : 'text-foreground-muted'}`}>
+              <p className={`text-sm font-bold leading-none ${range?.to ? 'text-emerald-800' : 'text-foreground-muted'}`}>
                 {range?.to ? fmtShort(range.to) : '—'}
               </p>
             </div>
@@ -113,9 +113,9 @@ export function AvailabilityCalendar({
 
         {/* Message confirmation */}
         {hasRange ? (
-          <div className="flex items-center gap-2 mb-3 px-3 py-2 bg-primary-50 border border-primary-100 rounded-xl">
-            <Check className="w-3.5 h-3.5 text-primary-500 shrink-0" />
-            <p className="text-xs font-semibold text-primary-700">
+          <div className="flex items-center gap-2 mb-3 px-3 py-2 bg-emerald-50 border border-emerald-100 rounded-xl">
+            <Check className="w-3.5 h-3.5 text-emerald-500 shrink-0" />
+            <p className="text-xs font-semibold text-emerald-700">
               {nights} nuit{nights > 1 ? 's' : ''} sélectionnée{nights > 1 ? 's' : ''} — modifiez si besoin
             </p>
           </div>
@@ -142,9 +142,9 @@ export function AvailabilityCalendar({
         <div className="mt-3 pt-3 border-t border-border flex flex-wrap items-center gap-x-4 gap-y-2">
           {[
             { color: 'bg-border opacity-40', label: 'Indisponible' },
-            { color: 'bg-primary-500', label: 'Départ / Retour' },
-            { color: 'bg-primary-100', label: 'Plage réservée' },
-            { color: 'bg-background-card border border-primary-400', label: "Aujourd'hui" },
+            { color: 'bg-emerald-500', label: 'Départ / Retour' },
+            { color: 'bg-emerald-100', label: 'Plage réservée' },
+            { color: 'bg-background-card border border-emerald-400', label: "Aujourd'hui" },
           ].map(({ color, label }) => (
             <div key={label} className="flex items-center gap-1.5">
               <div className={`w-3.5 h-3.5 rounded-sm shrink-0 ${color}`} />
@@ -157,7 +157,7 @@ export function AvailabilityCalendar({
         {range?.from && (
           <button
             onClick={() => handleSelect(undefined)}
-            className="mt-3 text-xs font-bold text-foreground-muted hover:text-primary-500 transition-colors underline underline-offset-2"
+            className="mt-3 text-xs font-bold text-foreground-muted hover:text-emerald-500 transition-colors underline underline-offset-2"
           >
             Effacer les dates
           </button>
@@ -246,7 +246,7 @@ export function AvailabilityCalendar({
             background: transparent;
           }
           .rdp-compact .rdp-selected:not(.rdp-range_middle) .rdp-day_button {
-            background: var(--primary-500);
+            background: var(--emerald-500);
             color: #fff;
             font-weight: 800;
             border-radius: 50%;
@@ -254,7 +254,7 @@ export function AvailabilityCalendar({
           }
           /* Range middle */
           .rdp-compact .rdp-range_middle {
-            background: var(--primary-50);
+            background: var(--emerald-50);
             border-radius: 0;
             color: #1a56c4;
           }
@@ -264,11 +264,11 @@ export function AvailabilityCalendar({
           }
           .rdp-compact .rdp-range_start {
             border-radius: 50% 0 0 50%;
-            background: var(--primary-50);
+            background: var(--emerald-50);
           }
           .rdp-compact .rdp-range_end {
             border-radius: 0 50% 50% 0;
-            background: var(--primary-50);
+            background: var(--emerald-50);
           }
           .rdp-compact .rdp-range_start.rdp-range_end {
             border-radius: 50%;
@@ -276,8 +276,8 @@ export function AvailabilityCalendar({
           }
           /* Aujourd'hui */
           .rdp-compact .rdp-today:not(.rdp-selected) .rdp-day_button {
-            border: 2px solid var(--primary-500);
-            color: var(--primary-500);
+            border: 2px solid var(--emerald-500);
+            color: var(--emerald-500);
             font-weight: 800;
             border-radius: 50%;
           }
@@ -305,7 +305,7 @@ export function AvailabilityCalendar({
       {/* Header */}
       <div className="px-6 pt-6 pb-4 border-b border-border">
         <div className="flex items-center gap-2.5 mb-1">
-          <CalendarDays className="w-4 h-4 text-primary-500" />
+          <CalendarDays className="w-4 h-4 text-emerald-500" />
           <span className="text-sm font-black text-foreground">Disponibilités</span>
         </div>
         {range?.from ? (
@@ -315,7 +315,7 @@ export function AvailabilityCalendar({
               ? ` → ${range.to.toLocaleDateString('fr-FR', { day: 'numeric', month: 'long' })} · `
               : ' — '}
             {nights > 0 && (
-              <span className="font-black text-primary-600">{nights} nuit{nights > 1 ? 's' : ''}</span>
+              <span className="font-black text-emerald-600">{nights} nuit{nights > 1 ? 's' : ''}</span>
             )}
           </p>
         ) : (
@@ -355,7 +355,7 @@ export function AvailabilityCalendar({
         <div className="px-6 pb-5">
           <button
             onClick={() => handleSelect(undefined)}
-            className="text-xs font-bold text-foreground-muted hover:text-primary-500 transition-colors underline underline-offset-2"
+            className="text-xs font-bold text-foreground-muted hover:text-emerald-500 transition-colors underline underline-offset-2"
           >
             Effacer les dates
           </button>
@@ -364,8 +364,8 @@ export function AvailabilityCalendar({
 
       <style>{`
         .rdp-immoloc .rdp-root {
-          --rdp-accent-color: var(--primary-500);
-          --rdp-accent-background-color: var(--primary-50);
+          --rdp-accent-color: var(--emerald-500);
+          --rdp-accent-background-color: var(--emerald-50);
           font-family: var(--font-sans, Inter, sans-serif);
           width: 100%;
           overflow: hidden;
@@ -397,13 +397,13 @@ export function AvailabilityCalendar({
         }
         .rdp-immoloc .rdp-selected:not(.rdp-range_middle) .rdp-day_button,
         .rdp-immoloc .rdp-selected:not(.rdp-range_middle) {
-          background: var(--primary-500); color: #fff; font-weight: 700; border-radius: 0.5rem;
+          background: var(--emerald-500); color: #fff; font-weight: 700; border-radius: 0.5rem;
         }
-        .rdp-immoloc .rdp-range_middle { background: var(--primary-50); color: var(--primary-700); border-radius: 0; }
+        .rdp-immoloc .rdp-range_middle { background: var(--emerald-50); color: var(--emerald-700); border-radius: 0; }
         .rdp-immoloc .rdp-range_start { border-radius: 0.5rem 0 0 0.5rem !important; }
         .rdp-immoloc .rdp-range_end   { border-radius: 0 0.5rem 0.5rem 0 !important; }
         .rdp-immoloc .rdp-range_start.rdp-range_end { border-radius: 0.5rem !important; }
-        .rdp-immoloc .rdp-today .rdp-day_button { border: 1.5px solid var(--primary-400); color: var(--primary-500); font-weight: 700; }
+        .rdp-immoloc .rdp-today .rdp-day_button { border: 1.5px solid var(--emerald-400); color: var(--emerald-500); font-weight: 700; }
         .rdp-immoloc .rdp-disabled .rdp-day_button { opacity: 0.3; cursor: not-allowed; }
         .rdp-immoloc .rdp-caption_label { font-size: 0.8125rem; font-weight: 800; color: var(--foreground); letter-spacing: -0.025em; }
         .rdp-immoloc .rdp-weekday { font-size: 0.625rem; font-weight: 700; color: var(--foreground-muted); text-transform: uppercase; letter-spacing: 0.05em; }
@@ -413,7 +413,7 @@ export function AvailabilityCalendar({
           display: flex; align-items: center; justify-content: center;
           color: var(--foreground-muted); transition: border-color 150ms, color 150ms;
         }
-        .rdp-immoloc .rdp-nav_button:hover { border-color: var(--primary-400); color: var(--primary-500); }
+        .rdp-immoloc .rdp-nav_button:hover { border-color: var(--emerald-400); color: var(--emerald-500); }
         @media (max-width: 640px) {
           .rdp-immoloc .rdp-months { flex-direction: column; gap: 2rem; }
           .rdp-immoloc .rdp-day { width: 2.5rem; height: 2.5rem; font-size: 0.875rem; }

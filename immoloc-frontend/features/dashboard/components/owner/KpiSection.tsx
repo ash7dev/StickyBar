@@ -66,7 +66,7 @@ interface KpiCardProps {
     ring: string;      // e.g. "ring-emerald-200"
   };
   sparkData: number[];
-  /** Hero mode — primary gradient bg with white text */
+  /** Hero mode — emerald gradient bg with white text */
   hero?: boolean;
 }
 
@@ -86,7 +86,7 @@ function KpiCard({
       className={`
         relative overflow-hidden rounded-2xl
         ${hero
-          ? 'bg-gradient-to-br from-primary-500 via-primary-600 to-primary-700 border border-primary-400/20 shadow-md hover:shadow-lg'
+          ? 'bg-gradient-to-br from-emerald-500 via-emerald-600 to-emerald-700 border border-emerald-400/20 shadow-md hover:shadow-lg'
           : `bg-background-card border border-border ring-1 ring-transparent hover:ring-1 hover:${accent.ring} hover:border-border-hover shadow-sm hover:shadow-md`
         }
         p-6 pb-5 group
@@ -100,7 +100,7 @@ function KpiCard({
         <>
           {/* Light shimmer on hero card */}
           <div className="absolute -top-12 -right-12 w-36 h-36 bg-background-card/10 rounded-full blur-3xl pointer-events-none" />
-          <div className="absolute bottom-0 left-0 w-24 h-24 bg-primary-400/20 rounded-full blur-2xl pointer-events-none" />
+          <div className="absolute bottom-0 left-0 w-24 h-24 bg-emerald-400/20 rounded-full blur-2xl pointer-events-none" />
         </>
       ) : (
         <>
@@ -177,13 +177,13 @@ function KpiCard({
 
 const ACCENTS = {
   // Vert Forêt — Primary
-  primary: {
+  emerald: {
     hex: '#14654C',
-    bg: 'bg-primary-100',
-    iconBg: 'bg-primary-50',
-    iconText: 'text-primary-600',
-    trendText: 'text-primary-600',
-    ring: 'ring-primary-200',
+    bg: 'bg-emerald-100',
+    iconBg: 'bg-emerald-50',
+    iconText: 'text-emerald-600',
+    trendText: 'text-emerald-600',
+    ring: 'ring-emerald-200',
   },
   // Terracotta — Accent
   accent: {
@@ -265,7 +265,7 @@ export function KpiSection({ stats, pendingConfirmations }: Props) {
           trend="up"
           trendLabel="Ce mois-ci"
           icon={TrendingUp}
-          accent={ACCENTS.primary}
+          accent={ACCENTS.emerald}
           sparkData={generateSpark(stats.revenue || 7)}
           hero
         />

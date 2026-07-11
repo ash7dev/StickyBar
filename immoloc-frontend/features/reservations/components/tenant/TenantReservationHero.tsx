@@ -14,7 +14,7 @@ const STATUT_CFG: Record<string, {
 }> = {
   PENDING:    { label: 'En attente',      gradient: 'from-amber-400 to-amber-500',     badge: 'bg-amber-400/15 text-amber-300 border-amber-400/30',       dot: 'bg-amber-400',   icon: Clock         },
   PAID:       { label: 'Paiement reçu',   gradient: 'from-emerald-400 to-emerald-500', badge: 'bg-emerald-400/15 text-emerald-300 border-emerald-400/30', dot: 'bg-emerald-400', icon: CheckCircle2  },
-  CONFIRMED:  { label: 'Confirmée',       gradient: 'from-primary-400 to-primary-500', badge: 'bg-primary-400/15 text-primary-300 border-primary-400/30', dot: 'bg-primary-400', icon: CheckCircle2  },
+  CONFIRMED:  { label: 'Confirmée',       gradient: 'from-emerald-400 to-emerald-500', badge: 'bg-emerald-400/15 text-emerald-300 border-emerald-400/30', dot: 'bg-emerald-400', icon: CheckCircle2  },
   CHECKED_IN: { label: 'Séjour en cours', gradient: 'from-emerald-400 to-teal-500',    badge: 'bg-emerald-400/15 text-emerald-300 border-emerald-400/30', dot: 'bg-emerald-400', icon: CheckCircle2  },
   COMPLETED:  { label: 'Terminée',        gradient: 'from-neutral-500 to-neutral-600', badge: 'bg-neutral-400/10 text-neutral-400 border-neutral-400/20', dot: 'bg-neutral-400', icon: CheckCircle2  },
   CANCELLED:  { label: 'Annulée',         gradient: 'from-rose-500 to-rose-600',       badge: 'bg-rose-400/15 text-rose-300 border-rose-400/30',          dot: 'bg-rose-400',    icon: AlertTriangle },
@@ -65,7 +65,7 @@ export function TenantReservationHero({ res }: { res: ReservationDetail }) {
                   <p className="text-sm font-bold text-white">{dateLong(res.dateDebut)}</p>
                 </div>
                 <div className="flex flex-col items-center justify-center px-4 border-x border-white/10 gap-0.5">
-                  <Moon className="w-3.5 h-3.5 text-primary-400" />
+                  <Moon className="w-3.5 h-3.5 text-emerald-400" />
                   <span className="text-base font-black text-white tabular-nums leading-none">{res.nbNuits}</span>
                   <span className="text-[8px] font-bold text-neutral-500 uppercase">nuit{res.nbNuits > 1 ? 's' : ''}</span>
                 </div>
@@ -91,7 +91,7 @@ export function TenantReservationHero({ res }: { res: ReservationDetail }) {
               )}
               <div className="rounded-2xl bg-white/6 border border-white/10 p-4 text-center backdrop-blur-sm">
                 <p className="text-[9px] font-black uppercase tracking-[0.2em] text-neutral-500 mb-1">Total payé</p>
-                <p className="text-3xl font-black text-primary-400 tracking-tight leading-none">{fcfa(res.totalLocataire)}</p>
+                <p className="text-3xl font-black text-emerald-400 tracking-tight leading-none">{fcfa(res.totalLocataire)}</p>
                 <p className="text-[10px] font-bold text-neutral-600 mt-0.5">FCFA</p>
               </div>
             </div>

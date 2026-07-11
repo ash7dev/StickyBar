@@ -60,7 +60,7 @@ export function WithdrawalForm({ soldeDisponible }: Props) {
           max={soldeDisponible}
           placeholder="50 000"
           {...register('montant', { valueAsNumber: true })}
-          className="w-full px-4 py-3 rounded-xl bg-background-alt border border-border text-sm font-bold text-foreground placeholder:text-foreground-muted/50 focus:outline-none focus:border-primary-500 focus:ring-2 focus:ring-primary-500/20 transition-all"
+          className="w-full px-4 py-3 rounded-xl bg-background-alt border border-border text-sm font-bold text-foreground placeholder:text-foreground-muted/50 focus:outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20 transition-all"
         />
         {errors.montant && (
           <p className="text-xs font-medium text-error-500 mt-1.5">{errors.montant.message}</p>
@@ -80,7 +80,7 @@ export function WithdrawalForm({ soldeDisponible }: Props) {
           {METHODES.map((m) => (
             <label key={m.value} className="flex-1 cursor-pointer">
               <input type="radio" value={m.value} {...register('methode')} className="sr-only peer" />
-              <span className="flex items-center justify-center px-3 py-2.5 rounded-xl border border-border text-xs font-bold text-foreground-muted peer-checked:bg-primary-600 peer-checked:border-primary-600 peer-checked:text-background-card hover:bg-background-alt transition-all">
+              <span className="flex items-center justify-center px-3 py-2.5 rounded-xl border border-border text-xs font-bold text-foreground-muted peer-checked:bg-emerald-600 peer-checked:border-emerald-600 peer-checked:text-background-card hover:bg-background-alt transition-all">
                 {m.label}
               </span>
             </label>
@@ -97,7 +97,7 @@ export function WithdrawalForm({ soldeDisponible }: Props) {
           type="text"
           placeholder="77 123 45 67"
           {...register('destinataire')}
-          className="w-full px-4 py-3 rounded-xl bg-background-alt border border-border text-sm font-medium text-foreground placeholder:text-foreground-muted/50 focus:outline-none focus:border-primary-500 focus:ring-2 focus:ring-primary-500/20 transition-all"
+          className="w-full px-4 py-3 rounded-xl bg-background-alt border border-border text-sm font-medium text-foreground placeholder:text-foreground-muted/50 focus:outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20 transition-all"
         />
         {errors.destinataire && (
           <p className="text-xs font-medium text-error-500 mt-1.5">{errors.destinataire.message}</p>
@@ -107,7 +107,7 @@ export function WithdrawalForm({ soldeDisponible }: Props) {
       <button
         type="submit"
         disabled={isPending || soldeDisponible < 10_000}
-        className="w-full flex items-center justify-center gap-2.5 py-3.5 px-6 bg-primary-600 text-background-card font-black rounded-2xl hover:bg-primary-700 disabled:opacity-40 disabled:cursor-not-allowed transition-all text-sm shadow-lg shadow-primary-500/20"
+        className="w-full flex items-center justify-center gap-2.5 py-3.5 px-6 bg-emerald-600 text-background-card font-black rounded-2xl hover:bg-emerald-700 disabled:opacity-40 disabled:cursor-not-allowed transition-all text-sm shadow-lg shadow-emerald-500/20"
       >
         {isPending ? (
           <><Loader2 className="w-4 h-4 animate-spin" /> Envoi en cours…</>

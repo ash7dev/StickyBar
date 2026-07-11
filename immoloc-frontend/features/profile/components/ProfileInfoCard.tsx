@@ -80,7 +80,7 @@ function EditRow({
           value={value}
           onChange={(e) => onChange(e.target.value)}
           placeholder={placeholder}
-          className="w-full text-sm font-semibold text-neutral-900 bg-neutral-50 border border-neutral-200 rounded-lg px-3 py-1.5 outline-none focus:border-primary-400 focus:ring-2 focus:ring-primary-400/20 transition-all placeholder:text-neutral-300 placeholder:font-normal"
+          className="w-full text-sm font-semibold text-neutral-900 bg-neutral-50 border border-neutral-200 rounded-lg px-3 py-1.5 outline-none focus:border-emerald-400 focus:ring-2 focus:ring-emerald-400/20 transition-all placeholder:text-neutral-300 placeholder:font-normal"
         />
       </div>
     </div>
@@ -144,13 +144,13 @@ export function ProfileInfoCard({ user, onUpdated }: Props) {
     <div className="bg-white rounded-2xl border border-neutral-200/80 shadow-sm hover:shadow-lg hover:shadow-neutral-200/40 transition-all duration-300">
 
       {/* ── Header — bleu uniforme ──────────────────────────── */}
-      <div className="flex items-center justify-between px-5 py-4 border-b border-primary-100 bg-primary-50 rounded-t-2xl">
+      <div className="flex items-center justify-between px-5 py-4 border-b border-emerald-100 bg-emerald-50 rounded-t-2xl">
         <div className="flex items-center gap-3">
-          <div className="w-9 h-9 rounded-xl bg-primary-100 flex items-center justify-center border border-primary-200 shrink-0">
-            <User className="w-[17px] h-[17px] text-primary-600" />
+          <div className="w-9 h-9 rounded-xl bg-emerald-100 flex items-center justify-center border border-emerald-200 shrink-0">
+            <User className="w-[17px] h-[17px] text-emerald-600" />
           </div>
           <div>
-            <p className="text-[10px] font-black text-primary-400 uppercase tracking-widest">Profil</p>
+            <p className="text-[10px] font-black text-emerald-400 uppercase tracking-widest">Profil</p>
             <h3 className="text-sm font-bold text-neutral-900">Informations personnelles</h3>
           </div>
         </div>
@@ -162,7 +162,7 @@ export function ProfileInfoCard({ user, onUpdated }: Props) {
               <X className="w-3.5 h-3.5" />
             </button>
             <button onClick={handleSave} disabled={isSaving}
-              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-primary-500 hover:bg-primary-600 text-white text-[10px] font-bold transition-colors disabled:opacity-60">
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-emerald-500 hover:bg-emerald-600 text-white text-[10px] font-bold transition-colors disabled:opacity-60">
               {isSaving
                 ? <Loader2 className="w-3 h-3 animate-spin" />
                 : <Check className="w-3 h-3" />}
@@ -171,7 +171,7 @@ export function ProfileInfoCard({ user, onUpdated }: Props) {
           </div>
         ) : (
           <button onClick={() => setIsEditing(true)}
-            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-white border border-primary-200 text-[10px] font-bold text-primary-600 hover:bg-primary-50 transition-colors">
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-white border border-emerald-200 text-[10px] font-bold text-emerald-600 hover:bg-emerald-50 transition-colors">
             <Pencil className="w-3 h-3" />
             Modifier
           </button>
@@ -190,9 +190,9 @@ export function ProfileInfoCard({ user, onUpdated }: Props) {
       <div className="px-5 py-1">
         {isEditing ? (
           <>
-            <EditRow icon={User}     iconCls="text-primary-500" bgCls="bg-primary-50"  borderCls="border-primary-100"
+            <EditRow icon={User}     iconCls="text-emerald-500" bgCls="bg-emerald-50"  borderCls="border-emerald-100"
               label="Prénom"           value={draft.prenom}        onChange={(v) => setDraft(d => ({ ...d, prenom: v }))}        placeholder="Votre prénom" />
-            <EditRow icon={User}     iconCls="text-primary-500" bgCls="bg-primary-50"  borderCls="border-primary-100"
+            <EditRow icon={User}     iconCls="text-emerald-500" bgCls="bg-emerald-50"  borderCls="border-emerald-100"
               label="Nom de famille"   value={draft.nom}           onChange={(v) => setDraft(d => ({ ...d, nom: v }))}           placeholder="Votre nom" />
             <EditRow icon={Phone}    iconCls="text-emerald-500" bgCls="bg-emerald-50" borderCls="border-emerald-100"
               label="Téléphone"        value={draft.telephone}     onChange={(v) => setDraft(d => ({ ...d, telephone: v }))}     placeholder="+221 7X XXX XX XX" type="tel" />
@@ -206,8 +206,8 @@ export function ProfileInfoCard({ user, onUpdated }: Props) {
           </>
         ) : (
           <>
-            <ReadRow icon={User}     iconCls="text-primary-500" bgCls="bg-primary-50"  borderCls="border-primary-100"  label="Prénom"            value={user.prenom} />
-            <ReadRow icon={User}     iconCls="text-primary-500" bgCls="bg-primary-50"  borderCls="border-primary-100"  label="Nom de famille"    value={user.nom} />
+            <ReadRow icon={User}     iconCls="text-emerald-500" bgCls="bg-emerald-50"  borderCls="border-emerald-100"  label="Prénom"            value={user.prenom} />
+            <ReadRow icon={User}     iconCls="text-emerald-500" bgCls="bg-emerald-50"  borderCls="border-emerald-100"  label="Nom de famille"    value={user.nom} />
             <ReadRow icon={Mail}     iconCls="text-violet-500"  bgCls="bg-violet-50"   borderCls="border-violet-100"   label="Adresse e-mail"    value={user.email} />
             <ReadRow icon={Phone}    iconCls="text-emerald-500" bgCls="bg-emerald-50"  borderCls="border-emerald-100"  label="Téléphone"         value={user.telephone} />
             <ReadRow icon={Calendar} iconCls="text-amber-500"   bgCls="bg-amber-50"    borderCls="border-amber-100"    label="Date de naissance" value={dateFormatted} />

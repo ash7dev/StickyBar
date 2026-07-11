@@ -12,10 +12,10 @@ export function WalletBalanceCard({ soldeDisponible, dettePenalites }: Props) {
   const hasDebt = dettePenalites > 0;
 
   return (
-    <div className="relative bg-gradient-to-br from-primary-500 via-primary-600 to-primary-700 rounded-2xl overflow-hidden border border-primary-400/20 p-7 hover:shadow-xl transition-all duration-500">
+    <div className="relative bg-gradient-to-br from-emerald-500 via-emerald-600 to-emerald-700 rounded-2xl overflow-hidden border border-emerald-400/20 p-7 hover:shadow-xl transition-all duration-500">
       {/* Ambient glow */}
       <div className="absolute -top-12 -right-12 w-48 h-48 bg-background-card/10 rounded-full blur-[80px] pointer-events-none" />
-      <div className="absolute -bottom-8 -left-8 w-32 h-32 bg-primary-400/20 rounded-full blur-[60px] pointer-events-none" />
+      <div className="absolute -bottom-8 -left-8 w-32 h-32 bg-emerald-400/20 rounded-full blur-[60px] pointer-events-none" />
 
       <div className="relative flex items-start justify-between gap-4">
         <div>
@@ -55,7 +55,7 @@ export function WalletBalanceCard({ soldeDisponible, dettePenalites }: Props) {
 
 export function WalletBalanceCardSkeleton() {
   return (
-    <div className="bg-gradient-to-br from-primary-500 via-primary-600 to-primary-700 rounded-2xl border border-primary-400/20 p-7 animate-pulse">
+    <div className="bg-gradient-to-br from-emerald-500 via-emerald-600 to-emerald-700 rounded-2xl border border-emerald-400/20 p-7 animate-pulse">
       <div className="flex items-center gap-2 mb-4">
         <div className="w-9 h-9 rounded-xl bg-background-card/10" />
         <div className="h-3 w-28 bg-background-card/20 rounded-full" />

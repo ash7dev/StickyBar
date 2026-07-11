@@ -14,8 +14,8 @@ interface Props {
 
 // Utilisation des couleurs du design system uniquement (variables CSS)
 const STATUT_CONFIG: Record<string, { label: string; color: string }> = {
-  CHECKED_IN: { label: 'En cours',   color: 'var(--primary-600)' },
-  CONFIRMED:  { label: 'Confirmées', color: 'var(--primary-400)' },
+  CHECKED_IN: { label: 'En cours',   color: 'var(--emerald-600)' },
+  CONFIRMED:  { label: 'Confirmées', color: 'var(--emerald-400)' },
   COMPLETED:  { label: 'Terminées',  color: 'var(--neutral-400)' },
   PENDING:    { label: 'En attente', color: 'var(--warning-500)' },
   CANCELLED:  { label: 'Annulées',   color: 'var(--error-500)' },
@@ -61,7 +61,7 @@ function SemiCircleChart({ percentage, size = 180 }: { percentage: number; size?
           strokeLinecap="round"
           strokeDasharray={circumference}
           strokeDashoffset={offset}
-          className="text-primary-600 transition-all duration-1000 ease-out"
+          className="text-emerald-600 transition-all duration-1000 ease-out"
         />
         {/* Secondary lighter arc */}
         <path
@@ -72,7 +72,7 @@ function SemiCircleChart({ percentage, size = 180 }: { percentage: number; size?
           strokeLinecap="round"
           strokeDasharray={circumference}
           strokeDashoffset={offset - 5}
-          className="text-primary-200 transition-all duration-1000 ease-out opacity-60"
+          className="text-emerald-200 transition-all duration-1000 ease-out opacity-60"
         />
       </svg>
 
@@ -148,7 +148,7 @@ export function ReservationStats({ bookings }: Props) {
       <div className="flex items-start justify-between mb-6">
         <div>
           <h3 className="text-base font-bold text-foreground mb-0.5">Sales Performance</h3>
-          <button className="text-xs font-medium text-foreground-muted hover:text-primary-600 transition-colors flex items-center gap-1">
+          <button className="text-xs font-medium text-foreground-muted hover:text-emerald-600 transition-colors flex items-center gap-1">
             Voir les statistiques
             <ArrowRight className="w-3 h-3" />
           </button>
@@ -186,7 +186,7 @@ export function ReservationStats({ bookings }: Props) {
           {/* ── See Details link ──────────────────────────────────────── */}
           <Link
             href="/dashboard/reservations"
-            className="mt-4 flex items-center justify-center gap-1.5 text-xs font-semibold text-foreground-muted hover:text-primary-600 transition-colors py-2"
+            className="mt-4 flex items-center justify-center gap-1.5 text-xs font-semibold text-foreground-muted hover:text-emerald-600 transition-colors py-2"
           >
             Voir les statistiques
             <ArrowRight className="w-3.5 h-3.5" />

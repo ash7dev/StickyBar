@@ -49,18 +49,18 @@ const SOCIALS = [
 
 export function Footer() {
   return (
-    <footer className="bg-primary-900 text-white overflow-hidden relative rounded-t-[2.5rem]">
+    <footer className="bg-emerald-900 text-white overflow-hidden relative rounded-t-[2.5rem]">
 
       {/* ── Ambient Glow ── */}
-      <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[600px] h-48 bg-primary-500/5 rounded-full blur-[80px] pointer-events-none" />
+      <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[600px] h-48 bg-emerald-500/5 rounded-full blur-[80px] pointer-events-none" />
 
       {/* ── Trust Badges ── */}
       <div className="max-w-7xl mx-auto px-6 py-8 border-b border-white/5">
         <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
           {TRUST_BADGES.map((badge, i) => (
             <div key={i} className="flex items-center gap-3 group">
-              <div className="w-9 h-9 rounded-xl bg-primary-500/8 border border-primary-400/15 flex items-center justify-center flex-shrink-0 group-hover:border-primary-400/40 group-hover:bg-primary-500/15 transition-all duration-500">
-                <badge.icon className="w-4 h-4 text-primary-400" />
+              <div className="w-9 h-9 rounded-xl bg-emerald-500/8 border border-emerald-400/15 flex items-center justify-center flex-shrink-0 group-hover:border-emerald-400/40 group-hover:bg-emerald-500/15 transition-all duration-500">
+                <badge.icon className="w-4 h-4 text-emerald-400" />
               </div>
               <span className="text-[11px] font-bold text-white/40 uppercase tracking-wider">{badge.label}</span>
             </div>
@@ -75,7 +75,7 @@ export function Footer() {
         <div className="lg:col-span-5 flex flex-col gap-5">
           {/* Logo */}
           <div className="flex items-center gap-2.5">
-            <div className="w-9 h-9 bg-primary-600 rounded-xl flex items-center justify-center">
+            <div className="w-9 h-9 bg-emerald-600 rounded-xl flex items-center justify-center">
               <Building2 className="w-5 h-5 text-white" />
             </div>
             <span className="text-lg font-black tracking-tighter uppercase">{BRAND.name}</span>
@@ -83,7 +83,7 @@ export function Footer() {
 
           <h3 className="text-2xl font-black leading-tight tracking-tight">
             L&apos;immobilier premium <br />
-            <span className="text-primary-400">en toute confiance.</span>
+            <span className="text-emerald-400">en toute confiance.</span>
           </h3>
 
           <p className="text-white/35 text-sm font-medium max-w-sm leading-relaxed">
@@ -92,14 +92,14 @@ export function Footer() {
 
           {/* Newsletter — Glassmorphism */}
           <div>
-            <p className="text-[10px] font-black uppercase text-primary-400 tracking-[0.2em] mb-3">Restez informé</p>
+            <p className="text-[10px] font-black uppercase text-emerald-400 tracking-[0.2em] mb-3">Restez informé</p>
             <div className="flex gap-2 max-w-sm">
               <input
                 type="email"
                 placeholder="votre@email.com"
-                className="flex-1 bg-black/50 backdrop-blur-xl border border-white/10 rounded-xl px-4 py-3 text-sm font-medium text-white placeholder:text-white/25 focus:outline-none focus:border-primary-500/50 transition-all"
+                className="flex-1 bg-black/50 backdrop-blur-xl border border-white/10 rounded-xl px-4 py-3 text-sm font-medium text-white placeholder:text-white/25 focus:outline-none focus:border-emerald-500/50 transition-all"
               />
-              <button className="w-12 h-12 bg-primary-600 flex items-center justify-center rounded-xl hover:bg-primary-500 hover:scale-105 active:scale-95 transition-all shadow-[0_0_20px_rgba(20,101,76,0.25)]">
+              <button className="w-12 h-12 bg-emerald-600 flex items-center justify-center rounded-xl hover:bg-emerald-500 hover:scale-105 active:scale-95 transition-all shadow-[0_0_20px_rgba(20,101,76,0.25)]">
                 <ArrowRight className="w-5 h-5 text-white" />
               </button>
             </div>
@@ -112,7 +112,7 @@ export function Footer() {
                 key={label}
                 href={href}
                 aria-label={label}
-                className="w-9 h-9 rounded-full border border-white/10 flex items-center justify-center text-white/40 hover:border-primary-400/50 hover:text-primary-400 transition-all duration-300"
+                className="w-9 h-9 rounded-full border border-white/10 flex items-center justify-center text-white/40 hover:border-emerald-400/50 hover:text-emerald-400 transition-all duration-300"
               >
                 <Icon className="w-4 h-4" />
               </Link>
@@ -128,7 +128,7 @@ export function Footer() {
               <li key={link.href}>
                 <Link
                   href={link.href}
-                  className="text-sm font-medium text-white/50 hover:text-primary-400 transition-colors duration-200"
+                  className="text-sm font-medium text-white/50 hover:text-emerald-400 transition-colors duration-200"
                 >
                   {link.label}
                 </Link>
@@ -144,21 +144,21 @@ export function Footer() {
             <h4 className="text-[10px] font-black uppercase text-white/25 tracking-[0.2em] mb-4">Contact</h4>
             <ul className="space-y-3">
               <li className="flex items-start gap-3.5">
-                <Mail className="w-4 h-4 text-primary-400 mt-0.5 flex-shrink-0" />
+                <Mail className="w-4 h-4 text-emerald-400 mt-0.5 flex-shrink-0" />
                 <div>
                   <p className="text-[10px] text-white/25 font-medium mb-0.5">Email</p>
                   <p className="text-sm font-bold">contact@{BRAND.domain}</p>
                 </div>
               </li>
               <li className="flex items-start gap-3.5">
-                <Phone className="w-4 h-4 text-primary-400 mt-0.5 flex-shrink-0" />
+                <Phone className="w-4 h-4 text-emerald-400 mt-0.5 flex-shrink-0" />
                 <div>
                   <p className="text-[10px] text-white/25 font-medium mb-0.5">Téléphone</p>
                   <p className="text-sm font-bold">+221 33 800 12 34</p>
                 </div>
               </li>
               <li className="flex items-start gap-3.5">
-                <MapPin className="w-4 h-4 text-primary-400 mt-0.5 flex-shrink-0" />
+                <MapPin className="w-4 h-4 text-emerald-400 mt-0.5 flex-shrink-0" />
                 <div>
                   <p className="text-[10px] text-white/25 font-medium mb-0.5">Localisation</p>
                   <p className="text-sm font-bold">Dakar, Sénégal</p>

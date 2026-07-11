@@ -68,13 +68,13 @@ function FilterDropdown({
                 key={f.id}
                 onClick={() => { onChange(f.id); setOpen(false); }}
                 className={`w-full flex items-center justify-between px-4 py-2.5 text-sm font-semibold transition-colors text-left ${
-                  isActive ? 'bg-primary-50 text-primary-600' : 'bg-background-card text-foreground hover:bg-background-alt'
+                  isActive ? 'bg-emerald-50 text-emerald-600' : 'bg-background-card text-foreground hover:bg-background-alt'
                 }`}
               >
                 <span>{f.label}</span>
                 <div className="flex items-center gap-2">
                   {f.count > 0 && (
-                    <span className={`text-[10px] font-black px-1.5 py-0.5 rounded-full ${isActive ? 'bg-primary-100 text-primary-600' : 'bg-neutral-100 text-foreground-muted'}`}>
+                    <span className={`text-[10px] font-black px-1.5 py-0.5 rounded-full ${isActive ? 'bg-emerald-100 text-emerald-600' : 'bg-neutral-100 text-foreground-muted'}`}>
                       {f.count}
                     </span>
                   )}
@@ -120,8 +120,8 @@ export default function AnnoncesPage() {
 
         {/* Left: icon + title */}
         <div className="flex items-center gap-3 min-w-0">
-          <div className="w-10 h-10 rounded-xl bg-primary-50 flex items-center justify-center border border-primary-100 shadow-sm shrink-0">
-            <Home className="w-[18px] h-[18px] text-primary-600" />
+          <div className="w-10 h-10 rounded-xl bg-emerald-50 flex items-center justify-center border border-emerald-100 shadow-sm shrink-0">
+            <Home className="w-[18px] h-[18px] text-emerald-600" />
           </div>
           <div className="min-w-0">
             <h1 className="text-xl font-bold text-foreground">Mes annonces</h1>

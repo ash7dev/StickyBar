@@ -38,8 +38,8 @@ interface Props {
 
 function SectionCard({
   icon: Icon, title, description,
-  accent = 'bg-primary-500', headerBg = 'bg-primary-50',
-  iconBg = 'bg-primary-100', iconColor = 'text-primary-600',
+  accent = 'bg-emerald-500', headerBg = 'bg-emerald-50',
+  iconBg = 'bg-emerald-100', iconColor = 'text-emerald-600',
   children,
 }: {
   icon: React.ComponentType<{ className?: string }>;
@@ -76,12 +76,12 @@ function Counter({ value, onChange, min = 0, max = 30 }: {
   return (
     <div className="flex items-center gap-2">
       <button type="button" onClick={() => onChange(Math.max(min, value - 1))} disabled={value <= min}
-        className="w-8 h-8 rounded-full border border-neutral-200 flex items-center justify-center text-neutral-400 hover:border-primary-400 hover:text-primary-500 disabled:opacity-20 transition-all active:scale-90">
+        className="w-8 h-8 rounded-full border border-neutral-200 flex items-center justify-center text-neutral-400 hover:border-emerald-400 hover:text-emerald-500 disabled:opacity-20 transition-all active:scale-90">
         <Minus className="w-3 h-3" />
       </button>
       <span className="w-8 text-center font-black text-neutral-900 text-[15px] tabular-nums">{value}</span>
       <button type="button" onClick={() => onChange(Math.min(max, value + 1))} disabled={value >= max}
-        className="w-8 h-8 rounded-full border border-neutral-200 flex items-center justify-center text-neutral-400 hover:border-primary-400 hover:text-primary-500 disabled:opacity-20 transition-all active:scale-90">
+        className="w-8 h-8 rounded-full border border-neutral-200 flex items-center justify-center text-neutral-400 hover:border-emerald-400 hover:text-emerald-500 disabled:opacity-20 transition-all active:scale-90">
         <Plus className="w-3 h-3" />
       </button>
     </div>
@@ -136,7 +136,7 @@ function CustomDropdown({
         onClick={() => setOpen((o) => !o)}
         className={cn(
           'w-full flex items-center justify-between gap-3 px-4 py-3.5 rounded-xl border bg-white text-sm transition-all duration-150',
-          open ? 'border-primary-400 ring-2 ring-primary-400/15'
+          open ? 'border-emerald-400 ring-2 ring-emerald-400/15'
                : error ? 'border-red-300' : 'border-neutral-200 hover:border-neutral-300 hover:shadow-sm',
           value ? 'text-neutral-900 font-semibold' : 'text-neutral-400 font-normal',
         )}
@@ -160,7 +160,7 @@ function CustomDropdown({
               <button key={opt} type="button" onClick={() => { onChange(opt); setOpen(false); }}
                 className={cn(
                   'w-full flex items-center justify-between px-4 py-3 text-sm transition-colors duration-100',
-                  selected ? 'bg-primary-500 text-white' : 'text-neutral-700 hover:bg-neutral-50',
+                  selected ? 'bg-emerald-500 text-white' : 'text-neutral-700 hover:bg-neutral-50',
                 )}>
                 <span className={cn('font-medium', selected && 'font-semibold')}>{opt}</span>
                 {selected && <Check className="w-3.5 h-3.5 text-white flex-shrink-0" strokeWidth={2.5} />}
@@ -212,16 +212,16 @@ export function StepBien({ onNext, submitRef }: Props) {
         icon={Building2}
         title="Type de logement"
         description="Quelle catégorie décrit le mieux votre bien ?"
-        accent="bg-primary-500"
-        headerBg="bg-primary-50"
-        iconBg="bg-primary-100"
-        iconColor="text-primary-600"
+        accent="bg-emerald-500"
+        headerBg="bg-emerald-50"
+        iconBg="bg-emerald-100"
+        iconColor="text-emerald-600"
       >
         {/* Chips type */}
         <div className="space-y-2.5">
           <div className="flex items-center gap-2">
-            <div className="w-7 h-7 rounded-lg bg-primary-100 flex items-center justify-center shrink-0">
-              <Home className="w-3.5 h-3.5 text-primary-600" />
+            <div className="w-7 h-7 rounded-lg bg-emerald-100 flex items-center justify-center shrink-0">
+              <Home className="w-3.5 h-3.5 text-emerald-600" />
             </div>
             <span className="text-sm font-black text-neutral-800">Type de logement</span>
             <span className="text-[10px] font-bold text-rose-400 ml-0.5">*</span>
@@ -249,7 +249,7 @@ export function StepBien({ onNext, submitRef }: Props) {
                     </div>
                     <span>{label}</span>
                     {active && (
-                      <div className="absolute -top-1.5 -right-1.5 w-5 h-5 rounded-full bg-primary-500 flex items-center justify-center shadow-sm shadow-primary-500/40">
+                      <div className="absolute -top-1.5 -right-1.5 w-5 h-5 rounded-full bg-emerald-500 flex items-center justify-center shadow-sm shadow-emerald-500/40">
                         <Check className="w-3 h-3 text-white" strokeWidth={3} />
                       </div>
                     )}

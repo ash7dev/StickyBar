@@ -90,7 +90,7 @@ export function ListingGallery({ photos, title }: Props) {
       <div className="hidden md:flex justify-end mt-3">
         <button
           onClick={() => openLightbox(0)}
-          className="flex items-center gap-2 px-4 py-2 rounded-xl border border-border text-sm font-bold text-foreground-muted hover:border-primary-400 hover:text-primary-600 transition-all"
+          className="flex items-center gap-2 px-4 py-2 rounded-xl border border-border text-sm font-bold text-foreground-muted hover:border-emerald-400 hover:text-emerald-600 transition-all"
         >
           <Grid2x2 className="w-4 h-4" />
           Voir les {photos.length} photos
@@ -161,7 +161,7 @@ export function ListingGallery({ photos, title }: Props) {
               <button
                 key={photo.id}
                 onClick={(e) => { e.stopPropagation(); lightboxApi?.scrollTo(i, true); setLightboxIndex(i); }}
-                className={`flex-shrink-0 w-14 h-10 rounded-lg overflow-hidden border-2 transition-all ${i === lightboxIndex ? 'border-primary-400' : 'border-transparent opacity-50 hover:opacity-80'}`}
+                className={`flex-shrink-0 w-14 h-10 rounded-lg overflow-hidden border-2 transition-all ${i === lightboxIndex ? 'border-emerald-400' : 'border-transparent opacity-50 hover:opacity-80'}`}
               >
                 <Image src={photo.url} alt="" width={56} height={40} className="object-cover w-full h-full" />
               </button>

@@ -197,7 +197,7 @@ export function PerformanceCard({ bookings, conversionRate, activeListings }: Pr
       <div className="relative z-10 border-t border-neutral-100 p-2 mt-4">
         <Link
           href="/dashboard/annonces"
-          className="flex items-center justify-center gap-2 py-3 rounded-xl text-xs font-bold text-foreground-muted hover:text-primary-600 hover:bg-primary-50 transition-colors w-full"
+          className="flex items-center justify-center gap-2 py-3 rounded-xl text-xs font-bold text-foreground-muted hover:text-emerald-600 hover:bg-emerald-50 transition-colors w-full"
         >
           Voir le détail des annonces
           <ArrowRight className="w-3.5 h-3.5" />

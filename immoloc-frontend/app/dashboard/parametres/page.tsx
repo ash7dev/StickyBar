@@ -96,11 +96,11 @@ export default function ParametresPage() {
       <div className="bg-white rounded-2xl border border-border shadow-sm p-5">
         <div className="flex items-center gap-4">
           {/* Avatar */}
-          <div className="w-14 h-14 rounded-2xl bg-primary-100 border border-primary-200 flex items-center justify-center text-base font-black text-primary-700 shrink-0">
+          <div className="w-14 h-14 rounded-2xl bg-emerald-100 border border-emerald-200 flex items-center justify-center text-base font-black text-emerald-700 shrink-0">
             {user ? (
               `${user.prenom?.[0] ?? ''}${user.nom?.[0] ?? ''}`
             ) : (
-              <div className="w-10 h-3 bg-primary-200 rounded animate-pulse" />
+              <div className="w-10 h-3 bg-emerald-200 rounded animate-pulse" />
             )}
           </div>
 
@@ -216,14 +216,14 @@ export default function ParametresPage() {
                 !isLast && 'border-b border-border',
               )}
             >
-              <div className="w-8 h-8 rounded-xl bg-neutral-100 flex items-center justify-center shrink-0 group-hover:bg-primary-50 transition-colors">
-                <Icon className="w-4 h-4 text-neutral-500 group-hover:text-primary-600 transition-colors" />
+              <div className="w-8 h-8 rounded-xl bg-neutral-100 flex items-center justify-center shrink-0 group-hover:bg-emerald-50 transition-colors">
+                <Icon className="w-4 h-4 text-neutral-500 group-hover:text-emerald-600 transition-colors" />
               </div>
               <div className="flex-1 min-w-0">
                 <p className="text-sm font-bold text-neutral-900">{s.title}</p>
                 <p className="text-xs text-neutral-400">{s.desc}</p>
               </div>
-              <ChevronRight className="w-4 h-4 text-neutral-300 group-hover:text-primary-400 transition-colors shrink-0" />
+              <ChevronRight className="w-4 h-4 text-neutral-300 group-hover:text-emerald-400 transition-colors shrink-0" />
             </Link>
           );
         })}

@@ -39,7 +39,7 @@ export function PageBanner({
                   {item.href ? (
                     <Link
                       href={item.href}
-                      className="text-sm font-medium text-foreground-muted hover:text-primary-500 transition-colors"
+                      className="text-sm font-medium text-foreground-muted hover:text-emerald-500 transition-colors"
                     >
                       {item.label}
                     </Link>
@@ -51,9 +51,9 @@ export function PageBanner({
             </nav>
           )}
           {badge && (
-            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-primary-50 border border-primary-200 mb-4">
-              <span className="w-1.5 h-1.5 rounded-full bg-primary-500" />
-              <span className="text-[10px] font-black text-primary-700 uppercase tracking-[0.18em]">{badge}</span>
+            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-emerald-50 border border-emerald-200 mb-4">
+              <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
+              <span className="text-[10px] font-black text-emerald-700 uppercase tracking-[0.18em]">{badge}</span>
             </div>
           )}
           <h1 className="text-3xl lg:text-4xl font-black text-foreground tracking-tight">{title}</h1>
@@ -67,10 +67,10 @@ export function PageBanner({
   }
 
   return (
-    <div className="relative bg-primary-800 overflow-hidden py-16 lg:py-20 px-6 rounded-b-[2.5rem] lg:rounded-b-[3rem]">
+    <div className="relative bg-emerald-800 overflow-hidden py-16 lg:py-20 px-6 rounded-b-[2.5rem] lg:rounded-b-[3rem]">
       {/* Glow Primary */}
-      <div className="absolute inset-0 bg-[radial-gradient(ellipse_60%_50%_at_50%_-10%,var(--primary-500),transparent)] rounded-b-[2.5rem] lg:rounded-b-[3rem]" style={{ opacity: '0.12' }} />
-      <div className="absolute top-0 left-1/4 w-96 h-32 bg-primary-500 blur-[80px] rounded-full" style={{ opacity: '0.08' }} />
+      <div className="absolute inset-0 bg-[radial-gradient(ellipse_60%_50%_at_50%_-10%,var(--emerald-500),transparent)] rounded-b-[2.5rem] lg:rounded-b-[3rem]" style={{ opacity: '0.12' }} />
+      <div className="absolute top-0 left-1/4 w-96 h-32 bg-emerald-500 blur-[80px] rounded-full" style={{ opacity: '0.08' }} />
 
       <div className="relative max-w-7xl mx-auto">
         {breadcrumbs && breadcrumbs.length > 0 && (
@@ -81,7 +81,7 @@ export function PageBanner({
                 {item.href ? (
                   <Link
                     href={item.href}
-                    className="text-sm font-medium text-white/40 hover:text-primary-400 transition-colors"
+                    className="text-sm font-medium text-white/40 hover:text-emerald-400 transition-colors"
                   >
                     {item.label}
                   </Link>
@@ -94,9 +94,9 @@ export function PageBanner({
         )}
 
         {badge && (
-          <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-primary-500/10 border border-primary-400/20 backdrop-blur-sm mb-5">
-            <span className="w-1.5 h-1.5 rounded-full bg-primary-400 animate-pulse" />
-            <span className="text-[10px] font-black text-primary-300 uppercase tracking-[0.2em]">{badge}</span>
+          <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-emerald-500/10 border border-emerald-400/20 backdrop-blur-sm mb-5">
+            <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
+            <span className="text-[10px] font-black text-emerald-300 uppercase tracking-[0.2em]">{badge}</span>
           </div>
         )}
 

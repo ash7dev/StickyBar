@@ -9,7 +9,7 @@ const STEPS = [
     desc: 'Explorez des centaines de logements vérifiés avec des photos réelles et des descriptions précises.',
     icon: Search,
     tag: 'Filtres intelligents',
-    accent: 'primary',
+    accent: 'emerald',
   },
   {
     id: '02',
@@ -30,13 +30,13 @@ const STEPS = [
 ];
 
 const ACCENT_STYLES = {
-  primary: {
-    glow: 'bg-primary-500/8 group-hover:bg-primary-500/15',
-    iconBg: 'bg-primary-500/10 border-primary-400/20 group-hover:border-primary-400/40',
-    iconColor: 'text-primary-400',
-    numBg: 'bg-primary-500',
-    tagColor: 'text-primary-400',
-    arrowHover: 'group-hover:bg-primary-500',
+  emerald: {
+    glow: 'bg-emerald-500/8 group-hover:bg-emerald-500/15',
+    iconBg: 'bg-emerald-500/10 border-emerald-400/20 group-hover:border-emerald-400/40',
+    iconColor: 'text-emerald-400',
+    numBg: 'bg-emerald-500',
+    tagColor: 'text-emerald-400',
+    arrowHover: 'group-hover:bg-emerald-500',
   },
   accent: {
     glow: 'bg-accent-500/6 group-hover:bg-accent-500/12',
@@ -58,17 +58,17 @@ const ACCENT_STYLES = {
 
 export function HowItWorks() {
   return (
-    <section className="bg-primary-900 py-32 px-6 overflow-hidden rounded-[3rem] mx-4 my-4">
+    <section className="bg-emerald-900 py-32 px-6 overflow-hidden rounded-[3rem] mx-4 my-4">
       <div className="max-w-7xl mx-auto">
         {/* Header */}
         <div className="text-center mb-20">
           <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-background-card/[0.03] border border-white/[0.06] backdrop-blur-sm mb-6">
-            <span className="w-1.5 h-1.5 rounded-full bg-primary-400 animate-pulse" />
-            <span className="text-[10px] font-black text-primary-400 uppercase tracking-[0.25em]">Le processus ImmoLoc</span>
+            <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
+            <span className="text-[10px] font-black text-emerald-400 uppercase tracking-[0.25em]">Le processus ImmoLoc</span>
           </div>
           <h2 className="text-4xl sm:text-5xl font-black text-white tracking-tight">
             Comment ça{' '}
-            <span className="text-primary-400">marche</span>
+            <span className="text-emerald-400">marche</span>
           </h2>
         </div>
 
@@ -77,8 +77,8 @@ export function HowItWorks() {
 
           {/* Connector line — desktop only */}
           <div className="hidden md:block absolute top-32 left-[16.66%] right-[16.66%] h-px z-0">
-            <div className="w-full h-full bg-gradient-to-r from-primary-500/40 via-accent-500/40 to-success-500/40" />
-            <div className="absolute top-0 left-0 w-1/3 h-full bg-primary-500 shadow-[0_0_12px_rgba(20,101,76,0.6)]" />
+            <div className="w-full h-full bg-gradient-to-r from-emerald-500/40 via-accent-500/40 to-success-500/40" />
+            <div className="absolute top-0 left-0 w-1/3 h-full bg-emerald-500 shadow-[0_0_12px_rgba(20,101,76,0.6)]" />
           </div>
 
           {STEPS.map((step, i) => {

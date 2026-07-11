@@ -10,10 +10,10 @@ const ACTIONS = [
     label: 'Confirmer réservations',
     sub: 'Accepter les demandes payées',
     href: '/dashboard/reservations?statut=PENDING',
-    gradient: 'from-primary-500 to-primary-600',
-    iconBg: 'bg-primary-500/10',
-    iconText: 'text-primary-500',
-    glowColor: 'primary',
+    gradient: 'from-emerald-500 to-emerald-600',
+    iconBg: 'bg-emerald-500/10',
+    iconText: 'text-emerald-500',
+    glowColor: 'emerald',
   },
   {
     icon: MessageSquareWarning,
@@ -79,7 +79,7 @@ function ActionCard({ action, index }: { action: typeof ACTIONS[0]; index: numbe
 
         {/* Content */}
         <div className="flex-1 min-w-0">
-          <h4 className="text-xs font-bold text-foreground group-hover:text-primary-600 transition-colors duration-300 truncate">
+          <h4 className="text-xs font-bold text-foreground group-hover:text-emerald-600 transition-colors duration-300 truncate">
             {action.label}
           </h4>
           <p className="text-[11px] text-foreground-muted truncate">
@@ -88,7 +88,7 @@ function ActionCard({ action, index }: { action: typeof ACTIONS[0]; index: numbe
         </div>
 
         {/* Arrow */}
-        <ChevronRight className="w-4 h-4 text-foreground-muted group-hover:text-primary-600 group-hover:translate-x-0.5 transition-all duration-300 shrink-0" />
+        <ChevronRight className="w-4 h-4 text-foreground-muted group-hover:text-emerald-600 group-hover:translate-x-0.5 transition-all duration-300 shrink-0" />
 
         {/* Bottom accent bar (appears on hover) */}
         <div className={`absolute bottom-0 left-0 right-0 h-0.5 bg-gradient-to-r ${action.gradient} transform origin-left scale-x-0 group-hover:scale-x-100 transition-transform duration-500 rounded-b-xl`} />
@@ -103,8 +103,8 @@ export function QuickActionsSidebar() {
 
       {/* Header */}
       <div className="flex items-center gap-2.5 mb-6 pb-4 border-b border-border">
-        <div className="w-8 h-8 rounded-lg bg-primary-50 flex items-center justify-center">
-          <Zap className="w-4 h-4 text-primary-600" />
+        <div className="w-8 h-8 rounded-lg bg-emerald-50 flex items-center justify-center">
+          <Zap className="w-4 h-4 text-emerald-600" />
         </div>
         <div>
           <h3 className="text-sm font-bold text-foreground">Actions rapides</h3>

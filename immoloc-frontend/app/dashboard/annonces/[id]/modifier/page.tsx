@@ -15,7 +15,7 @@ function Skeleton() {
   return (
     <div className="min-h-screen bg-neutral-50 flex items-center justify-center">
       <div className="flex flex-col items-center gap-4">
-        <div className="w-10 h-10 rounded-full border-2 border-primary-500 border-t-transparent animate-spin" />
+        <div className="w-10 h-10 rounded-full border-2 border-emerald-500 border-t-transparent animate-spin" />
         <p className="text-sm font-semibold text-neutral-500">Chargement de votre annonce…</p>
       </div>
     </div>
@@ -37,7 +37,7 @@ function ErrorState({ id, onRetry }: { id: string; onRetry: () => void }) {
         </div>
         <div className="flex items-center gap-3">
           <button onClick={onRetry}
-            className="flex items-center gap-2 px-4 py-2.5 bg-primary-500 hover:bg-primary-600 rounded-xl text-sm font-bold text-white shadow-lg shadow-primary-500/20 transition-all">
+            className="flex items-center gap-2 px-4 py-2.5 bg-emerald-500 hover:bg-emerald-600 rounded-xl text-sm font-bold text-white shadow-lg shadow-emerald-500/20 transition-all">
             <RefreshCw className="w-4 h-4" /> Réessayer
           </button>
           <Link href={`/dashboard/annonces/${id}`}

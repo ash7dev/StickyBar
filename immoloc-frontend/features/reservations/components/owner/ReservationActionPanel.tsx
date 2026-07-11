@@ -440,7 +440,7 @@ export function ReservationActionPanel({ id, res, onRefetch }: Props) {
                   className={cn(
                     'flex-1 py-3 text-xs font-black text-white rounded-2xl transition-all shadow-md',
                     res.locataire.statutKyc === 'VERIFIE' && !isSubmitting
-                      ? 'bg-gradient-to-r from-primary-500 to-primary-700 hover:from-primary-600 hover:to-primary-800 shadow-primary-500/25'
+                      ? 'bg-gradient-to-r from-emerald-500 to-emerald-700 hover:from-emerald-600 hover:to-emerald-800 shadow-emerald-500/25'
                       : 'bg-neutral-200 text-neutral-400 shadow-none',
                   )}
                 >
@@ -1116,7 +1116,7 @@ export function ReservationActionPanel({ id, res, onRefetch }: Props) {
 
                 <div className="bg-gradient-to-br from-white to-neutral-50/50 border-2 border-neutral-200 rounded-2xl p-5 space-y-4">
                   <div className="flex items-start gap-3">
-                    <div className="w-10 h-10 rounded-2xl bg-primary-100 flex items-center justify-center text-sm font-black text-primary-700 shrink-0 overflow-hidden border border-primary-200/50">
+                    <div className="w-10 h-10 rounded-2xl bg-emerald-100 flex items-center justify-center text-sm font-black text-emerald-700 shrink-0 overflow-hidden border border-emerald-200/50">
                       {res.locataire.avatarUrl
                         ? <img src={res.locataire.avatarUrl} alt="" className="w-full h-full object-cover" />
                         : `${res.locataire.prenom[0]}${res.locataire.nom[0]}`}
@@ -1170,7 +1170,7 @@ export function ReservationActionPanel({ id, res, onRefetch }: Props) {
                       rows={3}
                       value={ratingComment}
                       onChange={(e) => setRatingComment(e.target.value)}
-                      className="w-full text-xs bg-white border border-neutral-200 text-neutral-900 placeholder:text-neutral-400 rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-primary-400/50 focus:border-primary-400 resize-none"
+                      className="w-full text-xs bg-white border border-neutral-200 text-neutral-900 placeholder:text-neutral-400 rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-emerald-400/50 focus:border-emerald-400 resize-none"
                       placeholder="Partagez votre expérience avec ce locataire..."
                     />
                   </div>
@@ -1178,7 +1178,7 @@ export function ReservationActionPanel({ id, res, onRefetch }: Props) {
                   <button
                     onClick={handleSubmitRating}
                     disabled={isSubmitting || rating === 0}
-                    className="w-full flex items-center justify-center gap-2 py-3 text-sm font-black text-white rounded-xl bg-gradient-to-r from-primary-500 to-primary-700 hover:from-primary-600 hover:to-primary-800 disabled:from-neutral-200 disabled:to-neutral-200 disabled:text-neutral-400 shadow-md shadow-primary-500/25 disabled:shadow-none transition-all"
+                    className="w-full flex items-center justify-center gap-2 py-3 text-sm font-black text-white rounded-xl bg-gradient-to-r from-emerald-500 to-emerald-700 hover:from-emerald-600 hover:to-emerald-800 disabled:from-neutral-200 disabled:to-neutral-200 disabled:text-neutral-400 shadow-md shadow-emerald-500/25 disabled:shadow-none transition-all"
                   >
                     {isSubmitting ? (
                       <><Loader2 className="w-4 h-4 animate-spin" />Publication...</>
@@ -1202,9 +1202,9 @@ export function ReservationActionPanel({ id, res, onRefetch }: Props) {
           <button
             type="button"
             onClick={() => setShowRulesModal(true)}
-            className="flex items-center gap-2 text-xs font-bold text-primary-600 hover:text-primary-700 transition-colors cursor-pointer"
+            className="flex items-center gap-2 text-xs font-bold text-emerald-600 hover:text-emerald-700 transition-colors cursor-pointer"
           >
-            <HelpCircle className="w-4 h-4 text-primary-500 shrink-0" />
+            <HelpCircle className="w-4 h-4 text-emerald-500 shrink-0" />
             Comprendre les règles &amp; conditions (séquestre, auto-checkin…)
           </button>
         </div>
@@ -1251,7 +1251,7 @@ export function ReservationActionPanel({ id, res, onRefetch }: Props) {
                     type="time"
                     value={checkinHeure}
                     onChange={(e) => setCheckinHeure(e.target.value)}
-                    className="w-full text-sm font-bold text-white bg-white/8 border border-white/15 rounded-xl pl-11 pr-4 py-3 focus:outline-none focus:ring-1 focus:ring-primary-400/50 focus:border-primary-400/50 transition-all [color-scheme:dark]"
+                    className="w-full text-sm font-bold text-white bg-white/8 border border-white/15 rounded-xl pl-11 pr-4 py-3 focus:outline-none focus:ring-1 focus:ring-emerald-400/50 focus:border-emerald-400/50 transition-all [color-scheme:dark]"
                   />
                 </div>
                 <p className="text-[11px] text-neutral-500 leading-relaxed">
@@ -1273,9 +1273,9 @@ export function ReservationActionPanel({ id, res, onRefetch }: Props) {
               </div>
 
               {/* Info séquestre */}
-              <div className="flex items-start gap-2.5 bg-primary-500/8 border border-primary-400/15 rounded-xl px-3.5 py-3">
-                <Lock className="w-3.5 h-3.5 text-primary-400 shrink-0 mt-0.5" />
-                <p className="text-[11px] text-primary-300 leading-relaxed font-medium">
+              <div className="flex items-start gap-2.5 bg-emerald-500/8 border border-emerald-400/15 rounded-xl px-3.5 py-3">
+                <Lock className="w-3.5 h-3.5 text-emerald-400 shrink-0 mt-0.5" />
+                <p className="text-[11px] text-emerald-300 leading-relaxed font-medium">
                   Après confirmation, le locataire sera notifié et les fonds resteront en séquestre jusqu&apos;au check-in validé des deux côtés.
                 </p>
               </div>
@@ -1292,7 +1292,7 @@ export function ReservationActionPanel({ id, res, onRefetch }: Props) {
                 <button
                   onClick={handleConfirm}
                   disabled={isSubmitting}
-                  className="flex-1 py-3 text-xs font-black text-white bg-gradient-to-r from-primary-500 to-primary-700 hover:from-primary-600 hover:to-primary-800 disabled:from-neutral-700 disabled:to-neutral-700 disabled:text-neutral-500 rounded-xl transition-all shadow-md shadow-primary-500/20"
+                  className="flex-1 py-3 text-xs font-black text-white bg-gradient-to-r from-emerald-500 to-emerald-700 hover:from-emerald-600 hover:to-emerald-800 disabled:from-neutral-700 disabled:to-neutral-700 disabled:text-neutral-500 rounded-xl transition-all shadow-md shadow-emerald-500/20"
                 >
                   {isSubmitting
                     ? <span className="flex items-center justify-center gap-1.5"><Loader2 className="w-3.5 h-3.5 animate-spin" />Confirmation…</span>
@@ -1466,8 +1466,8 @@ export function ReservationActionPanel({ id, res, onRefetch }: Props) {
             </p>
 
             <div className="flex gap-3.5 items-start p-3.5 rounded-2xl bg-white/5 border border-white/5">
-              <div className="w-9 h-9 rounded-xl bg-primary-500/10 border border-primary-500/20 flex items-center justify-center shrink-0">
-                <Clock className="w-4 h-4 text-primary-400" />
+              <div className="w-9 h-9 rounded-xl bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center shrink-0">
+                <Clock className="w-4 h-4 text-emerald-400" />
               </div>
               <div className="space-y-1">
                 <h4 className="text-xs font-bold text-white">1. Délai de confirmation</h4>
@@ -1515,7 +1515,7 @@ export function ReservationActionPanel({ id, res, onRefetch }: Props) {
 
             <button
               onClick={() => setShowRulesModal(false)}
-              className="w-full mt-2 py-3 text-xs font-bold text-white bg-primary-600 hover:bg-primary-700 rounded-xl transition-all shadow-md shadow-primary-500/10 cursor-pointer"
+              className="w-full mt-2 py-3 text-xs font-bold text-white bg-emerald-600 hover:bg-emerald-700 rounded-xl transition-all shadow-md shadow-emerald-500/10 cursor-pointer"
             >
               J&apos;ai compris les règles
             </button>

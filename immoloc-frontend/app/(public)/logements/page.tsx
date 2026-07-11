@@ -99,7 +99,7 @@ export default async function LogementsPage({ searchParams }: Props) {
                   key={label}
                   className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-white/5 border border-white/10 backdrop-blur-sm"
                 >
-                  <Icon className="w-3.5 h-3.5 text-primary-400" />
+                  <Icon className="w-3.5 h-3.5 text-emerald-400" />
                   <span className="text-xs font-black text-white">{value}</span>
                   <span className="text-xs font-medium text-white/40">{label}</span>
                 </div>

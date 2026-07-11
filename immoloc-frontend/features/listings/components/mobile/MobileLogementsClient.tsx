@@ -128,7 +128,7 @@ export function MobileLogementsClient() {
                 onClick={() => setFilters({ type: value })}
                 className="flex items-center gap-1.5 px-4 py-2 rounded-full shrink-0 transition-all duration-200 active:scale-95 text-[12px] font-bold"
                 style={active ? {
-                  background: 'linear-gradient(135deg, var(--primary-600), var(--primary-500))',
+                  background: 'linear-gradient(135deg, var(--emerald-600), var(--emerald-500))',
                   color: 'white',
                   boxShadow: '0 4px 14px rgba(20,101,76,0.3)',
                 } : {
@@ -147,11 +147,11 @@ export function MobileLogementsClient() {
       {/* ── Titre section + filtres ── */}
       <div className="flex items-center justify-between px-4 pt-5 pb-3">
         <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-2xl bg-primary-50 flex items-center justify-center shrink-0">
-            <SectionIcon className="w-5 h-5 text-primary-600" />
+          <div className="w-10 h-10 rounded-2xl bg-emerald-50 flex items-center justify-center shrink-0">
+            <SectionIcon className="w-5 h-5 text-emerald-600" />
           </div>
           <div>
-            <p className="text-[9px] font-black uppercase tracking-[0.25em] text-primary-500 mb-0.5">
+            <p className="text-[9px] font-black uppercase tracking-[0.25em] text-emerald-500 mb-0.5">
               {filters.ville || 'Toutes zones'}
             </p>
             {loading ? (
@@ -195,7 +195,7 @@ export function MobileLogementsClient() {
             className="w-full mt-5 py-4 rounded-2xl border-2 border-neutral-200 bg-neutral-100 text-[13px] font-black text-foreground flex items-center justify-center gap-2 active:scale-[0.98] transition-all disabled:opacity-50"
           >
             {loadingMore
-              ? <div className="w-4 h-4 border-2 border-neutral-300 border-t-primary-500 rounded-full animate-spin" />
+              ? <div className="w-4 h-4 border-2 border-neutral-300 border-t-emerald-500 rounded-full animate-spin" />
               : <><ChevronDown className="w-4 h-4" /> Voir plus</>}
           </button>
         )}

@@ -31,8 +31,8 @@ export function MobileListingGrid({
   title = 'Logements disponibles',
   eyebrow = 'Annonces',
   icon: Icon,
-  iconColor = 'text-primary-600',
-  iconBg = 'bg-primary-50',
+  iconColor = 'text-emerald-600',
+  iconBg = 'bg-emerald-50',
 }: Props) {
   const { data: listings = [], isLoading } = useQuery({
     queryKey: ['listings', 'grid', params],
@@ -50,7 +50,7 @@ export function MobileListingGrid({
             </div>
           )}
           <div>
-            <p className="mb-0.5 text-[10px] font-semibold uppercase tracking-[0.18em] text-primary-600">
+            <p className="mb-0.5 text-[10px] font-semibold uppercase tracking-[0.18em] text-emerald-600">
               {eyebrow}
             </p>
             <h2 className="text-[18px] leading-tight text-foreground">{title}</h2>
@@ -60,7 +60,7 @@ export function MobileListingGrid({
         {!isLoading && listings.length > 0 && (
           <Link
             href="/logements"
-            className="flex shrink-0 items-center gap-0.5 rounded-full bg-primary-50 px-3 py-1.5 text-[12px] font-semibold text-primary-700"
+            className="flex shrink-0 items-center gap-0.5 rounded-full bg-emerald-50 px-3 py-1.5 text-[12px] font-semibold text-emerald-700"
           >
             Tout voir <ChevronRight className="h-3.5 w-3.5" />
           </Link>
@@ -84,7 +84,7 @@ export function MobileListingGrid({
           </div>
           <Link
             href="/logements"
-            className="mt-1 rounded-lg bg-primary-600 px-5 py-2.5 text-[13px] font-semibold text-white transition-colors active:bg-primary-800 hover:bg-primary-700"
+            className="mt-1 rounded-lg bg-emerald-600 px-5 py-2.5 text-[13px] font-semibold text-white transition-colors active:bg-emerald-800 hover:bg-emerald-700"
           >
             Voir tous les logements
           </Link>

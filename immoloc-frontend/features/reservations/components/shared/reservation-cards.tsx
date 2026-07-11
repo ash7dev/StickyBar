@@ -3,7 +3,7 @@ import { cn } from '@/lib/utils/cn';
 export function DarkCard({ children, className }: { children: React.ReactNode; className?: string }) {
   return (
     <div className={cn(
-      'bg-primary-800 border border-white/8 rounded-2xl overflow-hidden shadow-xl shadow-black/40',
+      'bg-emerald-800 border border-white/8 rounded-2xl overflow-hidden shadow-xl shadow-black/40',
       className,
     )}>
       {children}

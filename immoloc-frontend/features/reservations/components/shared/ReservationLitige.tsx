@@ -12,7 +12,7 @@ const STATUT_LITIGE_LABEL: Record<string, string> = {
 export function ReservationLitige({ litige }: { litige: Litige }) {
   if (!litige) return null;
   return (
-    <div className="bg-primary-800 border border-rose-500/20 rounded-2xl overflow-hidden shadow-xl shadow-black/40">
+    <div className="bg-emerald-800 border border-rose-500/20 rounded-2xl overflow-hidden shadow-xl shadow-black/40">
       <div className="h-0.5 bg-gradient-to-r from-rose-500 to-red-600 w-full" />
       <div className="p-5 space-y-3">
         <div className="flex items-center gap-3">

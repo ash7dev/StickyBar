@@ -71,7 +71,7 @@ export default function TenantParametresPage() {
   if (!store.hasHydrated) {
     return (
       <div className="max-w-2xl mx-auto px-4 py-12 pb-24 flex flex-col items-center text-center justify-center gap-4">
-        <Loader2 className="w-8 h-8 animate-spin text-primary-600" />
+        <Loader2 className="w-8 h-8 animate-spin text-emerald-600" />
         <p className="text-sm text-foreground-muted">Chargement...</p>
       </div>
     );
@@ -90,7 +90,7 @@ export default function TenantParametresPage() {
         </div>
         <Link
           href="/login"
-          className="inline-flex items-center gap-2 px-5 py-2.5 bg-primary-600 hover:bg-primary-700 text-white text-sm font-bold rounded-xl transition-colors"
+          className="inline-flex items-center gap-2 px-5 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white text-sm font-bold rounded-xl transition-colors"
         >
           Se connecter
         </Link>
@@ -132,7 +132,7 @@ export default function TenantParametresPage() {
       {/* Indicateur de synchronisation en arrière-plan */}
       {apiLoading && (
         <div className="fixed bottom-20 left-1/2 -translate-x-1/2 bg-background-card border border-border rounded-full px-4 py-2 shadow-lg flex items-center gap-2 z-50">
-          <Loader2 className="w-4 h-4 animate-spin text-primary-600" />
+          <Loader2 className="w-4 h-4 animate-spin text-emerald-600" />
           <span className="text-xs font-medium text-foreground-muted">Mise à jour...</span>
         </div>
       )}

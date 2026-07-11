@@ -40,7 +40,7 @@ const STATUS_CFG: Record<string, {
 }> = {
   PENDING:    { label: 'En attente',      color: 'text-warning-600',      stripe: 'bg-warning-500', Icon: Clock },
   PAID:       { label: 'Paiement reçu',   color: 'text-success-600',      stripe: 'bg-success-500', Icon: CheckCircle2 },
-  CONFIRMED:  { label: 'Confirmée',       color: 'text-primary-700',      stripe: 'bg-primary-500', Icon: CheckCircle2 },
+  CONFIRMED:  { label: 'Confirmée',       color: 'text-emerald-700',      stripe: 'bg-emerald-500', Icon: CheckCircle2 },
   CHECKED_IN: { label: 'Séjour en cours', color: 'text-success-600',      stripe: 'bg-success-500', Icon: CheckCircle2 },
   COMPLETED:  { label: 'Terminée',        color: 'text-foreground-muted', stripe: 'bg-neutral-400', Icon: CheckCircle2 },
   CANCELLED:  { label: 'Annulée',         color: 'text-error-600',        stripe: 'bg-error-500',   Icon: XCircle },
@@ -77,7 +77,7 @@ export function TenantReservationCardSkeleton() {
         <div className="p-5 space-y-4">
           <div className="space-y-2">
             <div className="flex items-center gap-2">
-              <div className="h-7 w-24 bg-primary-50 rounded-lg" />
+              <div className="h-7 w-24 bg-emerald-50 rounded-lg" />
               <div className="h-4 w-32 bg-background-alt rounded" />
             </div>
             <div className="h-6 w-3/4 bg-background-alt rounded-lg" />
@@ -91,7 +91,7 @@ export function TenantReservationCardSkeleton() {
               </div>
               <div className="h-9 w-20 bg-background-alt rounded-xl" />
             </div>
-            <div className="h-10 w-10 bg-primary-100 rounded-xl" />
+            <div className="h-10 w-10 bg-emerald-100 rounded-xl" />
           </div>
         </div>
       </div>
@@ -111,7 +111,7 @@ export function TenantReservationCard({ reservation }: { reservation: TenantRese
 
   return (
     <Link href={`/reservations/${reservation.id}`} className="group block">
-      <article className="relative bg-gradient-to-br from-background-card via-background-card to-background-alt/50 rounded-[28px] border border-border/80 shadow-lg shadow-black/5 overflow-hidden hover:shadow-[0_20px_40px_-12px_rgba(16,185,129,0.25)] hover:border-primary-400/50 hover:-translate-y-1.5 transition-all duration-500 ease-out">
+      <article className="relative bg-gradient-to-br from-background-card via-background-card to-background-alt/50 rounded-[28px] border border-border/80 shadow-lg shadow-black/5 overflow-hidden hover:shadow-[0_20px_40px_-12px_rgba(16,185,129,0.25)] hover:border-emerald-400/50 hover:-translate-y-1.5 transition-all duration-500 ease-out">
 
         {/* Bande de statut avec gradient */}
         <div className={cn('h-1.5 w-full', cfg.stripe, 'opacity-90')} />
@@ -167,9 +167,9 @@ export function TenantReservationCard({ reservation }: { reservation: TenantRese
             {/* Localisation + titre */}
             <div className="space-y-3">
               <div className="flex items-center gap-2.5">
-                <div className="flex items-center gap-2 px-3 py-1.5 rounded-xl bg-gradient-to-br from-primary-50 to-primary-100/50 border border-primary-200/80 shadow-sm">
-                  <MapPin className="w-3.5 h-3.5 text-primary-600" strokeWidth={2.5} />
-                  <span className="text-[11px] font-black text-primary-700 uppercase tracking-wider">
+                <div className="flex items-center gap-2 px-3 py-1.5 rounded-xl bg-gradient-to-br from-emerald-50 to-emerald-100/50 border border-emerald-200/80 shadow-sm">
+                  <MapPin className="w-3.5 h-3.5 text-emerald-600" strokeWidth={2.5} />
+                  <span className="text-[11px] font-black text-emerald-700 uppercase tracking-wider">
                     {typeLabel}
                   </span>
                 </div>
@@ -178,7 +178,7 @@ export function TenantReservationCard({ reservation }: { reservation: TenantRese
                   {reservation.logement.quartier ? ` · ${reservation.logement.quartier}` : ''}
                 </span>
               </div>
-              <h3 className="font-display text-xl font-bold text-foreground line-clamp-2 group-hover:text-primary-600 transition-colors duration-300 leading-tight">
+              <h3 className="font-display text-xl font-bold text-foreground line-clamp-2 group-hover:text-emerald-600 transition-colors duration-300 leading-tight">
                 {reservation.logement.titre}
               </h3>
             </div>
@@ -191,7 +191,7 @@ export function TenantReservationCard({ reservation }: { reservation: TenantRese
                   <p className="text-base md:text-lg font-black text-foreground tabular-nums tracking-tight">{formatShort(reservation.dateDebut)}</p>
                 </div>
 
-                <div className="flex items-center justify-center px-5 bg-gradient-to-br from-primary-600 via-primary-700 to-primary-800 shadow-inner">
+                <div className="flex items-center justify-center px-5 bg-gradient-to-br from-emerald-600 via-emerald-700 to-emerald-800 shadow-inner">
                   <div className="flex flex-col items-center gap-1 py-2">
                     <Moon className="w-5 h-5 text-white/90" strokeWidth={2.5} />
                     <span className="text-lg font-black text-white tabular-nums leading-none tracking-tight">{nbNuits}</span>
@@ -212,7 +212,7 @@ export function TenantReservationCard({ reservation }: { reservation: TenantRese
                 <div className="flex flex-col">
                   <p className="text-[10px] font-black text-foreground-muted/70 uppercase tracking-widest mb-1">Total</p>
                   <div className="flex items-baseline gap-1.5">
-                    <span className="font-sans text-2xl font-black text-primary-600 tracking-tight leading-none tabular-nums">
+                    <span className="font-sans text-2xl font-black text-emerald-600 tracking-tight leading-none tabular-nums">
                       {fcfa(reservation.totalLocataire)}
                     </span>
                     <span className="text-xs font-black text-foreground-muted/80">FCFA</span>
@@ -227,7 +227,7 @@ export function TenantReservationCard({ reservation }: { reservation: TenantRese
               </div>
 
               {/* Voir détails */}
-              <div className="relative w-11 h-11 rounded-2xl bg-gradient-to-br from-primary-600 via-primary-700 to-primary-800 flex items-center justify-center text-white shadow-lg shadow-primary-600/30 group-hover:shadow-xl group-hover:shadow-primary-600/40 group-hover:scale-110 transition-all duration-300 ring-1 ring-white/20">
+              <div className="relative w-11 h-11 rounded-2xl bg-gradient-to-br from-emerald-600 via-emerald-700 to-emerald-800 flex items-center justify-center text-white shadow-lg shadow-emerald-600/30 group-hover:shadow-xl group-hover:shadow-emerald-600/40 group-hover:scale-110 transition-all duration-300 ring-1 ring-white/20">
                 <ChevronRight className="w-5 h-5" strokeWidth={3} />
               </div>
             </div>
@@ -244,8 +244,8 @@ export function TenantReservationsEmpty({ filtered }: { filtered?: boolean }) {
   return (
     <div className="flex flex-col items-center py-20 px-6 text-center">
       <div className="relative mb-6">
-        <div className="w-20 h-20 rounded-3xl bg-primary-50 border border-primary-100 flex items-center justify-center">
-          <Calendar className="w-9 h-9 text-primary-300" />
+        <div className="w-20 h-20 rounded-3xl bg-emerald-50 border border-emerald-100 flex items-center justify-center">
+          <Calendar className="w-9 h-9 text-emerald-300" />
         </div>
         <div className="absolute -bottom-1 -right-1 w-8 h-8 rounded-xl bg-accent-50 border border-accent-100 flex items-center justify-center">
           <span className="text-sm">🏖️</span>
@@ -262,7 +262,7 @@ export function TenantReservationsEmpty({ filtered }: { filtered?: boolean }) {
       {!filtered && (
         <Link
           href="/logements"
-          className="inline-flex items-center gap-2 px-6 py-3 bg-primary-600 hover:bg-primary-700 text-white font-bold text-sm rounded-xl shadow-md shadow-primary-600/25 hover:-translate-y-0.5 active:scale-95 transition-all"
+          className="inline-flex items-center gap-2 px-6 py-3 bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-sm rounded-xl shadow-md shadow-emerald-600/25 hover:-translate-y-0.5 active:scale-95 transition-all"
         >
           Parcourir les logements
           <ArrowRight className="w-4 h-4" />

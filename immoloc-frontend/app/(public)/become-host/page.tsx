@@ -55,7 +55,7 @@ export default function BecomeHostPage() {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
         <div className="flex flex-col items-center gap-4">
-          <Loader2 className="w-8 h-8 animate-spin text-primary-600" />
+          <Loader2 className="w-8 h-8 animate-spin text-emerald-600" />
           <p className="text-sm text-neutral-400">Vérification de votre session...</p>
         </div>
       </div>
@@ -118,7 +118,7 @@ export default function BecomeHostPage() {
 
           {/* ── Icône du logement ────────────────────────────────── */}
           <div className="flex justify-center mb-8">
-            <div className="w-20 h-20 lg:w-24 lg:h-24 rounded-[24px] bg-gradient-to-br from-primary-600 to-primary-700 flex items-center justify-center shadow-lg shadow-primary-500/30">
+            <div className="w-20 h-20 lg:w-24 lg:h-24 rounded-[24px] bg-gradient-to-br from-emerald-600 to-emerald-700 flex items-center justify-center shadow-lg shadow-emerald-500/30">
               <Building2 className="w-10 h-10 lg:w-12 lg:h-12 text-white" strokeWidth={2.5} />
             </div>
           </div>
@@ -145,8 +145,8 @@ export default function BecomeHostPage() {
                 key={i}
                 className="flex items-start gap-3 group"
               >
-                <div className="flex-shrink-0 w-6 h-6 rounded-full bg-primary-50 flex items-center justify-center mt-0.5">
-                  <item.icon className="w-3.5 h-3.5 text-primary-600" strokeWidth={3} />
+                <div className="flex-shrink-0 w-6 h-6 rounded-full bg-emerald-50 flex items-center justify-center mt-0.5">
+                  <item.icon className="w-3.5 h-3.5 text-emerald-600" strokeWidth={3} />
                 </div>
                 <p className="text-base lg:text-lg text-foreground font-medium leading-relaxed">
                   {item.text}
@@ -161,9 +161,9 @@ export default function BecomeHostPage() {
             disabled={loading}
             className={cn(
               "w-full py-4 lg:py-5 rounded-2xl font-black text-base lg:text-lg transition-all duration-200",
-              "bg-primary-600 text-white",
-              "hover:bg-primary-700",
-              "active:scale-[0.98] shadow-xl shadow-primary-500/30",
+              "bg-emerald-600 text-white",
+              "hover:bg-emerald-700",
+              "active:scale-[0.98] shadow-xl shadow-emerald-500/30",
               "disabled:opacity-50 disabled:cursor-not-allowed"
             )}
           >

@@ -24,10 +24,10 @@ export interface Reservation {
    Config
    ═══════════════════════════════════════════════════════════════════════════ */
 
-const STATUT_CONFIG: Record<string, { label: string; theme: 'neutral' | 'primary' | 'success' | 'warning' | 'error' }> = {
+const STATUT_CONFIG: Record<string, { label: string; theme: 'neutral' | 'emerald' | 'success' | 'warning' | 'error' }> = {
   COMPLETED:  { label: 'Terminée',   theme: 'neutral'  },
   CHECKED_IN: { label: 'En cours',   theme: 'success'  },
-  CONFIRMED:  { label: 'Confirmée',  theme: 'primary'  },
+  CONFIRMED:  { label: 'Confirmée',  theme: 'emerald'  },
   PENDING:    { label: 'En attente', theme: 'warning'  },
   CANCELLED:  { label: 'Annulée',    theme: 'error'    },
   DISPUTED:   { label: 'Litige',     theme: 'error'    },
@@ -42,9 +42,9 @@ const THEMES = {
     bg: 'bg-background-alt', text: 'text-foreground-muted', dot: 'bg-neutral-400',
     border: 'border-border', avatar: 'bg-background-alt text-foreground', bar: 'bg-neutral-400',
   },
-  primary: {
-    bg: 'bg-primary-50', text: 'text-primary-700', dot: 'bg-primary-500',
-    border: 'border-primary-100', avatar: 'bg-primary-100 text-primary-700', bar: 'bg-primary-500',
+  emerald: {
+    bg: 'bg-emerald-50', text: 'text-emerald-700', dot: 'bg-emerald-500',
+    border: 'border-emerald-100', avatar: 'bg-emerald-100 text-emerald-700', bar: 'bg-emerald-500',
   },
   success: {
     bg: 'bg-success-500/10', text: 'text-success-600', dot: 'bg-success-500',
@@ -163,9 +163,9 @@ export function ReservationCardItem({ reservation }: { reservation: Reservation 
 
         {/* Barre prix — Vert Forêt profond (signature) */}
         <Link href={`/dashboard/reservations/${reservation.id}`} className="block relative overflow-hidden">
-          <div className="absolute inset-0 bg-primary-900" />
+          <div className="absolute inset-0 bg-emerald-900" />
           {/* halo forêt subtil */}
-          <div className={`absolute -top-10 -left-6 w-32 h-32 rounded-full blur-3xl pointer-events-none opacity-40 ${isPending ? 'bg-warning-500' : 'bg-primary-500'}`} />
+          <div className={`absolute -top-10 -left-6 w-32 h-32 rounded-full blur-3xl pointer-events-none opacity-40 ${isPending ? 'bg-warning-500' : 'bg-emerald-500'}`} />
           <div className="absolute inset-x-0 top-0 h-px bg-white/10" />
 
           <div className="relative flex items-center justify-between px-4 py-3">
@@ -183,7 +183,7 @@ export function ReservationCardItem({ reservation }: { reservation: Reservation 
 
             <div className="flex items-center gap-2 shrink-0">
               {isPending && (
-                <span className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-white text-[10px] font-black text-primary-700 shadow-md">
+                <span className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-white text-[10px] font-black text-emerald-700 shadow-md">
                   <CheckCircle2 className="w-3 h-3" />
                   Confirmer
                 </span>
@@ -205,7 +205,7 @@ export function ReservationCardItem({ reservation }: { reservation: Reservation 
         <div className={`absolute left-0 top-0 bottom-0 w-1 rounded-l-2xl ${theme.bar}`} />
 
         <Link href={`/dashboard/reservations/${reservation.id}`} className="block shrink-0 ml-2">
-          <div className="w-40 h-40 rounded-xl overflow-hidden relative bg-background-alt group-hover:ring-2 ring-primary-500/20 transition-all">
+          <div className="w-40 h-40 rounded-xl overflow-hidden relative bg-background-alt group-hover:ring-2 ring-emerald-500/20 transition-all">
             {principalPhoto ? (
               <Image
                 src={principalPhoto.url}
@@ -234,7 +234,7 @@ export function ReservationCardItem({ reservation }: { reservation: Reservation 
                 <span className="truncate">{reservation.logement.ville}</span>
               </div>
               <Link href={`/dashboard/reservations/${reservation.id}`} className="block">
-                <h3 className="font-display text-[17px] font-semibold text-foreground line-clamp-1 group-hover:text-primary-600 transition-colors">
+                <h3 className="font-display text-[17px] font-semibold text-foreground line-clamp-1 group-hover:text-emerald-600 transition-colors">
                   {reservation.logement.titre}
                 </h3>
               </Link>
@@ -249,8 +249,8 @@ export function ReservationCardItem({ reservation }: { reservation: Reservation 
           {/* Détails */}
           <div className="grid grid-cols-2 gap-4 mb-4">
             <div className="flex items-center gap-2.5">
-              <div className="w-8 h-8 rounded-lg bg-primary-50 border border-primary-100 flex items-center justify-center shrink-0">
-                <Calendar className="w-4 h-4 text-primary-600" />
+              <div className="w-8 h-8 rounded-lg bg-emerald-50 border border-emerald-100 flex items-center justify-center shrink-0">
+                <Calendar className="w-4 h-4 text-emerald-600" />
               </div>
               <div>
                 <p className="text-[10px] font-black text-foreground-muted uppercase tracking-wider">Séjour</p>
@@ -297,7 +297,7 @@ export function ReservationCardItem({ reservation }: { reservation: Reservation 
                     <XCircle className="w-3.5 h-3.5" />
                     Refuser
                   </button>
-                  <button className="flex items-center gap-1.5 px-3 py-1.5 text-[11px] font-bold text-white bg-primary-600 hover:bg-primary-700 rounded-lg shadow-sm shadow-primary-600/25 transition-colors">
+                  <button className="flex items-center gap-1.5 px-3 py-1.5 text-[11px] font-bold text-white bg-emerald-600 hover:bg-emerald-700 rounded-lg shadow-sm shadow-emerald-600/25 transition-colors">
                     <CheckCircle2 className="w-3.5 h-3.5" />
                     Confirmer
                   </button>
@@ -306,7 +306,7 @@ export function ReservationCardItem({ reservation }: { reservation: Reservation 
 
               <Link
                 href={`/dashboard/reservations/${reservation.id}`}
-                className="w-9 h-9 rounded-full bg-background-alt flex items-center justify-center border border-border hover:bg-primary-600 hover:border-primary-600 hover:text-white transition-colors text-foreground-muted ml-1"
+                className="w-9 h-9 rounded-full bg-background-alt flex items-center justify-center border border-border hover:bg-emerald-600 hover:border-emerald-600 hover:text-white transition-colors text-foreground-muted ml-1"
               >
                 <ChevronRight className="w-4 h-4" />
               </Link>

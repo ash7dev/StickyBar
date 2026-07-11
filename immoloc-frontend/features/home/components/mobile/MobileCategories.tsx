@@ -43,7 +43,7 @@ export function MobileCategories({ activeCategory, onCategoryChange }: MobileCat
               className={cn(
                 "flex items-center gap-1.5 px-3.5 py-2 rounded-full font-bold text-[12px] whitespace-nowrap transition-all duration-300 active:scale-95 shrink-0",
                 isActive
-                  ? "bg-primary-600 text-white shadow-[0_4px_16px_rgba(20,101,76,0.35)]"
+                  ? "bg-emerald-600 text-white shadow-[0_4px_16px_rgba(20,101,76,0.35)]"
                   : "bg-background-alt text-foreground-muted hover:bg-background-hover"
               )}
             >

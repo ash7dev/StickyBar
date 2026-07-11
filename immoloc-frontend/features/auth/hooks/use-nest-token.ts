@@ -20,7 +20,7 @@ export function useNestToken() {
 
   const refreshIfNeeded = useCallback(async () => {
     if (!refreshToken) return null;
-    
+
     if (isExpired()) {
       try {
         const result = await nestFetch<{
@@ -32,6 +32,8 @@ export function useNestToken() {
           body: JSON.stringify({ refreshToken }),
         });
 
+        // Préserver tous les champs du store pendant le refresh
+        const currentStore = useRoleStore.getState();
         setSession({
           token: result.accessToken,
           refreshToken: result.refreshToken,
@@ -43,6 +45,9 @@ export function useNestToken() {
           profileCompleted,
           phoneVerified,
           statutKyc,
+          dateNaissance: currentStore.dateNaissance,
+          selfieFaceDetected: currentStore.selfieFaceDetected,
+          selfieMatchScore: currentStore.selfieMatchScore,
         });
 
         return result.accessToken;

@@ -18,8 +18,8 @@ interface Props {
 
 function SectionCard({
   icon: Icon, title, description,
-  accent = 'bg-primary-500', headerBg = 'bg-primary-50',
-  iconBg = 'bg-primary-100', iconColor = 'text-primary-600',
+  accent = 'bg-emerald-500', headerBg = 'bg-emerald-50',
+  iconBg = 'bg-emerald-100', iconColor = 'text-emerald-600',
   children,
 }: {
   icon: React.ComponentType<{ className?: string }>;
@@ -48,7 +48,7 @@ function SectionCard({
   );
 }
 
-const INPUT_CLS = 'w-full px-4 py-3 rounded-xl border border-neutral-200 bg-white text-neutral-900 placeholder:text-neutral-400 text-sm outline-none focus:border-primary-400 focus:ring-2 focus:ring-primary-400/20 transition-all';
+const INPUT_CLS = 'w-full px-4 py-3 rounded-xl border border-neutral-200 bg-white text-neutral-900 placeholder:text-neutral-400 text-sm outline-none focus:border-emerald-400 focus:ring-2 focus:ring-emerald-400/20 transition-all';
 const INPUT_ERR = 'w-full px-4 py-3 rounded-xl border border-red-300 bg-white text-neutral-900 placeholder:text-neutral-400 text-sm outline-none focus:border-red-400 focus:ring-2 focus:ring-red-400/15 transition-all';
 
 /* ── Main Component ───────────────────────────────────────────────────────── */
@@ -124,7 +124,7 @@ export function StepAnnonce({ onNext, submitRef }: Props) {
                     descLength === 0 ? 'w-0'
                     : descLength > 1800 ? 'bg-amber-400'
                     : descLength > 800  ? 'bg-emerald-400'
-                    : 'bg-primary-400'
+                    : 'bg-emerald-400'
                   )}
                   style={{ width: `${Math.min(100, (descLength / 2000) * 100)}%` }}
                 />
@@ -188,15 +188,15 @@ export function StepAnnonce({ onNext, submitRef }: Props) {
         icon={Moon}
         title="Durée de séjour"
         description="Nombre de nuits minimum pour une réservation"
-        accent="bg-primary-500"
-        headerBg="bg-primary-50"
-        iconBg="bg-primary-100"
-        iconColor="text-primary-600"
+        accent="bg-emerald-500"
+        headerBg="bg-emerald-50"
+        iconBg="bg-emerald-100"
+        iconColor="text-emerald-600"
       >
         <div className="space-y-4">
           <div className="flex items-center gap-2">
-            <div className="w-7 h-7 rounded-lg bg-primary-100 flex items-center justify-center shrink-0">
-              <Moon className="w-3.5 h-3.5 text-primary-600" />
+            <div className="w-7 h-7 rounded-lg bg-emerald-100 flex items-center justify-center shrink-0">
+              <Moon className="w-3.5 h-3.5 text-emerald-600" />
             </div>
             <span className="text-sm font-black text-neutral-800">Durée minimum de séjour</span>
           </div>
@@ -204,7 +204,7 @@ export function StepAnnonce({ onNext, submitRef }: Props) {
           <Controller name="nuitesMinimum" control={control} render={({ field }) => (<>
             <div className="flex items-center gap-4 px-5 py-4 bg-neutral-50 rounded-2xl border border-neutral-200">
               <button type="button" onClick={() => field.onChange(Math.max(1, (field.value ?? 1) - 1))} disabled={(field.value ?? 1) <= 1}
-                className="w-12 h-12 rounded-xl bg-white border border-neutral-200 shadow-sm flex items-center justify-center text-neutral-500 hover:border-primary-400 hover:text-primary-500 hover:bg-primary-50 transition-all disabled:opacity-30 shrink-0 active:scale-90">
+                className="w-12 h-12 rounded-xl bg-white border border-neutral-200 shadow-sm flex items-center justify-center text-neutral-500 hover:border-emerald-400 hover:text-emerald-500 hover:bg-emerald-50 transition-all disabled:opacity-30 shrink-0 active:scale-90">
                 <Minus className="w-4 h-4" />
               </button>
               <div className="flex-1 text-center">
@@ -214,7 +214,7 @@ export function StepAnnonce({ onNext, submitRef }: Props) {
                 </p>
               </div>
               <button type="button" onClick={() => field.onChange(Math.min(365, (field.value ?? 1) + 1))} disabled={(field.value ?? 1) >= 365}
-                className="w-12 h-12 rounded-xl bg-white border border-neutral-200 shadow-sm flex items-center justify-center text-neutral-500 hover:border-primary-400 hover:text-primary-500 hover:bg-primary-50 transition-all disabled:opacity-30 shrink-0 active:scale-90">
+                className="w-12 h-12 rounded-xl bg-white border border-neutral-200 shadow-sm flex items-center justify-center text-neutral-500 hover:border-emerald-400 hover:text-emerald-500 hover:bg-emerald-50 transition-all disabled:opacity-30 shrink-0 active:scale-90">
                 <Plus className="w-4 h-4" />
               </button>
             </div>
@@ -223,7 +223,7 @@ export function StepAnnonce({ onNext, submitRef }: Props) {
                 <button key={n} type="button" onClick={() => field.onChange(n)}
                   className={cn('py-2.5 rounded-xl text-xs font-bold border transition-all active:scale-95',
                     field.value === n
-                      ? 'border-primary-400 bg-primary-500 text-white shadow-sm shadow-primary-500/20'
+                      ? 'border-emerald-400 bg-emerald-500 text-white shadow-sm shadow-emerald-500/20'
                       : 'border-neutral-200 bg-neutral-50 text-neutral-500 hover:bg-white hover:border-neutral-300')}>
                   {n === 1 ? '1 nuit' : n === 7 ? '1 sem.' : n === 14 ? '2 sem.' : n === 30 ? '1 mois' : `${n} nuits`}
                 </button>

@@ -39,6 +39,9 @@ export function NestSessionSync() {
             profileCompleted: result.user.profileCompleted,
             phoneVerified: result.user.phoneVerified,
             statutKyc: result.user.statutKyc,
+            dateNaissance: result.user.dateNaissance,
+            selfieFaceDetected: result.user.selfieFaceDetected,
+            selfieMatchScore: result.user.selfieMatchScore,
           });
         } catch (error: any) {
           // Si c'est une 401, c'est que le token Supabase a été rejeté par le backend

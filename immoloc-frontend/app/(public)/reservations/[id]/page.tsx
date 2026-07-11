@@ -75,8 +75,8 @@ export default function TenantReservationDetailPage({ params }: { params: Promis
       <GlassCard>
         <div className="flex items-center justify-between p-5">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-2xl bg-primary-50 border border-primary-100 flex items-center justify-center">
-              <FileText className="w-4 h-4 text-primary-600" />
+            <div className="w-10 h-10 rounded-2xl bg-emerald-50 border border-emerald-100 flex items-center justify-center">
+              <FileText className="w-4 h-4 text-emerald-600" />
             </div>
             <div>
               <p className="text-sm font-bold text-foreground">Contrat de location</p>
@@ -85,7 +85,7 @@ export default function TenantReservationDetailPage({ params }: { params: Promis
           </div>
           <Link
             href={`/reservations/${id}/contrat`}
-            className="inline-flex items-center gap-1.5 px-4 py-2 bg-primary-800 hover:bg-neutral-900 text-white text-xs font-bold rounded-xl transition-colors shadow-sm border border-white/8"
+            className="inline-flex items-center gap-1.5 px-4 py-2 bg-emerald-800 hover:bg-neutral-900 text-white text-xs font-bold rounded-xl transition-colors shadow-sm border border-white/8"
           >
             <ExternalLink className="w-3.5 h-3.5" />
             Consulter

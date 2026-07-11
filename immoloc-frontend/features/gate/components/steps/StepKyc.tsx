@@ -91,7 +91,7 @@ export function StepKyc({ onDone }: Props) {
       <button
         onClick={handleSubmit}
         disabled={loading || !rectoFile || !versoFile}
-        className="w-full bg-primary-600 hover:bg-primary-700 disabled:opacity-50 text-white text-sm font-bold rounded-xl py-3 transition-colors"
+        className="w-full bg-emerald-600 hover:bg-emerald-700 disabled:opacity-50 text-white text-sm font-bold rounded-xl py-3 transition-colors"
       >
         {loading ? 'Envoi en cours…' : 'Soumettre mes documents'}
       </button>
@@ -124,7 +124,7 @@ function UploadSlot({
           'relative rounded-xl border-2 border-dashed transition-colors',
           hasFile
             ? 'border-emerald-300 bg-emerald-50'
-            : 'border-border bg-neutral-50 hover:border-primary-300 hover:bg-primary-50',
+            : 'border-border bg-neutral-50 hover:border-emerald-300 hover:bg-emerald-50',
         )}
       >
         <button

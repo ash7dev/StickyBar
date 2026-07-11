@@ -22,8 +22,8 @@ const STEP_META: Record<GateStep, {
     title:    'Complétez votre profil',
     subtitle: 'Votre prénom, nom et date de naissance sont requis pour continuer.',
     icon:     UserCheck,
-    color:    'text-primary-600',
-    bg:       'bg-primary-50 border-primary-100',
+    color:    'text-emerald-600',
+    bg:       'bg-emerald-50 border-emerald-100',
   },
   phone: {
     title:    'Vérifiez votre numéro',
@@ -82,7 +82,7 @@ function ProgressBar({ total, current }: { total: number; current: number }) {
           key={i}
           className={cn(
             'h-1 rounded-full flex-1 transition-all duration-400',
-            i <= current ? 'bg-primary-500' : 'bg-neutral-200',
+            i <= current ? 'bg-emerald-500' : 'bg-neutral-200',
           )}
         />
       ))}

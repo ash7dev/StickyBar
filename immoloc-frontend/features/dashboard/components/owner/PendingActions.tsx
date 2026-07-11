@@ -27,7 +27,7 @@ export function PendingActions({ confirmations, disputes, recentBookings = [] }:
     <div className="bg-[#0a0a0a] rounded-2xl p-6 border border-white/[0.06] h-full min-h-[420px] flex flex-col group/card hover:shadow-2xl hover:shadow-black/30 hover:-translate-y-0.5 transition-all duration-500 relative overflow-hidden">
       
       {/* ── Ambient Background Glow ──────────────────────────────── */}
-      <div className="absolute top-0 right-0 w-64 h-64 bg-primary-500/8 rounded-full blur-[80px] pointer-events-none" />
+      <div className="absolute top-0 right-0 w-64 h-64 bg-emerald-500/8 rounded-full blur-[80px] pointer-events-none" />
       {hasUrgent && (
         <div className="absolute top-0 left-0 w-48 h-48 bg-rose-500/8 rounded-full blur-[60px] pointer-events-none" />
       )}
@@ -48,15 +48,15 @@ export function PendingActions({ confirmations, disputes, recentBookings = [] }:
             <div className={`w-10 h-10 rounded-2xl flex items-center justify-center border
               ${hasUrgent 
                 ? 'bg-rose-500/10 border-rose-500/20 text-rose-400' 
-                : 'bg-primary-500/10 border-primary-500/20 text-primary-400'}`}>
+                : 'bg-emerald-500/10 border-emerald-500/20 text-emerald-400'}`}>
               <Zap className="w-[18px] h-[18px]" />
             </div>
             {total > 0 && (
               <span className="absolute -top-1 -right-1 flex h-3 w-3">
                 <span className={`animate-ping absolute inline-flex h-full w-full rounded-full opacity-75
-                  ${hasUrgent ? 'bg-rose-400' : 'bg-primary-400'}`}></span>
+                  ${hasUrgent ? 'bg-rose-400' : 'bg-emerald-400'}`}></span>
                 <span className={`relative inline-flex rounded-full h-3 w-3 border-2 border-[#0a0a0a]
-                  ${hasUrgent ? 'bg-rose-500' : 'bg-primary-500'}`}></span>
+                  ${hasUrgent ? 'bg-rose-500' : 'bg-emerald-500'}`}></span>
               </span>
             )}
           </div>
@@ -87,9 +87,9 @@ export function PendingActions({ confirmations, disputes, recentBookings = [] }:
         </div>
         
         <div className="p-4 rounded-xl border bg-background-card/[0.02] border-white/[0.06] shadow-sm relative overflow-hidden">
-          <div className="absolute -right-4 -top-4 w-16 h-16 bg-primary-500/20 rounded-full blur-xl pointer-events-none" />
+          <div className="absolute -right-4 -top-4 w-16 h-16 bg-emerald-500/20 rounded-full blur-xl pointer-events-none" />
           <div className="flex items-center gap-2 mb-2">
-            <CalendarClock className="w-3.5 h-3.5 text-primary-400" />
+            <CalendarClock className="w-3.5 h-3.5 text-emerald-400" />
             <span className="text-[10px] font-bold text-white/40 uppercase tracking-wider">À traiter</span>
           </div>
           <p className="text-2xl font-black text-white">{toHandle}</p>
@@ -122,7 +122,7 @@ export function PendingActions({ confirmations, disputes, recentBookings = [] }:
         {confirmations > 0 && (
           <Link href="/dashboard/reservations?statut=PENDING" 
             className="flex items-start gap-3 p-3.5 rounded-xl border border-white/[0.06] bg-background-card/[0.02] hover:bg-background-card/[0.06] hover:border-white/[0.1] hover:shadow-md hover:-translate-y-0.5 transition-all group">
-            <div className="w-9 h-9 rounded-lg bg-primary-500/10 border border-primary-500/20 text-primary-400 flex items-center justify-center shrink-0 group-hover:scale-110 transition-transform">
+            <div className="w-9 h-9 rounded-lg bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 flex items-center justify-center shrink-0 group-hover:scale-110 transition-transform">
               <Activity className="w-[18px] h-[18px]" />
             </div>
             <div className="flex-1 min-w-0 pt-0.5">
@@ -131,7 +131,7 @@ export function PendingActions({ confirmations, disputes, recentBookings = [] }:
               </p>
               <p className="text-[10px] font-medium text-white/40">Accepter les demandes payées</p>
             </div>
-            <div className="w-6 h-6 rounded-full bg-background-card/[0.06] flex items-center justify-center border border-white/[0.06] group-hover:bg-primary-500 group-hover:border-primary-500 transition-colors mt-1 shrink-0">
+            <div className="w-6 h-6 rounded-full bg-background-card/[0.06] flex items-center justify-center border border-white/[0.06] group-hover:bg-emerald-500 group-hover:border-emerald-500 transition-colors mt-1 shrink-0">
               <ArrowRight className="w-3 h-3 text-white/40 group-hover:text-white" />
             </div>
           </Link>

@@ -61,7 +61,7 @@ export function LoginForm({ next }: Props) {
             onClick={() => setActiveTab(tab)}
             className={`flex-1 rounded-lg pt-3 pb-2 text-sm font-semibold transition-all duration-300 ${
               activeTab === tab
-                ? 'bg-black text-primary-400 shadow-lg border border-white/10'
+                ? 'bg-black text-emerald-400 shadow-lg border border-white/10'
                 : 'text-neutral-500 hover:text-neutral-700 dark:text-neutral-400'
             }`}
           >
@@ -81,7 +81,7 @@ export function LoginForm({ next }: Props) {
                 type="email"
                 autoComplete="email"
                 placeholder="vous@example.com"
-                className="w-full pl-10 pr-3 py-2.5 border border-border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+                className="w-full pl-10 pr-3 py-2.5 border border-border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent"
               />
             </div>
             {errors.email && <p className="text-red-500 text-xs mt-1">{errors.email.message}</p>}
@@ -90,7 +90,7 @@ export function LoginForm({ next }: Props) {
           <div>
             <div className="flex justify-between items-center mb-1">
               <label className="block text-sm font-medium text-neutral-700">Mot de passe</label>
-              <Link href="/forgot-password" className="text-xs text-primary-600 hover:underline">
+              <Link href="/forgot-password" className="text-xs text-emerald-600 hover:underline">
                 Mot de passe oublié ?
               </Link>
             </div>
@@ -101,7 +101,7 @@ export function LoginForm({ next }: Props) {
                 type="password"
                 autoComplete="current-password"
                 placeholder="••••••••"
-                className="w-full pl-10 pr-3 py-2.5 border border-border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+                className="w-full pl-10 pr-3 py-2.5 border border-border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent"
               />
             </div>
             {errors.password && <p className="text-red-500 text-xs mt-1">{errors.password.message}</p>}
@@ -116,7 +116,7 @@ export function LoginForm({ next }: Props) {
           <button
             type="submit"
             disabled={isSubmitting}
-            className="w-full flex items-center justify-center gap-2 py-2.5 px-4 bg-primary-700 hover:bg-primary-800 disabled:bg-primary-500 text-white rounded-lg text-sm font-medium transition-all duration-200 active:scale-[0.98]"
+            className="w-full flex items-center justify-center gap-2 py-2.5 px-4 bg-emerald-700 hover:bg-emerald-800 disabled:bg-emerald-500 text-white rounded-lg text-sm font-medium transition-all duration-200 active:scale-[0.98]"
           >
             {isSubmitting && <Loader2 className="h-4 w-4 animate-spin" />}
             {isSubmitting ? 'Connexion...' : 'Se connecter'}
@@ -156,7 +156,7 @@ export function LoginForm({ next }: Props) {
 
       <p className="text-center text-sm text-foreground-muted">
         Pas encore de compte ?{' '}
-        <Link href={registerHref} className="text-primary-600 font-medium hover:underline">
+        <Link href={registerHref} className="text-emerald-600 font-medium hover:underline">
           S&apos;inscrire
         </Link>
       </p>
@@ -213,7 +213,7 @@ function PhoneLoginSection({ next }: { next?: string }) {
             value={phone}
             onChange={(e) => setPhone(e.target.value)}
             placeholder="+221771234567"
-            className="w-full px-3 py-2.5 border border-border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary-500"
+            className="w-full px-3 py-2.5 border border-border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500"
           />
           {error && <p className="text-red-500 text-xs mt-1">{error}</p>}
         </div>
@@ -221,7 +221,7 @@ function PhoneLoginSection({ next }: { next?: string }) {
           type="button"
           onClick={handleSend}
           disabled={loading}
-          className="w-full flex items-center justify-center gap-2 py-2.5 bg-primary-700 hover:bg-primary-800 disabled:bg-primary-500 text-white rounded-lg text-sm font-medium transition-all duration-200"
+          className="w-full flex items-center justify-center gap-2 py-2.5 bg-emerald-700 hover:bg-emerald-800 disabled:bg-emerald-500 text-white rounded-lg text-sm font-medium transition-all duration-200"
         >
           {loading && <Loader2 className="h-4 w-4 animate-spin" />}
           {loading ? 'Envoi...' : 'Recevoir un code SMS'}
@@ -242,7 +242,7 @@ function PhoneLoginSection({ next }: { next?: string }) {
           value={otp}
           onChange={(e) => setOtp(e.target.value.replace(/\D/g, '').slice(0, 6))}
           placeholder="123456"
-          className="w-full px-3 py-2.5 border border-border rounded-lg text-sm text-center tracking-widest text-lg font-mono focus:outline-none focus:ring-2 focus:ring-primary-500"
+          className="w-full px-3 py-2.5 border border-border rounded-lg text-sm text-center tracking-widest text-lg font-mono focus:outline-none focus:ring-2 focus:ring-emerald-500"
         />
         {error && <p className="text-red-500 text-xs mt-1">{error}</p>}
       </div>
@@ -250,7 +250,7 @@ function PhoneLoginSection({ next }: { next?: string }) {
         type="button"
         onClick={handleVerify}
         disabled={loading || otp.length < 6}
-        className="w-full flex items-center justify-center gap-2 py-2.5 bg-primary-700 hover:bg-primary-800 disabled:bg-primary-500 text-white rounded-lg text-sm font-medium transition-all duration-200"
+        className="w-full flex items-center justify-center gap-2 py-2.5 bg-emerald-700 hover:bg-emerald-800 disabled:bg-emerald-500 text-white rounded-lg text-sm font-medium transition-all duration-200"
       >
         {loading && <Loader2 className="h-4 w-4 animate-spin" />}
         {loading ? 'Vérification...' : 'Valider'}

@@ -23,8 +23,8 @@ interface Props {
 
 function SectionCard({
   icon: Icon, title, description,
-  accent = 'bg-primary-500', headerBg = 'bg-primary-50',
-  iconBg = 'bg-primary-100', iconColor = 'text-primary-600',
+  accent = 'bg-emerald-500', headerBg = 'bg-emerald-50',
+  iconBg = 'bg-emerald-100', iconColor = 'text-emerald-600',
   badge, open, onToggle, children,
 }: {
   icon: React.ComponentType<{ className?: string }>;
@@ -86,7 +86,7 @@ function SectionCard({
   );
 }
 
-const INPUT_CLS = 'w-full px-4 py-3 rounded-xl border border-neutral-200 bg-white text-sm font-medium outline-none focus:border-primary-400 focus:ring-2 focus:ring-primary-400/15 transition-all placeholder:text-neutral-400';
+const INPUT_CLS = 'w-full px-4 py-3 rounded-xl border border-neutral-200 bg-white text-sm font-medium outline-none focus:border-emerald-400 focus:ring-2 focus:ring-emerald-400/15 transition-all placeholder:text-neutral-400';
 
 /* ── Tarif Row (existing palier display) ─────────────────────────────────── */
 

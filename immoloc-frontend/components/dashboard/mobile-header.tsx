@@ -84,7 +84,7 @@ export function MobileHeader({ onMenuToggle }: MobileHeaderProps) {
   const withdrawableBalance = Number(stats?.wallet?.balance ?? 0);
 
   return (
-    <header className="rounded-b-3xl bg-primary-800 pb-6">
+    <header className="rounded-b-3xl bg-emerald-800 pb-6">
 
       {/* ── Barre : salutation + notifications + avatar ─────────────────── */}
       <div className="flex items-center justify-between px-4 py-3">
@@ -108,7 +108,7 @@ export function MobileHeader({ onMenuToggle }: MobileHeaderProps) {
               <div className="absolute right-0 top-full z-50 mt-2 w-80 overflow-hidden rounded-2xl border border-border bg-background-card shadow-xl">
                 <div className="flex items-center justify-between border-b border-border px-4 py-3">
                   <p className="text-sm font-semibold text-foreground">Notifications</p>
-                  <button className="text-xs font-semibold text-primary-600 transition-colors hover:text-primary-700">
+                  <button className="text-xs font-semibold text-emerald-600 transition-colors hover:text-emerald-700">
                     Tout marquer lu
                   </button>
                 </div>
@@ -130,7 +130,7 @@ export function MobileHeader({ onMenuToggle }: MobileHeaderProps) {
               aria-label="Menu du compte"
               className="flex h-9 items-center gap-1.5 rounded-full bg-white/10 pl-1 pr-2.5 transition-colors hover:bg-white/15"
             >
-              <span className="flex h-7 w-7 items-center justify-center rounded-full bg-white text-xs font-semibold text-primary-700">
+              <span className="flex h-7 w-7 items-center justify-center rounded-full bg-white text-xs font-semibold text-emerald-700">
                 {initials}
               </span>
               <ChevronDown className={cn('h-3.5 w-3.5 text-white transition-transform', dropdownOpen && 'rotate-180')} />
@@ -181,15 +181,15 @@ export function MobileHeader({ onMenuToggle }: MobileHeaderProps) {
       {/* ── Carte revenus — le montant est le héros ─────────────────────── */}
       <div className="px-4 pt-1">
         {isLoading ? (
-          <div className="animate-pulse rounded-2xl bg-primary-900/60 p-5">
+          <div className="animate-pulse rounded-2xl bg-emerald-900/60 p-5">
             <div className="mb-3 h-3.5 w-28 rounded bg-white/10" />
             <div className="mb-2 h-9 w-44 rounded bg-white/10" />
             <div className="h-3 w-32 rounded bg-white/10" />
           </div>
         ) : (
-          <div className="rounded-2xl bg-primary-900/60 p-5">
+          <div className="rounded-2xl bg-emerald-900/60 p-5">
             <div className="mb-2 flex items-center justify-between">
-              <p className="text-[11px] font-semibold uppercase tracking-[0.15em] text-primary-200">
+              <p className="text-[11px] font-semibold uppercase tracking-[0.15em] text-emerald-200">
                 Revenus du mois
               </p>
               <button
@@ -198,18 +198,18 @@ export function MobileHeader({ onMenuToggle }: MobileHeaderProps) {
                 className="rounded-lg p-1.5 transition-colors hover:bg-white/10"
               >
                 {amountVisible
-                  ? <Eye className="h-4 w-4 text-primary-200" />
-                  : <EyeOff className="h-4 w-4 text-primary-200" />}
+                  ? <Eye className="h-4 w-4 text-emerald-200" />
+                  : <EyeOff className="h-4 w-4 text-emerald-200" />}
               </button>
             </div>
 
             <p className="text-[32px] font-semibold leading-none text-white tabular-nums" data-price>
               {amountVisible ? revenueMonth.toLocaleString('fr-FR') : '••••••'}
-              <span className="ml-1.5 text-[14px] font-medium text-primary-200">FCFA</span>
+              <span className="ml-1.5 text-[14px] font-medium text-emerald-200">FCFA</span>
             </p>
 
             {totalBookings > 0 && (
-              <p className="mt-2.5 text-[13px] text-primary-100/80">
+              <p className="mt-2.5 text-[13px] text-emerald-100/80">
                 {totalBookings} réservation{totalBookings > 1 ? 's' : ''} ce mois-ci
               </p>
             )}

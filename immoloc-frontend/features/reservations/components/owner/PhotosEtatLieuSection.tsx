@@ -35,7 +35,7 @@ const CATEGORIE_LABEL: Record<string, string> = {
 };
 
 const UPLOADER_CFG: Record<string, { label: string; icon: typeof User; accent: string }> = {
-  PROPRIO:   { label: 'Propriétaire', icon: Home, accent: 'text-primary-600 bg-primary-50 border-primary-100' },
+  PROPRIO:   { label: 'Propriétaire', icon: Home, accent: 'text-emerald-600 bg-emerald-50 border-emerald-100' },
   LOCATAIRE: { label: 'Locataire',    icon: User, accent: 'text-amber-600 bg-amber-50 border-amber-100' },
 };
 
@@ -203,7 +203,7 @@ function PhotoGridItem({
       className={cn(
         'group relative rounded-2xl overflow-hidden bg-neutral-100 border border-neutral-200/60',
         'transition-all duration-300 hover:shadow-lg hover:shadow-neutral-900/10 hover:border-neutral-300',
-        'focus-visible:ring-2 focus-visible:ring-primary-400 focus-visible:ring-offset-2',
+        'focus-visible:ring-2 focus-visible:ring-emerald-400 focus-visible:ring-offset-2',
         isLarge ? 'col-span-2 row-span-2' : '',
       )}
     >
@@ -283,10 +283,10 @@ export function PhotosEtatLieuSection({ checkinPhotos, checkoutPhotos }: Props) 
       icon: LogOut,
       label: 'Check-out',
       count: checkoutPhotos.length,
-      accent: 'text-primary-600',
-      activeBg: 'bg-primary-50 border-primary-200',
-      dot: 'bg-primary-500',
-      gradient: 'from-primary-500 to-primary-600',
+      accent: 'text-emerald-600',
+      activeBg: 'bg-emerald-50 border-emerald-200',
+      dot: 'bg-emerald-500',
+      gradient: 'from-emerald-500 to-emerald-600',
     },
   } as const;
 

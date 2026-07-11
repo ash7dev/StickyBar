@@ -222,9 +222,9 @@ export function ListingWizard({ editMode = false }: ListingWizardProps) {
 
       {/* ── Background Blobs for Glass Effect ──────────────── */}
       <div className="fixed inset-0 pointer-events-none z-0">
-        <div className="absolute top-[-10%] left-[-10%] w-[40%] h-[40%] rounded-full bg-primary-200/20 blur-[120px]" />
+        <div className="absolute top-[-10%] left-[-10%] w-[40%] h-[40%] rounded-full bg-emerald-200/20 blur-[120px]" />
         <div className="absolute top-[20%] right-[-10%] w-[35%] h-[35%] rounded-full bg-accent-200/20 blur-[100px]" />
-        <div className="absolute bottom-[-5%] left-[20%] w-[30%] h-[30%] rounded-full bg-primary-300/10 blur-[80px]" />
+        <div className="absolute bottom-[-5%] left-[20%] w-[30%] h-[30%] rounded-full bg-emerald-300/10 blur-[80px]" />
       </div>
 
       {/* ── Sticky header (Glass) ──────────────────────────── */}
@@ -234,21 +234,21 @@ export function ListingWizard({ editMode = false }: ListingWizardProps) {
           <div className="flex items-center justify-between h-16">
             <Link
               href="/dashboard/annonces"
-              className="group flex items-center gap-2 text-sm font-bold text-foreground-muted hover:text-primary-500 transition-all"
+              className="group flex items-center gap-2 text-sm font-bold text-foreground-muted hover:text-emerald-500 transition-all"
             >
-              <div className="w-8 h-8 rounded-lg bg-background-card/40 flex items-center justify-center group-hover:bg-primary-50 transition-colors border border-border/20">
+              <div className="w-8 h-8 rounded-lg bg-background-card/40 flex items-center justify-center group-hover:bg-emerald-50 transition-colors border border-border/20">
                 <ArrowLeft className="w-4 h-4 transition-transform group-hover:-translate-x-1" />
               </div>
               <span className="hidden sm:inline">Quitter</span>
             </Link>
 
             <div className="flex flex-col items-center">
-              <span className="text-[10px] font-black text-primary-500 uppercase tracking-widest">
+              <span className="text-[10px] font-black text-emerald-500 uppercase tracking-widest">
                 Étape {currentStep + 1} / {WIZARD_STEPS.length}
               </span>
-              <div className="h-1 w-12 bg-primary-100 rounded-full mt-1 overflow-hidden">
+              <div className="h-1 w-12 bg-emerald-100 rounded-full mt-1 overflow-hidden">
                 <div
-                  className="h-full bg-primary-400 transition-all duration-500"
+                  className="h-full bg-emerald-400 transition-all duration-500"
                   style={{ width: `${((currentStep + 1) / WIZARD_STEPS.length) * 100}%` }}
                 />
               </div>
@@ -274,7 +274,7 @@ export function ListingWizard({ editMode = false }: ListingWizardProps) {
 
         {/* Page Header */}
         <div className="text-center mb-12 animate-in fade-in slide-in-from-bottom-4 duration-700">
-          <p className="text-xs font-black uppercase tracking-[0.2em] text-primary-500 mb-3">
+          <p className="text-xs font-black uppercase tracking-[0.2em] text-emerald-500 mb-3">
             {editMode ? "Modification de l'annonce" : "Création d'annonce"}
           </p>
           <h1 className="text-3xl sm:text-4xl font-black text-foreground tracking-tight mb-3">
@@ -334,7 +334,7 @@ export function ListingWizard({ editMode = false }: ListingWizardProps) {
               <button
                 type="button"
                 onClick={handleNext}
-                className="group flex items-center gap-3 px-10 py-4 rounded-2xl bg-primary-500 hover:bg-primary-600 text-white text-sm font-black shadow-xl shadow-primary-500/30 hover:shadow-primary-500/40 hover:-translate-y-1 transition-all duration-300 active:scale-95"
+                className="group flex items-center gap-3 px-10 py-4 rounded-2xl bg-emerald-500 hover:bg-emerald-600 text-white text-sm font-black shadow-xl shadow-emerald-500/30 hover:shadow-emerald-500/40 hover:-translate-y-1 transition-all duration-300 active:scale-95"
               >
                 {currentStep === 4 ? 'Récapitulatif' : 'Continuer'}
                 <ArrowRight className="w-4 h-4 transition-transform group-hover:translate-x-1" />

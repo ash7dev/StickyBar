@@ -168,8 +168,8 @@ export function PricePreviewWidget({
       <div className="px-7 pt-7 pb-5 bg-gradient-to-b from-background-alt/80 to-background-card border-b border-border">
         <div className="flex items-start justify-between">
           <div>
-            <span className="inline-flex items-center gap-1.5 px-2.5 py-1 bg-primary-50 border border-primary-100 text-primary-600 text-[9px] font-black uppercase tracking-widest rounded-lg mb-3">
-              <span className="w-1.5 h-1.5 rounded-full bg-primary-500 animate-pulse" />
+            <span className="inline-flex items-center gap-1.5 px-2.5 py-1 bg-emerald-50 border border-emerald-100 text-emerald-600 text-[9px] font-black uppercase tracking-widest rounded-lg mb-3">
+              <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
               Disponible
             </span>
             <div className="flex items-baseline gap-1.5">
@@ -183,14 +183,14 @@ export function PricePreviewWidget({
                 </p>
               )}
               {tarifsNuits && tarifsNuits.length > 1 && (
-                <span className="text-[9px] font-black text-primary-600 bg-primary-50 border border-primary-100 px-2 py-0.5 rounded-md uppercase tracking-wide">
+                <span className="text-[9px] font-black text-emerald-600 bg-emerald-50 border border-emerald-100 px-2 py-0.5 rounded-md uppercase tracking-wide">
                   Tarif dégressif
                 </span>
               )}
             </div>
           </div>
-          <div className="w-10 h-10 rounded-2xl bg-primary-50 border border-primary-100 flex items-center justify-center">
-            <CalendarDays className="w-5 h-5 text-primary-500" />
+          <div className="w-10 h-10 rounded-2xl bg-emerald-50 border border-emerald-100 flex items-center justify-center">
+            <CalendarDays className="w-5 h-5 text-emerald-500" />
           </div>
         </div>
       </div>
@@ -215,7 +215,7 @@ export function PricePreviewWidget({
               <span className="text-xs font-black text-foreground uppercase tracking-wider">Voyageurs</span>
             </div>
             {capaciteMax > 1 && (
-              <span className="text-[10px] font-medium text-primary-500 bg-primary-50 border border-primary-100 px-2 py-0.5 rounded-full">
+              <span className="text-[10px] font-medium text-emerald-500 bg-emerald-50 border border-emerald-100 px-2 py-0.5 rounded-full">
                 Tarif dynamique
               </span>
             )}
@@ -226,7 +226,7 @@ export function PricePreviewWidget({
             <button
               onClick={() => setNbPersonnes((p) => Math.max(1, p - 1))}
               disabled={nbPersonnes <= 1}
-              className="w-10 h-10 rounded-xl bg-background-card border border-border shadow-sm flex items-center justify-center text-foreground-muted hover:text-primary-600 hover:border-primary-200 hover:shadow-md disabled:opacity-30 disabled:cursor-not-allowed transition-all duration-200"
+              className="w-10 h-10 rounded-xl bg-background-card border border-border shadow-sm flex items-center justify-center text-foreground-muted hover:text-emerald-600 hover:border-emerald-200 hover:shadow-md disabled:opacity-30 disabled:cursor-not-allowed transition-all duration-200"
             >
               <Minus className="w-4 h-4" />
             </button>
@@ -241,7 +241,7 @@ export function PricePreviewWidget({
             <button
               onClick={() => setNbPersonnes((p) => Math.min(capaciteMax, p + 1))}
               disabled={nbPersonnes >= capaciteMax}
-              className="w-10 h-10 rounded-xl bg-background-card border border-border shadow-sm flex items-center justify-center text-foreground-muted hover:text-primary-600 hover:border-primary-200 hover:shadow-md disabled:opacity-30 disabled:cursor-not-allowed transition-all duration-200"
+              className="w-10 h-10 rounded-xl bg-background-card border border-border shadow-sm flex items-center justify-center text-foreground-muted hover:text-emerald-600 hover:border-emerald-200 hover:shadow-md disabled:opacity-30 disabled:cursor-not-allowed transition-all duration-200"
             >
               <Plus className="w-4 h-4" />
             </button>
@@ -298,7 +298,7 @@ export function PricePreviewWidget({
                   <Moon className="w-4 h-4 text-foreground-muted" />
                   <span className="font-medium">Réduction séjour long</span>
                 </div>
-                <span className="font-bold text-primary-400">−{fmt(preview.reductionNuits)} FCFA</span>
+                <span className="font-bold text-emerald-400">−{fmt(preview.reductionNuits)} FCFA</span>
               </div>
             )}
 
@@ -326,8 +326,8 @@ export function PricePreviewWidget({
                 onClick={() => setCguAccepted((v) => !v)}
                 className={`w-5 h-5 rounded-md border-2 flex items-center justify-center transition-all duration-200 ${
                   cguAccepted
-                    ? 'bg-primary-500 border-primary-500 shadow-[0_0_0_3px_rgba(20,101,76,0.15)]'
-                    : 'border-border bg-background-card group-hover:border-primary-400'
+                    ? 'bg-emerald-500 border-emerald-500 shadow-[0_0_0_3px_rgba(20,101,76,0.15)]'
+                    : 'border-border bg-background-card group-hover:border-emerald-400'
                 }`}
               >
                 {cguAccepted && <CheckCircle2 className="w-3 h-3 text-white fill-white" />}
@@ -335,11 +335,11 @@ export function PricePreviewWidget({
             </div>
             <p className="text-xs font-medium text-foreground-muted leading-relaxed">
               J&apos;accepte les{' '}
-              <Link href="/cgu" target="_blank" className="text-primary-600 font-bold hover:underline underline-offset-2">
+              <Link href="/cgu" target="_blank" className="text-emerald-600 font-bold hover:underline underline-offset-2">
                 conditions de location
               </Link>{' '}
               et le{' '}
-              <span className="text-primary-600 font-bold">contrat de réservation</span>{' '}
+              <span className="text-emerald-600 font-bold">contrat de réservation</span>{' '}
               qui seront envoyés à la confirmation.
             </p>
           </label>
@@ -359,7 +359,7 @@ export function PricePreviewWidget({
           disabled={!canBook || !hasHydrated}
           className={`w-full flex items-center justify-center gap-2.5 py-4 px-6 font-black rounded-2xl text-[15px] transition-all duration-300 ${
             canBook && hasHydrated
-              ? 'bg-primary-600 text-white shadow-[0_8px_25px_rgba(20,101,76,0.30)] hover:bg-primary-700 hover:shadow-[0_12px_32px_rgba(20,101,76,0.40)] hover:-translate-y-0.5 active:translate-y-0'
+              ? 'bg-emerald-600 text-white shadow-[0_8px_25px_rgba(20,101,76,0.30)] hover:bg-emerald-700 hover:shadow-[0_12px_32px_rgba(20,101,76,0.40)] hover:-translate-y-0.5 active:translate-y-0'
               : 'bg-background-alt text-foreground-muted cursor-not-allowed'
           }`}
         >
@@ -399,8 +399,8 @@ export function PricePreviewWidget({
             { icon: CheckCircle2, text: 'Annulation', sub: 'flexible' },
           ].map(({ icon: Icon, text, sub }, i) => (
             <div key={i} className="flex flex-col items-center gap-1">
-              <div className="w-8 h-8 rounded-xl bg-primary-50 border border-primary-100 flex items-center justify-center">
-                <Icon className="w-4 h-4 text-primary-500" />
+              <div className="w-8 h-8 rounded-xl bg-emerald-50 border border-emerald-100 flex items-center justify-center">
+                <Icon className="w-4 h-4 text-emerald-500" />
               </div>
               <span className="text-[10px] font-black text-foreground">{text}</span>
               <span className="text-[10px] font-medium text-foreground-muted">{sub}</span>

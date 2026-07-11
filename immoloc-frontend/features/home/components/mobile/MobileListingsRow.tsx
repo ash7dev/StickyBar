@@ -46,7 +46,7 @@ export function MobileListingsRow({
         <h2 className="text-[16px] leading-tight text-foreground">{title}</h2>
         <Link
           href={href}
-          className="flex items-center gap-0.5 rounded-full bg-primary-50 px-2.5 py-1 text-[12px] font-semibold text-primary-700"
+          className="flex items-center gap-0.5 rounded-full bg-emerald-50 px-2.5 py-1 text-[12px] font-semibold text-emerald-700"
         >
           Tout voir <ChevronRight className="h-3.5 w-3.5" />
         </Link>

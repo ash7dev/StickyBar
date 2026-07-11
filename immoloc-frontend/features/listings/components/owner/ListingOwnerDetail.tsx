@@ -437,10 +437,10 @@ function ListingCalendar({ listingId, reservations }: { listingId: string; reser
                 className={cn(
                   'aspect-square flex items-center justify-center rounded-xl text-xs font-semibold transition-all select-none',
                   isPast     ? 'text-neutral-200 cursor-default' :
-                  isReserved ? 'bg-primary-500/10 text-primary-700 font-bold border border-primary-200/50 cursor-default' :
+                  isReserved ? 'bg-emerald-500/10 text-emerald-700 font-bold border border-emerald-200/50 cursor-default' :
                   isBlocked  ? 'bg-amber-100 text-amber-700 font-bold border border-amber-200' :
-                  isStart    ? 'bg-primary-600 text-white font-black shadow-md shadow-primary-500/30 scale-110' :
-                  inSel      ? 'bg-primary-100 text-primary-700 font-bold' :
+                  isStart    ? 'bg-emerald-600 text-white font-black shadow-md shadow-emerald-500/30 scale-110' :
+                  inSel      ? 'bg-emerald-100 text-emerald-700 font-bold' :
                   isToday    ? 'bg-neutral-900 text-white font-black shadow-md' :
                                'text-neutral-600 hover:bg-neutral-100 cursor-pointer',
                 )}
@@ -455,7 +455,7 @@ function ListingCalendar({ listingId, reservations }: { listingId: string; reser
         <div className="flex items-center flex-wrap gap-x-4 gap-y-1 mt-4 pt-4 border-t border-neutral-100 pb-4">
           {[
             { cls: 'bg-neutral-200',    label: 'Disponible' },
-            { cls: 'bg-primary-400',    label: 'Réservé' },
+            { cls: 'bg-emerald-400',    label: 'Réservé' },
             { cls: 'bg-amber-400',      label: 'Bloqué' },
             { cls: 'bg-neutral-900',    label: "Aujourd'hui" },
           ].map(({ cls, label }) => (
@@ -469,14 +469,14 @@ function ListingCalendar({ listingId, reservations }: { listingId: string; reser
 
       {/* Panel — sélection en cours */}
       {selectStart && (
-        <div className="mx-5 mb-5 p-4 rounded-2xl bg-primary-50 border border-primary-100 space-y-3">
+        <div className="mx-5 mb-5 p-4 rounded-2xl bg-emerald-50 border border-emerald-100 space-y-3">
           <div className="flex items-center justify-between">
-            <p className="text-xs font-black text-primary-700">
+            <p className="text-xs font-black text-emerald-700">
               {pendingRange
                 ? `${selectStart} → ${selectEnd}`
                 : `Départ : ${selectStart} — sélectionnez la date de fin`}
             </p>
-            <button onClick={() => { setSelectStart(null); setSelectEnd(null); setHoverDay(null); }} className="text-primary-400 hover:text-primary-700 transition-colors">
+            <button onClick={() => { setSelectStart(null); setSelectEnd(null); setHoverDay(null); }} className="text-emerald-400 hover:text-emerald-700 transition-colors">
               <X className="w-4 h-4" />
             </button>
           </div>
@@ -486,7 +486,7 @@ function ListingCalendar({ listingId, reservations }: { listingId: string; reser
                 value={motif}
                 onChange={e => setMotif(e.target.value)}
                 placeholder="Motif (optionnel) — ex. Travaux"
-                className="w-full text-xs rounded-xl border border-primary-200 bg-white px-3 py-2 outline-none focus:ring-2 focus:ring-primary-400/30 placeholder:text-neutral-300"
+                className="w-full text-xs rounded-xl border border-emerald-200 bg-white px-3 py-2 outline-none focus:ring-2 focus:ring-emerald-400/30 placeholder:text-neutral-300"
               />
               {blockError && (
                 <p className="text-[11px] font-semibold text-rose-600 bg-rose-50 rounded-xl px-3 py-2 border border-rose-100">
@@ -497,7 +497,7 @@ function ListingCalendar({ listingId, reservations }: { listingId: string; reser
                 type="button"
                 onClick={submitBlock}
                 disabled={createMutation.isPending}
-                className="w-full flex items-center justify-center gap-2 py-2.5 rounded-xl bg-primary-600 hover:bg-primary-700 text-white text-xs font-bold transition-colors disabled:opacity-50"
+                className="w-full flex items-center justify-center gap-2 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold transition-colors disabled:opacity-50"
               >
                 <Lock className="w-3.5 h-3.5" />
                 {createMutation.isPending ? 'Blocage…' : 'Bloquer cette période'}
@@ -1005,7 +1005,7 @@ export function ListingOwnerDetail({ listing }: { listing: ListingDetail }) {
           {/* Bottom info overlay */}
           <div className="absolute bottom-0 left-0 right-0 p-5 sm:p-7">
             <div className="flex items-center gap-2 mb-2">
-              <span className="text-[10px] font-black uppercase tracking-widest px-2.5 py-1 rounded-xl bg-primary-500 text-white">
+              <span className="text-[10px] font-black uppercase tracking-widest px-2.5 py-1 rounded-xl bg-emerald-500 text-white">
                 {listing.sousType ?? TYPE_LABELS[listing.type] ?? listing.type}
               </span>
               <div className="flex items-center gap-1 text-white/70 text-xs font-semibold">
@@ -1173,7 +1173,7 @@ export function ListingOwnerDetail({ listing }: { listing: ListingDetail }) {
 
             {canSubmit && (
               <Link href={`/dashboard/annonces/${listing.id}/soumettre`}
-                className="flex items-center justify-center gap-2 px-4 py-3.5 bg-gradient-to-r from-primary-500 to-primary-600 hover:from-primary-600 hover:to-primary-700 rounded-2xl text-sm font-bold text-white shadow-lg shadow-primary-500/25 hover:shadow-xl hover:shadow-primary-500/30 transition-all">
+                className="flex items-center justify-center gap-2 px-4 py-3.5 bg-gradient-to-r from-emerald-500 to-emerald-600 hover:from-emerald-600 hover:to-emerald-700 rounded-2xl text-sm font-bold text-white shadow-lg shadow-emerald-500/25 hover:shadow-xl hover:shadow-emerald-500/30 transition-all">
                 <Send className="w-4 h-4" />
                 Soumettre pour validation
               </Link>
@@ -1294,9 +1294,9 @@ export function ListingOwnerDetail({ listing }: { listing: ListingDetail }) {
       {/* ══ CTA toutes réservations ══════════════════════════════════════════ */}
       {isPublished && (
         <Link href={`/dashboard/reservations?logement=${listing.id}`}
-          className="flex items-center justify-between px-5 py-4 bg-white border border-neutral-200/60 rounded-[22px] hover:border-primary-200 hover:bg-primary-50/30 shadow-sm hover:shadow-lg hover:shadow-primary-100/50 transition-all duration-300 group">
+          className="flex items-center justify-between px-5 py-4 bg-white border border-neutral-200/60 rounded-[22px] hover:border-emerald-200 hover:bg-emerald-50/30 shadow-sm hover:shadow-lg hover:shadow-emerald-100/50 transition-all duration-300 group">
           <div className="flex items-center gap-4">
-            <div className="w-10 h-10 rounded-2xl bg-gradient-to-br from-primary-500 to-primary-600 flex items-center justify-center shadow-lg shadow-primary-500/25">
+            <div className="w-10 h-10 rounded-2xl bg-gradient-to-br from-emerald-500 to-emerald-600 flex items-center justify-center shadow-lg shadow-emerald-500/25">
               <CalendarCheck className="w-5 h-5 text-white" />
             </div>
             <div>
@@ -1304,8 +1304,8 @@ export function ListingOwnerDetail({ listing }: { listing: ListingDetail }) {
               <p className="text-xs text-neutral-500">Historique complet pour ce logement</p>
             </div>
           </div>
-          <div className="w-8 h-8 rounded-xl bg-neutral-50 border border-neutral-200 group-hover:bg-primary-50 group-hover:border-primary-200 flex items-center justify-center transition-all">
-            <ChevronRight className="w-4 h-4 text-neutral-400 group-hover:text-primary-500 transition-colors" />
+          <div className="w-8 h-8 rounded-xl bg-neutral-50 border border-neutral-200 group-hover:bg-emerald-50 group-hover:border-emerald-200 flex items-center justify-center transition-all">
+            <ChevronRight className="w-4 h-4 text-neutral-400 group-hover:text-emerald-500 transition-colors" />
           </div>
         </Link>
       )}
@@ -1387,7 +1387,7 @@ export function ListingOwnerDetail({ listing }: { listing: ListingDetail }) {
         >
           <Link
             href={`/dashboard/annonces/${listing.id}/modifier`}
-            className="flex-1 flex items-center justify-center gap-2 px-4 py-3 rounded-xl bg-gradient-to-r from-primary-500 to-primary-600 text-sm font-bold text-white shadow-lg shadow-primary-500/30 active:scale-95 transition-all"
+            className="flex-1 flex items-center justify-center gap-2 px-4 py-3 rounded-xl bg-gradient-to-r from-emerald-500 to-emerald-600 text-sm font-bold text-white shadow-lg shadow-emerald-500/30 active:scale-95 transition-all"
           >
             <Pencil className="w-4 h-4" />
             Modifier
@@ -1396,7 +1396,7 @@ export function ListingOwnerDetail({ listing }: { listing: ListingDetail }) {
           {canSubmit && (
             <Link
               href={`/dashboard/annonces/${listing.id}/soumettre`}
-              className="flex-1 flex items-center justify-center gap-2 px-4 py-3 rounded-xl bg-gradient-to-r from-primary-500 to-primary-600 text-sm font-bold text-white shadow-lg shadow-primary-500/30 active:scale-95 transition-all"
+              className="flex-1 flex items-center justify-center gap-2 px-4 py-3 rounded-xl bg-gradient-to-r from-emerald-500 to-emerald-600 text-sm font-bold text-white shadow-lg shadow-emerald-500/30 active:scale-95 transition-all"
             >
               <Send className="w-4 h-4" />
               Soumettre

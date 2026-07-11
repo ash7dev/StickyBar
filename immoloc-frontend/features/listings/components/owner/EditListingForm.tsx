@@ -59,7 +59,7 @@ function CustomDropdown({
         onClick={() => setOpen((o) => !o)}
         className={cn(
           'w-full flex items-center justify-between gap-3 px-4 py-3.5 rounded-xl border bg-white text-sm transition-all duration-150',
-          open ? 'border-primary-400 ring-2 ring-primary-400/15'
+          open ? 'border-emerald-400 ring-2 ring-emerald-400/15'
                : error ? 'border-red-300' : 'border-neutral-200 hover:border-neutral-300 hover:shadow-sm',
           value ? 'text-neutral-900 font-semibold' : 'text-neutral-400 font-normal',
         )}
@@ -87,7 +87,7 @@ function CustomDropdown({
                 onClick={() => { onChange(opt); setOpen(false); }}
                 className={cn(
                   'w-full flex items-center justify-between px-4 py-3 text-sm transition-colors duration-100',
-                  selected ? 'bg-primary-500 text-white' : 'text-neutral-700 hover:bg-neutral-50',
+                  selected ? 'bg-emerald-500 text-white' : 'text-neutral-700 hover:bg-neutral-50',
                 )}
               >
                 <span className={cn('font-medium', selected && 'font-semibold')}>{opt}</span>
@@ -128,7 +128,7 @@ const CAT_PHOTO_LABELS: Record<string, string> = {
 };
 
 const NAV_SECTIONS = [
-  { id: 'section-bien',         label: 'Logement',     icon: Home,       dot: 'bg-primary-400' },
+  { id: 'section-bien',         label: 'Logement',     icon: Home,       dot: 'bg-emerald-400' },
   { id: 'section-presentation', label: 'Présentation', icon: Pen,        dot: 'bg-accent-400' },
   { id: 'section-equipements',  label: 'Équipements',  icon: Armchair,   dot: 'bg-emerald-400' },
   { id: 'section-tarification', label: 'Tarification', icon: TrendingUp, dot: 'bg-violet-400' },
@@ -149,12 +149,12 @@ function computeQuality(listing: ListingDetail): number {
 
 /* ─── Shared styles ───────────────────────────────────────────────────────── */
 
-const INPUT_CLS = 'w-full px-4 py-3 rounded-xl border border-border bg-white text-foreground placeholder:text-neutral-400 text-sm outline-none focus:border-primary-400 focus:ring-2 focus:ring-primary-400/20 transition-all';
+const INPUT_CLS = 'w-full px-4 py-3 rounded-xl border border-border bg-white text-foreground placeholder:text-neutral-400 text-sm outline-none focus:border-emerald-400 focus:ring-2 focus:ring-emerald-400/20 transition-all';
 const INPUT_ERR = 'w-full px-4 py-3 rounded-xl border border-error-500/60 bg-white text-foreground placeholder:text-neutral-400 text-sm outline-none focus:border-error-500 focus:ring-2 focus:ring-error-500/15 transition-all';
 
 /* ─── Shared UI ───────────────────────────────────────────────────────────── */
 
-function SectionCard({ title, icon: Icon, headerBg = 'bg-primary-50', iconBg = 'bg-primary-100', iconColor = 'text-primary-600', accent = 'bg-primary-500', children }: {
+function SectionCard({ title, icon: Icon, headerBg = 'bg-emerald-50', iconBg = 'bg-emerald-100', iconColor = 'text-emerald-600', accent = 'bg-emerald-500', children }: {
   title: string;
   icon: React.ComponentType<{ className?: string }>;
   headerBg?: string;
@@ -191,12 +191,12 @@ function Counter({ value, onChange, min = 0, max = 30 }: { value: number; onChan
   return (
     <div className="flex items-center gap-2">
       <button type="button" onClick={() => onChange(Math.max(min, value - 1))} disabled={value <= min}
-        className="w-8 h-8 rounded-full border border-border bg-white flex items-center justify-center text-neutral-400 hover:border-primary-400 hover:text-primary-500 hover:bg-primary-50 disabled:opacity-30 transition-all active:scale-90">
+        className="w-8 h-8 rounded-full border border-border bg-white flex items-center justify-center text-neutral-400 hover:border-emerald-400 hover:text-emerald-500 hover:bg-emerald-50 disabled:opacity-30 transition-all active:scale-90">
         <Minus className="w-3 h-3" />
       </button>
       <span className="w-8 text-center font-black text-neutral-900 text-[15px] tabular-nums">{value}</span>
       <button type="button" onClick={() => onChange(Math.min(max, value + 1))} disabled={value >= max}
-        className="w-8 h-8 rounded-full border border-border bg-white flex items-center justify-center text-neutral-400 hover:border-primary-400 hover:text-primary-500 hover:bg-primary-50 disabled:opacity-30 transition-all active:scale-90">
+        className="w-8 h-8 rounded-full border border-border bg-white flex items-center justify-center text-neutral-400 hover:border-emerald-400 hover:text-emerald-500 hover:bg-emerald-50 disabled:opacity-30 transition-all active:scale-90">
         <Plus className="w-3 h-3" />
       </button>
     </div>
@@ -239,8 +239,8 @@ function SaveButton({ state, error, onSave, disabled }: { state: SaveState; erro
           state === 'saved'
             ? 'bg-success-500 text-white shadow-md shadow-success-500/25'
             : isDisabled
-              ? 'bg-primary-300 text-white cursor-not-allowed opacity-60'
-              : 'bg-primary-500 hover:bg-primary-600 text-white shadow-md shadow-primary-500/25 hover:-translate-y-0.5 active:scale-95',
+              ? 'bg-emerald-300 text-white cursor-not-allowed opacity-60'
+              : 'bg-emerald-500 hover:bg-emerald-600 text-white shadow-md shadow-emerald-500/25 hover:-translate-y-0.5 active:scale-95',
         )}
       >
         {state === 'saving' && <Loader2 className="w-4 h-4 animate-spin" />}
@@ -322,13 +322,13 @@ function SectionBien({ listing }: { listing: ListingDetail }) {
   }
 
   return (
-    <SectionCard title="Informations du logement" icon={Home} accent="bg-primary-500" headerBg="bg-primary-50" iconBg="bg-primary-100" iconColor="text-primary-600">
+    <SectionCard title="Informations du logement" icon={Home} accent="bg-emerald-500" headerBg="bg-emerald-50" iconBg="bg-emerald-100" iconColor="text-emerald-600">
 
       {/* ── Type de logement ── */}
       <div className="space-y-2.5">
         <div className="flex items-center gap-2">
-          <div className="w-7 h-7 rounded-lg bg-primary-100 flex items-center justify-center shrink-0">
-            <Home className="w-3.5 h-3.5 text-primary-600" />
+          <div className="w-7 h-7 rounded-lg bg-emerald-100 flex items-center justify-center shrink-0">
+            <Home className="w-3.5 h-3.5 text-emerald-600" />
           </div>
           <span className="text-sm font-black text-neutral-800">Type de logement</span>
           <span className="text-[10px] font-bold text-rose-400 ml-0.5">*</span>
@@ -356,7 +356,7 @@ function SectionBien({ listing }: { listing: ListingDetail }) {
                   </div>
                   <span>{label}</span>
                   {active && (
-                    <div className="absolute -top-1.5 -right-1.5 w-5 h-5 rounded-full bg-primary-500 flex items-center justify-center shadow-sm shadow-primary-500/40">
+                    <div className="absolute -top-1.5 -right-1.5 w-5 h-5 rounded-full bg-emerald-500 flex items-center justify-center shadow-sm shadow-emerald-500/40">
                       <Check className="w-3 h-3 text-white" strokeWidth={3} />
                     </div>
                   )}
@@ -560,7 +560,7 @@ function SectionPresentation({ listing }: { listing: ListingDetail }) {
                   descLength === 0 ? 'w-0'
                   : descLength > 1800 ? 'bg-amber-400'
                   : descLength > 800 ? 'bg-emerald-400'
-                  : 'bg-primary-400'
+                  : 'bg-emerald-400'
                 )}
                 style={{ width: `${Math.min(100, (descLength / 2000) * 100)}%` }}
               />
@@ -615,8 +615,8 @@ function SectionPresentation({ listing }: { listing: ListingDetail }) {
       {/* ── Durée minimum ── */}
       <div className="space-y-2">
         <div className="flex items-center gap-2">
-          <div className="w-7 h-7 rounded-lg bg-primary-100 flex items-center justify-center shrink-0">
-            <Moon className="w-3.5 h-3.5 text-primary-600" />
+          <div className="w-7 h-7 rounded-lg bg-emerald-100 flex items-center justify-center shrink-0">
+            <Moon className="w-3.5 h-3.5 text-emerald-600" />
           </div>
           <span className="text-sm font-black text-neutral-800">Durée minimum de séjour</span>
         </div>
@@ -624,7 +624,7 @@ function SectionPresentation({ listing }: { listing: ListingDetail }) {
         <Controller name="nuitesMinimum" control={control} render={({ field }) => (<>
           <div className="flex items-center gap-4 px-5 py-4 bg-neutral-50 rounded-2xl border border-border">
             <button type="button" onClick={() => field.onChange(Math.max(1, (field.value ?? 1) - 1))} disabled={(field.value ?? 1) <= 1}
-              className="w-12 h-12 rounded-xl bg-white border border-border shadow-sm flex items-center justify-center text-neutral-500 hover:border-primary-400 hover:text-primary-500 hover:bg-primary-50 transition-all disabled:opacity-30 shrink-0 active:scale-90">
+              className="w-12 h-12 rounded-xl bg-white border border-border shadow-sm flex items-center justify-center text-neutral-500 hover:border-emerald-400 hover:text-emerald-500 hover:bg-emerald-50 transition-all disabled:opacity-30 shrink-0 active:scale-90">
               <Minus className="w-4 h-4" />
             </button>
             <div className="flex-1 text-center">
@@ -632,7 +632,7 @@ function SectionPresentation({ listing }: { listing: ListingDetail }) {
               <p className="text-[10px] font-bold text-neutral-400 uppercase tracking-wider mt-1">Nuit{(field.value ?? 1) > 1 ? 's' : ''} minimum</p>
             </div>
             <button type="button" onClick={() => field.onChange(Math.min(365, (field.value ?? 1) + 1))} disabled={(field.value ?? 1) >= 365}
-              className="w-12 h-12 rounded-xl bg-white border border-border shadow-sm flex items-center justify-center text-neutral-500 hover:border-primary-400 hover:text-primary-500 hover:bg-primary-50 transition-all disabled:opacity-30 shrink-0 active:scale-90">
+              className="w-12 h-12 rounded-xl bg-white border border-border shadow-sm flex items-center justify-center text-neutral-500 hover:border-emerald-400 hover:text-emerald-500 hover:bg-emerald-50 transition-all disabled:opacity-30 shrink-0 active:scale-90">
               <Plus className="w-4 h-4" />
             </button>
           </div>
@@ -641,7 +641,7 @@ function SectionPresentation({ listing }: { listing: ListingDetail }) {
               <button key={n} type="button" onClick={() => field.onChange(n)}
                 className={cn('py-2.5 rounded-xl text-xs font-bold border transition-all active:scale-95',
                   field.value === n
-                    ? 'border-primary-400 bg-primary-500 text-white shadow-sm shadow-primary-500/20'
+                    ? 'border-emerald-400 bg-emerald-500 text-white shadow-sm shadow-emerald-500/20'
                     : 'border-border bg-neutral-50 text-neutral-500 hover:bg-white hover:border-neutral-300')}>
                 {n === 1 ? '1 nuit' : n === 7 ? '1 sem.' : n === 14 ? '2 sem.' : n === 30 ? '1 mois' : `${n} nuits`}
               </button>
@@ -803,7 +803,7 @@ function SectionEquipements({ listing }: { listing: ListingDetail }) {
                       className={cn(
                         'flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold border transition-all',
                         active
-                          ? 'bg-primary-500 border-primary-500 text-white shadow-sm shadow-primary-500/20'
+                          ? 'bg-emerald-500 border-emerald-500 text-white shadow-sm shadow-emerald-500/20'
                           : 'bg-neutral-50 border-border text-neutral-600 hover:bg-white hover:border-neutral-300',
                       )}>
                       {active && <Check className="w-3 h-3" />}
@@ -1081,7 +1081,7 @@ function SectionPhotos({ listing }: { listing: ListingDetail }) {
               <select
                 value={newCategory}
                 onChange={(e) => setNewCategory(e.target.value as typeof CATEGORIE_PHOTO[number])}
-                className="appearance-none pl-3 pr-8 py-2 rounded-lg border border-border bg-white text-neutral-700 text-xs font-semibold outline-none focus:border-primary-400 cursor-pointer">
+                className="appearance-none pl-3 pr-8 py-2 rounded-lg border border-border bg-white text-neutral-700 text-xs font-semibold outline-none focus:border-emerald-400 cursor-pointer">
                 {CATEGORIE_PHOTO.map((c) => (
                   <option key={c} value={c}>{CAT_PHOTO_LABELS[c]}</option>
                 ))}
@@ -1092,9 +1092,9 @@ function SectionPhotos({ listing }: { listing: ListingDetail }) {
           <button
             type="button"
             onClick={() => fileInputRef.current?.click()}
-            className="w-full flex items-center justify-center gap-3 py-5 rounded-2xl border-2 border-dashed border-primary-200 hover:border-primary-400 bg-primary-50/50 hover:bg-primary-50 text-primary-600 font-semibold text-sm transition-all group">
-            <div className="w-10 h-10 rounded-xl bg-primary-100 flex items-center justify-center group-hover:scale-110 transition-transform border border-primary-200">
-              <Upload className="w-4 h-4 text-primary-500" />
+            className="w-full flex items-center justify-center gap-3 py-5 rounded-2xl border-2 border-dashed border-emerald-200 hover:border-emerald-400 bg-emerald-50/50 hover:bg-emerald-50 text-emerald-600 font-semibold text-sm transition-all group">
+            <div className="w-10 h-10 rounded-xl bg-emerald-100 flex items-center justify-center group-hover:scale-110 transition-transform border border-emerald-200">
+              <Upload className="w-4 h-4 text-emerald-500" />
             </div>
             Ajouter des photos — {10 - photos.length} restante{10 - photos.length > 1 ? 's' : ''}
           </button>
@@ -1389,8 +1389,8 @@ export function EditListingForm({ listing }: { listing: ListingDetail }) {
           <div className="max-w-5xl mx-auto">
             {/* Label */}
             <div className="flex items-center gap-1.5 mb-2">
-              <Sparkles className="w-3 h-3 text-primary-300" />
-              <span className="text-[10px] font-black text-primary-300 uppercase tracking-[0.2em]">Modifier l&apos;annonce</span>
+              <Sparkles className="w-3 h-3 text-emerald-300" />
+              <span className="text-[10px] font-black text-emerald-300 uppercase tracking-[0.2em]">Modifier l&apos;annonce</span>
             </div>
 
             {/* Titre */}
@@ -1424,7 +1424,7 @@ export function EditListingForm({ listing }: { listing: ListingDetail }) {
                 </div>
               ))}
 
-              <div className="flex items-center gap-1.5 text-white text-xs font-black bg-primary-500/70 backdrop-blur-sm border border-primary-400/30 rounded-lg px-2.5 py-1.5">
+              <div className="flex items-center gap-1.5 text-white text-xs font-black bg-emerald-500/70 backdrop-blur-sm border border-emerald-400/30 rounded-lg px-2.5 py-1.5">
                 <TrendingUp className="w-3.5 h-3.5" />
                 {fcfa(listing.prixBase)} FCFA
               </div>

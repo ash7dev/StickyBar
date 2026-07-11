@@ -24,7 +24,7 @@ export function TenantFinancialCard({ nbNuits, nbPersonnes, dateDebut, dateFin, 
       value: dateLong(dateFin),
     },
     {
-      icon: <Moon className="w-3.5 h-3.5 text-primary-400" />,
+      icon: <Moon className="w-3.5 h-3.5 text-emerald-400" />,
       label: 'Durée',
       value: `${nbNuits} nuit${nbNuits > 1 ? 's' : ''}`,
     },
@@ -62,19 +62,19 @@ export function TenantFinancialCard({ nbNuits, nbPersonnes, dateDebut, dateFin, 
             <span className="text-base font-black text-neutral-300 tabular-nums">{fcfa(totalLocataire)}</span>
           </div>
 
-          <div className="rounded-2xl bg-gradient-to-r from-primary-500/15 to-primary-600/10 border border-primary-400/20 px-5 py-4 flex items-center justify-between">
-            <span className="text-sm font-bold text-primary-300 uppercase tracking-wide">Total payé</span>
+          <div className="rounded-2xl bg-gradient-to-r from-emerald-500/15 to-emerald-600/10 border border-emerald-400/20 px-5 py-4 flex items-center justify-between">
+            <span className="text-sm font-bold text-emerald-300 uppercase tracking-wide">Total payé</span>
             <div className="text-right">
               <span className="text-2xl font-black text-white tracking-tight tabular-nums">{fcfa(totalLocataire)}</span>
-              <span className="text-xs font-bold text-primary-400 ml-1.5">FCFA</span>
+              <span className="text-xs font-bold text-emerald-400 ml-1.5">FCFA</span>
             </div>
           </div>
         </div>
 
         {/* Séquestre */}
-        <div className="flex items-start gap-3 bg-primary-500/8 border border-primary-400/15 rounded-xl p-4">
-          <Shield className="w-4 h-4 text-primary-400 shrink-0 mt-0.5" />
-          <p className="text-xs text-primary-300 font-medium leading-relaxed">
+        <div className="flex items-start gap-3 bg-emerald-500/8 border border-emerald-400/15 rounded-xl p-4">
+          <Shield className="w-4 h-4 text-emerald-400 shrink-0 mt-0.5" />
+          <p className="text-xs text-emerald-300 font-medium leading-relaxed">
             Votre paiement est sécurisé par séquestre. Les fonds sont libérés à l&apos;hôte uniquement après confirmation de votre check-in.
           </p>
         </div>

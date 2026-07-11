@@ -68,24 +68,24 @@ export function MobileBottomNav() {
                   className={cn(
                     'relative flex flex-col items-center gap-0.5 py-2 px-4 rounded-xl transition-all duration-300',
                     'active:scale-90',
-                    isActive && 'bg-primary-600/10',
+                    isActive && 'bg-emerald-600/10',
                   )}
                 >
                   {isActive && (
-                    <div className="absolute -top-0.5 left-1/2 -translate-x-1/2 w-5 h-[3px] rounded-full bg-primary-600 nav-pill-anim" />
+                    <div className="absolute -top-0.5 left-1/2 -translate-x-1/2 w-5 h-[3px] rounded-full bg-emerald-600 nav-pill-anim" />
                   )}
 
                   <Icon
                     className={cn(
                       'w-[22px] h-[22px] transition-all duration-300',
-                      isActive ? 'text-primary-700 nav-icon-active' : 'text-foreground',
+                      isActive ? 'text-emerald-700 nav-icon-active' : 'text-foreground',
                     )}
                     strokeWidth={isActive ? 2.2 : 1.6}
                   />
 
                   <span className={cn(
                     'text-[10px] font-semibold tracking-tight transition-colors duration-300',
-                    isActive ? 'text-primary-700' : 'text-foreground',
+                    isActive ? 'text-emerald-700' : 'text-foreground',
                   )}>
                     {tab.label}
                   </span>

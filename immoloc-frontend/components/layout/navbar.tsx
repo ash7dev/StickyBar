@@ -143,7 +143,7 @@ export function Navbar() {
           background: rgba(77, 150, 255, 0.06);
         }
         .avatar-ring {
-          background: linear-gradient(135deg, var(--primary-400), var(--primary-700));
+          background: linear-gradient(135deg, var(--emerald-400), var(--emerald-700));
           padding: 2px;
         }
         .avatar-ring:hover {
@@ -153,11 +153,11 @@ export function Navbar() {
           background-size: 200% 100%;
           background-image: linear-gradient(
             110deg,
-            var(--primary-700) 0%,
-            var(--primary-700) 40%,
-            var(--primary-500) 50%,
-            var(--primary-700) 60%,
-            var(--primary-700) 100%
+            var(--emerald-700) 0%,
+            var(--emerald-700) 40%,
+            var(--emerald-500) 50%,
+            var(--emerald-700) 60%,
+            var(--emerald-700) 100%
           );
           animation: navbar-shimmer 3s ease-in-out infinite;
         }
@@ -183,10 +183,10 @@ export function Navbar() {
 
             {/* ── Logo ─────────────────────────────────────────── */}
             <Link href="/" className="flex items-center gap-2.5 flex-shrink-0 group">
-              <div className="relative w-9 h-9 rounded-xl bg-gradient-to-br from-primary-500 to-primary-800 flex items-center justify-center shadow-md transition-all duration-300 group-hover:shadow-lg group-hover:scale-105">
+              <div className="relative w-9 h-9 rounded-xl bg-gradient-to-br from-emerald-500 to-emerald-800 flex items-center justify-center shadow-md transition-all duration-300 group-hover:shadow-lg group-hover:scale-105">
                 <Building2 className="h-[18px] w-[18px] text-white drop-shadow-sm" />
                 {/* Subtle glow */}
-                <div className="absolute inset-0 rounded-xl bg-primary-400/20 blur-md opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+                <div className="absolute inset-0 rounded-xl bg-emerald-400/20 blur-md opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
               </div>
               <span className="font-bold text-xl tracking-tight bg-gradient-to-r from-neutral-900 to-neutral-600 bg-clip-text text-transparent">
                 {BRAND.name}
@@ -202,7 +202,7 @@ export function Navbar() {
                   className={cn(
                     'flex items-center gap-1.5 px-4 py-1.5 rounded-full text-[13px] font-medium transition-all duration-300',
                     pathname === link.href
-                      ? 'nav-link-active text-primary-700 shadow-sm'
+                      ? 'nav-link-active text-emerald-700 shadow-sm'
                       : 'text-foreground-muted hover:text-neutral-800 nav-link-hover',
                   )}
                 >
@@ -234,13 +234,13 @@ export function Navbar() {
                   >
                     {/* Avatar with gradient ring */}
                     <div className="avatar-ring rounded-full">
-                      <div className="w-8 h-8 rounded-full bg-gradient-to-br from-primary-600 to-primary-800 flex items-center justify-center text-white text-xs font-bold shadow-inner">
+                      <div className="w-8 h-8 rounded-full bg-gradient-to-br from-emerald-600 to-emerald-800 flex items-center justify-center text-white text-xs font-bold shadow-inner">
                         {initials}
                       </div>
                     </div>
                     <ChevronDown className={cn(
                       'h-3.5 w-3.5 text-foreground-muted transition-transform duration-300',
-                      dropdownOpen && 'rotate-180 text-primary-500'
+                      dropdownOpen && 'rotate-180 text-emerald-500'
                     )} />
                   </button>
 
@@ -248,10 +248,10 @@ export function Navbar() {
                   {dropdownOpen && (
                     <div className="absolute right-0 top-full mt-2.5 w-60 rounded-2xl border border-white/40 shadow-xl overflow-hidden dropdown-glass">
                       {/* Header */}
-                      <div className="px-4 py-3.5 border-b border-neutral-100/80 bg-gradient-to-r from-primary-50/50 to-transparent">
+                      <div className="px-4 py-3.5 border-b border-neutral-100/80 bg-gradient-to-r from-emerald-50/50 to-transparent">
                         <div className="flex items-center gap-3">
                           <div className="avatar-ring rounded-full flex-shrink-0">
-                            <div className="w-10 h-10 rounded-full bg-gradient-to-br from-primary-600 to-primary-800 flex items-center justify-center text-white text-sm font-bold">
+                            <div className="w-10 h-10 rounded-full bg-gradient-to-br from-emerald-600 to-emerald-800 flex items-center justify-center text-white text-sm font-bold">
                               {initials}
                             </div>
                           </div>
@@ -268,10 +268,10 @@ export function Navbar() {
                         {activeRole === 'PROPRIETAIRE' ? (
                           <Link
                             href={hasAnnonce ? "/dashboard" : "/become-host"}
-                            className="dropdown-item flex items-center gap-3 px-3 py-2.5 text-sm font-semibold text-primary-700 rounded-xl"
+                            className="dropdown-item flex items-center gap-3 px-3 py-2.5 text-sm font-semibold text-emerald-700 rounded-xl"
                           >
-                            <div className="w-8 h-8 rounded-lg bg-primary-50 flex items-center justify-center">
-                              <LayoutDashboard className="h-4 w-4 text-primary-600" />
+                            <div className="w-8 h-8 rounded-lg bg-emerald-50 flex items-center justify-center">
+                              <LayoutDashboard className="h-4 w-4 text-emerald-600" />
                             </div>
                             Tableau de bord
                           </Link>
@@ -279,20 +279,20 @@ export function Navbar() {
                           <button
                             onClick={() => switchRole('PROPRIETAIRE')}
                             disabled={isSwitching}
-                            className="w-full dropdown-item flex items-center gap-3 px-3 py-2.5 text-sm font-semibold text-primary-700 rounded-xl disabled:opacity-60"
+                            className="w-full dropdown-item flex items-center gap-3 px-3 py-2.5 text-sm font-semibold text-emerald-700 rounded-xl disabled:opacity-60"
                           >
-                            <div className="w-8 h-8 rounded-lg bg-primary-50 flex items-center justify-center">
-                              <Building className="h-4 w-4 text-primary-600" />
+                            <div className="w-8 h-8 rounded-lg bg-emerald-50 flex items-center justify-center">
+                              <Building className="h-4 w-4 text-emerald-600" />
                             </div>
                             {isSwitching ? 'Changement…' : 'Espace Propriétaire'}
                           </button>
                         ) : (
                           <Link
                             href="/become-host"
-                            className="dropdown-item flex items-center gap-3 px-3 py-2.5 text-sm font-semibold text-primary-700 rounded-xl"
+                            className="dropdown-item flex items-center gap-3 px-3 py-2.5 text-sm font-semibold text-emerald-700 rounded-xl"
                           >
-                            <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-primary-50 to-accent-50 flex items-center justify-center">
-                              <Sparkles className="h-4 w-4 text-primary-600" />
+                            <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-emerald-50 to-accent-50 flex items-center justify-center">
+                              <Sparkles className="h-4 w-4 text-emerald-600" />
                             </div>
                             Devenir hôte
                           </Link>
@@ -392,13 +392,13 @@ export function Navbar() {
                   className={cn(
                     'flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium transition-all duration-200',
                     pathname === link.href
-                      ? 'nav-link-active text-primary-700 shadow-sm'
+                      ? 'nav-link-active text-emerald-700 shadow-sm'
                       : 'text-neutral-600 hover:bg-background-card/60',
                   )}
                 >
                   <div className={cn(
                     'w-8 h-8 rounded-lg flex items-center justify-center',
-                    pathname === link.href ? 'bg-primary-100/60' : 'bg-neutral-100/80'
+                    pathname === link.href ? 'bg-emerald-100/60' : 'bg-neutral-100/80'
                   )}>
                     {link.icon}
                   </div>
@@ -411,9 +411,9 @@ export function Navbar() {
               {loading ? null : user ? (
                 <>
                   {/* Profil */}
-                  <div className="flex items-center gap-3 px-4 py-3 mb-2 rounded-xl bg-gradient-to-r from-primary-50/40 to-transparent border border-primary-100/30">
+                  <div className="flex items-center gap-3 px-4 py-3 mb-2 rounded-xl bg-gradient-to-r from-emerald-50/40 to-transparent border border-emerald-100/30">
                     <div className="avatar-ring rounded-full flex-shrink-0">
-                      <div className="w-10 h-10 rounded-full bg-gradient-to-br from-primary-600 to-primary-800 flex items-center justify-center text-white text-sm font-bold">
+                      <div className="w-10 h-10 rounded-full bg-gradient-to-br from-emerald-600 to-emerald-800 flex items-center justify-center text-white text-sm font-bold">
                         {initials}
                       </div>
                     </div>
@@ -426,10 +426,10 @@ export function Navbar() {
                   {activeRole === 'PROPRIETAIRE' ? (
                     <Link
                       href={hasAnnonce ? "/dashboard" : "/become-host"}
-                      className="flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-semibold text-primary-700 nav-link-active"
+                      className="flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-semibold text-emerald-700 nav-link-active"
                     >
-                      <div className="w-8 h-8 rounded-lg bg-primary-100/60 flex items-center justify-center">
-                        <LayoutDashboard className="h-4 w-4 text-primary-600" />
+                      <div className="w-8 h-8 rounded-lg bg-emerald-100/60 flex items-center justify-center">
+                        <LayoutDashboard className="h-4 w-4 text-emerald-600" />
                       </div>
                       Tableau de bord
                     </Link>
@@ -437,20 +437,20 @@ export function Navbar() {
                     <button
                       onClick={() => switchRole('PROPRIETAIRE')}
                       disabled={isSwitching}
-                      className="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-semibold text-primary-700 nav-link-active disabled:opacity-60"
+                      className="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-semibold text-emerald-700 nav-link-active disabled:opacity-60"
                     >
-                      <div className="w-8 h-8 rounded-lg bg-primary-100/60 flex items-center justify-center">
-                        <Building className="h-4 w-4 text-primary-600" />
+                      <div className="w-8 h-8 rounded-lg bg-emerald-100/60 flex items-center justify-center">
+                        <Building className="h-4 w-4 text-emerald-600" />
                       </div>
                       {isSwitching ? 'Changement…' : 'Espace Propriétaire'}
                     </button>
                   ) : (
                     <Link
                       href="/become-host"
-                      className="flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-semibold text-primary-700 nav-link-active"
+                      className="flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-semibold text-emerald-700 nav-link-active"
                     >
-                      <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-primary-50 to-accent-50 flex items-center justify-center">
-                        <Sparkles className="h-4 w-4 text-primary-600" />
+                      <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-emerald-50 to-accent-50 flex items-center justify-center">
+                        <Sparkles className="h-4 w-4 text-emerald-600" />
                       </div>
                       Devenir hôte
                     </Link>

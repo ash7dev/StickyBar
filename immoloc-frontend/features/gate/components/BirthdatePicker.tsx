@@ -85,7 +85,7 @@ export function BirthdatePicker({ value, onChange, error }: Props) {
           'w-full flex items-center gap-3 rounded-xl border px-4 py-3 bg-white text-left',
           'transition-all duration-200',
           open
-            ? 'border-primary-400 ring-2 ring-primary-100 shadow-sm'
+            ? 'border-emerald-400 ring-2 ring-emerald-100 shadow-sm'
             : error
             ? 'border-rose-300 ring-1 ring-rose-100'
             : 'border-border hover:border-neutral-300 hover:shadow-sm',
@@ -93,7 +93,7 @@ export function BirthdatePicker({ value, onChange, error }: Props) {
       >
         <div className={cn(
           'w-8 h-8 rounded-lg flex items-center justify-center shrink-0 transition-colors duration-200',
-          selected ? 'bg-primary-50 text-primary-500' : 'bg-neutral-100 text-neutral-400',
+          selected ? 'bg-emerald-50 text-emerald-500' : 'bg-neutral-100 text-neutral-400',
         )}>
           <CalendarDays className="w-4 h-4" />
         </div>
@@ -229,15 +229,15 @@ export function BirthdatePicker({ value, onChange, error }: Props) {
                   {...props}
                   className={cn(
                     'w-full h-9 rounded-xl text-sm transition-all duration-100',
-                    'focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-200',
+                    'focus:outline-none focus-visible:ring-2 focus-visible:ring-emerald-200',
                     modifiers.selected
-                      ? 'bg-primary-500 text-white font-black shadow-md shadow-primary-500/30 scale-[1.08]'
+                      ? 'bg-emerald-500 text-white font-black shadow-md shadow-emerald-500/30 scale-[1.08]'
                       : modifiers.disabled
                       ? 'text-neutral-300 cursor-not-allowed'
                       : modifiers.outside
                       ? 'text-neutral-300 hover:bg-neutral-50 font-medium'
                       : modifiers.today
-                      ? 'text-primary-600 font-black ring-2 ring-primary-200 ring-inset hover:bg-primary-50'
+                      ? 'text-emerald-600 font-black ring-2 ring-emerald-200 ring-inset hover:bg-emerald-50'
                       : 'text-neutral-700 font-medium hover:bg-neutral-100 active:scale-95',
                   )}
                 >

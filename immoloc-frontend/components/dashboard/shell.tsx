@@ -45,7 +45,7 @@ function BottomNav() {
             >
               <div className={cn(
                 'flex items-center justify-center w-10 h-10 rounded-xl transition-all duration-200',
-                active && 'bg-primary-600 shadow-md shadow-primary-600/20'
+                active && 'bg-emerald-600 shadow-md shadow-emerald-600/20'
               )}>
                 <item.icon
                   className={cn(
@@ -57,7 +57,7 @@ function BottomNav() {
               </div>
               <span className={cn(
                 'text-[9px] font-semibold truncate',
-                active ? 'text-primary-700' : 'text-foreground-muted'
+                active ? 'text-emerald-700' : 'text-foreground-muted'
               )}>
                 {item.label}
               </span>
@@ -70,10 +70,10 @@ function BottomNav() {
           href="/dashboard/annonces/nouvelle"
           className="flex flex-col items-center -mt-6 px-3"
         >
-          <div className="w-14 h-14 rounded-full bg-gradient-to-br from-primary-600 to-primary-700 flex items-center justify-center shadow-xl shadow-primary-600/30 active:scale-95 transition-all mb-1 border-4 border-background">
+          <div className="w-14 h-14 rounded-full bg-gradient-to-br from-emerald-600 to-emerald-700 flex items-center justify-center shadow-xl shadow-emerald-600/30 active:scale-95 transition-all mb-1 border-4 border-background">
             <Plus className="w-6 h-6 text-white" strokeWidth={3} />
           </div>
-          <span className="text-[9px] font-semibold text-primary-700">
+          <span className="text-[9px] font-semibold text-emerald-700">
             Nouveau
           </span>
         </Link>
@@ -89,7 +89,7 @@ function BottomNav() {
             >
               <div className={cn(
                 'flex items-center justify-center w-10 h-10 rounded-xl transition-all duration-200',
-                active && 'bg-primary-600 shadow-md shadow-primary-600/20'
+                active && 'bg-emerald-600 shadow-md shadow-emerald-600/20'
               )}>
                 <item.icon
                   className={cn(
@@ -101,7 +101,7 @@ function BottomNav() {
               </div>
               <span className={cn(
                 'text-[9px] font-semibold truncate',
-                active ? 'text-primary-700' : 'text-foreground-muted'
+                active ? 'text-emerald-700' : 'text-foreground-muted'
               )}>
                 {item.label}
               </span>
@@ -137,7 +137,7 @@ export function DashboardShell({ children }: { children: React.ReactNode }) {
   if (!isAuthorized) {
     return (
       <div className="flex items-center justify-center h-screen bg-background-alt">
-        <div className="w-8 h-8 border-4 border-primary-700 border-t-transparent rounded-full animate-spin" />
+        <div className="w-8 h-8 border-4 border-emerald-700 border-t-transparent rounded-full animate-spin" />
       </div>
     );
   }
