@@ -214,9 +214,9 @@ export function ListingInfo({ listing }: Props) {
 
   const accentMap: Record<string, { bg: string; border: string; text: string; iconBg: string; glow: string }> = {
     emerald: { bg: 'bg-emerald-50',  border: 'border-emerald-100',  text: 'text-emerald-600',  iconBg: 'bg-background-card border-white', glow: 'hover:shadow-[0_4px_20px_rgba(20,101,76,0.12)]'  },
-    violet:  { bg: 'bg-emerald-50',   border: 'border-emerald-100',   text: 'text-emerald-600',   iconBg: 'bg-background-card border-white', glow: 'hover:shadow-[0_4px_20px_rgba(20,101,76,0.12)]'  },
-    emerald: { bg: 'bg-emerald-50',  border: 'border-emerald-100',  text: 'text-emerald-600',  iconBg: 'bg-background-card border-white', glow: 'hover:shadow-[0_4px_20px_rgba(20,101,76,0.12)]'  },
-    sky:     { bg: 'bg-emerald-50',      border: 'border-emerald-100',      text: 'text-emerald-600',      iconBg: 'bg-background-card border-white', glow: 'hover:shadow-[0_4px_20px_rgba(20,101,76,0.12)]'  },
+    violet:  { bg: 'bg-violet-50',   border: 'border-violet-100',   text: 'text-violet-600',   iconBg: 'bg-background-card border-white', glow: 'hover:shadow-[0_4px_20px_rgba(139,92,246,0.12)]'  },
+    primary: { bg: 'bg-primary-50',  border: 'border-primary-100',  text: 'text-primary-600',  iconBg: 'bg-background-card border-white', glow: 'hover:shadow-[0_4px_20px_rgba(20,101,76,0.12)]'  },
+    sky:     { bg: 'bg-sky-50',      border: 'border-sky-100',      text: 'text-sky-600',      iconBg: 'bg-background-card border-white', glow: 'hover:shadow-[0_4px_20px_rgba(14,165,233,0.12)]'  },
     accent:  { bg: 'bg-gold-50',    border: 'border-gold-100',    text: 'text-gold-600',    iconBg: 'bg-background-card border-white', glow: 'hover:shadow-[0_4px_20px_rgba(201,162,75,0.12)]'  },
   };
 

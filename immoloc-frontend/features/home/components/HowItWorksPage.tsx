@@ -34,7 +34,7 @@ const TENANT_STEPS = [
 const COLOR = {
   emerald: { grid: 'var(--emerald-500)', glow: 'bg-emerald-500/10 group-hover:bg-emerald-500/18', iconBg: 'bg-emerald-500/10 border-emerald-400/20 group-hover:bg-emerald-500/20', iconText: 'text-emerald-400', numBg: 'bg-emerald-500', tagText: 'text-emerald-400', bullet: 'bg-emerald-400', liseré: 'bg-emerald-500 shadow-[0_0_12px_var(--emerald-500)]' },
   amber: { grid: 'var(--amber-500)', glow: 'bg-amber-400/8 group-hover:bg-amber-400/15', iconBg: 'bg-amber-400/10 border-amber-400/20 group-hover:bg-amber-400/20', iconText: 'text-amber-400', numBg: 'bg-amber-500', tagText: 'text-amber-400', bullet: 'bg-amber-400', liseré: 'bg-amber-400 shadow-[0_0_12px_var(--amber-500)]' },
-  emerald: { grid: 'var(--emerald-500)', glow: 'bg-emerald-400/6 group-hover:bg-emerald-400/14', iconBg: 'bg-emerald-400/10 border-emerald-400/20 group-hover:bg-emerald-400/20', iconText: 'text-emerald-400', numBg: 'bg-emerald-500', tagText: 'text-emerald-400', bullet: 'bg-emerald-400', liseré: 'bg-emerald-500 shadow-[0_0_12px_var(--emerald-500)]' },
+  primary: { grid: 'var(--primary-500)', glow: 'bg-primary-400/6 group-hover:bg-primary-400/14', iconBg: 'bg-primary-400/10 border-primary-400/20 group-hover:bg-primary-400/20', iconText: 'text-primary-400', numBg: 'bg-primary-500', tagText: 'text-primary-400', bullet: 'bg-primary-400', liseré: 'bg-primary-500 shadow-[0_0_12px_var(--primary-500)]' },
 };
 
 const TRUST_FEATURES = [

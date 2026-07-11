@@ -46,7 +46,7 @@ const ACCENT_STYLES = {
     tagColor: 'text-accent-500',
     arrowHover: 'group-hover:bg-accent-500',
   },
-  emerald: {
+  primary: {
     glow: 'bg-success-500/6 group-hover:bg-success-500/12',
     iconBg: 'bg-success-500/10 border-success-500/20 group-hover:border-success-500/40',
     iconColor: 'text-success-500',

@@ -192,8 +192,8 @@ export function ReservationDetailSkeleton() {
 function DarkCard({ children, className }: { children: React.ReactNode; className?: string }) {
   return (
     <div className={cn(
-      'bg-surface-dark border border-white/8 rounded-2xl overflow-hidden',
-      'shadow-xl shadow-black/40',
+      'bg-primary-900 border border-primary-800/50 rounded-2xl overflow-hidden',
+      'shadow-xl shadow-primary-950/60',
       className,
     )}>
       {children}
