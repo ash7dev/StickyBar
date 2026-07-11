@@ -29,10 +29,11 @@ export function useActionGate(): ActionGateState {
     block = 'kyc_suspended';
   }
 
-  // Ajouter l'étape selfie si KYC est en attente mais selfie pas encore fait
-  if (statutKyc === 'EN_ATTENTE' && !selfieFaceDetected) {
-    steps.push('selfie');
-  }
+  // ── SELFIE DÉSACTIVÉ ──
+  // L'étape selfie est temporairement masquée (mode simulation uniquement)
+  // if (statutKyc === 'EN_ATTENTE' && !selfieFaceDetected) {
+  //   steps.push('selfie');
+  // }
 
   const isReady = steps.length === 0 && block === null;
 
