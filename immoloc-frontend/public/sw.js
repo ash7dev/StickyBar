@@ -6,8 +6,7 @@ const RUNTIME_CACHE = 'immoloc-runtime';
 const PRECACHE_URLS = [
   '/',
   '/manifest.json',
-  '/icon-192x192.png',
-  '/icon-512x512.png',
+  '/icon.svg',
 ];
 
 // Installation - précache les ressources essentielles
@@ -38,7 +37,7 @@ self.addEventListener('fetch', (event) => {
   if (event.request.method !== 'GET') return;
 
   // Ignorer les requêtes API backend
-  if (event.request.url.includes('/api/') || event.request.url.includes(process.env.NEXT_PUBLIC_API_URL)) {
+  if (event.request.url.includes('/api/')) {
     return;
   }
 
