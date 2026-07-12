@@ -29,6 +29,7 @@ interface Props {
   personnesBase?: number;
   tarifsPersonnes?: TarifPersonne[];
   tarifsNuits?: TarifNuit[];
+  disabledDates?: Date[];
 }
 
 const fmt = (n: any) => {
@@ -47,6 +48,7 @@ export function MobileReservationSheet({
   personnesBase,
   tarifsPersonnes,
   tarifsNuits,
+  disabledDates = [],
 }: Props) {
   const router = useRouter();
   const { nestToken, activeRole, hasHydrated } = useRoleStore();
@@ -293,6 +295,7 @@ export function MobileReservationSheet({
                       setTimeout(() => setShowCalendar(false), 400);
                     }
                   }}
+                  disabledDates={disabledDates}
                   minNights={nuitesMinimum}
                   compact
                 />

@@ -40,8 +40,8 @@ yarn-error.log*
 *.tsbuildinfo
 next-env.d.ts
 
-# PWA files
-public/sw.js
+# PWA files (auto-generated - keep custom sw.js versioned)
+# public/sw.js — COMMENTÉ pour versionner le SW custom
 public/workbox-*.js
 public/worker-*.js
 public/fallback-*.js

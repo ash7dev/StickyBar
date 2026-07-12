@@ -110,6 +110,33 @@ async function CityListingsPage({
   );
 }
 
+// Helper: Calculer toutes les dates bloquées (réservations + indisponibilités)
+function getDisabledDates(listing: any): Date[] {
+  const disabled: Date[] = [];
+
+  // Bloquer toutes les dates dans les réservations actives
+  (listing.reservations || []).forEach((res: any) => {
+    const start = new Date(res.dateDebut);
+    const end = new Date(res.dateFin);
+
+    for (let d = new Date(start); d <= end; d.setDate(d.getDate() + 1)) {
+      disabled.push(new Date(d));
+    }
+  });
+
+  // Bloquer toutes les dates dans les indisponibilités manuelles
+  (listing.indisponibilites || []).forEach((indispo: any) => {
+    const start = new Date(indispo.dateDebut);
+    const end = new Date(indispo.dateFin);
+
+    for (let d = new Date(start); d <= end; d.setDate(d.getDate() + 1)) {
+      disabled.push(new Date(d));
+    }
+  });
+
+  return disabled;
+}
+
 // Listing detail page — SSR always fresh
 async function ListingDetailPage({ slug }: { slug: string }) {
   let listing;
@@ -121,6 +148,9 @@ async function ListingDetailPage({ slug }: { slug: string }) {
 
   // Type cast to bypass TS strict enum overlap error
   if ((listing.statut as any) !== 'PUBLISHED') notFound();
+
+  // Calculer les dates bloquées pour le calendrier
+  const disabledDates = getDisabledDates(listing);
 
   const jsonLd = {
     '@context': 'https://schema.org',
@@ -182,6 +212,7 @@ async function ListingDetailPage({ slug }: { slug: string }) {
                 personnesBase={listing.personnesBase}
                 tarifsPersonnes={listing.tarifsPersonnes}
                 tarifsNuits={listing.tarifsNuits}
+                disabledDates={disabledDates}
               />
             </div>
           </div>
@@ -202,6 +233,7 @@ async function ListingDetailPage({ slug }: { slug: string }) {
         personnesBase={listing.personnesBase}
         tarifsPersonnes={listing.tarifsPersonnes}
         tarifsNuits={listing.tarifsNuits}
+        disabledDates={disabledDates}
       />
     </>
   );

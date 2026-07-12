@@ -142,7 +142,8 @@ export class LogementsService {
       meta: { total, page, limit, totalPages: Math.ceil(total / limit) },
     };
 
-    await this.redis.set(cacheKey, JSON.stringify(payload), 60);
+    // Cache 5 minutes (300s) — le cache est invalidé automatiquement lors des modifications
+    await this.redis.set(cacheKey, JSON.stringify(payload), 300);
     return payload;
   }
 
@@ -335,6 +336,30 @@ export class LogementsService {
             equipement: { select: { id: true, nom: true, categorie: true } },
           },
         },
+        // Récupérer les réservations actives pour bloquer le calendrier
+        reservations: {
+          where: {
+            statut: {
+              in: [
+                StatutReservation.PENDING,
+                StatutReservation.PAID,
+                StatutReservation.CONFIRMED,
+                StatutReservation.CHECKED_IN,
+              ],
+            },
+          },
+          select: {
+            dateDebut: true,
+            dateFin: true,
+          },
+        },
+        // Récupérer les indisponibilités manuelles
+        indisponibilites: {
+          select: {
+            dateDebut: true,
+            dateFin: true,
+          },
+        },
       },
     });
 
@@ -374,6 +399,11 @@ export class LogementsService {
         }),
       },
     });
+
+    // Invalider le cache si le logement est publié (visible dans les recherches)
+    if (logement.statut === StatutLogement.PUBLISHED) {
+      await this.invalidateSearchCache();
+    }
 
     this.logger.log(`Logement [${id}] mis à jour par utilisateur [${userId}]`);
     return logement;
@@ -436,6 +466,7 @@ export class LogementsService {
       data: { statut: StatutLogement.PAUSED },
     });
 
+    await this.invalidateSearchCache();
     this.logger.log(`Logement [${id}] mis en pause par utilisateur [${userId}]`);
     return { message: 'Logement mis en pause' };
   }
@@ -452,6 +483,7 @@ export class LogementsService {
       data: { statut: StatutLogement.PUBLISHED },
     });
 
+    await this.invalidateSearchCache();
     this.logger.log(`Logement [${id}] republié par utilisateur [${userId}]`);
     return { message: 'Logement republié' };
   }
