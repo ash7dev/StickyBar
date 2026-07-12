@@ -145,151 +145,188 @@ export class ReservationsService {
    * Signal tenant no-show (owner only, T+2h after start)
    */
   async signalTenantNoshow(userId: string, reservationId: string, commentaire?: string) {
-    const reservation = await this.prisma.reservation.findUnique({
-      where: { id: reservationId },
-      include: { proprietaire: true, locataire: true },
-    });
+    return await this.prisma.$transaction(async (tx) => {
+      // Pessimistic lock sur la réservation
+      const reservation = await tx.$queryRaw<Array<{
+        id: string;
+        proprietaireId: string;
+        locataireId: string;
+        statut: string;
+        dateDebut: Date;
+      }>>`
+        SELECT id, "proprietaireId", "locataireId", statut, "dateDebut"
+        FROM "Reservation"
+        WHERE id = ${reservationId}
+        FOR UPDATE
+      `.then(rows => rows[0]);
 
-    if (!reservation) {
-      throw new NotFoundException('Réservation introuvable');
-    }
+      if (!reservation) {
+        throw new NotFoundException('Réservation introuvable');
+      }
 
-    if (reservation.proprietaireId !== userId) {
-      throw new BadRequestException('Seul le propriétaire peut signaler une absence');
-    }
+      if (reservation.proprietaireId !== userId) {
+        throw new BadRequestException('Seul le propriétaire peut signaler une absence');
+      }
 
-    if (reservation.statut !== 'CONFIRMED') {
-      throw new BadRequestException('La réservation doit être confirmée');
-    }
+      if (reservation.statut !== 'CONFIRMED') {
+        throw new BadRequestException('La réservation doit être confirmée');
+      }
 
-    const now = new Date();
-    const twoHoursAfterStart = new Date(reservation.dateDebut.getTime() + 2 * 60 * 60 * 1000);
-    if (now < twoHoursAfterStart) {
-      throw new BadRequestException(
-        'Vous pouvez signaler l\'absence du locataire uniquement 2h après l\'heure de début prévue'
-      );
-    }
+      const now = new Date();
+      const twoHoursAfterStart = new Date(reservation.dateDebut.getTime() + 2 * 60 * 60 * 1000);
+      if (now < twoHoursAfterStart) {
+        throw new BadRequestException(
+          'Vous pouvez signaler l\'absence du locataire uniquement 2h après l\'heure de début prévue'
+        );
+      }
 
-    // Create historique entry for detection in auto-cancel logic
-    await this.prisma.reservationHistorique.create({
-      data: {
-        reservationId,
-        ancienStatut: reservation.statut,
-        nouveauStatut: reservation.statut,
-        modifiePar: 'OWNER_SIGNAL_TENANT_NOSHOW',
-        raison: commentaire || 'Locataire absent - No-show signalé',
-      },
-    });
+      // Create historique entry for detection in auto-cancel logic
+      await tx.reservationHistorique.create({
+        data: {
+          reservationId,
+          ancienStatut: reservation.statut as StatutReservation,
+          nouveauStatut: reservation.statut as StatutReservation,
+          modifiePar: 'OWNER_SIGNAL_TENANT_NOSHOW',
+          raison: commentaire || 'Locataire absent - No-show signalé',
+        },
+      });
 
-    return { message: 'Absence signalée. La réservation sera annulée automatiquement si le locataire ne se présente pas.' };
+      return { message: 'Absence signalée. La réservation sera annulée automatiquement si le locataire ne se présente pas.' };
+    }, { isolationLevel: 'RepeatableRead' });
   }
 
   /**
    * Rate tenant (owner only, reservation must be COMPLETED)
    */
   async rateTenant(userId: string, reservationId: string, note: number, commentaire?: string) {
-    const reservation = await this.prisma.reservation.findUnique({
-      where: { id: reservationId },
-      include: { proprietaire: true, locataire: true, logement: true },
-    });
+    const result = await this.prisma.$transaction(async (tx) => {
+      // Pessimistic lock sur la réservation pour éviter les notations concurrentes
+      const reservation = await tx.$queryRaw<Array<{
+        id: string;
+        proprietaireId: string;
+        locataireId: string;
+        logementId: string;
+        statut: string;
+      }>>`
+        SELECT id, "proprietaireId", "locataireId", "logementId", statut
+        FROM "Reservation"
+        WHERE id = ${reservationId}
+        FOR UPDATE
+      `.then(rows => rows[0]);
 
-    if (!reservation) {
-      throw new NotFoundException('Réservation introuvable');
-    }
+      if (!reservation) {
+        throw new NotFoundException('Réservation introuvable');
+      }
 
-    if (reservation.proprietaireId !== userId) {
-      throw new BadRequestException('Seul le propriétaire peut noter le locataire');
-    }
+      if (reservation.proprietaireId !== userId) {
+        throw new BadRequestException('Seul le propriétaire peut noter le locataire');
+      }
 
-    if (reservation.statut !== 'COMPLETED') {
-      throw new BadRequestException('La réservation doit être terminée pour noter le locataire');
-    }
+      if (reservation.statut !== 'COMPLETED') {
+        throw new BadRequestException('La réservation doit être terminée pour noter le locataire');
+      }
 
-    // Check if rating already exists
-    const existingRating = await this.prisma.avis.findUnique({
-      where: {
-        reservationId_auteurId: {
+      // Check if rating already exists
+      const existingRating = await tx.avis.findUnique({
+        where: {
+          reservationId_auteurId: {
+            reservationId,
+            auteurId: userId,
+          },
+        },
+      });
+
+      if (existingRating) {
+        throw new BadRequestException('Vous avez déjà noté ce locataire pour cette réservation');
+      }
+
+      // Create rating
+      await tx.avis.create({
+        data: {
           reservationId,
           auteurId: userId,
+          cibleId: reservation.locataireId,
+          logementId: reservation.logementId,
+          note,
+          commentaire,
+          typeAvis: TypeAvis.PROPRIO_NOTE_LOCATAIRE,
         },
-      },
-    });
+      });
 
-    if (existingRating) {
-      throw new BadRequestException('Vous avez déjà noté ce locataire pour cette réservation');
-    }
+      return { locataireId: reservation.locataireId, note };
+    }, { isolationLevel: 'RepeatableRead' });
 
-    // Create rating
-    await this.prisma.avis.create({
-      data: {
-        reservationId,
-        auteurId: userId,
-        cibleId: reservation.locataireId,
-        logementId: reservation.logementId,
-        note,
-        commentaire,
-        typeAvis: TypeAvis.PROPRIO_NOTE_LOCATAIRE,
-      },
-    });
+    // Update tenant's average rating outside transaction to avoid deadlocks
+    await this.updateUserAverageRating(result.locataireId, 'LOCATAIRE');
 
-    // Update tenant's average rating
-    await this.updateUserAverageRating(reservation.locataireId, 'LOCATAIRE');
-
-    return { message: `Évaluation de ${note}/5 publiée avec succès` };
+    return { message: `Évaluation de ${result.note}/5 publiée avec succès` };
   }
 
   /**
    * Rate owner (tenant only, reservation must be COMPLETED)
    */
   async rateOwner(userId: string, reservationId: string, note: number, commentaire?: string) {
-    const reservation = await this.prisma.reservation.findUnique({
-      where: { id: reservationId },
-      include: { proprietaire: true, locataire: true, logement: true },
-    });
+    const result = await this.prisma.$transaction(async (tx) => {
+      // Pessimistic lock sur la réservation pour éviter les notations concurrentes
+      const reservation = await tx.$queryRaw<Array<{
+        id: string;
+        proprietaireId: string;
+        locataireId: string;
+        logementId: string;
+        statut: string;
+      }>>`
+        SELECT id, "proprietaireId", "locataireId", "logementId", statut
+        FROM "Reservation"
+        WHERE id = ${reservationId}
+        FOR UPDATE
+      `.then(rows => rows[0]);
 
-    if (!reservation) {
-      throw new NotFoundException('Réservation introuvable');
-    }
+      if (!reservation) {
+        throw new NotFoundException('Réservation introuvable');
+      }
 
-    if (reservation.locataireId !== userId) {
-      throw new BadRequestException('Seul le locataire peut noter le propriétaire');
-    }
+      if (reservation.locataireId !== userId) {
+        throw new BadRequestException('Seul le locataire peut noter le propriétaire');
+      }
 
-    if (reservation.statut !== 'COMPLETED') {
-      throw new BadRequestException('La réservation doit être terminée pour noter le propriétaire');
-    }
+      if (reservation.statut !== 'COMPLETED') {
+        throw new BadRequestException('La réservation doit être terminée pour noter le propriétaire');
+      }
 
-    // Check if rating already exists
-    const existingRating = await this.prisma.avis.findUnique({
-      where: {
-        reservationId_auteurId: {
+      // Check if rating already exists
+      const existingRating = await tx.avis.findUnique({
+        where: {
+          reservationId_auteurId: {
+            reservationId,
+            auteurId: userId,
+          },
+        },
+      });
+
+      if (existingRating) {
+        throw new BadRequestException('Vous avez déjà noté ce propriétaire pour cette réservation');
+      }
+
+      // Create rating
+      await tx.avis.create({
+        data: {
           reservationId,
           auteurId: userId,
+          cibleId: reservation.proprietaireId,
+          logementId: reservation.logementId,
+          note,
+          commentaire,
+          typeAvis: TypeAvis.LOCATAIRE_NOTE_LOGEMENT_ET_PROPRIO,
         },
-      },
-    });
+      });
 
-    if (existingRating) {
-      throw new BadRequestException('Vous avez déjà noté ce propriétaire pour cette réservation');
-    }
+      return { proprietaireId: reservation.proprietaireId, note };
+    }, { isolationLevel: 'RepeatableRead' });
 
-    // Create rating
-    await this.prisma.avis.create({
-      data: {
-        reservationId,
-        auteurId: userId,
-        cibleId: reservation.proprietaireId,
-        logementId: reservation.logementId,
-        note,
-        commentaire,
-        typeAvis: TypeAvis.LOCATAIRE_NOTE_LOGEMENT_ET_PROPRIO,
-      },
-    });
+    // Update owner's average rating outside transaction to avoid deadlocks
+    await this.updateUserAverageRating(result.proprietaireId, 'PROPRIETAIRE');
 
-    // Update owner's average rating
-    await this.updateUserAverageRating(reservation.proprietaireId, 'PROPRIETAIRE');
-
-    return { message: `Évaluation de ${note}/5 publiée avec succès` };
+    return { message: `Évaluation de ${result.note}/5 publiée avec succès` };
   }
 
   /**
@@ -302,6 +339,13 @@ export class ReservationsService {
       : TypeAvis.LOCATAIRE_NOTE_LOGEMENT_ET_PROPRIO;
 
     await this.prisma.$transaction(async (tx) => {
+      // Pessimistic lock sur l'utilisateur pour éviter les race conditions lors de mises à jour concurrentes
+      await tx.$queryRaw`
+        SELECT id FROM "Utilisateur"
+        WHERE id = ${userId}
+        FOR UPDATE
+      `;
+
       // Utiliser l'agrégation directe en base de données pour éviter les race conditions
       const result = await tx.avis.aggregate({
         where: { cibleId: userId, typeAvis: avisType },

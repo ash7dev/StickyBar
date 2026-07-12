@@ -1,5 +1,5 @@
 import { useRoleStore } from '@/stores/role.store';
-import { NEST_API } from './endpoints';
+import { tokenManager } from './token-manager';
 
 export class ApiError extends Error {
   constructor(
@@ -12,6 +12,15 @@ export class ApiError extends Error {
   }
 }
 
+/**
+ * Fetch wrapper with automatic token management, retry logic, and request queuing
+ *
+ * Features:
+ * - ✅ Automatic token refresh with request queuing
+ * - ✅ Retry with exponential backoff (3 attempts)
+ * - ✅ Type-safe error handling
+ * - ✅ Cross-tab synchronization
+ */
 export async function nestFetch<T>(
   url: string,
   options: RequestInit & {
@@ -19,18 +28,37 @@ export async function nestFetch<T>(
     skipAutoToken?: boolean;
     skipContentType?: boolean;
     preferredRole?: 'LOCATAIRE' | 'PROPRIETAIRE' | 'ADMIN' | null;
+    retryAttempts?: number;
   } = {},
 ): Promise<T> {
-  const { token, skipAutoToken, skipContentType, preferredRole, ...fetchOptions } = options;
+  const {
+    token,
+    skipAutoToken,
+    skipContentType,
+    preferredRole,
+    retryAttempts = 3,
+    ...fetchOptions
+  } = options;
+
   const store = useRoleStore.getState();
 
-  // Utiliser le token fourni ou celui du store
-  const activeToken = token ?? (!skipAutoToken ? store.nestToken : null);
+  // Get valid token (with automatic refresh if needed)
+  let activeToken: string | null = null;
+  if (token) {
+    activeToken = token;
+  } else if (!skipAutoToken && store.nestToken) {
+    try {
+      activeToken = await tokenManager.getValidToken();
+    } catch (error) {
+      console.warn('[nestFetch] Failed to get valid token:', error);
+      // Continue without token (for public endpoints)
+    }
+  }
 
-  // Utiliser preferredRole si fourni, sinon le rôle du store
+  // Use preferredRole if provided, otherwise use store role
   const roleToSend = preferredRole !== undefined ? preferredRole : store.activeRole;
 
-  // skipContentType=true pour les uploads multipart (le browser gère le boundary)
+  // Build headers (skipContentType=true for multipart uploads)
   const headers: Record<string, string> = {
     ...(skipContentType ? {} : { 'Content-Type': 'application/json' }),
     ...(activeToken ? { Authorization: `Bearer ${activeToken}` } : {}),
@@ -38,63 +66,40 @@ export async function nestFetch<T>(
     ...(fetchOptions.headers as Record<string, string> | undefined),
   };
 
-  const buildRequest = (h: Record<string, string>) => fetch(url, { ...fetchOptions, headers: h });
-
-  let res = await buildRequest(headers);
-
-  // ── Gestion du Refresh Token (Intercepteur 401) ───────────────────────────
-  if (
-    res.status === 401 && 
-    store.refreshToken && 
-    !url.includes('/auth/refresh') && 
-    !url.includes('/auth/logout') &&
-    !url.includes('/auth/me/supabase')
-  ) {
+  // Retry logic with exponential backoff
+  let lastError: Error | null = null;
+  for (let attempt = 0; attempt < retryAttempts; attempt++) {
     try {
-      const refreshRes = await fetch(NEST_API.AUTH.REFRESH, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ refreshToken: store.refreshToken }),
-      });
+      const res = await fetch(url, { ...fetchOptions, headers });
+      const data = await res.json().catch(() => null);
 
-      if (refreshRes.ok) {
-        const result = await refreshRes.json();
-        // Préserver tous les champs du store pendant le refresh
-        store.setSession({
-          token: result.accessToken,
-          refreshToken: result.refreshToken,
-          expiresIn: result.expiresIn,
-          role: store.activeRole,
-          estProprietaire: store.estProprietaire,
-          userId: store.userId ?? '',
-          hasAnnonce: store.hasAnnonce,
-          profileCompleted: store.profileCompleted,
-          phoneVerified: store.phoneVerified,
-          statutKyc: store.statutKyc,
-          dateNaissance: store.dateNaissance,
-          selfieFaceDetected: store.selfieFaceDetected,
-          selfieMatchScore: store.selfieMatchScore,
-        });
-
-        const retryHeaders = { ...headers, Authorization: `Bearer ${result.accessToken}` };
-        res = await buildRequest(retryHeaders);
-      } else {
-        // Le refresh a échoué (ex: refresh token expiré), on déconnecte
-        store.clearSession();
+      if (!res.ok) {
+        const message = extractErrorMessage(data) ?? `Erreur ${res.status}`;
+        throw new ApiError(res.status, message, data);
       }
-    } catch (e) {
-      store.clearSession();
+
+      return data as T;
+    } catch (error) {
+      lastError = error instanceof Error ? error : new Error('Unknown error');
+
+      const isLastAttempt = attempt === retryAttempts - 1;
+      const isRetryableError =
+        error instanceof ApiError &&
+        (error.status >= 500 || error.status === 408 || error.status === 429);
+
+      // Don't retry on client errors (4xx except 408/429) or last attempt
+      if (!isRetryableError || isLastAttempt) {
+        throw lastError;
+      }
+
+      // Exponential backoff: 500ms, 1s, 2s
+      const delay = 500 * Math.pow(2, attempt);
+      console.warn(`[nestFetch] Attempt ${attempt + 1} failed, retrying in ${delay}ms...`);
+      await new Promise(resolve => setTimeout(resolve, delay));
     }
   }
 
-  const data = await res.json().catch(() => null);
-
-  if (!res.ok) {
-    const message = extractErrorMessage(data) ?? `Erreur ${res.status}`;
-    throw new ApiError(res.status, message, data);
-  }
-
-  return data as T;
+  throw lastError || new Error('Request failed after all retry attempts');
 }
 
 function extractErrorMessage(data: unknown): string | null {

@@ -1,5 +1,5 @@
 import { Injectable, Logger } from '@nestjs/common';
-import { StatutReservation, StatutPaiement, StatutLogement, SensTransaction, TypeTransactionWallet, PolitiqueAnnulation } from '@prisma/client';
+import { StatutReservation, StatutPaiement, StatutLogement, SensTransaction, TypeTransactionWallet, ResultatAnnulation } from '@prisma/client';
 import { PrismaService } from '../../../infrastructure/prisma/prisma.service';
 import { ReservationStateMachine } from '../reservation.state-machine';
 import { RefundPaymentUseCase } from '../../payment/use-cases/refund-payment.use-case';
@@ -42,7 +42,7 @@ export class ProprioAbsentExpireUseCase {
           statut: StatutReservation.CANCELLED,
           annuleLe: now,
           annuleParId: 'SYSTEM_ABSENCE',
-          politiqueAppliquee: PolitiqueAnnulation.ABSENCE_PROPRIO,
+          politiqueAppliquee: ResultatAnnulation.ABSENCE_PROPRIO,
           raisonAnnulation: 'Annulation automatique : propriétaire injoignable le jour du check-in (délai 2h dépassé)',
         },
       });

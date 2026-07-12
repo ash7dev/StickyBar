@@ -204,6 +204,9 @@ model Logement {
   @@index([ville, type])
   @@index([isFeatured, featuredUntil])
   @@index([statut, nbNonConformitesAnnonce])
+  // Optimisations search (capaciteMax, archiveLe)
+  @@index([statut, archiveLe, capaciteMax])
+  @@index([capaciteMax])
 }
 
 // Tarification par plage de personnes
@@ -322,7 +325,7 @@ model Reservation {
   statut StatutReservation @default(PENDING)
 
   // Politique d'annulation appliquee (si annulee)
-  politiqueAppliquee PolitiqueAnnulation?
+  politiqueAppliquee ResultatAnnulation?
 
   // Confirmation proprio
   delaiConfirmation DateTime
@@ -367,6 +370,7 @@ model Reservation {
   avis           Avis[]
   historique     ReservationHistorique[]
   idempotencyKey IdempotencyKey?
+  refunds        Refund[]
 
   @@index([logementId, statut])
   @@index([logementId, statut, dateDebut, dateFin])
@@ -438,9 +442,48 @@ model Paiement {
   creeLe                   DateTime            @default(now())
 
   reservation Reservation @relation(fields: [reservationId], references: [id])
+  refunds     Refund[]
 
   @@index([statut])
   @@index([idTransactionFournisseur])
+  @@index([statut, creeLe])
+}
+
+// =============================================================================
+// REFUND — Traçabilité complète des remboursements
+// =============================================================================
+
+model Refund {
+  id            String @id @default(uuid())
+  reservationId String
+  paiementId    String
+
+  // Montants détaillés
+  montantTotal           Decimal @db.Decimal(10, 2) // Total à rembourser
+  montantLocataire       Decimal @db.Decimal(10, 2) // Va au locataire
+  montantPenaliteProprio Decimal @default(0) @db.Decimal(10, 2) // Pénalité prélevée sur proprio
+  montantCommissionImmoLoc Decimal @default(0) @db.Decimal(10, 2) // Commission gardée/remboursée
+
+  // Motif et contexte
+  motif        ResultatAnnulation
+  declenchePar String? // userId qui a annulé
+
+  // Exécution du remboursement
+  statut               StatutRefund        @default(EN_ATTENTE)
+  methodeRemboursement FournisseurPaiement?
+  idTransactionRefund  String? // ID de transaction du remboursement
+
+  // Tracking
+  creeLe    DateTime  @default(now())
+  executeLe DateTime?
+  echecRaison String? // Raison si échec
+
+  reservation Reservation @relation(fields: [reservationId], references: [id])
+  paiement    Paiement    @relation(fields: [paiementId], references: [id])
+
+  @@index([reservationId])
+  @@index([paiementId])
+  @@index([statut])
   @@index([statut, creeLe])
 }
 
@@ -695,16 +738,31 @@ enum StatutReservation {
   EXPIRED
 }
 
-enum PolitiqueAnnulation {
-  REMBOURSEMENT_100
-  REMBOURSEMENT_50
-  REMBOURSEMENT_25
-  REMBOURSEMENT_0
-  NO_SHOW
-  FAUTE_PROPRIO
-  ABSENCE_PROPRIO
-  NON_CONFORMITE
-  DEPASSEMENT_PERSONNES
+// Résultat d'annulation appliqué (USE CASE 1, 2, 3, 4)
+enum ResultatAnnulation {
+  // USE CASE 1: Locataire annule — Réservation NON confirmée (PAID)
+  UC1_LOCATAIRE_NON_CONFIRMEE // 100% remboursé (commission incluse)
+
+  // USE CASE 2: Locataire annule — Réservation CONFIRMÉE
+  UC2_LOCATAIRE_PLUS_3J      // > 3j: 100% totalBase (commission 7% retenue)
+  UC2_LOCATAIRE_1_3J         // 1-3j: 75% totalLocataire (7% ImmoLoc, ~18% proprio)
+  UC2_LOCATAIRE_BLOQUE       // < 24h: Annulation impossible
+
+  // USE CASE 3: Proprio annule — Réservation PAYÉE (pas confirmée)
+  UC3_PROPRIO_REFUSE         // Refus: 100% remboursé (commission incluse)
+
+  // USE CASE 4: Proprio annule — Réservation CONFIRMÉE
+  UC4_PROPRIO_PLUS_7J        // > 7j: 100% remboursé, pénalité 0%
+  UC4_PROPRIO_3_7J           // 3-7j: 100% remboursé, pénalité 20% totalBase
+  UC4_PROPRIO_MOINS_3J       // < 3j: 100% remboursé, pénalité 40% totalBase
+  UC4_PROPRIO_JOUR_MEME      // < 24h: Bloqué (admin force cancel)
+
+  // Cas spéciaux
+  NO_SHOW_LOCATAIRE          // Locataire ne se présente pas
+  ABSENCE_PROPRIO            // Proprio absent jour J
+  NON_CONFORMITE_LOGEMENT    // Logement non conforme
+  DEPASSEMENT_PERSONNES      // Trop de personnes
+  FORCE_MAJEURE              // Catastrophe naturelle, etc.
 }
 
 enum TypeEtatLieu {
@@ -772,6 +830,14 @@ enum StatutPaiement {
   ECHOUE
   REMBOURSE
   GELE
+}
+
+enum StatutRefund {
+  EN_ATTENTE // Créé, pas encore exécuté
+  EN_COURS   // En cours d'exécution
+  EXECUTE    // Remboursement effectué avec succès
+  ECHOUE     // Échec (retry manuel nécessaire)
+  ANNULE     // Annulé par admin
 }
 
 enum TypeTransactionWallet {

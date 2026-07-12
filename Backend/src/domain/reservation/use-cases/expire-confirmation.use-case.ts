@@ -1,5 +1,5 @@
 import { Injectable, Logger } from '@nestjs/common';
-import { StatutReservation, StatutPaiement, PolitiqueAnnulation } from '@prisma/client';
+import { StatutReservation, StatutPaiement, ResultatAnnulation } from '@prisma/client';
 import { PrismaService } from '../../../infrastructure/prisma/prisma.service';
 import { ReservationStateMachine } from '../reservation.state-machine';
 import { RefundPaymentUseCase } from '../../payment/use-cases/refund-payment.use-case';
@@ -43,7 +43,7 @@ export class ExpireConfirmationUseCase {
           annuleLe: new Date(),
           annuleParId: 'SYSTEM_CONFIRMATION_EXPIRY',
           raisonAnnulation: 'Expiration automatique : délai de confirmation propriétaire dépassé',
-          politiqueAppliquee: PolitiqueAnnulation.REMBOURSEMENT_100,
+          politiqueAppliquee: ResultatAnnulation.UC1_LOCATAIRE_NON_CONFIRMEE,
           updatedBySystem: true,
         },
       });

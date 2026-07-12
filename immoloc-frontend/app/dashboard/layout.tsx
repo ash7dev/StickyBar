@@ -1,40 +1,27 @@
 import type { ReactNode } from 'react';
-import { redirect } from 'next/navigation';
-import { createClient } from '@/lib/supabase/server';
 import { DashboardShell } from '@/components/dashboard/shell';
-import { buildApiUrl } from '@/lib/config/api';
+import { OwnerGuard } from '@/components/guards';
 
-export default async function DashboardLayout({ children }: { children: ReactNode }) {
-  const supabase = await createClient();
-  const { data: { user } } = await supabase.auth.getUser();
-
-  if (!user) redirect('/login');
-
-  // Vérifie que l'utilisateur est bien PROPRIETAIRE côté NestJS
-  try {
-    const res = await fetch(buildApiUrl('/auth/me/supabase'), {
-      headers: {
-        Authorization: `Bearer ${(await supabase.auth.getSession()).data.session?.access_token ?? ''}`,
-        'X-Active-Role': 'PROPRIETAIRE', // Le dashboard est toujours pour les propriétaires
-      },
-      cache: 'no-store',
-    });
-
-    if (!res.ok) {
-      // Si le backend retourne une erreur, on redirige vers l'accueil
-      console.error('[Dashboard Layout] Failed to verify role:', res.status);
-      redirect('/');
-    }
-
-    const payload = await res.json() as { user?: { activeRole?: string } };
-    if (payload.user?.activeRole !== 'PROPRIETAIRE') {
-      redirect('/');
-    }
-  } catch (error) {
-    // En cas d'erreur réseau critique, on redirige par sécurité
-    console.error('[Dashboard Layout] Error verifying user role:', error);
-    redirect('/login?error=backend_unavailable');
-  }
-
-  return <DashboardShell>{children}</DashboardShell>;
+/**
+ * Dashboard Layout - Ultra Clean Version
+ *
+ * Architecture propre :
+ * 1. Middleware (Edge) → Vérifie auth Supabase
+ * 2. OwnerGuard (Client) → Vérifie rôle PROPRIETAIRE + auto-switch
+ * 3. DashboardShell → UI du dashboard
+ *
+ * Avantages vs ancienne version :
+ * - ✅ Pas de fetch serveur redondant (déjà fait par middleware)
+ * - ✅ Loading state propre (pas de flash)
+ * - ✅ Auto-switch vers PROPRIETAIRE si eligible
+ * - ✅ Réutilisable (OwnerGuard peut être utilisé ailleurs)
+ * - ✅ Type-safe
+ * - ✅ Zero spaghetti code
+ */
+export default function DashboardLayout({ children }: { children: ReactNode }) {
+  return (
+    <OwnerGuard>
+      <DashboardShell>{children}</DashboardShell>
+    </OwnerGuard>
+  );
 }

@@ -150,7 +150,16 @@ export const useRoleStore = create<RoleState>()(
         persistActiveRole(role);
       },
 
-      setRole: (role) => { set({ activeRole: role }); persistActiveRole(role); },
+      setRole: (role) => {
+        set({ activeRole: role });
+        persistActiveRole(role);
+        // Broadcast role change to other tabs
+        if (typeof window !== 'undefined') {
+          import('../lib/nestjs/token-manager').then(({ tokenManager }) => {
+            tokenManager.broadcastRoleChange(role);
+          });
+        }
+      },
 
       setHasAnnonce: (value) => set({ hasAnnonce: value }),
 
@@ -183,6 +192,13 @@ export const useRoleStore = create<RoleState>()(
           hasHydrated: state.hasHydrated,
         }));
         clearPersistedActiveRole();
+        // Broadcast logout to other tabs
+        if (typeof window !== 'undefined') {
+          import('../lib/nestjs/token-manager').then(({ tokenManager }) => {
+            tokenManager.broadcastLogout();
+            tokenManager.clear();
+          });
+        }
       },
     }),
     {

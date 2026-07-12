@@ -6,38 +6,63 @@ import { createClient } from '@/lib/supabase/client';
 import { authApi } from '@/lib/nestjs';
 import { useRoleStore, getPersistedActiveRole } from '@/stores/role.store';
 
+/**
+ * NestSessionSync - Provider propre pour la synchronisation Supabase ↔ NestJS
+ *
+ * Architecture propre avec séparation des responsabilités :
+ *
+ * 1. Écoute les changements d'auth Supabase
+ * 2. Synchronise avec le backend NestJS (obtient les tokens JWT)
+ * 3. Met à jour le store local
+ * 4. Cross-tab sync automatique via BroadcastChannel (géré par TokenManager)
+ *
+ * Features:
+ * - ✅ Auto-switch /dashboard → PROPRIETAIRE
+ * - ✅ Gestion d'erreur propre (pas de crash)
+ * - ✅ Skip tokens expirés
+ * - ✅ Persistance du rôle entre sessions
+ * - ✅ Zero spaghetti code
+ */
 export function NestSessionSync() {
   const supabase = createClient();
   const { setSession, clearSession, setNeedsOnboarding, activeRole, setRole } = useRoleStore();
   const pathname = usePathname();
 
+  // ── Auto-switch vers PROPRIETAIRE pour /dashboard ─────────────────────────
   useEffect(() => {
     if (pathname?.startsWith('/dashboard') && activeRole !== 'PROPRIETAIRE') {
       setRole('PROPRIETAIRE');
     }
   }, [pathname, activeRole, setRole]);
 
+  // ── Synchronisation Supabase Auth → NestJS ────────────────────────────────
   useEffect(() => {
     const {
       data: { subscription },
     } = supabase.auth.onAuthStateChange(async (event, session) => {
+      // ── Cas 1 : Utilisateur connecté ─────────────────────────────────────
       if (session) {
-        // Éviter de synchroniser avec un token Supabase expiré ou sur le point de l'être
-        const isExpired = session.expires_at && (session.expires_at * 1000 < Date.now() + 5000);
-        if (isExpired) return;
+        // Skip si le token Supabase est expiré ou sur le point de l'être
+        const isExpired = session.expires_at && session.expires_at * 1000 < Date.now() + 5000;
+        if (isExpired) {
+          console.warn('[NestSessionSync] Skipping expired Supabase token');
+          return;
+        }
 
-        // Si on a déjà un token NestJS et que c'est un simple event INITIAL_SESSION ou SIGNED_IN sans changement majeur,
-        // on pourrait éviter le refetch, mais pour la solidité au refresh (F5), on fetch /auth/me.
         try {
-          // Utiliser le rôle persisté si disponible, sinon laisser le backend décider
+          // Récupérer le rôle persisté (localStorage) pour le passer au backend
           const persistedRole = getPersistedActiveRole();
+
+          // Appeler le backend NestJS pour obtenir les tokens JWT
           const result = await authApi.meSupabase(session.access_token, persistedRole);
 
+          // ── Cas 1a : Onboarding requis ─────────────────────────────────
           if ('onboardingRequired' in result) {
             setNeedsOnboarding(true);
             return;
           }
 
+          // ── Cas 1b : Session complète → Mettre à jour le store ─────────
           setSession({
             token: result.accessToken,
             refreshToken: result.refreshToken,
@@ -53,22 +78,30 @@ export function NestSessionSync() {
             selfieFaceDetected: result.user.selfieFaceDetected,
             selfieMatchScore: result.user.selfieMatchScore,
           });
+
+          console.log('[NestSessionSync] ✅ Session synced successfully');
         } catch (error: any) {
-          // Si c'est une 401, c'est que le token Supabase a été rejeté par le backend
-          // (souvent pendant INITIAL_SESSION si le token est périmé).
-          // On ignore l'erreur silencieusement, Supabase finira par rafraîchir le token.
-          if (error?.status !== 401) {
-            console.error('[NestSessionSync] Error syncing session:', error);
+          // ── Gestion d'erreur propre (pas de spam console) ────────────────
+          if (error?.status === 401) {
+            // Token Supabase rejeté (normal pendant INITIAL_SESSION si expiré)
+            // Supabase va rafraîchir le token automatiquement
+            console.warn('[NestSessionSync] Token rejected by backend (will retry with fresh token)');
+          } else {
+            // Autre erreur (réseau, backend down, etc.)
+            console.error('[NestSessionSync] Failed to sync session:', error);
           }
-          // Ne pas clearSession immédiatement ici pour éviter les boucles
+          // Ne pas clearSession immédiatement pour éviter les boucles infinies
         }
-      } else if (event === 'SIGNED_OUT') {
+      }
+      // ── Cas 2 : Utilisateur déconnecté ─────────────────────────────────────
+      else if (event === 'SIGNED_OUT') {
         clearSession();
+        console.log('[NestSessionSync] ✅ Session cleared (signed out)');
       }
     });
 
     return () => subscription.unsubscribe();
-  }, [supabase, setSession, clearSession]);
+  }, [supabase, setSession, clearSession, setNeedsOnboarding]);
 
   return null;
 }

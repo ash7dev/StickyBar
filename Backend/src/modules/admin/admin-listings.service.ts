@@ -5,7 +5,7 @@ import {
   UnprocessableEntityException,
 } from '@nestjs/common';
 import {
-  PolitiqueAnnulation,
+  ResultatAnnulation,
   SensTransaction,
   StatutLogement,
   StatutPaiement,
@@ -184,7 +184,7 @@ export class AdminListingsService {
             statut: StatutReservation.CANCELLED,
             annuleLe: now,
             raisonAnnulation: raison,
-            politiqueAppliquee: PolitiqueAnnulation.FAUTE_PROPRIO,
+            politiqueAppliquee: ResultatAnnulation.ABSENCE_PROPRIO,
           },
         });
 

@@ -4,12 +4,13 @@ import {
   NotFoundException,
   ConflictException,
   ForbiddenException,
+  BadRequestException,
 } from '@nestjs/common';
 import {
   StatutReservation,
   StatutPaiement,
   StatutLogement,
-  PolitiqueAnnulation,
+  ResultatAnnulation,
   SensTransaction,
   TypeTransactionWallet,
   TypeFaute,
@@ -53,28 +54,28 @@ export class CancelReservationUseCase {
     const diffDays = diffMs / (1000 * 60 * 60 * 24);
     const diffHours = diffMs / (1000 * 60 * 60);
 
-    let politique: PolitiqueAnnulation = PolitiqueAnnulation.REMBOURSEMENT_100;
+    let politique: ResultatAnnulation = ResultatAnnulation.UC2_LOCATAIRE_PLUS_3J;
     let montantRembourse = 0;
     let penaliteProprio = 0;
 
     if (isProprio) {
-      politique = PolitiqueAnnulation.FAUTE_PROPRIO;
+      politique = ResultatAnnulation.UC4_PROPRIO_MOINS_3J;
       montantRembourse = Number(reservation.totalLocataire);
       if (diffDays > 7) penaliteProprio = 5000;
       else if (diffDays >= 2) penaliteProprio = 10000;
       else penaliteProprio = 20000;
     } else {
       if (diffDays > 7) {
-        politique = PolitiqueAnnulation.REMBOURSEMENT_100;
+        politique = ResultatAnnulation.UC2_LOCATAIRE_PLUS_3J;
         montantRembourse = Number(reservation.totalLocataire);
       } else if (diffDays >= 3) {
-        politique = PolitiqueAnnulation.REMBOURSEMENT_50;
+        politique = ResultatAnnulation.UC2_LOCATAIRE_1_3J;
         montantRembourse = Number(reservation.totalLocataire) * 0.5;
       } else if (diffHours >= 24) {
-        politique = PolitiqueAnnulation.REMBOURSEMENT_25;
+        politique = ResultatAnnulation.UC2_LOCATAIRE_1_3J;
         montantRembourse = Number(reservation.totalLocataire) * 0.25;
       } else {
-        politique = PolitiqueAnnulation.REMBOURSEMENT_0;
+        politique = ResultatAnnulation.UC2_LOCATAIRE_BLOQUE;
         montantRembourse = 0;
       }
     }
@@ -103,7 +104,14 @@ export class CancelReservationUseCase {
       }
 
       if (isProprio && penaliteProprio > 0) {
-        const wallet = await tx.wallet.findUnique({ where: { utilisateurId: userId } });
+        // Pessimistic lock: SELECT FOR UPDATE pour éviter les race conditions sur le wallet
+        const wallet = await tx.$queryRaw<Array<{ id: string; soldeDisponible: number; dettePenalites: number }>>`
+          SELECT id, "soldeDisponible", "dettePenalites"
+          FROM "Wallet"
+          WHERE "utilisateurId" = ${userId}
+          FOR UPDATE
+        `.then(rows => rows[0]);
+
         if (wallet) {
           const solde = Number(wallet.soldeDisponible);
           if (solde >= penaliteProprio) {
@@ -179,11 +187,12 @@ export class CancelReservationUseCase {
         montantRembourse,
         penaliteAppliquee: penaliteProprio,
       };
-    }, { isolationLevel: 'RepeatableRead' });
+    }, { isolationLevel: 'Serializable' });
 
     // Déclencher le remboursement financier réel après la TX (appel API externe)
     if (montantRembourse > 0) {
-      await this.refundPayment.execute(reservationId);
+      const percentage = (montantRembourse / Number(reservation.totalLocataire)) * 100;
+      await this.refundPayment.execute(reservationId, percentage);
     }
 
     return result;
