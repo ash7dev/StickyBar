@@ -1,7 +1,8 @@
+'use client';
+
 import Image from 'next/image';
-import { Phone, Lock, PhoneCall } from 'lucide-react';
+import { Phone, Lock, PhoneCall, ShieldCheck } from 'lucide-react';
 import { canSeeCoordonnees } from '@/features/reservations/utils';
-import { GlassCard } from '../shared/reservation-cards';
 import type { ReservationDetail } from '@/lib/nestjs/types';
 
 type Proprietaire = ReservationDetail['proprietaire'];
@@ -17,66 +18,62 @@ export function TenantHostCard({ proprietaire, statut, dateDebut }: Props) {
   const initiales = `${proprietaire.prenom[0]}${proprietaire.nom[0]}`.toUpperCase();
 
   return (
-    <GlassCard>
-      <div className="p-5 space-y-5">
-
-        {/* Avatar + identité */}
-        <div className="flex items-center gap-4">
-          <div className="relative shrink-0">
-            <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-emerald-400 to-emerald-600 flex items-center justify-center text-lg font-black text-white shadow-lg shadow-emerald-500/25 overflow-hidden">
-              {proprietaire.avatarUrl
-                ? <Image src={proprietaire.avatarUrl} alt="" fill className="object-cover" />
-                : initiales}
-            </div>
-            {/* Pastille verte "actif" */}
-            <span className="absolute -bottom-1 -right-1 w-4 h-4 bg-emerald-400 border-2 border-white rounded-full" />
+    <div className="bg-background-card rounded-card border border-border/80 p-5 space-y-4 shadow-2xs">
+      {/* Avatar + identité */}
+      <div className="flex items-center gap-3.5">
+        <div className="relative shrink-0">
+          <div className="w-14 h-14 rounded-inner bg-forest-950 text-lime-400 font-display font-extrabold text-base flex items-center justify-center border border-lime-400/20 overflow-hidden shadow-2xs">
+            {proprietaire.avatarUrl ? (
+              <Image src={proprietaire.avatarUrl} alt="" fill className="object-cover" />
+            ) : (
+              initiales
+            )}
           </div>
-
-          <div className="min-w-0 flex-1">
-            <p className="text-[10px] font-bold uppercase tracking-widest text-neutral-400 mb-0.5">Votre hôte</p>
-            <p className="text-base font-black text-neutral-900 leading-tight truncate">
-              {proprietaire.prenom} {proprietaire.nom}
-            </p>
-            <span className="inline-flex items-center gap-1 mt-1 text-[10px] font-bold text-emerald-600 bg-emerald-50 border border-emerald-100 px-2 py-0.5 rounded-full">
-              Propriétaire vérifié
-            </span>
-          </div>
+          <span className="absolute -bottom-0.5 -right-0.5 w-3.5 h-3.5 bg-lime-400 border-2 border-background-card rounded-full" />
         </div>
 
-        {/* Téléphone */}
-        {canSeePhone && proprietaire.telephone ? (
-          <a
-            href={`tel:${proprietaire.telephone}`}
-            className="flex items-center gap-3 w-full bg-emerald-50 hover:bg-emerald-100 border border-emerald-200 hover:border-emerald-300 rounded-2xl px-4 py-3.5 transition-all group"
-          >
-            <div className="w-9 h-9 rounded-xl bg-emerald-500 group-hover:bg-emerald-600 flex items-center justify-center shrink-0 transition-colors shadow-sm shadow-emerald-500/30">
-              <PhoneCall className="w-4 h-4 text-white" />
-            </div>
-            <div className="min-w-0">
-              <p className="text-[10px] font-bold uppercase tracking-wider text-emerald-600">Appeler l&apos;hôte</p>
-              <p className="text-sm font-black text-emerald-800 tracking-wide">{proprietaire.telephone}</p>
-            </div>
-          </a>
-        ) : (
-          <div className="flex items-center gap-3 bg-neutral-50 border border-neutral-200 rounded-2xl px-4 py-3.5">
-            <div className="w-9 h-9 rounded-xl bg-neutral-200 flex items-center justify-center shrink-0">
-              <Lock className="w-4 h-4 text-neutral-400" />
-            </div>
-            <div>
-              <p className="text-xs font-bold text-neutral-500">Numéro masqué</p>
-              <p className="text-[10px] text-neutral-400 mt-0.5 leading-relaxed">
-                {['CANCELLED', 'COMPLETED', 'EXPIRED'].includes(statut)
-                  ? 'Non disponible pour cette réservation'
-                  : 'Visible 24h avant votre arrivée'}
-              </p>
-            </div>
-            <div className="ml-auto">
-              <Phone className="w-4 h-4 text-neutral-300" />
-            </div>
-          </div>
-        )}
-
+        <div className="min-w-0 flex-1">
+          <p className="text-[10px] font-extrabold uppercase tracking-wider text-foreground-muted mb-0.5">Votre hôte</p>
+          <h4 className="font-display text-base font-bold text-forest-950 leading-tight truncate">
+            {proprietaire.prenom} {proprietaire.nom}
+          </h4>
+          <span className="inline-flex items-center gap-1 mt-1 text-[10px] font-extrabold text-forest-800 bg-forest-50 border border-forest-100 px-2.5 py-0.5 rounded-pill">
+            <ShieldCheck className="w-3 h-3 text-forest-600" />
+            <span>Propriétaire vérifié</span>
+          </span>
+        </div>
       </div>
-    </GlassCard>
+
+      {/* Téléphone */}
+      {canSeePhone && proprietaire.telephone ? (
+        <a
+          href={`tel:${proprietaire.telephone}`}
+          className="flex items-center gap-3.5 w-full bg-forest-950 hover:bg-forest-900 border border-forest-800 rounded-inner p-3.5 transition-all group"
+        >
+          <div className="w-9 h-9 rounded-inner bg-lime-400 flex items-center justify-center shrink-0 shadow-2xs group-hover:scale-105 transition-transform">
+            <PhoneCall className="w-4 h-4 text-forest-950" />
+          </div>
+          <div className="min-w-0">
+            <p className="text-[10px] font-extrabold uppercase tracking-wider text-forest-200">Appeler l&apos;hôte</p>
+            <p className="text-sm font-mono font-extrabold text-lime-300 tracking-wide">{proprietaire.telephone}</p>
+          </div>
+        </a>
+      ) : (
+        <div className="flex items-center gap-3.5 bg-background-alt border border-border/80 rounded-inner p-3.5">
+          <div className="w-9 h-9 rounded-inner bg-background-card border border-border flex items-center justify-center shrink-0">
+            <Lock className="w-4 h-4 text-foreground-faint" />
+          </div>
+          <div className="flex-1 min-w-0">
+            <p className="text-xs font-bold text-forest-950">Numéro masqué</p>
+            <p className="text-[10px] text-foreground-muted mt-0.5 leading-relaxed">
+              {['CANCELLED', 'COMPLETED', 'EXPIRED'].includes(statut)
+                ? 'Non disponible pour cette réservation'
+                : 'Visible 24h avant votre arrivée'}
+            </p>
+          </div>
+          <Phone className="w-4 h-4 text-foreground-faint shrink-0" />
+        </div>
+      )}
+    </div>
   );
 }

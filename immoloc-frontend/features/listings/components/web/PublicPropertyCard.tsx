@@ -25,7 +25,7 @@ export function PublicPropertyCard({ listing }: Props) {
 
   return (
     <Link
-      href={`/logements/${listing.id}`}
+      href={`/explorer/${listing.id}`}
       className="group flex flex-col rounded-[2rem] overflow-hidden bg-background-card shadow-[0_4px_24px_rgba(0,0,0,0.08)] border border-border hover:shadow-[0_12px_40px_rgba(0,0,0,0.14)] hover:-translate-y-1 transition-all duration-300 h-full"
     >
       {/* Image - ratio amélioré */}

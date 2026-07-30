@@ -1,10 +1,10 @@
 'use client';
 
-import { useEffect } from 'react';
+import { useEffect, useMemo } from 'react';
 import { usePathname } from 'next/navigation';
 import { createClient } from '@/lib/supabase/client';
 import { authApi } from '@/lib/nestjs';
-import { useRoleStore, getPersistedActiveRole } from '@/stores/role.store';
+import { useRoleStore, getPersistedActiveRole, isTokenExpired } from '@/stores/role.store';
 
 /**
  * NestSessionSync - Provider propre pour la synchronisation Supabase ↔ NestJS
@@ -24,7 +24,7 @@ import { useRoleStore, getPersistedActiveRole } from '@/stores/role.store';
  * - ✅ Zero spaghetti code
  */
 export function NestSessionSync() {
-  const supabase = createClient();
+  const supabase = useMemo(() => createClient(), []);
   const { setSession, clearSession, setNeedsOnboarding, activeRole, setRole } = useRoleStore();
   const pathname = usePathname();
 
@@ -42,6 +42,15 @@ export function NestSessionSync() {
     } = supabase.auth.onAuthStateChange(async (event, session) => {
       // ── Cas 1 : Utilisateur connecté ─────────────────────────────────────
       if (session) {
+        // Skip si la session NestJS est déjà valide et non expirée en cache
+        const storeState = useRoleStore.getState();
+        const hasValidToken = storeState.nestToken && !isTokenExpired(storeState.tokenExpiresAt);
+
+        if (hasValidToken && (event === 'INITIAL_SESSION' || event === 'TOKEN_REFRESHED')) {
+          console.log('[NestSessionSync] ⚡ Session déjà synchronisée et valide en cache');
+          return;
+        }
+
         // Skip si le token Supabase est expiré ou sur le point de l'être
         const isExpired = session.expires_at && session.expires_at * 1000 < Date.now() + 5000;
         if (isExpired) {
@@ -86,6 +95,10 @@ export function NestSessionSync() {
             // Token Supabase rejeté (normal pendant INITIAL_SESSION si expiré)
             // Supabase va rafraîchir le token automatiquement
             console.warn('[NestSessionSync] Token rejected by backend (will retry with fresh token)');
+          } else if (error?.status === 404) {
+            // Endpoint non trouvé - backend probablement non démarré ou route manquante
+            // Ignorer silencieusement pour ne pas polluer la console en développement
+            console.warn('[NestSessionSync] Backend endpoint not found (404) - backend may not be running');
           } else {
             // Autre erreur (réseau, backend down, etc.)
             console.error('[NestSessionSync] Failed to sync session:', error);

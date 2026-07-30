@@ -71,7 +71,7 @@ export function ListingCardSkeleton() {
 }
 
 /* ═══════════════════════════════════════════════════════════════════════════
-   Premium Listing Card — ImmoLoc
+   Premium Listing Card — Klef
    ═══════════════════════════════════════════════════════════════════════════ */
 
 export function ListingCardItem({ listing }: { listing: ListingCard }) {

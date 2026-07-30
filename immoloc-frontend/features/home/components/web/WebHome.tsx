@@ -1,49 +1,45 @@
+'use client';
+
+import { useState, useEffect } from 'react';
 import { HeroSection } from './HeroSection';
-import { FilterBar } from './FilterBar';
 import { CategoriesSection } from './CategoriesSection';
-import { FeaturedListingsSection } from './FeaturedListingsSection';
-import { StatsSection } from './StatsSection';
-import { TrustSection } from './TrustSection';
-import { HowItWorks } from './HowItWorks';
-import { ImmoLocChiffres } from './ImmoLocChiffres';
-import { TestimonialsSection } from './TestimonialsSection';
-import { FaqSection } from './FaqSection';
-import { BecomeHostCTA } from './BecomeHostCTA';
+import { FeedSections } from './FeedSections';
+import { HowItWorksSection } from './HowItWorksSection';
+import { OwnerCTASection } from './OwnerCTASection';
+import { listingsApi } from '@/lib/nestjs/listings.api';
+import type { Listing } from '@/lib/nestjs/types';
 
 export function WebHome() {
+  const [listings, setListings] = useState<Listing[]>([]);
+
+  useEffect(() => {
+    const fetchListings = async () => {
+      try {
+        const { data } = await listingsApi.search({ limit: 2, page: 1 });
+        setListings(data);
+      } catch (error) {
+        console.error('[WebHome] Failed to fetch listings:', error);
+      }
+    };
+    fetchListings();
+  }, []);
+
   return (
-    <main className="bg-background min-h-screen">
-      {/* 1. Hero immersif — fond noir */}
-      <HeroSection />
+    <div className="bg-canvas">
+      {/* Hero Section */}
+      <HeroSection listings={listings} />
 
-      {/* 2. Filtre flottant — ancré sous le hero */}
-      <div className="relative z-30 -mt-24">
-        <FilterBar />
-      </div>
-
-      {/* 3. Profils — Locataire / Propriétaire */}
+      {/* Categories Section */}
       <CategoriesSection />
 
-      {/* 4. Catalogue — cards logements */}
-      <FeaturedListingsSection />
+      {/* Feed Sections - Multiple horizontal sections */}
+      <FeedSections />
 
-      {/* 6. Pourquoi faire confiance à ImmoLoc — bento grid */}
-      <TrustSection />
+      {/* How It Works Section */}
+      <HowItWorksSection />
 
-      {/* 7. Comment ça marche — 3 étapes */}
-      <HowItWorks />
-
-      {/* 8. ImmoLoc en chiffres — dark card premium */}
-      <ImmoLocChiffres />
-
-      {/* 9. Témoignages clients */}
-      <TestimonialsSection />
-
-      {/* 10. FAQ — split layout */}
-      <FaqSection />
-
-      {/* 11. CTA final — devenir hôte */}
-      <BecomeHostCTA />
-    </main>
+      {/* Owner CTA Section */}
+      <OwnerCTASection />
+    </div>
   );
 }

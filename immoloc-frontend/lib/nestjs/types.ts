@@ -1,4 +1,4 @@
-// ── ImmoLoc — Types API centralisés ──────────────────────────────────────────
+// ── Klef — Types API centralisés ──────────────────────────────────────────
 // Une seule source de vérité pour toutes les interfaces request/response NestJS.
 
 // ── Primitives partagées ──────────────────────────────────────────────────────
@@ -199,6 +199,17 @@ export interface Listing {
   totalSejours?: number;
   createdAt: string;
   updatedAt: string;
+  proprietaire?: {
+    id: string;
+    prenom: string;
+    nom: string;
+    avatarUrl?: string | null;
+    statutKyc?: StatutKyc;
+    noteProprietaire?: number;
+    totalAvis?: number;
+    totalSejours?: number;
+    creeLe?: string;
+  };
 }
 
 /** Shape minimale retournée par /listings/feed — compatible avec MobileListingGridCard */
@@ -263,6 +274,12 @@ export interface SearchListingsResponse {
   total: number;
   page: number;
   limit: number;
+  meta?: {
+    total: number;
+    page: number;
+    limit: number;
+    totalPages: number;
+  };
 }
 
 export interface PhotoUploadParams {

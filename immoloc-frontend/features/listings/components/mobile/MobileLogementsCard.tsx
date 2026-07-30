@@ -23,7 +23,7 @@ export function MobileLogementsCard({ listing }: { listing: Listing }) {
 
   return (
     <Link
-      href={`/logements/${listing.id}`}
+      href={`/explorer/${listing.id}`}
       className="flex rounded-[1.8rem] overflow-hidden bg-white border border-slate-100 shadow-[0_4px_20px_rgba(0,0,0,0.08)] active:scale-[0.97] transition-all duration-200 hover:shadow-[0_8px_30px_rgba(0,0,0,0.12)]"
     >
       {/* Photo — gauche, format optimisé */}

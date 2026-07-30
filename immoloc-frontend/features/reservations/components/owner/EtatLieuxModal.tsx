@@ -30,7 +30,7 @@ interface Props {
   onCancel: () => void;
 }
 
-/* ─── Config ──────────────────────────────────────────────────────────────── */
+/* ─── Config (Klef Design System v2) ──────────────────────────────────── */
 
 const CATEGORIES: { value: PhotoCategorie; label: string }[] = [
   { value: 'ENTREE',        label: 'Entrée'        },
@@ -50,22 +50,22 @@ const CFG = {
     subtitle:     'Photographiez l\'état du logement avant l\'arrivée du locataire.',
     confirmLabel: 'Confirmer le check-in',
     icon:         CheckCircle2,
-    iconBg:       'bg-emerald-50 border-emerald-100',
-    iconColor:    'text-emerald-600',
-    btn:          'bg-emerald-600 hover:bg-emerald-700 shadow-emerald-600/20',
-    bar:          'bg-emerald-500',
-    dot:          'bg-emerald-500',
+    iconBg:       'bg-forest-900 border-lime-400/20',
+    iconColor:    'text-lime-400',
+    btn:          'bg-lime-400 hover:bg-lime-300 text-forest-950 font-extrabold shadow-md',
+    bar:          'bg-lime-400',
+    dot:          'bg-lime-400',
   },
   CHECKOUT: {
     title:        'Check-out propriétaire',
     subtitle:     'Photographiez l\'état du logement après le départ du locataire.',
     confirmLabel: 'Confirmer le check-out',
     icon:         LogOut,
-    iconBg:       'bg-emerald-50 border-emerald-100',
-    iconColor:    'text-emerald-600',
-    btn:          'bg-emerald-600 hover:bg-emerald-700 shadow-emerald-600/20',
-    bar:          'bg-emerald-500',
-    dot:          'bg-emerald-500',
+    iconBg:       'bg-forest-900 border-lime-400/20',
+    iconColor:    'text-lime-400',
+    btn:          'bg-lime-400 hover:bg-lime-300 text-forest-950 font-extrabold shadow-md',
+    bar:          'bg-lime-400',
+    dot:          'bg-lime-400',
   },
 } as const;
 
@@ -218,39 +218,36 @@ function EtatLieuxModal({ reservationId, type, onSuccess, onCancel }: Props) {
 
       {/* Backdrop */}
       <div
-        className="absolute inset-0 bg-black/50 backdrop-blur-sm"
+        className="absolute inset-0 bg-black/70 backdrop-blur-sm"
         onClick={!loading ? onCancel : undefined}
       />
 
-      {/* Card */}
-      <div className="relative z-10 w-full max-w-lg bg-white rounded-3xl shadow-2xl shadow-black/10 flex flex-col max-h-[90dvh] overflow-hidden">
+      {/* Card Modal */}
+      <div className="relative z-10 w-full max-w-lg bg-forest-950 text-white border border-forest-800/90 rounded-card shadow-2xl flex flex-col max-h-[90dvh] overflow-hidden">
 
         {/* ── En-tête ── */}
-        <div className="flex items-start justify-between gap-4 px-7 pt-7 pb-6 shrink-0">
+        <div className="flex items-start justify-between gap-4 px-7 pt-7 pb-6 shrink-0 border-b border-forest-800/80">
           <div className="flex items-center gap-4">
             <div className={cn(
-              'w-12 h-12 rounded-2xl border flex items-center justify-center shrink-0',
+              'w-12 h-12 rounded-inner border flex items-center justify-center shrink-0',
               cfg.iconBg,
             )}>
               <Icon className={cn('w-5 h-5', cfg.iconColor)} />
             </div>
             <div>
-              <h2 className="text-base font-black text-neutral-900 leading-tight">{cfg.title}</h2>
-              <p className="text-xs text-neutral-400 mt-0.5 leading-relaxed">{cfg.subtitle}</p>
+              <h2 className="font-display text-base font-bold text-white leading-tight">{cfg.title}</h2>
+              <p className="text-xs text-forest-300 mt-0.5 leading-relaxed">{cfg.subtitle}</p>
             </div>
           </div>
           {!loading && (
             <button
               onClick={onCancel}
-              className="w-8 h-8 rounded-full bg-neutral-100 hover:bg-neutral-200 flex items-center justify-center transition-colors shrink-0 mt-0.5"
+              className="w-8 h-8 rounded-inner bg-forest-900 hover:bg-forest-800 border border-forest-800 flex items-center justify-center transition-colors shrink-0 mt-0.5 text-forest-200"
             >
-              <X className="w-3.5 h-3.5 text-neutral-500" />
+              <X className="w-3.5 h-3.5" />
             </button>
           )}
         </div>
-
-        {/* Divider */}
-        <div className="h-px bg-border shrink-0" />
 
         {/* ── Corps scrollable ── */}
         <div className="flex-1 overflow-y-auto px-7 py-6 space-y-6">
@@ -259,12 +256,12 @@ function EtatLieuxModal({ reservationId, type, onSuccess, onCancel }: Props) {
           <div>
             <div className="flex items-center justify-between mb-4">
               <div>
-                <p className="text-sm font-bold text-neutral-800">Photos état des lieux</p>
-                <p className="text-xs text-neutral-400 mt-0.5">Optionnel — recommandé en cas de litige</p>
+                <p className="font-display text-sm font-bold text-white">Photos état des lieux</p>
+                <p className="text-xs text-forest-300 mt-0.5">Optionnel — recommandé en cas de litige</p>
               </div>
               {photos.length > 0 && (
-                <span className="text-[10px] font-black text-neutral-400 bg-neutral-100 border border-border px-2.5 py-1 rounded-full">
-                  {photos.length} / ∞
+                <span className="text-[10px] font-extrabold text-forest-300 bg-forest-900 border border-forest-800 px-2.5 py-1 rounded-pill">
+                  {photos.length} photo{photos.length > 1 ? 's' : ''}
                 </span>
               )}
             </div>
@@ -274,7 +271,7 @@ function EtatLieuxModal({ reservationId, type, onSuccess, onCancel }: Props) {
               {photos.map((entry) => (
                 <div key={entry.localId} className="flex flex-col gap-1.5">
                   {/* Thumbnail */}
-                  <div className="relative aspect-square rounded-xl overflow-hidden bg-neutral-100 border border-border group">
+                  <div className="relative aspect-square rounded-inner overflow-hidden bg-forest-900 border border-forest-800 group">
                     <Image
                       src={entry.preview}
                       alt={entry.categorie}
@@ -282,13 +279,13 @@ function EtatLieuxModal({ reservationId, type, onSuccess, onCancel }: Props) {
                       className="object-cover"
                     />
                     {/* Overlay remove */}
-                    <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-all duration-200 flex items-center justify-center">
+                    <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-all duration-200 flex items-center justify-center">
                       <button
                         type="button"
                         onClick={() => removePhoto(entry.localId)}
-                        className="w-7 h-7 rounded-full bg-white/90 backdrop-blur-sm border border-white/50 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all duration-200 hover:bg-rose-50 hover:border-rose-200 shadow-sm"
+                        className="w-7 h-7 rounded-pill bg-error-500/90 text-white flex items-center justify-center shadow-sm hover:scale-105 transition-transform"
                       >
-                        <Trash2 className="w-3 h-3 text-rose-500" />
+                        <Trash2 className="w-3.5 h-3.5" />
                       </button>
                     </div>
                   </div>
@@ -296,10 +293,10 @@ function EtatLieuxModal({ reservationId, type, onSuccess, onCancel }: Props) {
                   <select
                     value={entry.categorie}
                     onChange={(e) => changeCategorie(entry.localId, e.target.value as PhotoCategorie)}
-                    className="w-full text-[10px] font-bold text-neutral-600 bg-neutral-50 border border-border rounded-lg px-2 py-1.5 outline-none focus:border-emerald-400 cursor-pointer"
+                    className="w-full text-[10px] font-bold text-forest-200 bg-forest-900 border border-forest-800 rounded-inner px-2 py-1.5 outline-none focus:border-lime-400 cursor-pointer"
                   >
                     {CATEGORIES.map((c) => (
-                      <option key={c.value} value={c.value}>{c.label}</option>
+                      <option key={c.value} value={c.value} className="bg-forest-950 text-white">{c.label}</option>
                     ))}
                   </select>
                 </div>
@@ -309,12 +306,12 @@ function EtatLieuxModal({ reservationId, type, onSuccess, onCancel }: Props) {
               <button
                 type="button"
                 onClick={() => fileInputRef.current?.click()}
-                className="flex flex-col items-center justify-center aspect-square rounded-xl border-2 border-dashed border-border hover:border-emerald-300 bg-neutral-50 hover:bg-emerald-50 transition-all duration-200 group"
+                className="flex flex-col items-center justify-center aspect-square rounded-inner border-2 border-dashed border-forest-800 hover:border-lime-400 bg-forest-900/60 hover:bg-forest-900 transition-all duration-200 group"
               >
-                <div className="w-8 h-8 rounded-full bg-white border border-border group-hover:border-emerald-200 group-hover:bg-emerald-50 flex items-center justify-center transition-all duration-200 mb-1.5 shadow-sm">
-                  <Plus className="w-3.5 h-3.5 text-neutral-400 group-hover:text-emerald-500 transition-colors" />
+                <div className="w-8 h-8 rounded-pill bg-forest-950 border border-forest-800 group-hover:border-lime-400 flex items-center justify-center transition-all duration-200 mb-1.5 shadow-sm">
+                  <Plus className="w-3.5 h-3.5 text-forest-300 group-hover:text-lime-400 transition-colors" />
                 </div>
-                <span className="text-[10px] font-bold text-neutral-400 group-hover:text-emerald-500 transition-colors">
+                <span className="text-[10px] font-bold text-forest-300 group-hover:text-lime-400 transition-colors">
                   Ajouter
                 </span>
               </button>
@@ -335,37 +332,37 @@ function EtatLieuxModal({ reservationId, type, onSuccess, onCancel }: Props) {
             <button
               type="button"
               onClick={() => fileInputRef.current?.click()}
-              className="w-full flex flex-col items-center justify-center gap-3 py-10 rounded-2xl border-2 border-dashed border-border hover:border-emerald-300 bg-neutral-50 hover:bg-emerald-50 transition-all duration-200 group"
+              className="w-full flex flex-col items-center justify-center gap-3 py-10 rounded-card border-2 border-dashed border-forest-800 hover:border-lime-400 bg-forest-900/60 hover:bg-forest-900 transition-all duration-200 group"
             >
-              <div className="w-12 h-12 rounded-2xl bg-white border border-border group-hover:border-emerald-200 flex items-center justify-center shadow-sm transition-colors">
-                <ImageIcon className="w-5 h-5 text-neutral-300 group-hover:text-emerald-400 transition-colors" />
+              <div className="w-12 h-12 rounded-inner bg-forest-950 border border-forest-800 group-hover:border-lime-400 flex items-center justify-center shadow-sm transition-colors">
+                <ImageIcon className="w-5 h-5 text-forest-300 group-hover:text-lime-400 transition-colors" />
               </div>
               <div className="text-center">
-                <p className="text-sm font-bold text-neutral-500 group-hover:text-emerald-600 transition-colors">
+                <p className="text-sm font-bold text-white group-hover:text-lime-400 transition-colors">
                   Ajouter des photos
                 </p>
-                <p className="text-xs text-neutral-400 mt-0.5">JPG, PNG, WebP · Plusieurs fichiers acceptés</p>
+                <p className="text-xs text-forest-300 mt-0.5">JPG, PNG, WebP · Plusieurs fichiers acceptés</p>
               </div>
             </button>
           )}
 
           {/* Barre de progression */}
           {loading && (
-            <div className="space-y-2.5 bg-neutral-50 border border-border rounded-2xl p-4">
+            <div className="space-y-2.5 bg-forest-900 border border-forest-800 rounded-inner p-4">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2">
-                  <Loader2 className="w-3.5 h-3.5 text-neutral-400 animate-spin" />
-                  <p className="text-xs font-bold text-neutral-600">
+                  <Loader2 className="w-3.5 h-3.5 text-lime-400 animate-spin" />
+                  <p className="text-xs font-bold text-white">
                     {progress < 88 && photos.length > 0
                       ? `Upload des photos… (${Math.ceil(progress / (88 / Math.max(photos.length, 1)))} / ${photos.length})`
                       : 'Confirmation en cours…'}
                   </p>
                 </div>
-                <p className="text-xs font-black text-neutral-400 tabular-nums">{progress}%</p>
+                <p className="text-xs font-extrabold text-lime-400 tabular-nums">{progress}%</p>
               </div>
-              <div className="h-1.5 rounded-full bg-neutral-200 overflow-hidden">
+              <div className="h-1.5 rounded-pill bg-forest-950 overflow-hidden">
                 <div
-                  className={cn('h-full rounded-full transition-all duration-500', cfg.bar)}
+                  className={cn('h-full rounded-pill transition-all duration-500', cfg.bar)}
                   style={{ width: `${progress}%` }}
                 />
               </div>
@@ -374,16 +371,16 @@ function EtatLieuxModal({ reservationId, type, onSuccess, onCancel }: Props) {
 
           {/* Erreur */}
           {error && (
-            <div className="flex items-start gap-3 bg-rose-50 border border-rose-100 rounded-2xl p-4">
-              <AlertTriangle className="w-4 h-4 text-rose-500 shrink-0 mt-0.5" />
-              <p className="text-xs font-medium text-rose-700 leading-relaxed">{error}</p>
+            <div className="flex items-start gap-3 bg-error-500/20 border border-error-500/30 rounded-inner p-4">
+              <AlertTriangle className="w-4 h-4 text-error-400 shrink-0 mt-0.5" />
+              <p className="text-xs font-medium text-error-300 leading-relaxed">{error}</p>
             </div>
           )}
 
           {/* Note */}
-          <div className="flex items-start gap-3 bg-neutral-50 border border-border rounded-2xl p-4">
-            <Camera className="w-4 h-4 text-neutral-400 shrink-0 mt-0.5" />
-            <p className="text-xs text-neutral-400 leading-relaxed">
+          <div className="flex items-start gap-3 bg-forest-900/60 border border-forest-800/80 rounded-inner p-4">
+            <Camera className="w-4 h-4 text-lime-400 shrink-0 mt-0.5" />
+            <p className="text-xs text-forest-200 leading-relaxed">
               Les photos constituent une preuve en cas de litige. Couvrez toutes les pièces pour une protection optimale des deux parties.
             </p>
           </div>
@@ -391,12 +388,12 @@ function EtatLieuxModal({ reservationId, type, onSuccess, onCancel }: Props) {
         </div>
 
         {/* ── Pied de page ── */}
-        <div className="px-7 pb-7 pt-5 border-t border-border shrink-0 flex flex-col gap-3">
+        <div className="px-7 pb-7 pt-5 border-t border-forest-800/80 shrink-0 flex flex-col gap-3">
           <button
             onClick={handleSubmit}
             disabled={loading}
             className={cn(
-              'w-full flex items-center justify-center gap-2.5 py-3.5 text-white text-sm font-black rounded-2xl shadow-lg transition-all duration-200 disabled:opacity-60 active:scale-[0.98]',
+              'w-full flex items-center justify-center gap-2.5 py-3.5 text-forest-950 text-sm font-extrabold rounded-pill shadow-lg transition-all duration-200 disabled:opacity-60 active:scale-[0.98]',
               cfg.btn,
             )}
           >
@@ -407,7 +404,7 @@ function EtatLieuxModal({ reservationId, type, onSuccess, onCancel }: Props) {
               </>
             ) : (
               <>
-                <Icon className="w-4 h-4" />
+                <Icon className="w-4 h-4 text-forest-950" />
                 {cfg.confirmLabel}
               </>
             )}
@@ -416,7 +413,7 @@ function EtatLieuxModal({ reservationId, type, onSuccess, onCancel }: Props) {
           {!loading && (
             <button
               onClick={onCancel}
-              className="text-xs font-semibold text-neutral-400 hover:text-neutral-600 transition-colors text-center"
+              className="text-xs font-bold text-forest-300 hover:text-white transition-colors text-center"
             >
               Annuler
             </button>

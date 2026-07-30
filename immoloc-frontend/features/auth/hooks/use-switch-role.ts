@@ -18,7 +18,10 @@ export function useSwitchRole() {
   const [isSwitching, setIsSwitching] = useState(false);
   const { activeRole, setRole, estProprietaire, setSession, userId, hasAnnonce } = useRoleStore();
 
-  const switchRole = async (targetRole: 'LOCATAIRE' | 'PROPRIETAIRE') => {
+  const switchRole = async (
+    targetRole: 'LOCATAIRE' | 'PROPRIETAIRE',
+    options?: { redirectTo?: string | null }
+  ) => {
     if (!estProprietaire && targetRole === 'PROPRIETAIRE') {
       router.push('/become-host');
       return;
@@ -57,8 +60,13 @@ export function useSwitchRole() {
         selfieMatchScore: currentStore.selfieMatchScore,
       });
 
-      // ── Redirection selon le rôle ──────────────────────────────────────────
-      if (targetRole === 'PROPRIETAIRE') {
+      // ── Redirection selon l'option ou le rôle ──────────────────────────────
+      if (options?.redirectTo !== undefined) {
+        if (options.redirectTo) {
+          router.push(options.redirectTo);
+        }
+        // Si options.redirectTo === null, on reste sur la page courante
+      } else if (targetRole === 'PROPRIETAIRE') {
         router.push('/dashboard');
       } else {
         router.push('/');

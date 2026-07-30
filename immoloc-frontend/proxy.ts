@@ -5,7 +5,7 @@ import { NextResponse, type NextRequest } from 'next/server';
 const PROTECTED_ROUTES = ['/dashboard', '/reservations', '/parametres', '/reserver'];
 
 // Routes d'authentification (rediriger si déjà connecté)
-const AUTH_ROUTES = ['/login', '/register', '/verify', '/complete-profile'];
+const AUTH_ROUTES = ['/login', '/register', '/verify', '/complete-profile', '/auth/login', '/auth/register'];
 
 // Routes publiques (toujours accessibles)
 const PUBLIC_ROUTES = ['/', '/logements', '/contact', '/cgu', '/legal', '/privacy', '/comment-ca-marche', '/become-host'];

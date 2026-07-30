@@ -1,3 +1,4 @@
+import { useMemo } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { createClient } from '@/lib/supabase/client';
 import { useRoleStore } from '@/stores/role.store';
@@ -7,6 +8,8 @@ interface User {
   email?: string;
   prenom?: string;
   nom?: string;
+  telephone?: string;
+  photoUrl?: string;
 }
 
 /**
@@ -20,7 +23,7 @@ interface User {
  */
 export function useCurrentUser() {
   const nestToken = useRoleStore((s) => s.nestToken);
-  const supabase = createClient();
+  const supabase = useMemo(() => createClient(), []);
 
   return useQuery<User>({
     queryKey: ['user', 'current', nestToken],
@@ -41,6 +44,8 @@ export function useCurrentUser() {
         email: data.user?.email,
         prenom: data.user?.user_metadata?.prenom,
         nom: data.user?.user_metadata?.nom,
+        telephone: data.user?.user_metadata?.telephone,
+        photoUrl: data.user?.user_metadata?.avatar_url || data.user?.user_metadata?.photoUrl,
       };
     },
     staleTime: 5 * 60 * 1000, // 5 minutes - données rarement changeantes

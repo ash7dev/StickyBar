@@ -50,46 +50,51 @@ export function DashboardCalendar({ checkins, checkouts }: Props) {
   const totalOccupied = checkinDates.size + checkoutDates.size;
 
   return (
-    <div className="bg-background rounded-2xl p-6 border border-border">
+    <div className="bg-background-card rounded-card p-5 lg:p-6 border border-border/80 shadow-2xs hover:border-forest-600/30 hover:shadow-md transition-all space-y-4">
       {/* Header */}
-      <div className="flex items-center justify-between mb-5">
-        <div className="flex items-center gap-2">
-          <CalendarDays className="w-4 h-4 text-foreground-muted" />
-          <h3 className="text-sm font-black text-foreground">Agenda logistique</h3>
-          {totalOccupied > 0 && (
-            <span className="text-[10px] font-medium text-foreground-muted">
-              {totalOccupied} jour{totalOccupied > 1 ? 's' : ''} occupé{totalOccupied > 1 ? 's' : ''}
-            </span>
-          )}
+      <div className="flex items-center justify-between pb-3 border-b border-border/60">
+        <div className="flex items-center gap-3">
+          <div className="w-9 h-9 rounded-inner bg-forest-950 text-lime-400 border border-lime-400/20 flex items-center justify-center shrink-0 shadow-2xs">
+            <CalendarDays className="w-4 h-4 text-lime-400" />
+          </div>
+          <div>
+            <h3 className="font-display text-base font-bold text-forest-950">Agenda logistique</h3>
+            {totalOccupied > 0 && (
+              <p className="text-[10px] font-extrabold text-foreground-muted uppercase tracking-wider">
+                {totalOccupied} jour{totalOccupied > 1 ? 's' : ''} d&apos;occupation
+              </p>
+            )}
+          </div>
         </div>
+
         <div className="flex items-center gap-2">
-          <button onClick={prevMonth} className="w-7 h-7 rounded-lg bg-background-alt flex items-center justify-center hover:bg-background-card transition-colors">
-            <ChevronLeft className="w-3.5 h-3.5 text-foreground-muted" />
+          <button onClick={prevMonth} className="w-8 h-8 rounded-inner bg-background-alt flex items-center justify-center hover:bg-background-card transition-colors border border-border/60">
+            <ChevronLeft className="w-4 h-4 text-forest-950" />
           </button>
-          <span className="text-xs font-black text-foreground uppercase tracking-wider w-28 text-center">
+          <span className="font-display text-xs font-extrabold text-forest-950 uppercase tracking-wider min-w-[100px] text-center">
             {MONTHS_FR[month]} {year}
           </span>
-          <button onClick={nextMonth} className="w-7 h-7 rounded-lg bg-background-alt flex items-center justify-center hover:bg-background-card transition-colors">
-            <ChevronRight className="w-3.5 h-3.5 text-foreground-muted" />
+          <button onClick={nextMonth} className="w-8 h-8 rounded-inner bg-background-alt flex items-center justify-center hover:bg-background-card transition-colors border border-border/60">
+            <ChevronRight className="w-4 h-4 text-forest-950" />
           </button>
         </div>
       </div>
 
       {/* Grille calendrier + Agenda du jour */}
-      <div className="grid lg:grid-cols-[1fr_160px] gap-4">
+      <div className="grid lg:grid-cols-[1fr_200px] gap-6">
         {/* Calendrier */}
         <div>
           {/* En-têtes jours */}
-          <div className="grid grid-cols-7 mb-1">
+          <div className="grid grid-cols-7 mb-2">
             {DAYS_FR.map(d => (
-              <div key={d} className="py-1 text-center text-[10px] font-black text-foreground-muted uppercase tracking-wider">
+              <div key={d} className="py-1 text-center text-[10px] font-extrabold text-foreground-muted uppercase tracking-wider">
                 {d}
               </div>
             ))}
           </div>
 
           {/* Cases */}
-          <div className="grid grid-cols-7 gap-1">
+          <div className="grid grid-cols-7 gap-1.5">
             {cells.map((day, i) => {
               if (day === null) return <div key={`empty-${i}`} />;
 
@@ -102,19 +107,19 @@ export function DashboardCalendar({ checkins, checkouts }: Props) {
               return (
                 <div
                   key={day}
-                  className={`aspect-square flex flex-col items-center justify-center rounded-xl text-xs font-bold transition-colors ${
+                  className={`aspect-square flex flex-col items-center justify-center rounded-inner text-xs font-extrabold transition-all ${
                     isToday
-                      ? 'bg-neutral-900 text-white'
+                      ? 'bg-forest-950 text-white shadow-md'
                       : hasEvent
-                        ? 'bg-success-500/10 text-foreground'
-                        : 'hover:bg-background-alt text-foreground'
+                        ? 'bg-forest-50 border border-forest-100 text-forest-950'
+                        : 'hover:bg-background-alt text-forest-950'
                   }`}
                 >
                   <span>{day}</span>
                   {hasEvent && !isToday && (
-                    <div className="flex gap-0.5 mt-0.5">
-                      {hasCheckin && <div className="w-1 h-1 rounded-full bg-emerald-500" />}
-                      {hasCheckout && <div className="w-1 h-1 rounded-full bg-warning-500" />}
+                    <div className="flex gap-1 mt-0.5">
+                      {hasCheckin && <div className="w-1.5 h-1.5 rounded-full bg-lime-500" />}
+                      {hasCheckout && <div className="w-1.5 h-1.5 rounded-full bg-warning-500" />}
                     </div>
                   )}
                 </div>
@@ -124,47 +129,49 @@ export function DashboardCalendar({ checkins, checkouts }: Props) {
         </div>
 
         {/* Agenda du jour */}
-        <div className="border-t lg:border-t-0 lg:border-l border-border pt-4 lg:pt-0 lg:pl-4">
-          <p className="text-[10px] font-black text-foreground-muted uppercase tracking-wider mb-1">Agenda du jour</p>
-          <p className="text-sm font-black text-foreground mb-4">
-            {today.toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' })}
-          </p>
+        <div className="border-t lg:border-t-0 lg:border-l border-border/60 pt-4 lg:pt-0 lg:pl-6 space-y-4">
+          <div>
+            <p className="text-[10px] font-extrabold text-foreground-muted uppercase tracking-wider mb-0.5">Agenda du jour</p>
+            <p className="font-display text-sm font-bold text-forest-950">
+              {today.toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' })}
+            </p>
+          </div>
 
           {/* Départs */}
-          <div className="mb-3">
-            <div className="flex items-center gap-1.5 mb-1.5">
-              <LogOut className="w-3.5 h-3.5 text-warning-500" />
-              <span className="text-[10px] font-black text-foreground-muted uppercase tracking-wider">
+          <div className="p-3 rounded-inner bg-background-alt border border-border/60 space-y-1.5">
+            <div className="flex items-center gap-1.5">
+              <LogOut className="w-3.5 h-3.5 text-warning-600" />
+              <span className="text-[10px] font-extrabold text-forest-950 uppercase tracking-wider">
                 Départs ({todayEvents.filter(e => e.type === 'OUT').length})
               </span>
             </div>
             {todayEvents.filter(e => e.type === 'OUT').length === 0 ? (
-              <p className="text-[10px] text-foreground-muted italic pl-1">Aucun départ prévu</p>
+              <p className="text-[10px] text-foreground-muted italic">Aucun départ prévu</p>
             ) : (
               todayEvents.filter(e => e.type === 'OUT').map(e => (
-                <div key={e.id} className="pl-1 mb-1.5">
-                  <p className="text-xs font-bold text-foreground truncate">{e.logement.titre}</p>
-                  <p className="text-[10px] text-foreground-muted">Cli : {e.locataire.prenom} {e.locataire.nom.charAt(0)}.</p>
+                <div key={e.id} className="pt-1">
+                  <p className="font-display text-xs font-bold text-forest-950 truncate">{e.logement.titre}</p>
+                  <p className="text-[10px] text-foreground-muted">Client : {e.locataire.prenom} {e.locataire.nom.charAt(0)}.</p>
                 </div>
               ))
             )}
           </div>
 
-          {/* Retours */}
-          <div>
-            <div className="flex items-center gap-1.5 mb-1.5">
-              <LogIn className="w-3.5 h-3.5 text-emerald-500" />
-              <span className="text-[10px] font-black text-foreground-muted uppercase tracking-wider">
-                Retours ({todayEvents.filter(e => e.type === 'IN').length})
+          {/* Arrivées */}
+          <div className="p-3 rounded-inner bg-background-alt border border-border/60 space-y-1.5">
+            <div className="flex items-center gap-1.5">
+              <LogIn className="w-3.5 h-3.5 text-lime-600" />
+              <span className="text-[10px] font-extrabold text-forest-950 uppercase tracking-wider">
+                Arrivées ({todayEvents.filter(e => e.type === 'IN').length})
               </span>
             </div>
             {todayEvents.filter(e => e.type === 'IN').length === 0 ? (
-              <p className="text-[10px] text-foreground-muted italic pl-1">Aucune arrivée prévue</p>
+              <p className="text-[10px] text-foreground-muted italic">Aucune arrivée prévue</p>
             ) : (
               todayEvents.filter(e => e.type === 'IN').map(e => (
-                <div key={e.id} className="pl-1 mb-1.5">
-                  <p className="text-xs font-bold text-foreground truncate">{e.logement.titre}</p>
-                  <p className="text-[10px] text-foreground-muted">Cli : {e.locataire.prenom} {e.locataire.nom.charAt(0)}.</p>
+                <div key={e.id} className="pt-1">
+                  <p className="font-display text-xs font-bold text-forest-950 truncate">{e.logement.titre}</p>
+                  <p className="text-[10px] text-foreground-muted">Client : {e.locataire.prenom} {e.locataire.nom.charAt(0)}.</p>
                 </div>
               ))
             )}

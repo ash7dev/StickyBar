@@ -35,7 +35,7 @@ interface ThemeProviderProps {
 export function ThemeProvider({
   children,
   defaultMode = 'light',
-  storageKey = 'immoloc-theme',
+  storageKey = 'klef-theme',
 }: ThemeProviderProps) {
   const [mode, setModeState] = useState<ThemeMode>(defaultMode);
   const [resolved, setResolved] = useState<'light' | 'dark'>('light');

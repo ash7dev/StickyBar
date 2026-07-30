@@ -26,7 +26,7 @@ interface Props {
   checkoutPhotos: Photo[];
 }
 
-/* ─── Config ──────────────────────────────────────────────────────────────── */
+/* ─── Config (Klef Design System v2) ──────────────────────────────────── */
 
 const CATEGORIE_LABEL: Record<string, string> = {
   SALON: 'Salon', CHAMBRE: 'Chambre', CUISINE: 'Cuisine',
@@ -35,8 +35,8 @@ const CATEGORIE_LABEL: Record<string, string> = {
 };
 
 const UPLOADER_CFG: Record<string, { label: string; icon: typeof User; accent: string }> = {
-  PROPRIO:   { label: 'Propriétaire', icon: Home, accent: 'text-emerald-600 bg-emerald-50 border-emerald-100' },
-  LOCATAIRE: { label: 'Locataire',    icon: User, accent: 'text-amber-600 bg-amber-50 border-amber-100' },
+  PROPRIO:   { label: 'Propriétaire', icon: Home, accent: 'text-forest-800 bg-forest-50 border-forest-100' },
+  LOCATAIRE: { label: 'Locataire',    icon: User, accent: 'text-amber-800 bg-amber-50 border-amber-200' },
 };
 
 function dateTimeFull(s: string) {
@@ -75,7 +75,6 @@ function Lightbox({
     return () => window.removeEventListener('keydown', handleKey);
   }, [onClose, goNext, goPrev]);
 
-  // Prevent body scroll
   useEffect(() => {
     document.body.style.overflow = 'hidden';
     return () => { document.body.style.overflow = ''; };
@@ -92,15 +91,15 @@ function Lightbox({
       {/* Close button */}
       <button
         onClick={onClose}
-        className="absolute top-4 right-4 z-20 w-10 h-10 rounded-full bg-white/10 hover:bg-white/20 border border-white/10 flex items-center justify-center transition-all duration-200 backdrop-blur-sm"
+        className="absolute top-4 right-4 z-20 w-10 h-10 rounded-inner bg-forest-900 hover:bg-forest-800 border border-forest-800 flex items-center justify-center transition-all duration-200 backdrop-blur-sm text-forest-200"
       >
         <X className="w-4 h-4 text-white" />
       </button>
 
       {/* Counter */}
-      <div className="absolute top-4 left-4 z-20 px-4 py-2 rounded-full bg-white/10 border border-white/10 backdrop-blur-sm">
+      <div className="absolute top-4 left-4 z-20 px-4 py-2 rounded-pill bg-forest-900 border border-forest-800 backdrop-blur-sm">
         <span className="text-sm font-bold text-white tabular-nums">
-          {idx + 1} <span className="text-white/50">/ {photos.length}</span>
+          {idx + 1} <span className="text-forest-300">/ {photos.length}</span>
         </span>
       </div>
 
@@ -109,22 +108,22 @@ function Lightbox({
         <>
           <button
             onClick={goPrev}
-            className="absolute left-3 md:left-6 z-20 w-11 h-11 rounded-full bg-white/10 hover:bg-white/20 border border-white/10 flex items-center justify-center transition-all duration-200 backdrop-blur-sm group"
+            className="absolute left-3 md:left-6 z-20 w-11 h-11 rounded-inner bg-forest-900 hover:bg-forest-800 border border-forest-800 flex items-center justify-center transition-all duration-200 backdrop-blur-sm text-white"
           >
-            <ChevronLeft className="w-5 h-5 text-white group-hover:scale-110 transition-transform" />
+            <ChevronLeft className="w-5 h-5 text-white" />
           </button>
           <button
             onClick={goNext}
-            className="absolute right-3 md:right-6 z-20 w-11 h-11 rounded-full bg-white/10 hover:bg-white/20 border border-white/10 flex items-center justify-center transition-all duration-200 backdrop-blur-sm group"
+            className="absolute right-3 md:right-6 z-20 w-11 h-11 rounded-inner bg-forest-900 hover:bg-forest-800 border border-forest-800 flex items-center justify-center transition-all duration-200 backdrop-blur-sm text-white"
           >
-            <ChevronRight className="w-5 h-5 text-white group-hover:scale-110 transition-transform" />
+            <ChevronRight className="w-5 h-5 text-white" />
           </button>
         </>
       )}
 
       {/* Main image */}
       <div className="relative z-10 w-full max-w-4xl max-h-[80vh] mx-4 md:mx-8 aspect-auto">
-        <div className="relative w-full h-[70vh] rounded-2xl overflow-hidden bg-black/40">
+        <div className="relative w-full h-[70vh] rounded-card overflow-hidden bg-forest-950 border border-forest-800">
           <Image
             key={photo.id}
             src={photo.url}
@@ -140,18 +139,18 @@ function Lightbox({
         <div className="flex items-center justify-between gap-4 mt-4 px-1">
           <div className="flex items-center gap-3 flex-wrap">
             {/* Category */}
-            <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-white/10 border border-white/10 text-xs font-bold text-white backdrop-blur-sm">
-              <Camera className="w-3 h-3 text-white/60" />
+            <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-inner bg-forest-900 border border-forest-800 text-xs font-bold text-white backdrop-blur-sm">
+              <Camera className="w-3.5 h-3.5 text-lime-400" />
               {CATEGORIE_LABEL[photo.categorie] ?? photo.categorie}
             </span>
             {/* Uploader */}
-            <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-white/10 border border-white/10 text-xs font-bold text-white backdrop-blur-sm">
-              <UploaderIcon className="w-3 h-3 text-white/60" />
+            <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-inner bg-forest-900 border border-forest-800 text-xs font-bold text-white backdrop-blur-sm">
+              <UploaderIcon className="w-3.5 h-3.5 text-lime-400" />
               {uploaderCfg.label}
             </span>
           </div>
           {/* Date */}
-          <span className="text-xs font-medium text-white/50 shrink-0">
+          <span className="text-xs font-bold text-forest-300 shrink-0">
             {dateTimeFull(photo.creeLe)}
           </span>
         </div>
@@ -159,7 +158,7 @@ function Lightbox({
 
       {/* Thumbnail strip */}
       {photos.length > 1 && (
-        <div className="absolute bottom-4 left-1/2 -translate-x-1/2 z-20 flex items-center gap-2 px-4 py-3 rounded-2xl bg-white/10 border border-white/10 backdrop-blur-xl max-w-[90vw] overflow-x-auto"
+        <div className="absolute bottom-4 left-1/2 -translate-x-1/2 z-20 flex items-center gap-2 px-4 py-3 rounded-card bg-forest-950/90 border border-forest-800 backdrop-blur-xl max-w-[90vw] overflow-x-auto"
           style={{ scrollbarWidth: 'none' }}
         >
           {photos.map((p, i) => (
@@ -167,9 +166,9 @@ function Lightbox({
               key={p.id}
               onClick={() => setIdx(i)}
               className={cn(
-                'relative shrink-0 w-12 h-12 rounded-xl overflow-hidden border-2 transition-all duration-200',
+                'relative shrink-0 w-12 h-12 rounded-inner overflow-hidden border-2 transition-all duration-200',
                 i === idx
-                  ? 'border-white shadow-lg shadow-white/20 scale-110'
+                  ? 'border-lime-400 shadow-md scale-110'
                   : 'border-transparent opacity-50 hover:opacity-80',
               )}
             >
@@ -201,9 +200,9 @@ function PhotoGridItem({
       type="button"
       onClick={onClick}
       className={cn(
-        'group relative rounded-2xl overflow-hidden bg-neutral-100 border border-neutral-200/60',
-        'transition-all duration-300 hover:shadow-lg hover:shadow-neutral-900/10 hover:border-neutral-300',
-        'focus-visible:ring-2 focus-visible:ring-emerald-400 focus-visible:ring-offset-2',
+        'group relative rounded-inner overflow-hidden bg-background-alt border border-border/80',
+        'transition-all duration-300 hover:shadow-md hover:border-forest-300',
+        'focus-visible:ring-2 focus-visible:ring-lime-400 focus-visible:ring-offset-2',
         isLarge ? 'col-span-2 row-span-2' : '',
       )}
     >
@@ -217,18 +216,18 @@ function PhotoGridItem({
         />
 
         {/* Hover overlay */}
-        <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/0 to-black/0 opacity-0 group-hover:opacity-100 transition-all duration-300" />
+        <div className="absolute inset-0 bg-gradient-to-t from-forest-950/80 via-forest-950/20 to-transparent opacity-0 group-hover:opacity-100 transition-all duration-300" />
 
         {/* Zoom icon (hover) */}
         <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all duration-300">
-          <div className="w-10 h-10 rounded-full bg-white/20 backdrop-blur-sm border border-white/20 flex items-center justify-center transform scale-75 group-hover:scale-100 transition-transform duration-300">
-            <ZoomIn className="w-4 h-4 text-white" />
+          <div className="w-10 h-10 rounded-pill bg-forest-950/80 backdrop-blur-sm border border-lime-400/30 flex items-center justify-center transform scale-75 group-hover:scale-100 transition-transform duration-300">
+            <ZoomIn className="w-4 h-4 text-lime-400" />
           </div>
         </div>
 
-        {/* Category badge — always visible */}
+        {/* Category badge */}
         <div className="absolute top-2.5 left-2.5">
-          <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-white/90 backdrop-blur-sm border border-white/50 text-[10px] font-bold text-neutral-700 shadow-sm">
+          <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-pill bg-forest-950/85 backdrop-blur-sm border border-forest-800 text-[10px] font-bold text-white shadow-sm">
             {CATEGORIE_LABEL[photo.categorie] ?? photo.categorie}
           </span>
         </div>
@@ -236,7 +235,7 @@ function PhotoGridItem({
         {/* Uploader badge (hover) */}
         <div className="absolute bottom-2.5 left-2.5 opacity-0 group-hover:opacity-100 transition-all duration-300 translate-y-1 group-hover:translate-y-0">
           <span className={cn(
-            'inline-flex items-center gap-1 px-2 py-1 rounded-lg border text-[10px] font-bold backdrop-blur-sm shadow-sm',
+            'inline-flex items-center gap-1 px-2 py-1 rounded-pill border text-[10px] font-bold backdrop-blur-sm shadow-sm',
             uploaderCfg.accent,
           )}>
             <UploaderIcon className="w-2.5 h-2.5" />
@@ -246,8 +245,8 @@ function PhotoGridItem({
 
         {/* Date (hover) */}
         <div className="absolute bottom-2.5 right-2.5 opacity-0 group-hover:opacity-100 transition-all duration-300 translate-y-1 group-hover:translate-y-0">
-          <span className="inline-flex items-center gap-1 px-2 py-1 rounded-lg bg-black/50 backdrop-blur-sm border border-white/10 text-[9px] font-bold text-white/80">
-            <Clock className="w-2.5 h-2.5" />
+          <span className="inline-flex items-center gap-1 px-2 py-1 rounded-pill bg-forest-950/80 backdrop-blur-sm border border-forest-800 text-[9px] font-bold text-forest-200">
+            <Clock className="w-2.5 h-2.5 text-lime-400" />
             {dateTimeFull(photo.creeLe)}
           </span>
         </div>
@@ -274,19 +273,19 @@ export function PhotosEtatLieuSection({ checkinPhotos, checkoutPhotos }: Props) 
       icon: LogIn,
       label: 'Check-in',
       count: checkinPhotos.length,
-      accent: 'text-emerald-600',
-      activeBg: 'bg-emerald-50 border-emerald-200',
-      dot: 'bg-emerald-500',
-      gradient: 'from-emerald-500 to-teal-500',
+      accent: 'text-forest-800',
+      activeBg: 'bg-forest-50 border-forest-100',
+      dot: 'bg-lime-400',
+      gradient: 'from-forest-800 to-forest-950',
     },
     CHECKOUT: {
       icon: LogOut,
       label: 'Check-out',
       count: checkoutPhotos.length,
-      accent: 'text-emerald-600',
-      activeBg: 'bg-emerald-50 border-emerald-200',
-      dot: 'bg-emerald-500',
-      gradient: 'from-emerald-500 to-emerald-600',
+      accent: 'text-forest-800',
+      activeBg: 'bg-forest-50 border-forest-100',
+      dot: 'bg-lime-400',
+      gradient: 'from-forest-800 to-forest-950',
     },
   } as const;
 
@@ -299,18 +298,17 @@ export function PhotosEtatLieuSection({ checkinPhotos, checkoutPhotos }: Props) 
   return (
     <>
       <div className={cn(
-        'bg-white/80 backdrop-blur-sm border border-neutral-200/80 rounded-2xl overflow-hidden',
-        'shadow-sm shadow-neutral-900/5',
+        'bg-background-card border border-border/80 rounded-card overflow-hidden shadow-2xs',
       )}>
         {/* ── Header ── */}
-        <div className="flex items-center justify-between px-5 py-4 border-b border-neutral-200/60">
+        <div className="flex items-center justify-between px-6 py-5 border-b border-border/60">
           <div className="flex items-center gap-3">
-            <div className="w-8 h-8 rounded-xl bg-neutral-100 border border-neutral-200/60 flex items-center justify-center shrink-0">
-              <Camera className="w-4 h-4 text-neutral-600" />
+            <div className="w-9 h-9 rounded-inner bg-forest-950 text-lime-400 border border-lime-400/20 flex items-center justify-center shrink-0 shadow-2xs">
+              <Camera className="w-4 h-4 text-lime-400" />
             </div>
             <div>
-              <span className="text-sm font-bold text-neutral-800">Photos état des lieux</span>
-              <p className="text-[10px] text-neutral-400 mt-0.5">
+              <span className="font-display text-base font-bold text-forest-950">Photos état des lieux</span>
+              <p className="text-xs text-foreground-muted mt-0.5">
                 {checkinPhotos.length + checkoutPhotos.length} photo{(checkinPhotos.length + checkoutPhotos.length) > 1 ? 's' : ''} au total
               </p>
             </div>
@@ -318,8 +316,8 @@ export function PhotosEtatLieuSection({ checkinPhotos, checkoutPhotos }: Props) 
 
           {/* Verification badge */}
           {hasBoth && (
-            <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-emerald-50 border border-emerald-100 text-[10px] font-bold text-emerald-700">
-              <CheckCircle2 className="w-3 h-3" />
+            <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-pill bg-forest-50 border border-forest-100 text-xs font-bold text-forest-800">
+              <CheckCircle2 className="w-3.5 h-3.5 text-forest-600" />
               Complet
             </span>
           )}
@@ -327,8 +325,8 @@ export function PhotosEtatLieuSection({ checkinPhotos, checkoutPhotos }: Props) 
 
         {/* ── Segmented Tabs ── */}
         {hasBoth && (
-          <div className="px-5 pt-4">
-            <div className="flex bg-neutral-100/80 rounded-xl p-1 border border-neutral-200/50">
+          <div className="px-6 pt-5">
+            <div className="flex bg-background-alt rounded-inner p-1 border border-border/80">
               {(['CHECKIN', 'CHECKOUT'] as const).map((tab) => {
                 const cfg = TAB_CFG[tab];
                 const TabIcon = cfg.icon;
@@ -338,19 +336,19 @@ export function PhotosEtatLieuSection({ checkinPhotos, checkoutPhotos }: Props) 
                     key={tab}
                     onClick={() => setActiveTab(tab)}
                     className={cn(
-                      'flex-1 flex items-center justify-center gap-2 py-2.5 px-4 rounded-lg text-xs font-bold transition-all duration-300',
+                      'flex-1 flex items-center justify-center gap-2 py-2.5 px-4 rounded-inner text-xs font-bold transition-all duration-300',
                       isActive
-                        ? 'bg-white shadow-sm border border-neutral-200/60 text-neutral-900'
-                        : 'text-neutral-400 hover:text-neutral-600',
+                        ? 'bg-background-card shadow-2xs border border-border text-forest-950'
+                        : 'text-foreground-muted hover:text-forest-950',
                     )}
                   >
                     <TabIcon className={cn('w-3.5 h-3.5', isActive ? cfg.accent : '')} />
                     {cfg.label}
                     <span className={cn(
-                      'inline-flex items-center justify-center min-w-[20px] h-5 px-1.5 rounded-full text-[10px] font-black transition-all duration-300',
+                      'inline-flex items-center justify-center min-w-[20px] h-5 px-1.5 rounded-pill text-[10px] font-extrabold transition-all duration-300',
                       isActive
-                        ? `bg-gradient-to-r ${cfg.gradient} text-white shadow-sm`
-                        : 'bg-neutral-200/80 text-neutral-400',
+                        ? `bg-forest-950 text-lime-400 shadow-2xs`
+                        : 'bg-background-alt text-foreground-muted',
                     )}>
                       {cfg.count}
                     </span>
@@ -363,7 +361,7 @@ export function PhotosEtatLieuSection({ checkinPhotos, checkoutPhotos }: Props) 
 
         {/* ── Single tab header (when only one type exists) ── */}
         {!hasBoth && (
-          <div className="px-5 pt-4">
+          <div className="px-6 pt-5">
             {(() => {
               const tab = hasCheckin ? 'CHECKIN' : 'CHECKOUT';
               const cfg = TAB_CFG[tab];
@@ -371,14 +369,14 @@ export function PhotosEtatLieuSection({ checkinPhotos, checkoutPhotos }: Props) 
               return (
                 <div className="flex items-center gap-2">
                   <span className={cn(
-                    'inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl border text-xs font-bold',
+                    'inline-flex items-center gap-1.5 px-3 py-1.5 rounded-pill border text-xs font-bold',
                     cfg.activeBg, cfg.accent,
                   )}>
-                    <span className={cn('w-1.5 h-1.5 rounded-full', cfg.dot)} />
-                    <TabIcon className="w-3 h-3" />
+                    <span className={cn('w-1.5 h-1.5 rounded-pill', cfg.dot)} />
+                    <TabIcon className="w-3.5 h-3.5" />
                     {cfg.label}
                   </span>
-                  <span className="text-xs text-neutral-400">
+                  <span className="text-xs text-foreground-muted font-medium">
                     — {cfg.count} photo{cfg.count > 1 ? 's' : ''}
                   </span>
                 </div>
@@ -388,7 +386,7 @@ export function PhotosEtatLieuSection({ checkinPhotos, checkoutPhotos }: Props) 
         )}
 
         {/* ── Photo Grid ── */}
-        <div className="p-5">
+        <div className="p-6">
           <div className={cn(
             'grid gap-3 transition-all duration-300',
             activePhotos.length === 1
@@ -411,7 +409,6 @@ export function PhotosEtatLieuSection({ checkinPhotos, checkoutPhotos }: Props) 
 
           {/* Summary under photos */}
           <div className="mt-4 flex items-center gap-4 flex-wrap">
-            {/* Categories breakdown */}
             {(() => {
               const cats = activePhotos.reduce<Record<string, number>>((acc, p) => {
                 acc[p.categorie] = (acc[p.categorie] ?? 0) + 1;
@@ -420,11 +417,11 @@ export function PhotosEtatLieuSection({ checkinPhotos, checkoutPhotos }: Props) 
               return Object.entries(cats).map(([cat, count]) => (
                 <span
                   key={cat}
-                  className="inline-flex items-center gap-1.5 text-[10px] font-bold text-neutral-400"
+                  className="inline-flex items-center gap-1.5 text-[10px] font-extrabold text-foreground-muted"
                 >
-                  <span className="w-1 h-1 rounded-full bg-neutral-300" />
+                  <span className="w-1.5 h-1.5 rounded-full bg-forest-300" />
                   {CATEGORIE_LABEL[cat] ?? cat}
-                  {count > 1 && <span className="text-neutral-300">×{count}</span>}
+                  {count > 1 && <span className="text-forest-700">×{count}</span>}
                 </span>
               ));
             })()}

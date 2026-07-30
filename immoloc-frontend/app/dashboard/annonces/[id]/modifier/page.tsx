@@ -7,41 +7,53 @@ import { NEST_API } from '@/lib/nestjs/endpoints';
 import type { ListingDetail } from '@/lib/nestjs/types';
 import { EditListingForm } from '@/features/listings/components/owner/EditListingForm';
 import Link from 'next/link';
-import { ArrowLeft, RefreshCw } from 'lucide-react';
+import { ArrowLeft, RefreshCw, Loader2, AlertTriangle } from 'lucide-react';
 
 /* ─── Skeleton ────────────────────────────────────────────────────────────── */
 
 function Skeleton() {
   return (
-    <div className="min-h-screen bg-neutral-50 flex items-center justify-center">
-      <div className="flex flex-col items-center gap-4">
-        <div className="w-10 h-10 rounded-full border-2 border-emerald-500 border-t-transparent animate-spin" />
-        <p className="text-sm font-semibold text-neutral-500">Chargement de votre annonce…</p>
+    <div className="min-h-screen bg-background-alt flex items-center justify-center p-6">
+      <div className="flex flex-col items-center gap-4 text-center">
+        <div className="w-14 h-14 rounded-inner bg-forest-950 border border-forest-800 flex items-center justify-center shadow-lg">
+          <Loader2 className="w-7 h-7 text-lime-400 animate-spin" />
+        </div>
+        <div>
+          <h3 className="font-display text-lg font-bold text-foreground">Chargement de votre annonce…</h3>
+          <p className="text-xs text-foreground-muted mt-1">Veuillez patienter quelques instants</p>
+        </div>
       </div>
     </div>
   );
 }
 
-/* ─── Error ───────────────────────────────────────────────────────────────── */
+/* ─── Error State ─────────────────────────────────────────────────────────── */
 
 function ErrorState({ id, onRetry }: { id: string; onRetry: () => void }) {
   return (
-    <div className="min-h-screen bg-neutral-50 flex items-center justify-center p-6">
-      <div className="flex flex-col items-center gap-4 text-center max-w-xs">
-        <div className="w-14 h-14 rounded-2xl bg-rose-50 border border-rose-100 flex items-center justify-center">
-          <RefreshCw className="w-6 h-6 text-rose-400" />
+    <div className="min-h-screen bg-background-alt flex items-center justify-center p-6">
+      <div className="card p-8 max-w-md w-full text-center space-y-5 shadow-xl">
+        <div className="w-14 h-14 rounded-inner bg-error-50 border border-error-500/30 flex items-center justify-center text-error-600 mx-auto">
+          <AlertTriangle className="w-7 h-7 text-error-600" />
         </div>
         <div>
-          <p className="font-bold text-neutral-900 mb-1">Impossible de charger l&apos;annonce</p>
-          <p className="text-sm text-neutral-500">Vérifiez votre connexion puis réessayez.</p>
+          <h3 className="font-display text-xl font-bold text-foreground">Impossible de charger l&apos;annonce</h3>
+          <p className="text-xs text-foreground-muted mt-1.5 leading-relaxed">
+            Vérifiez votre connexion internet ou la validité de l&apos;identifiant de l&apos;annonce.
+          </p>
         </div>
-        <div className="flex items-center gap-3">
-          <button onClick={onRetry}
-            className="flex items-center gap-2 px-4 py-2.5 bg-emerald-500 hover:bg-emerald-600 rounded-xl text-sm font-bold text-white shadow-lg shadow-emerald-500/20 transition-all">
+        <div className="flex items-center justify-center gap-3 pt-2">
+          <button
+            type="button"
+            onClick={onRetry}
+            className="btn-action text-xs px-5 justify-center cursor-pointer"
+          >
             <RefreshCw className="w-4 h-4" /> Réessayer
           </button>
-          <Link href={`/dashboard/annonces/${id}`}
-            className="flex items-center gap-2 px-4 py-2.5 bg-white border border-neutral-200 rounded-xl text-sm font-bold text-neutral-700 hover:bg-neutral-50 transition-all">
+          <Link
+            href={`/dashboard/annonces/${id}`}
+            className="btn-ghost text-xs px-5 justify-center"
+          >
             <ArrowLeft className="w-4 h-4" /> Retour
           </Link>
         </div>

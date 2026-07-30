@@ -4,11 +4,12 @@ import { useState, useEffect, useRef } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import {
-  Bell, Plus, LogOut, ChevronDown, Settings, ArrowLeftRight
+  Bell, Plus, LogOut, ChevronDown, Settings, ArrowLeftRight, Menu, Search
 } from 'lucide-react';
 import { createClient } from '@/lib/supabase/client';
 import { useRoleStore } from '@/stores/role.store';
 import { useSwitchRole } from '@/features/auth/hooks/use-switch-role';
+import { useCurrentUser } from '@/hooks/use-current-user';
 import { cn } from '@/lib/utils/cn';
 
 const PAGE_TITLES: Array<[string, string]> = [
@@ -19,7 +20,7 @@ const PAGE_TITLES: Array<[string, string]> = [
   ['/dashboard/profil', 'Mon profil'],
   ['/dashboard/parametres', 'Paramètres'],
   ['/dashboard/annonces', 'Mes annonces'],
-  ['/dashboard', "Dashboard"],
+  ['/dashboard', "Vue d'ensemble"],
 ];
 
 interface DesktopHeaderProps {
@@ -30,16 +31,12 @@ export function DesktopHeader({ onMenuToggle }: DesktopHeaderProps) {
   const pathname = usePathname();
   const clearSession = useRoleStore((s) => s.clearSession);
   const { switchRole, isSwitching } = useSwitchRole();
-  const [user, setUser] = useState<{ email?: string; user_metadata?: Record<string, string> } | null>(null);
+  const { data: user } = useCurrentUser();
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
   const [notifOpen, setNotifOpen] = useState(false);
   const notifRef = useRef<HTMLDivElement>(null);
   const supabase = createClient();
-
-  useEffect(() => {
-    supabase.auth.getUser().then(({ data }) => setUser(data.user));
-  }, [supabase.auth]);
 
   useEffect(() => {
     function handleClickOutside(e: MouseEvent) {
@@ -62,53 +59,79 @@ export function DesktopHeader({ onMenuToggle }: DesktopHeaderProps) {
   }
 
   const title = PAGE_TITLES.find(([key]) => pathname === key || pathname.startsWith(key + '/'))?.[1] ?? 'Dashboard';
-  const prenom = user?.user_metadata?.prenom;
-  const nom = user?.user_metadata?.nom;
+  const prenom = user?.prenom;
+  const nom = user?.nom;
   const initials = prenom ? prenom[0].toUpperCase() : (user?.email?.[0]?.toUpperCase() ?? '?');
 
-  // Format: "Bonjour, Prénom Nom" ou "Dashboard" si pas de données
   const fullName = prenom && nom ? `${prenom} ${nom}` : (prenom || title);
   const greeting = prenom ? `Bonjour, ${fullName}` : title;
 
   return (
-    <header className="sticky top-0 z-50 bg-background border-b border-border rounded-b-3xl shadow-sm">
-      <div className="px-4 sm:px-6 py-4">
+    <header className="sticky top-0 z-40 bg-background-card/95 backdrop-blur-md border-b border-border/80 text-forest-950 shadow-2xs">
+      <div className="px-5 sm:px-8 py-4.5">
         <div className="flex items-center justify-between gap-4">
 
-          {/* ── Gauche : Bonjour, Prénom Nom ───────────────── */}
-          <div>
-            <h1 className="text-xl sm:text-2xl font-bold text-foreground tracking-tight">
-              {greeting}
-            </h1>
+          {/* Gauche : Bouton Hamburger Mobile + Titre */}
+          <div className="flex items-center gap-3.5">
+            <button
+              onClick={onMenuToggle}
+              aria-label="Ouvrir le menu"
+              className="lg:hidden p-2.5 rounded-inner bg-background-alt border border-border/80 text-forest-950 hover:bg-background-card transition-all"
+            >
+              <Menu className="h-5 w-5 text-forest-950" />
+            </button>
+
+            <div>
+              {/* Titre principal */}
+              <h1 className="font-display text-lg sm:text-xl font-extrabold text-forest-950 tracking-tight leading-none">
+                {greeting}
+              </h1>
+            </div>
           </div>
 
-          {/* ── Droite : Notifications + Créer annonce + Avatar ──── */}
-          <div className="flex items-center gap-2 sm:gap-3">
+          {/* Centre : Barre de Recherche Rapide (Desktop) */}
+          <div className="hidden md:flex items-center flex-1 max-w-sm mx-6">
+            <div className="relative w-full">
+              <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-foreground-muted" />
+              <input
+                type="text"
+                placeholder="Rechercher une réservation, un bien..."
+                className="w-full h-10 pl-10 pr-9 bg-background-alt border border-border/80 rounded-pill text-xs font-semibold text-forest-950 placeholder:text-foreground-faint focus:outline-none focus:border-forest-600/50 transition-all shadow-2xs"
+              />
+              <kbd className="absolute right-3 top-1/2 -translate-y-1/2 px-1.5 py-0.5 rounded bg-background-card border border-border/80 text-[9px] font-extrabold text-foreground-muted">
+                ⌘K
+              </kbd>
+            </div>
+          </div>
 
-            {/* Notification */}
+          {/* Droite : Notifications + Créer annonce + Avatar Dropdown */}
+          <div className="flex items-center gap-3">
+
+            {/* Notification Dropdown */}
             <div ref={notifRef} className="relative">
               <button
                 onClick={() => setNotifOpen((v) => !v)}
-                className="flex items-center justify-center w-10 h-10 rounded-full bg-background-alt hover:bg-neutral-200 text-foreground transition-all"
+                className="relative flex items-center justify-center w-10 h-10 rounded-inner bg-background-alt border border-border/80 hover:bg-background-card text-forest-950 transition-all shadow-2xs"
               >
-                <Bell className="h-5 w-5" />
+                <Bell className="h-4.5 w-4.5 text-forest-950" />
+                <span className="absolute top-2 right-2 w-2 h-2 rounded-full bg-lime-500 animate-pulse" />
               </button>
 
               {notifOpen && (
-                <div className="absolute right-0 top-full mt-2 w-80 rounded-2xl border border-border bg-background-card shadow-xl overflow-hidden z-50 animate-in fade-in slide-in-from-top-2 duration-200">
-                  <div className="px-4 py-3 border-b border-border flex justify-between items-center">
-                    <p className="text-sm font-bold text-foreground">Notifications</p>
-                    <button className="text-xs font-semibold text-emerald-600 hover:text-emerald-700 transition-colors">
+                <div className="absolute right-0 top-full mt-2.5 w-80 rounded-card border border-border/80 bg-background-card shadow-xl overflow-hidden z-50 animate-in fade-in slide-in-from-top-2 duration-200">
+                  <div className="px-4 py-3.5 border-b border-border flex justify-between items-center bg-background-alt">
+                    <p className="font-display text-xs font-bold text-forest-950">Notifications</p>
+                    <button className="text-[10px] font-extrabold text-lime-600 hover:text-lime-700 transition-colors">
                       Tout marquer lu
                     </button>
                   </div>
 
-                  <div className="p-6 text-center">
-                    <div className="w-12 h-12 rounded-full bg-background-alt flex items-center justify-center mx-auto mb-3">
-                      <Bell className="h-5 w-5 text-foreground-muted" />
+                  <div className="p-6 text-center space-y-2">
+                    <div className="w-10 h-10 rounded-inner bg-forest-950 text-lime-400 border border-lime-400/20 flex items-center justify-center mx-auto shadow-2xs">
+                      <Bell className="h-5 w-5 text-lime-400" />
                     </div>
-                    <p className="text-sm font-semibold text-foreground mb-1">Aucune notification</p>
-                    <p className="text-xs text-foreground-muted">Vous êtes à jour !</p>
+                    <p className="font-display text-sm font-bold text-forest-950">Aucune notification non lue</p>
+                    <p className="text-xs text-foreground-muted">Toutes vos alertes apparaîtront ici.</p>
                   </div>
                 </div>
               )}
@@ -117,58 +140,59 @@ export function DesktopHeader({ onMenuToggle }: DesktopHeaderProps) {
             {/* Bouton Créer une annonce */}
             <Link
               href="/dashboard/annonces/nouvelle"
-              className="flex items-center gap-2 h-10 px-4 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-sm font-semibold shadow-sm transition-all active:scale-95"
+              className="inline-flex items-center gap-2 h-10 px-4.5 rounded-pill bg-lime-400 hover:bg-lime-300 text-forest-950 text-xs font-extrabold shadow-md transition-all active:scale-95"
             >
-              <Plus className="h-4 w-4" />
-              <span>Créer une annonce</span>
+              <Plus className="h-4 w-4 text-forest-950" />
+              <span className="hidden sm:inline">Créer une annonce</span>
+              <span className="sm:hidden">Créer</span>
             </Link>
 
             {/* Avatar avec dropdown */}
             <div ref={dropdownRef} className="relative">
               <button
                 onClick={() => setDropdownOpen((v) => !v)}
-                className="flex items-center h-10 gap-2 pl-1 pr-3 rounded-full bg-background-alt hover:bg-neutral-200 border border-border transition-all"
+                className="flex items-center h-10 gap-2.5 pl-1.5 pr-3 rounded-pill bg-background-alt hover:bg-background-card border border-border/80 transition-all shadow-2xs"
               >
-                <div className="w-8 h-8 rounded-full bg-emerald-600 flex items-center justify-center text-white text-sm font-bold">
+                <div className="w-7.5 h-7.5 rounded-inner bg-forest-950 text-lime-400 border border-lime-400/20 flex items-center justify-center font-display font-extrabold text-xs shadow-2xs">
                   {initials}
                 </div>
-                <ChevronDown className={cn('h-4 w-4 text-foreground-muted transition-transform', dropdownOpen && 'rotate-180')} />
+                <ChevronDown className={cn('h-3.5 w-3.5 text-foreground-muted transition-transform', dropdownOpen && 'rotate-180')} />
               </button>
 
               {dropdownOpen && (
-                <div className="absolute right-0 top-full mt-2 w-64 rounded-2xl border border-border bg-background-card shadow-xl overflow-hidden z-50 animate-in fade-in slide-in-from-top-2 duration-200">
-                  <div className="px-4 py-3 border-b border-border">
-                    <p className="text-xs font-semibold text-foreground-muted mb-1">Connecté en tant que</p>
-                    <p className="text-sm font-semibold text-foreground truncate">{user?.email}</p>
+                <div className="absolute right-0 top-full mt-2.5 w-64 rounded-card border border-border/80 bg-background-card shadow-xl overflow-hidden z-50 animate-in fade-in slide-in-from-top-2 duration-200">
+                  <div className="px-4 py-3.5 border-b border-border bg-background-alt">
+                    <p className="text-[10px] font-extrabold text-foreground-muted uppercase tracking-wider mb-0.5">Connecté en tant que</p>
+                    <p className="text-xs font-bold text-forest-950 truncate">{user?.email}</p>
                   </div>
 
                   <div className="p-2 space-y-1">
                     <button
                       onClick={() => { setDropdownOpen(false); switchRole('LOCATAIRE'); }}
                       disabled={isSwitching}
-                      className="w-full flex items-center gap-3 px-3 py-2.5 text-sm font-medium text-foreground hover:bg-background-alt rounded-lg transition-colors disabled:opacity-50"
+                      className="w-full flex items-center gap-3 px-3 py-2.5 text-xs font-bold text-forest-950 hover:bg-background-alt rounded-inner transition-colors disabled:opacity-50"
                     >
-                      <ArrowLeftRight className="h-4 w-4" />
-                      Mode Locataire
+                      <ArrowLeftRight className="h-4 w-4 text-lime-600" />
+                      <span>Mode Locataire</span>
                     </button>
 
                     <Link
                       href="/dashboard/parametres"
                       onClick={() => setDropdownOpen(false)}
-                      className="flex items-center gap-3 px-3 py-2.5 text-sm font-medium text-foreground hover:bg-background-alt rounded-lg transition-colors"
+                      className="flex items-center gap-3 px-3 py-2.5 text-xs font-bold text-forest-950 hover:bg-background-alt rounded-inner transition-colors"
                     >
-                      <Settings className="h-4 w-4" />
-                      Paramètres
+                      <Settings className="h-4 w-4 text-foreground-muted" />
+                      <span>Paramètres</span>
                     </Link>
 
-                    <div className="h-px bg-border my-1" />
+                    <div className="h-px bg-border/60 my-1" />
 
                     <button
                       onClick={handleLogout}
-                      className="w-full flex items-center gap-3 px-3 py-2.5 text-sm font-medium text-error-600 hover:bg-error-50 rounded-lg transition-all"
+                      className="w-full flex items-center gap-3 px-3 py-2.5 text-xs font-bold text-error-700 hover:bg-error-50 rounded-inner transition-all"
                     >
-                      <LogOut className="h-4 w-4" />
-                      Déconnexion
+                      <LogOut className="h-4 w-4 text-error-600" />
+                      <span>Déconnexion</span>
                     </button>
                   </div>
                 </div>

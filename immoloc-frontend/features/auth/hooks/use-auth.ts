@@ -124,12 +124,20 @@ export function useAuth() {
     router.refresh();
   }
 
-  async function logout() {
+  async function logout(redirectTo: string = '/') {
     await authApi.logout().catch(() => {});
     await supabase.auth.signOut();
     clearSession();
-    router.push('/login');
+    router.push(redirectTo);
     router.refresh();
+  }
+
+  async function resendConfirmation(email: string) {
+    const { error } = await supabase.auth.resend({
+      type: 'signup',
+      email,
+    });
+    if (error) throw new Error(mapSupabaseError(error.message));
   }
 
   return {
@@ -139,6 +147,7 @@ export function useAuth() {
     verifyPhoneOtp,
     loginWithGoogle,
     completeGoogleProfile,
+    resendConfirmation,
     logout,
   };
 }

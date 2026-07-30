@@ -1,18 +1,25 @@
-import { IsString, IsNotEmpty, MinLength, IsDateString } from 'class-validator';
+import { IsString, IsOptional, MinLength, IsDateString } from 'class-validator';
 
 export class UpdateProfileDto {
   @IsString()
-  @IsNotEmpty()
+  @IsOptional()
   @MinLength(2)
-  prenom!: string;
+  prenom?: string;
 
   @IsString()
-  @IsNotEmpty()
+  @IsOptional()
   @MinLength(2)
-  nom!: string;
+  nom?: string;
+
+  @IsString()
+  @IsOptional()
+  avatarUrl?: string;
+
+  @IsString()
+  @IsOptional()
+  telephone?: string;
 
   @IsDateString()
-  @IsNotEmpty()
-  dateNaissance!: string;
+  @IsOptional()
+  dateNaissance?: string;
 }
-

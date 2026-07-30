@@ -15,30 +15,24 @@ interface Props {
 
 function ReadRow({
   icon: Icon,
-  iconCls,
-  bgCls,
-  borderCls,
   label,
   value,
   mono = false,
 }: {
   icon: React.ComponentType<{ className?: string }>;
-  iconCls: string;
-  bgCls: string;
-  borderCls: string;
   label: string;
   value: string | null;
   mono?: boolean;
 }) {
   return (
-    <div className="flex items-center gap-3 py-3 border-b border-neutral-100 last:border-0">
-      <div className={`w-8 h-8 rounded-lg flex items-center justify-center shrink-0 border ${bgCls} ${borderCls}`}>
-        <Icon className={`w-4 h-4 ${iconCls}`} />
+    <div className="bg-background-alt p-3.5 rounded-inner border border-border/80 flex items-center gap-3.5">
+      <div className="w-8 h-8 rounded-inner bg-forest-950 text-lime-400 border border-lime-400/20 flex items-center justify-center shrink-0">
+        <Icon className="w-4 h-4 text-lime-400" />
       </div>
       <div className="flex-1 min-w-0">
-        <p className="text-[10px] font-black text-neutral-400 uppercase tracking-wider mb-0.5">{label}</p>
-        <p className={`text-sm font-semibold text-neutral-900 truncate ${mono ? 'font-mono text-xs' : ''}`}>
-          {value ?? <span className="text-neutral-300 font-normal italic text-xs">Non renseigné</span>}
+        <p className="text-[10px] font-extrabold text-foreground-muted uppercase tracking-wider mb-0.5">{label}</p>
+        <p className={`text-xs font-bold text-forest-950 truncate ${mono ? 'font-mono' : ''}`}>
+          {value ?? <span className="text-foreground-faint font-normal italic">Non renseigné</span>}
         </p>
       </div>
     </div>
@@ -49,9 +43,6 @@ function ReadRow({
 
 function EditRow({
   icon: Icon,
-  iconCls,
-  bgCls,
-  borderCls,
   label,
   value,
   onChange,
@@ -59,9 +50,6 @@ function EditRow({
   placeholder,
 }: {
   icon: React.ComponentType<{ className?: string }>;
-  iconCls: string;
-  bgCls: string;
-  borderCls: string;
   label: string;
   value: string;
   onChange: (v: string) => void;
@@ -69,18 +57,18 @@ function EditRow({
   placeholder?: string;
 }) {
   return (
-    <div className="flex items-center gap-3 py-2.5 border-b border-neutral-100 last:border-0">
-      <div className={`w-8 h-8 rounded-lg flex items-center justify-center shrink-0 border ${bgCls} ${borderCls}`}>
-        <Icon className={`w-4 h-4 ${iconCls}`} />
+    <div className="bg-background-alt p-3.5 rounded-inner border border-border/80 flex items-center gap-3.5 relative">
+      <div className="w-8 h-8 rounded-inner bg-forest-950 text-lime-400 border border-lime-400/20 flex items-center justify-center shrink-0">
+        <Icon className="w-4 h-4 text-lime-400" />
       </div>
-      <div className="flex-1 min-w-0">
-        <p className="text-[10px] font-black text-neutral-400 uppercase tracking-wider mb-1">{label}</p>
+      <div className="flex-1 min-w-0 relative z-10">
+        <p className="text-[10px] font-extrabold text-foreground-muted uppercase tracking-wider mb-1">{label}</p>
         <input
           type={type}
           value={value}
           onChange={(e) => onChange(e.target.value)}
           placeholder={placeholder}
-          className="w-full text-sm font-semibold text-neutral-900 bg-neutral-50 border border-neutral-200 rounded-lg px-3 py-1.5 outline-none focus:border-emerald-400 focus:ring-2 focus:ring-emerald-400/20 transition-all placeholder:text-neutral-300 placeholder:font-normal"
+          className="w-full text-xs font-bold text-forest-950 bg-background-card border border-border rounded-inner px-3 py-1.5 outline-none focus:border-forest-600 focus:ring-2 focus:ring-forest-600/20 transition-all placeholder:text-foreground-faint placeholder:font-normal relative z-20"
         />
       </div>
     </div>
@@ -141,77 +129,75 @@ export function ProfileInfoCard({ user, onUpdated }: Props) {
   }
 
   return (
-    <div className="bg-white rounded-2xl border border-neutral-200/80 shadow-sm hover:shadow-lg hover:shadow-neutral-200/40 transition-all duration-300">
-
-      {/* ── Header — bleu uniforme ──────────────────────────── */}
-      <div className="flex items-center justify-between px-5 py-4 border-b border-emerald-100 bg-emerald-50 rounded-t-2xl">
+    <div className="bg-background-card rounded-card border border-border/80 p-5 space-y-4 shadow-2xs overflow-visible">
+      {/* Header */}
+      <div className="flex items-center justify-between pb-3 border-b border-border/60">
         <div className="flex items-center gap-3">
-          <div className="w-9 h-9 rounded-xl bg-emerald-100 flex items-center justify-center border border-emerald-200 shrink-0">
-            <User className="w-[17px] h-[17px] text-emerald-600" />
+          <div className="w-9 h-9 rounded-inner bg-forest-950 text-lime-400 border border-lime-400/20 flex items-center justify-center shrink-0 shadow-2xs">
+            <User className="w-4 h-4 text-lime-400" />
           </div>
           <div>
-            <p className="text-[10px] font-black text-emerald-400 uppercase tracking-widest">Profil</p>
-            <h3 className="text-sm font-bold text-neutral-900">Informations personnelles</h3>
+            <h3 className="font-display text-base font-bold text-forest-950">Informations personnelles</h3>
+            <p className="text-[10px] font-extrabold text-foreground-muted uppercase tracking-wider">Identité & Coordonnées</p>
           </div>
         </div>
 
         {isEditing ? (
           <div className="flex items-center gap-2">
-            <button onClick={handleCancel} disabled={isSaving}
-              className="w-8 h-8 flex items-center justify-center rounded-lg bg-white border border-neutral-200 text-neutral-400 hover:text-rose-500 hover:border-rose-200 transition-colors">
-              <X className="w-3.5 h-3.5" />
+            <button
+              onClick={handleCancel}
+              disabled={isSaving}
+              className="w-8 h-8 flex items-center justify-center rounded-inner bg-background-alt border border-border text-foreground-muted hover:text-error-600 transition-colors"
+            >
+              <X className="w-4 h-4" />
             </button>
-            <button onClick={handleSave} disabled={isSaving}
-              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-emerald-500 hover:bg-emerald-600 text-white text-[10px] font-bold transition-colors disabled:opacity-60">
-              {isSaving
-                ? <Loader2 className="w-3 h-3 animate-spin" />
-                : <Check className="w-3 h-3" />}
-              {isSaving ? 'Sauvegarde…' : 'Sauvegarder'}
+            <button
+              onClick={handleSave}
+              disabled={isSaving}
+              className="inline-flex items-center gap-1.5 px-4 py-2 rounded-pill bg-lime-400 hover:bg-lime-300 text-forest-950 text-xs font-extrabold transition-all shadow-md active:scale-95 disabled:opacity-60"
+            >
+              {isSaving ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Check className="w-3.5 h-3.5" />}
+              <span>{isSaving ? 'Sauvegarde…' : 'Sauvegarder'}</span>
             </button>
           </div>
         ) : (
-          <button onClick={() => setIsEditing(true)}
-            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-white border border-emerald-200 text-[10px] font-bold text-emerald-600 hover:bg-emerald-50 transition-colors">
-            <Pencil className="w-3 h-3" />
-            Modifier
+          <button
+            onClick={() => setIsEditing(true)}
+            className="inline-flex items-center gap-1.5 px-4 py-2 rounded-pill bg-lime-400 hover:bg-lime-300 text-forest-950 text-xs font-extrabold transition-all shadow-md active:scale-95"
+          >
+            <Pencil className="w-3.5 h-3.5" />
+            <span>Modifier</span>
           </button>
         )}
       </div>
 
-      {/* ── Erreur ─────────────────────────────────────────── */}
+      {/* Erreur */}
       {error && (
-        <div className="mx-5 mt-3 flex items-center gap-2 px-3 py-2.5 bg-rose-50 border border-rose-100 rounded-xl">
-          <X className="w-3.5 h-3.5 text-rose-500 shrink-0" />
-          <p className="text-xs text-rose-600 font-semibold">{error}</p>
+        <div className="flex items-center gap-2 px-3.5 py-2.5 bg-error-50 border border-error-200 rounded-inner">
+          <X className="w-4 h-4 text-error-600 shrink-0" />
+          <p className="text-xs text-error-700 font-bold">{error}</p>
         </div>
       )}
 
-      {/* ── Champs ─────────────────────────────────────────── */}
-      <div className="px-5 py-1">
+      {/* Grille de champs */}
+      <div className="grid sm:grid-cols-2 gap-3 overflow-visible">
         {isEditing ? (
           <>
-            <EditRow icon={User}     iconCls="text-emerald-500" bgCls="bg-emerald-50"  borderCls="border-emerald-100"
-              label="Prénom"           value={draft.prenom}        onChange={(v) => setDraft(d => ({ ...d, prenom: v }))}        placeholder="Votre prénom" />
-            <EditRow icon={User}     iconCls="text-emerald-500" bgCls="bg-emerald-50"  borderCls="border-emerald-100"
-              label="Nom de famille"   value={draft.nom}           onChange={(v) => setDraft(d => ({ ...d, nom: v }))}           placeholder="Votre nom" />
-            <EditRow icon={Phone}    iconCls="text-emerald-500" bgCls="bg-emerald-50" borderCls="border-emerald-100"
-              label="Téléphone"        value={draft.telephone}     onChange={(v) => setDraft(d => ({ ...d, telephone: v }))}     placeholder="+221 7X XXX XX XX" type="tel" />
-            <EditRow icon={Calendar} iconCls="text-amber-500"   bgCls="bg-amber-50"   borderCls="border-amber-100"
-              label="Date de naissance" value={draft.dateNaissance} onChange={(v) => setDraft(d => ({ ...d, dateNaissance: v }))} type="date" />
-            {/* Email — toujours lecture seule */}
-            <ReadRow icon={Mail} iconCls="text-violet-500" bgCls="bg-violet-50" borderCls="border-violet-100"
-              label="Adresse e-mail (non modifiable)" value={user.email} />
-            <ReadRow icon={Hash} iconCls="text-neutral-400" bgCls="bg-neutral-50" borderCls="border-neutral-100"
-              label="Identifiant" value={user.id.slice(0, 16).toUpperCase()} mono />
+            <EditRow icon={User} label="Prénom" value={draft.prenom} onChange={(v) => setDraft(d => ({ ...d, prenom: v }))} placeholder="Votre prénom" />
+            <EditRow icon={User} label="Nom de famille" value={draft.nom} onChange={(v) => setDraft(d => ({ ...d, nom: v }))} placeholder="Votre nom" />
+            <EditRow icon={Phone} label="Téléphone" value={draft.telephone} onChange={(v) => setDraft(d => ({ ...d, telephone: v }))} placeholder="+221 7X XXX XX XX" type="tel" />
+            <EditRow icon={Calendar} label="Date de naissance" value={draft.dateNaissance} onChange={(v) => setDraft(d => ({ ...d, dateNaissance: v }))} type="date" />
+            <ReadRow icon={Mail} label="Adresse e-mail (non modifiable)" value={user.email} />
+            <ReadRow icon={Hash} label="Identifiant" value={user.id.slice(0, 16).toUpperCase()} mono />
           </>
         ) : (
           <>
-            <ReadRow icon={User}     iconCls="text-emerald-500" bgCls="bg-emerald-50"  borderCls="border-emerald-100"  label="Prénom"            value={user.prenom} />
-            <ReadRow icon={User}     iconCls="text-emerald-500" bgCls="bg-emerald-50"  borderCls="border-emerald-100"  label="Nom de famille"    value={user.nom} />
-            <ReadRow icon={Mail}     iconCls="text-violet-500"  bgCls="bg-violet-50"   borderCls="border-violet-100"   label="Adresse e-mail"    value={user.email} />
-            <ReadRow icon={Phone}    iconCls="text-emerald-500" bgCls="bg-emerald-50"  borderCls="border-emerald-100"  label="Téléphone"         value={user.telephone} />
-            <ReadRow icon={Calendar} iconCls="text-amber-500"   bgCls="bg-amber-50"    borderCls="border-amber-100"    label="Date de naissance" value={dateFormatted} />
-            <ReadRow icon={Hash}     iconCls="text-neutral-400" bgCls="bg-neutral-50"  borderCls="border-neutral-100"  label="Identifiant"       value={user.id.slice(0, 16).toUpperCase()} mono />
+            <ReadRow icon={User} label="Prénom" value={user.prenom} />
+            <ReadRow icon={User} label="Nom de famille" value={user.nom} />
+            <ReadRow icon={Mail} label="Adresse e-mail" value={user.email} />
+            <ReadRow icon={Phone} label="Téléphone" value={user.telephone} />
+            <ReadRow icon={Calendar} label="Date de naissance" value={dateFormatted} />
+            <ReadRow icon={Hash} label="Identifiant" value={user.id.slice(0, 16).toUpperCase()} mono />
           </>
         )}
       </div>

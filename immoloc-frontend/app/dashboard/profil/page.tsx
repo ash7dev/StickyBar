@@ -89,7 +89,7 @@ export default function ProfilPage() {
   }
 
   return (
-    <div className="space-y-5">
+    <div className="space-y-5 overflow-visible">
 
       {/* ── Header ──────────────────────────────────────────── */}
       <div className="flex items-center gap-3">
@@ -102,8 +102,8 @@ export default function ProfilPage() {
           <ArrowLeft className="w-4 h-4 text-foreground-muted" />
         </button>
 
-        <div className="w-10 h-10 rounded-xl bg-emerald-50 flex items-center justify-center border border-emerald-100 shadow-sm shrink-0">
-          <User className="w-[18px] h-[18px] text-emerald-600" />
+        <div className="w-10 h-10 rounded-xl bg-forest-950 text-lime-400 border border-lime-400/20 flex items-center justify-center shadow-sm shrink-0">
+          <User className="w-[18px] h-[18px] text-lime-400" />
         </div>
         <div className="flex-1 min-w-0">
           <h1 className="text-xl font-bold text-neutral-900">Mon profil</h1>
@@ -118,13 +118,13 @@ export default function ProfilPage() {
 
       {/* ── Content ─────────────────────────────────────────── */}
       {user && (
-        <div className="space-y-5">
+        <div className="space-y-5 overflow-visible">
           <ProfileHero
             user={user}
             onKycClick={() => setGateOpen(true)}
           />
 
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-5 overflow-visible">
             <ProfileInfoCard
               user={user}
               onUpdated={() => queryClient.invalidateQueries({ queryKey: ['users', 'me'] })}

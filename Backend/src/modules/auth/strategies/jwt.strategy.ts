@@ -7,11 +7,13 @@ import { RedisService } from '@infrastructure/redis/redis.service';
 import { AuthUser, JwtPayload, Role } from '@shared/types/jwt-payload.type';
 
 interface CacheEntry { value: string | null; expiresAt: number }
+interface UserCacheEntry { value: any; expiresAt: number }
 
 @Injectable()
 export class JwtStrategy extends PassportStrategy(Strategy) {
-  // In-memory cache — évite de frapper Redis sur chaque requête authentifiée
+  // In-memory cache — évite de frapper Redis et la BDD Supabase sur chaque requête authentifiée
   private readonly localCache = new Map<string, CacheEntry>();
+  private readonly localUserCache = new Map<string, UserCacheEntry>();
 
   constructor(
     config: ConfigService,
@@ -37,9 +39,43 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
     return value;
   }
 
+  // Cache le profil utilisateur 30s avec fallback en cas de déconnexion réseau du pooler Supabase
+  private async getCachedUtilisateur(id: string) {
+    const now = Date.now();
+    const entry = this.localUserCache.get(id);
+    if (entry && entry.expiresAt > now) return entry.value;
+
+    try {
+      const user = await this.prisma.utilisateur.findUnique({
+        where: { id },
+        select: {
+          id: true,
+          userId: true,
+          email: true,
+          telephone: true,
+          prenom: true,
+          nom: true,
+          estProprietaire: true,
+          actif: true,
+          bloqueJusqua: true,
+          statutKyc: true,
+        },
+      });
+      if (user) {
+        this.localUserCache.set(id, { value: user, expiresAt: now + 30 * 1000 });
+      }
+      return user;
+    } catch (err) {
+      // Si déconnexion temporaire du pooler BDD mais qu'on a le cache, on réutilise pour ne pas casser la requête HTTP
+      if (entry) return entry.value;
+      throw err;
+    }
+  }
+
   // Invalide le cache local immédiatement (logout, switch-role)
   invalidateLocal(key: string) {
     this.localCache.delete(key);
+    this.localUserCache.delete(key);
   }
 
   async validate(req: any, payload: JwtPayload): Promise<AuthUser> {
@@ -48,21 +84,7 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
     const isBlacklisted = await this.cachedGet(blacklistKey, 60);
     if (isBlacklisted) throw new UnauthorizedException('Session révoquée');
 
-    const utilisateur = await this.prisma.utilisateur.findUnique({
-      where: { id: payload.sub },
-      select: {
-        id: true,
-        userId: true,
-        email: true,
-        telephone: true,
-        prenom: true,
-        nom: true,
-        estProprietaire: true,
-        actif: true,
-        bloqueJusqua: true,
-        statutKyc: true,
-      },
-    });
+    const utilisateur = await this.getCachedUtilisateur(payload.sub);
 
     if (!utilisateur || !utilisateur.actif) {
       throw new UnauthorizedException('Compte inexistant ou désactivé');

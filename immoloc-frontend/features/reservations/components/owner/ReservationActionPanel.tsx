@@ -33,7 +33,7 @@ function Modal({
     >
       <div
         onClick={(e) => e.stopPropagation()}
-        className="w-full sm:max-w-lg bg-surface-dark border border-white/10 rounded-t-3xl sm:rounded-2xl shadow-2xl shadow-black/60"
+        className="w-full sm:max-w-lg bg-forest-950 border border-forest-800/90 rounded-t-card sm:rounded-card shadow-2xl shadow-black/60"
       >
         <div className="flex items-center justify-between px-6 py-5 border-b border-white/8">
           <h3 className="text-sm font-bold text-white">{title}</h3>
@@ -57,11 +57,11 @@ function Feedback({ type, message }: { type: 'error' | 'success'; message: strin
   return (
     <div className={cn(
       'flex items-start gap-2.5 rounded-xl p-3.5 border',
-      isError ? 'bg-rose-50 border-rose-200 text-rose-700' : 'bg-emerald-50 border-emerald-200 text-emerald-700',
+      isError ? 'bg-rose-50 border-rose-200 text-rose-700' : 'bg-success-50 border-success-500/30 text-success-700',
     )}>
       {isError
         ? <AlertTriangle className="w-4 h-4 text-rose-500 shrink-0 mt-0.5" />
-        : <CheckCircle2 className="w-4 h-4 text-emerald-500 shrink-0 mt-0.5" />}
+        : <CheckCircle2 className="w-4 h-4 text-success-600 shrink-0 mt-0.5" />}
       <p className="text-xs font-semibold leading-relaxed">{message}</p>
     </div>
   );
@@ -257,48 +257,59 @@ export function ReservationActionPanel({ id, res, onRefetch }: Props) {
     finally { setIsSubmitting(false); }
   };
 
+  const handleReopenLateCheckin = async () => {
+    clearFeedback(); setIsSubmitting(true);
+    try {
+      await nestFetch(NEST_API.RESERVATIONS.REOPEN_LATE_CHECKIN(id), {
+        method: 'POST',
+      });
+      onSuccess('Réservation ré-ouverte ! Le locataire a été accueilli pour un check-in tardif.');
+    } catch (e) { onError(e); }
+    finally { setIsSubmitting(false); }
+  };
+
   /* ── Config par statut ── */
   const stepConfig = {
     PENDING: {
       step: 1, icon: Clock,
       gradient: 'from-neutral-400 to-neutral-500',
-      iconBg: 'bg-neutral-50 border-neutral-100', iconColor: 'text-neutral-500',
-      badge: 'bg-neutral-100 text-neutral-600 border border-neutral-200',
+      iconBg: 'bg-background-alt border-border', iconColor: 'text-foreground-muted',
+      badge: 'bg-background-alt text-foreground-muted border border-border',
       label: 'En attente', sub: 'En attente du paiement du locataire',
     },
     PAID: {
       step: 2, icon: Shield,
-      gradient: 'from-amber-500 to-amber-700',
-      iconBg: 'bg-amber-50 border-amber-100', iconColor: 'text-amber-600',
-      badge: 'bg-amber-100 text-amber-700 border border-amber-200',
+      gradient: 'from-gold-400 to-gold-600',
+      iconBg: 'bg-gold-50 border-gold-200', iconColor: 'text-gold-800',
+      badge: 'bg-gold-50 text-gold-800 border border-gold-200',
       label: 'Décision requise', sub: 'Paiement reçu — acceptez ou refusez',
     },
     CONFIRMED: {
       step: 3, icon: LogIn,
-      gradient: 'from-emerald-500 to-emerald-700',
-      iconBg: 'bg-emerald-50 border-emerald-100', iconColor: 'text-emerald-600',
-      badge: 'bg-emerald-100 text-emerald-700 border border-emerald-200',
+      gradient: 'from-forest-800 to-forest-950',
+      iconBg: 'bg-forest-50 border-forest-100', iconColor: 'text-forest-800',
+      badge: 'bg-forest-50 text-forest-800 border border-forest-100',
       label: 'Check-in', sub: "État des lieux d'entrée",
     },
     CHECKED_IN: {
       step: 4, icon: LogOut,
-      gradient: 'from-rose-500 to-rose-700',
-      iconBg: 'bg-rose-50 border-rose-100', iconColor: 'text-rose-600',
-      badge: 'bg-rose-100 text-rose-700 border border-rose-200',
+      gradient: 'from-amber-500 to-rose-600',
+      iconBg: 'bg-amber-50 border-amber-200', iconColor: 'text-amber-700',
+      badge: 'bg-amber-50 text-amber-800 border border-amber-200',
       label: 'Check-out', sub: 'Clôture du séjour',
     },
     COMPLETED: {
       step: 5, icon: CheckCircle2,
-      gradient: 'from-emerald-500 to-teal-600',
-      iconBg: 'bg-emerald-50 border-emerald-100', iconColor: 'text-emerald-600',
-      badge: 'bg-emerald-100 text-emerald-700 border border-emerald-200',
+      gradient: 'from-forest-800 to-forest-950',
+      iconBg: 'bg-forest-50 border-forest-100', iconColor: 'text-forest-800',
+      badge: 'bg-forest-50 text-forest-800 border border-forest-100',
       label: 'Terminée', sub: 'Séjour terminé avec succès',
     },
     DISPUTED: {
       step: 0, icon: AlertTriangle,
-      gradient: 'from-rose-500 to-red-600',
-      iconBg: 'bg-rose-50 border-rose-100', iconColor: 'text-rose-600',
-      badge: 'bg-rose-100 text-rose-700 border border-rose-200',
+      gradient: 'from-error-500 to-red-700',
+      iconBg: 'bg-error-500/10 border-error-500/20', iconColor: 'text-error-500',
+      badge: 'bg-error-500/10 text-error-400 border border-error-500/20',
       label: 'Litige en cours', sub: 'En attente de résolution',
     },
   } as const;
@@ -309,36 +320,36 @@ export function ReservationActionPanel({ id, res, onRefetch }: Props) {
   /* ─────────────────────────────────────────────────── */
   return (
     <>
-      <div className="bg-white border border-neutral-200/60 rounded-3xl overflow-hidden shadow-sm shadow-neutral-200/40">
+      <div className="bg-background-card border border-border/80 rounded-card overflow-hidden shadow-2xs">
 
         {/* Gradient bar */}
         <div className={cn('h-1 w-full bg-gradient-to-r', step.gradient)} />
 
         {/* Header */}
         <div className="flex items-start gap-4 px-6 pt-5 pb-4">
-          <div className={cn('w-10 h-10 rounded-2xl border flex items-center justify-center shrink-0 mt-0.5', step.iconBg)}>
+          <div className={cn('w-10 h-10 rounded-inner border flex items-center justify-center shrink-0 mt-0.5 shadow-2xs', step.iconBg)}>
             <StepIcon className={cn('w-4.5 h-4.5', step.iconColor)} />
           </div>
           <div className="flex-1 min-w-0">
             <div className="flex items-center gap-2 flex-wrap">
-              <p className="text-sm font-black text-neutral-900 leading-tight">{step.label}</p>
-              <span className={cn('text-[10px] font-black px-2 py-0.5 rounded-full', step.badge)}>
+              <p className="font-display text-base font-bold text-forest-950 leading-tight">{step.label}</p>
+              <span className={cn('text-[10px] font-extrabold px-2.5 py-0.5 rounded-pill', step.badge)}>
                 Étape {step.step}/4
               </span>
             </div>
-            <p className="text-xs text-neutral-400 mt-0.5">{step.sub}</p>
+            <p className="text-xs text-foreground-muted mt-0.5">{step.sub}</p>
           </div>
           <button
             onClick={onRefetch}
             title="Actualiser"
-            className="w-8 h-8 rounded-xl bg-neutral-100 hover:bg-neutral-200 border border-neutral-200/80 flex items-center justify-center transition-colors shrink-0 mt-0.5"
+            className="w-8 h-8 rounded-inner bg-background-alt hover:bg-forest-50 border border-border flex items-center justify-center transition-colors shrink-0 mt-0.5"
           >
-            <RefreshCw className="w-3.5 h-3.5 text-neutral-400" />
+            <RefreshCw className="w-3.5 h-3.5 text-forest-700" />
           </button>
         </div>
 
         {/* Divider */}
-        <div className="h-px bg-neutral-100 mx-6" />
+        <div className="h-px bg-border/60 mx-6" />
 
         <div className="p-6 space-y-4">
 
@@ -393,13 +404,13 @@ export function ReservationActionPanel({ id, res, onRefetch }: Props) {
                   </div>
                 </div>
               ) : (
-                <div className="flex items-start gap-3 bg-emerald-50 border border-emerald-200 rounded-2xl p-4">
-                  <div className="w-8 h-8 rounded-xl bg-emerald-100 border border-emerald-200 flex items-center justify-center shrink-0">
-                    <CheckCircle2 className="w-4 h-4 text-emerald-500" />
+                <div className="flex items-start gap-3 bg-success-50 border border-success-500/30 rounded-2xl p-4">
+                  <div className="w-8 h-8 rounded-xl bg-success-50 border border-success-500/30 flex items-center justify-center shrink-0">
+                    <CheckCircle2 className="w-4 h-4 text-success-600" />
                   </div>
                   <div>
-                    <p className="text-xs font-black text-emerald-800">Identité vérifiée</p>
-                    <p className="text-xs text-emerald-700 mt-0.5">Vous pouvez confirmer la réservation en toute sécurité.</p>
+                    <p className="text-xs font-black text-success-700">Identité vérifiée</p>
+                    <p className="text-xs text-success-700 mt-0.5">Vous pouvez confirmer la réservation en toute sécurité.</p>
                   </div>
                 </div>
               )}
@@ -440,7 +451,7 @@ export function ReservationActionPanel({ id, res, onRefetch }: Props) {
                   className={cn(
                     'flex-1 py-3 text-xs font-black text-white rounded-2xl transition-all shadow-md',
                     res.locataire.statutKyc === 'VERIFIE' && !isSubmitting
-                      ? 'bg-gradient-to-r from-emerald-500 to-emerald-700 hover:from-emerald-600 hover:to-emerald-800 shadow-emerald-500/25'
+                      ? 'bg-gradient-to-r from-success-500 to-success-700 hover:from-success-600 hover:to-success-700 shadow-[0_4px_12px_rgba(46,158,82,0.25)]'
                       : 'bg-neutral-200 text-neutral-400 shadow-none',
                   )}
                 >
@@ -485,18 +496,18 @@ export function ReservationActionPanel({ id, res, onRefetch }: Props) {
                   <button
                     type="button"
                     onClick={() => { clearFeedback(); setShowCheckinModal(true); }}
-                    className="w-full group relative flex items-center gap-4 p-4 rounded-2xl border border-emerald-200/80 bg-white hover:bg-emerald-50/40 hover:border-emerald-300/80 hover:shadow-md hover:shadow-emerald-100/60 transition-all duration-200 text-left overflow-hidden"
+                    className="w-full group relative flex items-center gap-4 p-4 rounded-2xl border border-success-500/30 bg-white hover:bg-success-50/40 hover:border-success-500/50 hover:shadow-md hover:shadow-success-50 transition-all duration-200 text-left overflow-hidden"
                   >
-                    <div className="absolute left-0 top-0 bottom-0 w-1 rounded-l-2xl bg-emerald-500" />
-                    <div className="w-11 h-11 rounded-2xl border bg-emerald-50 border-emerald-100 flex items-center justify-center shrink-0 ml-1">
-                      <Camera className="w-5 h-5 text-emerald-600" />
+                    <div className="absolute left-0 top-0 bottom-0 w-1 rounded-l-2xl bg-success-600" />
+                    <div className="w-11 h-11 rounded-2xl border bg-success-50 border-success-500/30 flex items-center justify-center shrink-0 ml-1">
+                      <Camera className="w-5 h-5 text-success-600" />
                     </div>
                     <div className="flex-1 min-w-0">
                       <p className="text-sm font-black text-neutral-900 leading-tight">Démarrer l&apos;état des lieux d&apos;entrée</p>
                       <p className="text-xs text-neutral-400 mt-0.5">Photographiez chaque pièce avant l&apos;arrivée du locataire</p>
                     </div>
-                    <div className="w-8 h-8 rounded-xl bg-neutral-100 group-hover:bg-emerald-100 flex items-center justify-center transition-colors shrink-0">
-                      <ArrowRight className="w-4 h-4 text-neutral-400 group-hover:text-emerald-600 transition-colors" />
+                    <div className="w-8 h-8 rounded-xl bg-neutral-100 group-hover:bg-success-50 flex items-center justify-center transition-colors shrink-0">
+                      <ArrowRight className="w-4 h-4 text-neutral-400 group-hover:text-success-600 transition-colors" />
                     </div>
                   </button>
 
@@ -574,11 +585,11 @@ export function ReservationActionPanel({ id, res, onRefetch }: Props) {
                   <button
                     onClick={handleCheckinProprio}
                     disabled={isSubmitting}
-                    className="w-full flex items-center justify-center gap-2.5 py-3.5 text-sm font-black text-white rounded-2xl bg-gradient-to-r from-emerald-500 to-emerald-700 hover:from-emerald-600 hover:to-emerald-800 disabled:from-neutral-200 disabled:to-neutral-200 disabled:text-neutral-400 shadow-md shadow-emerald-500/25 disabled:shadow-none transition-all"
+                    className="w-full flex items-center justify-center gap-2.5 py-3.5 text-sm font-extrabold text-forest-950 rounded-pill bg-lime-400 hover:bg-lime-300 disabled:opacity-60 shadow-md transition-all active:scale-95"
                   >
                     {isSubmitting
                       ? <><Loader2 className="w-4 h-4 animate-spin" />Confirmation…</>
-                      : <><CheckCircle2 className="w-4 h-4" />Confirmer l&apos;état des lieux d&apos;entrée</>}
+                      : <><CheckCircle2 className="w-4 h-4 text-forest-950" />Confirmer l&apos;état des lieux d&apos;entrée</>}
                   </button>
 
                   <button
@@ -646,15 +657,15 @@ export function ReservationActionPanel({ id, res, onRefetch }: Props) {
               {/* WAITING-TENANT : checkinProprioLe set, attente locataire */}
               {confirmedSub === 'waiting-tenant' && (
                 <>
-                  <div className="flex items-start gap-3 bg-emerald-50 border border-emerald-200 rounded-2xl p-4">
-                    <div className="w-8 h-8 rounded-xl bg-emerald-100 border border-emerald-200 flex items-center justify-center shrink-0">
-                      <CheckCircle2 className="w-4 h-4 text-emerald-500" />
+                  <div className="flex items-start gap-3 bg-forest-50 border border-forest-100 rounded-inner p-4">
+                    <div className="w-8 h-8 rounded-inner bg-forest-100 border border-forest-200 flex items-center justify-center shrink-0">
+                      <CheckCircle2 className="w-4 h-4 text-forest-700" />
                     </div>
                     <div>
-                      <p className="text-xs font-black text-emerald-800">
+                      <p className="text-xs font-bold text-forest-950">
                         {checkinPhotos.length} photo{checkinPhotos.length > 1 ? 's' : ''} de check-in confirmée{checkinPhotos.length > 1 ? 's' : ''}
                       </p>
-                      <p className="text-xs text-emerald-700 mt-0.5 leading-relaxed">
+                      <p className="text-xs text-forest-800 mt-0.5 leading-relaxed">
                         Le locataire a été notifié. Il doit confirmer son check-in depuis son espace. Les fonds restent en séquestre jusqu&apos;à sa validation.
                       </p>
                     </div>
@@ -794,26 +805,26 @@ export function ReservationActionPanel({ id, res, onRefetch }: Props) {
               {/* AWAITING-COMPLETION : checkoutProprioLe set → libérer les fonds */}
               {checkedInSub === 'awaiting-completion' && (
                 <>
-                  <div className="flex items-start gap-3 bg-emerald-50 border border-emerald-200 rounded-2xl p-4">
-                    <div className="w-8 h-8 rounded-xl bg-emerald-100 border border-emerald-200 flex items-center justify-center shrink-0">
-                      <CheckCircle2 className="w-4 h-4 text-emerald-500" />
+                  <div className="flex items-start gap-3 bg-forest-50 border border-forest-100 rounded-inner p-4">
+                    <div className="w-8 h-8 rounded-inner bg-forest-100 border border-forest-200 flex items-center justify-center shrink-0">
+                      <CheckCircle2 className="w-4 h-4 text-forest-700" />
                     </div>
                     <div>
-                      <p className="text-xs font-black text-emerald-800">
+                      <p className="text-xs font-bold text-forest-950">
                         {checkoutPhotos.length} photo{checkoutPhotos.length > 1 ? 's' : ''} de check-out confirmée{checkoutPhotos.length > 1 ? 's' : ''}
                       </p>
-                      <p className="text-xs text-emerald-700 mt-0.5">État des lieux documenté. Clôturez le séjour pour libérer les fonds.</p>
+                      <p className="text-xs text-forest-800 mt-0.5">État des lieux documenté. Clôturez le séjour pour libérer les fonds.</p>
                     </div>
                   </div>
 
                   <button
                     onClick={handleCompleteCheckout}
                     disabled={isSubmitting}
-                    className="w-full flex items-center justify-center gap-2.5 py-3.5 text-sm font-black text-white rounded-2xl bg-gradient-to-r from-emerald-500 to-emerald-700 hover:from-emerald-600 hover:to-emerald-800 disabled:from-neutral-200 disabled:to-neutral-200 disabled:text-neutral-400 shadow-md shadow-emerald-500/25 disabled:shadow-none transition-all"
+                    className="w-full flex items-center justify-center gap-2.5 py-3.5 text-sm font-extrabold text-forest-950 rounded-pill bg-lime-400 hover:bg-lime-300 disabled:opacity-60 shadow-md transition-all active:scale-95"
                   >
                     {isSubmitting
                       ? <><Loader2 className="w-4 h-4 animate-spin" />Clôture en cours…</>
-                      : <><Banknote className="w-4 h-4" />Finaliser le check-out &amp; libérer les fonds</>}
+                      : <><Banknote className="w-4 h-4 text-forest-950" />Finaliser le check-out &amp; libérer les fonds</>}
                   </button>
                 </>
               )}
@@ -889,7 +900,7 @@ export function ReservationActionPanel({ id, res, onRefetch }: Props) {
                           'inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border text-xs font-bold',
                           res.litige.statut === 'EN_ATTENTE' && 'bg-amber-50 text-amber-700 border-amber-200',
                           res.litige.statut === 'FONDE' && 'bg-rose-50 text-rose-700 border-rose-200',
-                          res.litige.statut === 'NON_FONDE' && 'bg-emerald-50 text-emerald-700 border-emerald-200',
+                          res.litige.statut === 'NON_FONDE' && 'bg-success-50 text-success-700 border-success-500/30',
                         )}>
                           {res.litige.statut === 'EN_ATTENTE' && <><Clock className="w-3 h-3" /> En cours d&apos;examen</>}
                           {res.litige.statut === 'FONDE' && <><CheckCircle2 className="w-3 h-3" /> Litige fondé</>}
@@ -956,9 +967,9 @@ export function ReservationActionPanel({ id, res, onRefetch }: Props) {
                         </div>
                       )}
                       {res.litige.statut === 'NON_FONDE' && (
-                        <div className="flex items-start gap-2.5 bg-emerald-50 border border-emerald-200 rounded-xl px-3.5 py-3">
-                          <XCircle className="w-3.5 h-3.5 text-emerald-500 shrink-0 mt-0.5" />
-                          <p className="text-xs text-emerald-700 leading-relaxed">
+                        <div className="flex items-start gap-2.5 bg-success-50 border border-success-500/30 rounded-xl px-3.5 py-3">
+                          <XCircle className="w-3.5 h-3.5 text-success-600 shrink-0 mt-0.5" />
+                          <p className="text-xs text-success-700 leading-relaxed">
                             <span className="font-bold">Litige non fondé.</span> Les fonds seront débloqués normalement après le check-out. Aucune pénalité n&apos;est appliquée.
                           </p>
                         </div>
@@ -1017,7 +1028,7 @@ export function ReservationActionPanel({ id, res, onRefetch }: Props) {
                     'inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border text-xs font-bold',
                     res.litige.statut === 'EN_ATTENTE' && 'bg-amber-50 text-amber-700 border-amber-200',
                     res.litige.statut === 'FONDE' && 'bg-rose-50 text-rose-700 border-rose-200',
-                    res.litige.statut === 'NON_FONDE' && 'bg-emerald-50 text-emerald-700 border-emerald-200',
+                    res.litige.statut === 'NON_FONDE' && 'bg-success-50 text-success-700 border-success-500/30',
                   )}>
                     {res.litige.statut === 'EN_ATTENTE' && <><Clock className="w-3 h-3" /> En cours d&apos;examen</>}
                     {res.litige.statut === 'FONDE' && <><CheckCircle2 className="w-3 h-3" /> Litige fondé</>}
@@ -1084,9 +1095,9 @@ export function ReservationActionPanel({ id, res, onRefetch }: Props) {
                   </div>
                 )}
                 {res.litige.statut === 'NON_FONDE' && (
-                  <div className="flex items-start gap-2.5 bg-emerald-50 border border-emerald-200 rounded-xl px-3.5 py-3">
-                    <X className="w-3.5 h-3.5 text-emerald-500 shrink-0 mt-0.5" />
-                    <p className="text-xs text-emerald-700 leading-relaxed">
+                  <div className="flex items-start gap-2.5 bg-success-50 border border-success-500/30 rounded-xl px-3.5 py-3">
+                    <X className="w-3.5 h-3.5 text-success-600 shrink-0 mt-0.5" />
+                    <p className="text-xs text-success-700 leading-relaxed">
                       <span className="font-bold">Litige non fondé.</span> Les fonds seront débloqués normalement après le check-out. Aucune pénalité n&apos;est appliquée.
                     </p>
                   </div>
@@ -1098,37 +1109,53 @@ export function ReservationActionPanel({ id, res, onRefetch }: Props) {
           {/* ══ COMPLETED : notation du locataire ══ */}
           {statut === 'COMPLETED' && (
             <>
-              <div className="flex items-start gap-3 bg-emerald-50 border border-emerald-200 rounded-2xl p-4">
-                <div className="w-8 h-8 rounded-xl bg-emerald-100 border border-emerald-200 flex items-center justify-center shrink-0">
-                  <CheckCircle2 className="w-4 h-4 text-emerald-500" />
+              <div className="flex items-start gap-3 bg-forest-50 border border-forest-100 rounded-inner p-4">
+                <div className="w-8 h-8 rounded-inner bg-forest-100 border border-forest-200 flex items-center justify-center shrink-0">
+                  <CheckCircle2 className="w-4 h-4 text-forest-700" />
                 </div>
                 <div>
-                  <p className="text-xs font-black text-emerald-800">Séjour terminé avec succès</p>
-                  <p className="text-xs text-emerald-700 mt-0.5 leading-relaxed">
-                    Les fonds ont été débloqués et transférés vers votre wallet. Merci d&apos;avoir utilisé ImmoLoc !
+                  <p className="text-xs font-bold text-forest-950">Séjour terminé avec succès</p>
+                  <p className="text-xs text-forest-800 mt-0.5 leading-relaxed">
+                    Les fonds ont été débloqués et transférés vers votre wallet. Merci d&apos;avoir utilisé Klef !
                   </p>
                 </div>
               </div>
 
-              {/* Notation du locataire */}
-              <div className="pt-2 border-t border-neutral-100 space-y-3">
-                <p className="text-[10px] text-neutral-400 font-semibold uppercase tracking-wide">Évaluer votre expérience</p>
+              {/* Bouton de ré-ouverture tardive si No-Show */}
+              {(res.politiqueAppliquee as string) === 'NO_SHOW_LOCATAIRE' && (
+                <div className="p-4 bg-amber-50/80 border border-amber-200 rounded-2xl space-y-2">
+                  <p className="text-xs font-bold text-amber-900">Le locataire est finalement arrivé avec du retard ?</p>
+                  <p className="text-xs text-amber-800">Vous pouvez ré-ouvrir la réservation pour lui remettre les clés tout en conservant vos fonds débloqués.</p>
+                  <button
+                    onClick={handleReopenLateCheckin}
+                    disabled={isSubmitting}
+                    className="w-full flex items-center justify-center gap-2 py-2.5 px-4 rounded-xl text-xs font-bold bg-amber-600 hover:bg-amber-700 text-white transition-all shadow-sm"
+                  >
+                    {isSubmitting ? <Loader2 className="w-4 h-4 animate-spin" /> : <RefreshCw className="w-4 h-4" />}
+                    Accueillir le voyageur quand même (Check-in Tardif)
+                  </button>
+                </div>
+              )}
 
-                <div className="bg-gradient-to-br from-white to-neutral-50/50 border-2 border-neutral-200 rounded-2xl p-5 space-y-4">
+              {/* Notation du locataire */}
+              <div className="pt-2 border-t border-border/60 space-y-3">
+                <p className="text-[10px] text-foreground-muted font-semibold uppercase tracking-wide">Évaluer votre expérience</p>
+
+                <div className="bg-background-alt border border-border/80 rounded-inner p-5 space-y-4">
                   <div className="flex items-start gap-3">
-                    <div className="w-10 h-10 rounded-2xl bg-emerald-100 flex items-center justify-center text-sm font-black text-emerald-700 shrink-0 overflow-hidden border border-emerald-200/50">
+                    <div className="w-10 h-10 rounded-inner bg-forest-950 flex items-center justify-center text-sm font-extrabold text-lime-400 shrink-0 overflow-hidden border border-lime-400/20">
                       {res.locataire.avatarUrl
                         ? <img src={res.locataire.avatarUrl} alt="" className="w-full h-full object-cover" />
                         : `${res.locataire.prenom[0]}${res.locataire.nom[0]}`}
                     </div>
                     <div className="flex-1 min-w-0">
-                      <p className="text-sm font-bold text-neutral-900">Noter {res.locataire.prenom} {res.locataire.nom}</p>
-                      <p className="text-xs text-neutral-500 mt-0.5">Comment s&apos;est passé le séjour avec ce locataire ?</p>
+                      <p className="text-sm font-bold text-forest-950">Noter {res.locataire.prenom} {res.locataire.nom}</p>
+                      <p className="text-xs text-foreground-muted mt-0.5">Comment s&apos;est passé le séjour avec ce locataire ?</p>
                     </div>
                   </div>
 
                   {/* Étoiles interactives */}
-                  <div className="flex items-center justify-center gap-2 py-4 bg-neutral-50 rounded-xl border border-neutral-200">
+                  <div className="flex items-center justify-center gap-2 py-4 bg-background-card rounded-inner border border-border">
                     {[1, 2, 3, 4, 5].map((star) => {
                       const isActive = (hoverRating || rating) >= star;
                       return (
@@ -1153,7 +1180,7 @@ export function ReservationActionPanel({ id, res, onRefetch }: Props) {
                     })}
                   </div>
                   {rating > 0 && (
-                    <p className="text-xs font-bold text-center text-neutral-600">
+                    <p className="text-xs font-bold text-center text-forest-950">
                       {rating === 1 && 'Très insatisfait'}
                       {rating === 2 && 'Insatisfait'}
                       {rating === 3 && 'Moyen'}
@@ -1163,14 +1190,14 @@ export function ReservationActionPanel({ id, res, onRefetch }: Props) {
                   )}
 
                   <div className="space-y-2">
-                    <label className="block text-xs font-bold text-neutral-700">
-                      Commentaire <span className="text-neutral-400 font-normal">(optionnel)</span>
+                    <label className="block text-xs font-bold text-forest-950">
+                      Commentaire <span className="text-foreground-muted font-normal">(optionnel)</span>
                     </label>
                     <textarea
                       rows={3}
                       value={ratingComment}
                       onChange={(e) => setRatingComment(e.target.value)}
-                      className="w-full text-xs bg-white border border-neutral-200 text-neutral-900 placeholder:text-neutral-400 rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-emerald-400/50 focus:border-emerald-400 resize-none"
+                      className="w-full text-xs bg-background-card border border-border text-forest-950 placeholder:text-foreground-faint rounded-inner px-4 py-3 focus:outline-none focus:ring-2 focus:ring-lime-400/40 focus:border-lime-400 resize-none"
                       placeholder="Partagez votre expérience avec ce locataire..."
                     />
                   </div>
@@ -1178,16 +1205,16 @@ export function ReservationActionPanel({ id, res, onRefetch }: Props) {
                   <button
                     onClick={handleSubmitRating}
                     disabled={isSubmitting || rating === 0}
-                    className="w-full flex items-center justify-center gap-2 py-3 text-sm font-black text-white rounded-xl bg-gradient-to-r from-emerald-500 to-emerald-700 hover:from-emerald-600 hover:to-emerald-800 disabled:from-neutral-200 disabled:to-neutral-200 disabled:text-neutral-400 shadow-md shadow-emerald-500/25 disabled:shadow-none transition-all"
+                    className="w-full flex items-center justify-center gap-2 py-3 text-sm font-extrabold text-forest-950 rounded-pill bg-lime-400 hover:bg-lime-300 disabled:opacity-60 shadow-md transition-all active:scale-95"
                   >
                     {isSubmitting ? (
                       <><Loader2 className="w-4 h-4 animate-spin" />Publication...</>
                     ) : (
-                      <><Star className="w-4 h-4" />Publier mon évaluation</>
+                      <><Star className="w-4 h-4 text-forest-950" />Publier mon évaluation</>
                     )}
                   </button>
 
-                  <p className="text-[11px] text-neutral-400 text-center leading-relaxed">
+                  <p className="text-[11px] text-foreground-muted text-center leading-relaxed">
                     Votre évaluation aidera les autres propriétaires à mieux connaître ce locataire
                   </p>
                 </div>
@@ -1198,13 +1225,13 @@ export function ReservationActionPanel({ id, res, onRefetch }: Props) {
         </div>
 
         {/* Footer règles */}
-        <div className="px-6 py-4 bg-neutral-50/50 border-t border-neutral-100">
+        <div className="px-6 py-4 bg-background-alt border-t border-border/80">
           <button
             type="button"
             onClick={() => setShowRulesModal(true)}
-            className="flex items-center gap-2 text-xs font-bold text-emerald-600 hover:text-emerald-700 transition-colors cursor-pointer"
+            className="flex items-center gap-2 text-xs font-bold text-forest-800 hover:text-forest-950 transition-colors cursor-pointer"
           >
-            <HelpCircle className="w-4 h-4 text-emerald-500 shrink-0" />
+            <HelpCircle className="w-4 h-4 text-forest-700 shrink-0" />
             Comprendre les règles &amp; conditions (séquestre, auto-checkin…)
           </button>
         </div>
@@ -1251,7 +1278,7 @@ export function ReservationActionPanel({ id, res, onRefetch }: Props) {
                     type="time"
                     value={checkinHeure}
                     onChange={(e) => setCheckinHeure(e.target.value)}
-                    className="w-full text-sm font-bold text-white bg-white/8 border border-white/15 rounded-xl pl-11 pr-4 py-3 focus:outline-none focus:ring-1 focus:ring-emerald-400/50 focus:border-emerald-400/50 transition-all [color-scheme:dark]"
+                    className="w-full text-sm font-bold text-white bg-white/8 border border-white/15 rounded-xl pl-11 pr-4 py-3 focus:outline-none focus:ring-1 focus:ring-success-500/50 focus:border-success-500/50 transition-all [color-scheme:dark]"
                   />
                 </div>
                 <p className="text-[11px] text-neutral-500 leading-relaxed">
@@ -1462,7 +1489,7 @@ export function ReservationActionPanel({ id, res, onRefetch }: Props) {
         <Modal title="Charte de Confiance & Règles de Séjour" onClose={() => setShowRulesModal(false)}>
           <div className="p-6 space-y-5 max-h-[75vh] overflow-y-auto text-left">
             <p className="text-xs text-neutral-400 leading-relaxed">
-              ImmoLoc applique un système hybride de double validation et de séquestre sécurisé pour protéger les deux parties.
+              Klef applique un système hybride de double validation et de séquestre sécurisé pour protéger les deux parties.
             </p>
 
             <div className="flex gap-3.5 items-start p-3.5 rounded-2xl bg-white/5 border border-white/5">

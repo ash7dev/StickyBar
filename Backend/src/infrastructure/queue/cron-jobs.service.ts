@@ -63,6 +63,18 @@ export class CronJobsService implements OnApplicationBootstrap {
       },
     );
 
-    this.logger.log('[CronJobs] Jobs répétables enregistrés (orphan-payment, reconcile-notes, reset-compteurs, cleanup-etat-lieux-photos)');
+    // Traitement des No-Show locataires toutes les 15 min
+    await this.reservationQueue.add(
+      'tenant-noshow',
+      {},
+      {
+        repeat: { cron: '*/15 * * * *' },
+        jobId: 'cron-tenant-noshow',
+        removeOnComplete: true,
+        attempts: 3,
+      },
+    );
+
+    this.logger.log('[CronJobs] Jobs répétables enregistrés (orphan-payment, reconcile-notes, reset-compteurs, cleanup-etat-lieux-photos, tenant-noshow)');
   }
 }

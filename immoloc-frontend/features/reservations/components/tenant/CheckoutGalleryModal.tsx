@@ -153,7 +153,7 @@ function Lightbox({
     >
       {/* Close */}
       <button
-        className="absolute top-4 right-4 z-10 w-10 h-10 rounded-2xl bg-white/10 hover:bg-white/20 border border-white/15 flex items-center justify-center transition-colors"
+        className="absolute top-4 right-4 z-10 w-10 h-10 rounded-inner bg-forest-900 hover:bg-forest-800 border border-forest-800 flex items-center justify-center transition-colors text-forest-200"
         onClick={onClose}
       >
         <X className="w-4 h-4 text-white" />
@@ -161,18 +161,18 @@ function Lightbox({
 
       {/* Compteur + catégorie */}
       <div className="absolute top-4 left-1/2 -translate-x-1/2 z-10 flex items-center gap-2">
-        <span className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-white/10 border border-white/15 text-xs font-bold text-white backdrop-blur-sm">
-          <span className="text-neutral-400">{cfg.icon}</span>
+        <span className="flex items-center gap-1.5 px-3 py-1.5 rounded-inner bg-forest-900 border border-forest-800 text-xs font-bold text-white backdrop-blur-sm">
+          <span className="text-amber-400">{cfg.icon}</span>
           {cfg.label}
         </span>
-        <span className="px-3 py-1.5 rounded-xl bg-white/10 border border-white/15 text-xs font-bold text-neutral-400 backdrop-blur-sm tabular-nums">
+        <span className="px-3 py-1.5 rounded-inner bg-forest-900 border border-forest-800 text-xs font-bold text-forest-300 backdrop-blur-sm tabular-nums">
           {current + 1} / {photos.length}
         </span>
       </div>
 
       {/* Photo centrale */}
       <div
-        className="relative w-full max-w-3xl max-h-[80dvh] aspect-auto mx-16 rounded-2xl overflow-hidden"
+        className="relative w-full max-w-3xl max-h-[80dvh] aspect-auto mx-16 rounded-card overflow-hidden"
         onClick={(e) => e.stopPropagation()}
       >
         <Image
@@ -189,13 +189,13 @@ function Lightbox({
         <>
           <button
             onClick={(e) => { e.stopPropagation(); prev(); }}
-            className="absolute left-3 top-1/2 -translate-y-1/2 z-10 w-11 h-11 rounded-2xl bg-white/10 hover:bg-white/20 border border-white/15 flex items-center justify-center transition-colors"
+            className="absolute left-3 top-1/2 -translate-y-1/2 z-10 w-11 h-11 rounded-inner bg-forest-900 hover:bg-forest-800 border border-forest-800 flex items-center justify-center transition-colors text-white"
           >
             <ChevronLeft className="w-5 h-5 text-white" />
           </button>
           <button
             onClick={(e) => { e.stopPropagation(); next(); }}
-            className="absolute right-3 top-1/2 -translate-y-1/2 z-10 w-11 h-11 rounded-2xl bg-white/10 hover:bg-white/20 border border-white/15 flex items-center justify-center transition-colors"
+            className="absolute right-3 top-1/2 -translate-y-1/2 z-10 w-11 h-11 rounded-inner bg-forest-900 hover:bg-forest-800 border border-forest-800 flex items-center justify-center transition-colors text-white"
           >
             <ChevronRight className="w-5 h-5 text-white" />
           </button>
@@ -204,14 +204,14 @@ function Lightbox({
 
       {/* Bande thumbnails bas */}
       {photos.length > 1 && (
-        <div className="absolute bottom-4 left-1/2 -translate-x-1/2 z-10 flex gap-1.5 px-4 py-2.5 bg-black/60 backdrop-blur-sm rounded-2xl border border-white/10 max-w-[90vw] overflow-x-auto">
+        <div className="absolute bottom-4 left-1/2 -translate-x-1/2 z-10 flex gap-1.5 px-4 py-2.5 bg-forest-950/90 backdrop-blur-md rounded-card border border-forest-800 max-w-[90vw] overflow-x-auto">
           {photos.map((p, i) => (
             <button
               key={p.id}
               onClick={(e) => { e.stopPropagation(); setCurrent(i); }}
               className={cn(
-                'relative shrink-0 w-10 h-10 rounded-xl overflow-hidden border-2 transition-all duration-150',
-                i === current ? 'border-white scale-110 shadow-md' : 'border-transparent opacity-50 hover:opacity-80',
+                'relative shrink-0 w-10 h-10 rounded-inner overflow-hidden border-2 transition-all duration-150',
+                i === current ? 'border-amber-400 scale-110 shadow-md' : 'border-transparent opacity-50 hover:opacity-80',
               )}
             >
               <Image src={p.url} alt="" fill className="object-cover" />
@@ -260,41 +260,41 @@ export function CheckoutGalleryModal({ photos, onClose }: Props) {
         {/* Carte principale */}
         <div
           onClick={(e) => e.stopPropagation()}
-          className="w-full sm:max-w-2xl bg-surface-dark border border-white/10 rounded-t-3xl sm:rounded-3xl shadow-2xl shadow-black/60 flex flex-col max-h-[92dvh] overflow-hidden"
+          className="w-full sm:max-w-2xl bg-forest-950 text-white border border-forest-800/90 rounded-t-card sm:rounded-card shadow-2xl flex flex-col max-h-[92dvh] overflow-hidden"
         >
 
           {/* ── En-tête ── */}
-          <div className="shrink-0 px-6 pt-6 pb-5 border-b border-white/8">
+          <div className="shrink-0 px-6 pt-6 pb-5 border-b border-forest-800/80">
             <div className="flex items-start justify-between gap-4">
               <div className="flex items-center gap-3.5">
-                <div className="w-11 h-11 rounded-2xl bg-amber-500/15 border border-amber-400/25 flex items-center justify-center shrink-0">
+                <div className="w-11 h-11 rounded-inner bg-forest-900 border border-amber-400/20 flex items-center justify-center shrink-0">
                   <LogOut className="w-5 h-5 text-amber-400" />
                 </div>
                 <div>
-                  <h2 className="text-sm font-black text-white leading-tight">
+                  <h2 className="font-display text-base font-bold text-white leading-tight">
                     État des lieux de sortie
                   </h2>
-                  <p className="text-xs text-neutral-500 mt-0.5">
+                  <p className="text-xs text-forest-300 mt-0.5">
                     {photos.length} photo{photos.length > 1 ? 's' : ''} · Uploadées par l&apos;hôte
                   </p>
                 </div>
               </div>
               <button
                 onClick={onClose}
-                className="w-8 h-8 rounded-xl bg-white/8 hover:bg-white/14 border border-white/8 flex items-center justify-center transition-colors shrink-0 mt-0.5"
+                className="w-8 h-8 rounded-inner bg-forest-900 hover:bg-forest-800 border border-forest-800 flex items-center justify-center transition-colors text-forest-200 shrink-0 mt-0.5"
               >
-                <X className="w-4 h-4 text-neutral-400" />
+                <X className="w-4 h-4" />
               </button>
             </div>
 
             {/* Bandeau informatif */}
-            <div className="mt-4 flex items-start gap-3 bg-amber-500/10 border border-amber-400/20 rounded-2xl px-4 py-3.5">
+            <div className="mt-4 flex items-start gap-3 bg-amber-500/10 border border-amber-400/20 rounded-inner px-4 py-3.5">
               <ShieldCheck className="w-4 h-4 text-amber-400 shrink-0 mt-0.5" />
               <div>
                 <p className="text-xs font-bold text-amber-200 leading-snug">
                   État des lieux de sortie
                 </p>
-                <p className="text-[11px] text-amber-400/80 mt-0.5 leading-relaxed">
+                <p className="text-[11px] text-amber-300/80 mt-0.5 leading-relaxed">
                   Ces photos documentent l&apos;état du logement à votre départ. En cas de
                   désaccord, vous disposez de 48h pour déclarer un litige.
                 </p>
@@ -310,11 +310,11 @@ export function CheckoutGalleryModal({ photos, onClose }: Props) {
                 <div key={categorie}>
                   {/* Titre section */}
                   <div className="flex items-center gap-2 mb-3">
-                    <span className="flex items-center justify-center w-6 h-6 rounded-lg bg-white/8 border border-white/8 text-neutral-400">
+                    <span className="flex items-center justify-center w-6 h-6 rounded-inner bg-forest-900 border border-forest-800 text-amber-400">
                       {cfg.icon}
                     </span>
-                    <span className="text-xs font-bold text-neutral-300">{cfg.label}</span>
-                    <span className="text-[10px] font-bold text-neutral-600 bg-white/5 border border-white/8 px-2 py-0.5 rounded-full">
+                    <span className="font-display text-xs font-bold text-white">{cfg.label}</span>
+                    <span className="text-[10px] font-extrabold text-forest-300 bg-forest-900 border border-forest-800 px-2 py-0.5 rounded-pill">
                       {catPhotos.length}
                     </span>
                   </div>
@@ -332,8 +332,8 @@ export function CheckoutGalleryModal({ photos, onClose }: Props) {
                         type="button"
                         onClick={() => setLightboxIndex(globalIndex(categorie, localIdx))}
                         className={cn(
-                          'group relative overflow-hidden rounded-2xl bg-white/5 border border-white/8',
-                          'hover:border-white/20 hover:shadow-lg hover:shadow-black/40 transition-all duration-200',
+                          'group relative overflow-hidden rounded-inner bg-forest-900 border border-forest-800',
+                          'hover:border-amber-400 hover:shadow-lg transition-all duration-200',
                           catPhotos.length === 1 ? 'aspect-video' : 'aspect-square',
                         )}
                       >
@@ -345,9 +345,9 @@ export function CheckoutGalleryModal({ photos, onClose }: Props) {
                           sizes="(max-width: 640px) 90vw, (max-width: 1024px) 45vw, 300px"
                         />
                         {/* Overlay hover */}
-                        <div className="absolute inset-0 bg-black/0 group-hover:bg-black/30 transition-all duration-200 flex items-center justify-center">
-                          <div className="opacity-0 group-hover:opacity-100 transition-all duration-200 w-9 h-9 rounded-2xl bg-white/20 backdrop-blur-sm border border-white/30 flex items-center justify-center">
-                            <ZoomIn className="w-4 h-4 text-white" />
+                        <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-all duration-200 flex items-center justify-center">
+                          <div className="w-9 h-9 rounded-inner bg-forest-950/80 backdrop-blur-sm border border-amber-400/30 flex items-center justify-center">
+                            <ZoomIn className="w-4 h-4 text-amber-400" />
                           </div>
                         </div>
                       </button>
@@ -359,10 +359,10 @@ export function CheckoutGalleryModal({ photos, onClose }: Props) {
           </div>
 
           {/* ── Pied de page ── */}
-          <div className="shrink-0 px-6 pb-6 pt-4 border-t border-white/8">
-            <div className="flex items-center gap-2.5 bg-white/4 border border-white/8 rounded-2xl px-4 py-3">
-              <Camera className="w-4 h-4 text-neutral-500 shrink-0" />
-              <p className="text-[11px] text-neutral-500 leading-relaxed">
+          <div className="shrink-0 px-6 pb-6 pt-4 border-t border-forest-800/80">
+            <div className="flex items-center gap-2.5 bg-forest-900/60 border border-forest-800/80 rounded-inner px-4 py-3">
+              <Camera className="w-4 h-4 text-amber-400 shrink-0" />
+              <p className="text-[11px] text-forest-300 leading-relaxed">
                 Appuyez sur une photo pour l&apos;agrandir · Naviguez avec les flèches ← →
               </p>
             </div>

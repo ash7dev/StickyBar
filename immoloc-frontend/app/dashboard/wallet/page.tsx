@@ -1,6 +1,7 @@
 'use client';
 
 import { useWallet } from '@/features/wallet/hooks/use-wallet';
+import { WalletHeader } from '@/features/wallet/components/WalletHeader';
 import { WalletBalanceCard, WalletBalanceCardSkeleton } from '@/features/wallet/components/WalletBalanceCard';
 import { DebtWarningBanner } from '@/features/wallet/components/DebtWarningBanner';
 import { WalletHistoryCard } from '@/features/wallet/components/WalletHistoryCard';
@@ -10,9 +11,12 @@ export default function WalletPage() {
   const { data, isLoading } = useWallet();
 
   return (
-    <div className="space-y-6 pb-10">
-      {/* WalletBalanceCard masqué en mobile, visible desktop */}
-      <div className="hidden sm:block">
+    <div className="space-y-6 pb-12">
+      {/* Header de la page */}
+      <WalletHeader />
+
+      {/* Carte de solde du portefeuille */}
+      <div>
         {isLoading || !data ? (
           <WalletBalanceCardSkeleton />
         ) : (
@@ -23,13 +27,13 @@ export default function WalletPage() {
         )}
       </div>
 
+      {/* Bannière d'avertissement si dette présente */}
       {!isLoading && data && Number(data.dettePenalites) > 0 && (
         <DebtWarningBanner dettePenalites={Number(data.dettePenalites)} />
       )}
 
-      {/* Desktop: HistoryCard (gauche) + WithdrawalCard (droite 420px) */}
-      {/* Mobile: WithdrawalCard en haut, HistoryCard en bas */}
-      <div className="flex flex-col gap-6 lg:grid lg:grid-cols-[1fr_420px]">
+      {/* Disposition principale : Formulaire de retrait + Historique */}
+      <div className="flex flex-col gap-6 lg:grid lg:grid-cols-[1fr_400px]">
         <div className="order-2 lg:order-1 min-w-0">
           <WalletHistoryCard transactions={data?.transactions} isLoading={isLoading} />
         </div>

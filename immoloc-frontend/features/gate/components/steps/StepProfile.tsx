@@ -9,6 +9,7 @@ import { useRoleStore } from '@/stores/role.store';
 import { useNestToken } from '@/features/auth/hooks/use-nest-token';
 import { BirthdatePicker } from '@/features/gate/components/BirthdatePicker';
 import { cn } from '@/lib/utils/cn';
+import { Loader2 } from 'lucide-react';
 
 const schema = z.object({
   prenom: z.string().min(2, 'Minimum 2 caractères'),
@@ -31,10 +32,10 @@ type FormData = z.infer<typeof schema>;
 interface Props { onDone: () => void }
 
 const inputCls = cn(
-  'w-full rounded-xl border border-border px-4 py-3 text-sm text-neutral-900',
-  'placeholder:text-neutral-300',
+  'w-full rounded-field bg-background-alt border border-border px-4 py-3 text-sm font-semibold text-foreground',
+  'placeholder:text-foreground-faint',
   'outline-none transition-all',
-  'focus:border-emerald-400 focus:ring-2 focus:ring-emerald-100',
+  'focus:border-forest-600 focus:ring-2 focus:ring-forest-500/20',
 );
 
 export function StepProfile({ onDone }: Props) {
@@ -69,35 +70,34 @@ export function StepProfile({ onDone }: Props) {
 
   return (
     <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
-
       <div className="grid grid-cols-2 gap-3">
-        <div className="space-y-1.5">
-          <label className="text-xs font-bold text-neutral-600">Prénom</label>
+        <div>
+          <label className="eyebrow block mb-1.5">Prénom</label>
           <input
             {...register('prenom')}
             placeholder="Mamadou"
-            className={cn(inputCls, errors.prenom && 'border-rose-300 focus:border-rose-400 focus:ring-rose-100')}
+            className={cn(inputCls, errors.prenom && 'border-error-500/50 focus:border-error-600')}
           />
           {errors.prenom && (
-            <p className="text-[11px] font-medium text-rose-500">{errors.prenom.message}</p>
+            <p className="text-[11px] font-semibold text-error-600 mt-1">{errors.prenom.message}</p>
           )}
         </div>
 
-        <div className="space-y-1.5">
-          <label className="text-xs font-bold text-neutral-600">Nom</label>
+        <div>
+          <label className="eyebrow block mb-1.5">Nom</label>
           <input
             {...register('nom')}
             placeholder="Diallo"
-            className={cn(inputCls, errors.nom && 'border-rose-300 focus:border-rose-400 focus:ring-rose-100')}
+            className={cn(inputCls, errors.nom && 'border-error-500/50 focus:border-error-600')}
           />
           {errors.nom && (
-            <p className="text-[11px] font-medium text-rose-500">{errors.nom.message}</p>
+            <p className="text-[11px] font-semibold text-error-600 mt-1">{errors.nom.message}</p>
           )}
         </div>
       </div>
 
-      <div className="space-y-1.5">
-        <label className="text-xs font-bold text-neutral-600">Date de naissance</label>
+      <div>
+        <label className="eyebrow block mb-1.5">Date de naissance</label>
         <Controller
           control={control}
           name="dateNaissance"
@@ -110,16 +110,20 @@ export function StepProfile({ onDone }: Props) {
           )}
         />
         {errors.dateNaissance && (
-          <p className="text-[11px] font-medium text-rose-500">{errors.dateNaissance.message}</p>
+          <p className="text-[11px] font-semibold text-error-600 mt-1">{errors.dateNaissance.message}</p>
         )}
       </div>
 
       <button
         type="submit"
         disabled={isSubmitting}
-        className="w-full bg-emerald-600 hover:bg-emerald-700 disabled:opacity-50 text-white text-sm font-bold rounded-xl py-3 transition-colors"
+        className="btn-action w-full text-xs justify-center cursor-pointer disabled:opacity-50"
       >
-        {isSubmitting ? 'Enregistrement…' : 'Continuer'}
+        {isSubmitting ? (
+          <><Loader2 className="w-4 h-4 animate-spin" /> Enregistrement…</>
+        ) : (
+          'Continuer'
+        )}
       </button>
     </form>
   );

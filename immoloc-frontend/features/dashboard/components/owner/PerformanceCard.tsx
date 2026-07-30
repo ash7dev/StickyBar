@@ -22,12 +22,6 @@ interface LogementStat {
   nbLocations: number;
 }
 
-const RANK_STYLES = {
-  1: { bg: 'bg-amber-100',   text: 'text-amber-600',   ring: 'ring-amber-200',   bar: 'from-amber-400 to-amber-500',   medal: '🥇' },
-  2: { bg: 'bg-neutral-100', text: 'text-foreground-muted', ring: 'ring-neutral-200', bar: 'from-neutral-300 to-neutral-400', medal: '🥈' },
-  3: { bg: 'bg-orange-100',  text: 'text-orange-600',  ring: 'ring-orange-200',  bar: 'from-orange-300 to-orange-400',  medal: '🥉' },
-};
-
 export function PerformanceCard({ bookings, conversionRate, activeListings }: Props) {
   const [mounted, setMounted] = useState(false);
   useEffect(() => {
@@ -58,133 +52,76 @@ export function PerformanceCard({ bookings, conversionRate, activeListings }: Pr
   const monthCapitalized = currentMonth.charAt(0).toUpperCase() + currentMonth.slice(1);
 
   return (
-    <div className="bg-background-card rounded-2xl border border-border/80 flex flex-col flex-1 min-h-[420px] hover:shadow-xl hover:shadow-md/40 hover:-translate-y-0.5 transition-all duration-500 relative overflow-hidden group/card">
+    <div className="bg-background-card rounded-card border border-border/80 p-5 lg:p-6 flex flex-col justify-between shadow-2xs hover:border-forest-600/30 hover:shadow-md transition-all min-h-[380px] space-y-4">
 
-      {/* Ambient glow */}
-      <div className="absolute -top-12 -right-12 w-48 h-48 bg-amber-500/5 rounded-full blur-[60px] pointer-events-none" />
-
-      {/* ── Header ──────────────────────────────────────────────── */}
-      <div className="relative z-10 flex items-center justify-between p-4 lg:p-6 pb-3 lg:pb-4">
-        <div className="flex items-center gap-3">
-          <div className="w-9 h-9 lg:w-10 lg:h-10 rounded-xl bg-amber-50 flex items-center justify-center border border-amber-100 shadow-sm shrink-0">
-            <Trophy className="w-[16px] h-[16px] lg:w-[18px] lg:h-[18px] text-amber-500" />
+      {/* Header */}
+      <div className="flex items-center justify-between gap-2 flex-wrap sm:flex-nowrap pb-3 border-b border-border/60">
+        <div className="flex items-center gap-3 min-w-0">
+          <div className="w-9 h-9 lg:w-10 lg:h-10 rounded-inner bg-forest-950 text-lime-400 border border-lime-400/20 flex items-center justify-center shrink-0 shadow-2xs">
+            <Trophy className="w-4 h-4 text-lime-400" />
           </div>
-          <div>
-            <p className="text-[10px] font-black text-foreground-muted uppercase tracking-widest">Performance</p>
-            <h3 className="text-sm font-bold text-foreground">Classement {monthCapitalized}</h3>
+          <div className="min-w-0">
+            <p className="text-[10px] font-extrabold text-foreground-muted uppercase tracking-wider">Performance</p>
+            <h3 className="font-display text-sm sm:text-base font-bold text-forest-950 truncate">Classement {monthCapitalized}</h3>
           </div>
         </div>
-        <div className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-emerald-50 border border-emerald-100 shrink-0">
-          <TrendingUp className="w-3 h-3 text-emerald-500" />
-          <span className="text-[10px] font-bold text-emerald-600">{conversionRate}% actifs</span>
+        <div className="inline-flex items-center gap-1.5 px-2.5 sm:px-3 py-1 rounded-pill bg-forest-50 border border-forest-100 text-forest-800 text-[11px] sm:text-xs font-extrabold shrink-0">
+          <TrendingUp className="w-3.5 h-3.5 text-forest-600" />
+          <span>{conversionRate}% actifs</span>
         </div>
       </div>
 
-      {/* ── Section label ───────────────────────────────────────── */}
-      <div className="relative z-10 px-4 lg:px-6 pb-3 flex items-center justify-between">
-        <div className="flex items-center gap-2">
-          <BarChart2 className="w-3.5 h-3.5 text-foreground-muted" />
-          <span className="text-[10px] font-bold text-foreground-muted uppercase tracking-wider">Top Propriétés</span>
-        </div>
-        <span className="text-[10px] text-foreground-muted font-medium">Revenus</span>
-      </div>
-
-      {/* ── Ranked list ─────────────────────────────────────────── */}
-      <div className="relative z-10 px-4 lg:px-6 flex-1">
+      {/* Ranked List */}
+      <div className="flex-1 space-y-3">
         {ranked.length === 0 ? (
-          <div className="py-12 flex flex-col items-center justify-center text-center">
-            <Star className="w-6 h-6 text-neutral-200 mb-2" />
-            <p className="text-xs font-bold text-foreground-muted">Aucune donnée classée</p>
-            <p className="text-[11px] text-foreground-muted mt-1">Les réservations actives apparaîtront ici.</p>
+          <div className="py-10 flex flex-col items-center justify-center text-center space-y-2">
+            <div className="w-10 h-10 rounded-inner bg-forest-950 text-lime-400 border border-lime-400/20 flex items-center justify-center">
+              <Star className="w-5 h-5 text-lime-400" />
+            </div>
+            <p className="font-display text-sm font-bold text-forest-950">Aucune donnée classée</p>
+            <p className="text-xs text-foreground-muted">Les réservations activées apparaîtront ici.</p>
           </div>
         ) : (
-          <div className="space-y-2">
+          <div className="space-y-2.5">
             {ranked.map((item, i) => {
-              const rank      = (i + 1) as 1 | 2 | 3;
-              const barPct    = maxRevenue > 0 ? Math.round((item.revenue / maxRevenue) * 100) : 0;
-              const occupation = Math.min(conversionRate + (3 - i) * 8, 100);
-              const rankStyle = RANK_STYLES[rank] ?? RANK_STYLES[2];
-              const isFirst   = rank === 1;
+              const rank = i + 1;
+              const barPct = maxRevenue > 0 ? Math.round((item.revenue / maxRevenue) * 100) : 0;
+              const isFirst = rank === 1;
 
               return (
                 <div
                   key={item.titre}
-                  className={`group/row rounded-2xl transition-all duration-200 ${
+                  className={`p-3.5 rounded-inner border transition-all ${
                     isFirst
-                      ? 'bg-gradient-to-br from-amber-50 to-amber-50/30 border border-amber-100 shadow-sm'
-                      : 'border border-neutral-100 hover:border-border hover:bg-neutral-50/60'
+                      ? 'bg-forest-950 text-white border-forest-800 shadow-md'
+                      : 'bg-background-alt border-border/80 text-forest-950'
                   }`}
                 >
-                  {/* ── Mobile layout ─────────────────────────── */}
-                  <div className="lg:hidden p-3">
-                    {/* Row 1: rank badge + title + séjours */}
-                    <div className="flex items-center gap-2.5 mb-2.5">
-                      <div className={`w-8 h-8 rounded-xl flex items-center justify-center shrink-0 shadow-sm ring-1 ring-inset font-black text-xs ${rankStyle.bg} ${rankStyle.text} ${rankStyle.ring}`}>
+                  <div className="flex items-center justify-between gap-3 mb-2">
+                    <div className="flex items-center gap-2.5 min-w-0">
+                      <span className={`w-6 h-6 rounded-pill flex items-center justify-center font-display font-extrabold text-xs shrink-0 ${
+                        isFirst ? 'bg-lime-400 text-forest-950' : 'bg-background-card border border-border text-forest-950'
+                      }`}>
                         {rank}
-                      </div>
-                      <p className="flex-1 text-sm font-bold text-foreground truncate leading-tight">
+                      </span>
+                      <p className={`font-display text-xs font-bold truncate ${isFirst ? 'text-white' : 'text-forest-950'}`}>
                         {item.titre}
                       </p>
-                      <span className="shrink-0 text-[10px] font-bold text-foreground-muted bg-neutral-100 px-2 py-0.5 rounded-full">
-                        {item.nbLocations} séjour{item.nbLocations > 1 ? 's' : ''}
-                      </span>
                     </div>
 
-                    {/* Row 2: big price + occupation badge */}
-                    <div className="flex items-center justify-between mb-2">
-                      <div className="flex items-baseline gap-1">
-                        <span className={`text-xl font-black tracking-tight ${isFirst ? 'text-amber-700' : 'text-foreground'}`}>
-                          {fmt(item.revenue)}
-                        </span>
-                        <span className="text-[9px] font-bold text-foreground-muted uppercase">FCFA</span>
-                      </div>
-                      <span className={`text-[10px] font-black px-2 py-0.5 rounded-full border ${
-                        occupation >= 70
-                          ? 'bg-emerald-50 text-emerald-600 border-emerald-100'
-                          : 'bg-neutral-50 text-foreground-muted border-neutral-100'
-                      }`}>
-                        {occupation}% occ.
+                    <div className="text-right shrink-0">
+                      <span className={`font-display text-xs font-extrabold ${isFirst ? 'text-lime-400' : 'text-forest-950'}`}>
+                        {fmt(item.revenue)} FCFA
                       </span>
-                    </div>
-
-                    {/* Row 3: progress bar */}
-                    <div className="h-2 rounded-full bg-neutral-100 overflow-hidden">
-                      <div
-                        className={`h-full rounded-full bg-gradient-to-r transition-all duration-1000 ease-out ${rankStyle.bar}`}
-                        style={{ width: mounted ? `${Math.max(barPct, 2)}%` : '0%', transitionDelay: `${i * 150}ms` }}
-                      />
                     </div>
                   </div>
 
-                  {/* ── Desktop layout ────────────────────────── */}
-                  <div className="hidden lg:block p-3">
-                    <div className="flex items-center gap-3.5 mb-2.5">
-                      <div className={`w-8 h-8 rounded-xl flex items-center justify-center shrink-0 shadow-sm ring-1 ring-inset ${rankStyle.bg} ${rankStyle.text} ${rankStyle.ring}`}>
-                        <span className="text-xs font-black">{rank}</span>
-                      </div>
-                      <div className="flex-1 min-w-0">
-                        <p className={`text-sm font-bold truncate ${isFirst ? 'text-amber-900' : 'text-foreground'}`}>
-                          {item.titre}
-                        </p>
-                        <p className="text-[10px] font-medium text-foreground-muted mt-0.5">
-                          Occupation : <span className="font-bold text-neutral-700">{occupation}%</span>
-                        </p>
-                      </div>
-                      <div className="text-right shrink-0">
-                        <p className="text-[15px] font-black text-foreground tracking-tight">
-                          {fmt(item.revenue)} <span className="text-[9px] font-bold text-foreground-muted uppercase">FCFA</span>
-                        </p>
-                        <p className="text-[10px] font-medium text-foreground-muted mt-0.5">
-                          {item.nbLocations} séjour{item.nbLocations > 1 ? 's' : ''}
-                        </p>
-                      </div>
-                    </div>
-                    <div className="ml-[46px] h-1.5 rounded-full bg-neutral-100 overflow-hidden">
-                      <div
-                        className={`h-full rounded-full bg-gradient-to-r transition-all duration-1000 ease-out ${rankStyle.bar}`}
-                        style={{ width: mounted ? `${Math.max(barPct, 2)}%` : '0%', transitionDelay: `${i * 150}ms` }}
-                      />
-                    </div>
+                  {/* Progress Bar */}
+                  <div className="h-1.5 rounded-pill bg-border/40 overflow-hidden">
+                    <div
+                      className={`h-full rounded-pill transition-all duration-1000 ${isFirst ? 'bg-lime-400' : 'bg-forest-700'}`}
+                      style={{ width: mounted ? `${Math.max(barPct, 4)}%` : '0%' }}
+                    />
                   </div>
                 </div>
               );
@@ -193,14 +130,14 @@ export function PerformanceCard({ bookings, conversionRate, activeListings }: Pr
         )}
       </div>
 
-      {/* ── Footer ──────────────────────────────────────────────── */}
-      <div className="relative z-10 border-t border-neutral-100 p-2 mt-4">
+      {/* Footer Link */}
+      <div className="pt-3 border-t border-border/60">
         <Link
           href="/dashboard/annonces"
-          className="flex items-center justify-center gap-2 py-3 rounded-xl text-xs font-bold text-foreground-muted hover:text-emerald-600 hover:bg-emerald-50 transition-colors w-full"
+          className="w-full inline-flex items-center justify-center gap-2 py-2.5 rounded-pill bg-background-alt hover:bg-background-card text-forest-950 font-extrabold text-xs transition-all border border-border/80 shadow-2xs"
         >
-          Voir le détail des annonces
-          <ArrowRight className="w-3.5 h-3.5" />
+          <span>Voir le détail des annonces</span>
+          <ArrowRight className="w-3.5 h-3.5 text-forest-950" />
         </Link>
       </div>
     </div>

@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 'use client';
 
 import { useState, useEffect, useTransition } from 'react';
@@ -162,14 +163,14 @@ export function PricePreviewWidget({
   }
 
   return (
-    <div className="bg-background-card rounded-[2rem] border border-border shadow-[0_8px_40px_-8px_rgba(0,0,0,0.08),0_0_0_1px_rgba(0,0,0,0.03)] overflow-hidden">
+    <div className="w-full max-w-full bg-background-card rounded-[2rem] border border-border shadow-[0_8px_40px_-8px_rgba(0,0,0,0.08),0_0_0_1px_rgba(0,0,0,0.03)] overflow-hidden">
 
       {/* ── Header prix ─────────────────────────────────────────────── */}
       <div className="px-7 pt-7 pb-5 bg-gradient-to-b from-background-alt/80 to-background-card border-b border-border">
         <div className="flex items-start justify-between">
           <div>
-            <span className="inline-flex items-center gap-1.5 px-2.5 py-1 bg-emerald-50 border border-emerald-100 text-emerald-600 text-[9px] font-black uppercase tracking-widest rounded-lg mb-3">
-              <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+            <span className="inline-flex items-center gap-1.5 px-2.5 py-1 bg-success-50 border border-success-500/30 text-success-700 text-[9px] font-black uppercase tracking-widest rounded-lg mb-3">
+              <span className="w-1.5 h-1.5 rounded-full bg-success-600 animate-pulse" />
               Disponible
             </span>
             <div className="flex items-baseline gap-1.5">
@@ -183,14 +184,14 @@ export function PricePreviewWidget({
                 </p>
               )}
               {tarifsNuits && tarifsNuits.length > 1 && (
-                <span className="text-[9px] font-black text-emerald-600 bg-emerald-50 border border-emerald-100 px-2 py-0.5 rounded-md uppercase tracking-wide">
+                <span className="text-[9px] font-black text-success-700 bg-success-50 border border-success-500/30 px-2 py-0.5 rounded-md uppercase tracking-wide">
                   Tarif dégressif
                 </span>
               )}
             </div>
           </div>
-          <div className="w-10 h-10 rounded-2xl bg-emerald-50 border border-emerald-100 flex items-center justify-center">
-            <CalendarDays className="w-5 h-5 text-emerald-500" />
+          <div className="w-10 h-10 rounded-2xl bg-success-50 border border-success-500/30 flex items-center justify-center">
+            <CalendarDays className="w-5 h-5 text-success-600" />
           </div>
         </div>
       </div>
@@ -215,7 +216,7 @@ export function PricePreviewWidget({
               <span className="text-xs font-black text-foreground uppercase tracking-wider">Voyageurs</span>
             </div>
             {capaciteMax > 1 && (
-              <span className="text-[10px] font-medium text-emerald-500 bg-emerald-50 border border-emerald-100 px-2 py-0.5 rounded-full">
+              <span className="text-[10px] font-medium text-success-700 bg-success-50 border border-success-500/30 px-2 py-0.5 rounded-full">
                 Tarif dynamique
               </span>
             )}
@@ -226,7 +227,7 @@ export function PricePreviewWidget({
             <button
               onClick={() => setNbPersonnes((p) => Math.max(1, p - 1))}
               disabled={nbPersonnes <= 1}
-              className="w-10 h-10 rounded-xl bg-background-card border border-border shadow-sm flex items-center justify-center text-foreground-muted hover:text-emerald-600 hover:border-emerald-200 hover:shadow-md disabled:opacity-30 disabled:cursor-not-allowed transition-all duration-200"
+              className="w-10 h-10 rounded-xl bg-background-card border border-border shadow-sm flex items-center justify-center text-foreground-muted hover:text-success-600 hover:border-success-500/50 hover:shadow-md disabled:opacity-30 disabled:cursor-not-allowed transition-all duration-200"
             >
               <Minus className="w-4 h-4" />
             </button>
@@ -241,7 +242,7 @@ export function PricePreviewWidget({
             <button
               onClick={() => setNbPersonnes((p) => Math.min(capaciteMax, p + 1))}
               disabled={nbPersonnes >= capaciteMax}
-              className="w-10 h-10 rounded-xl bg-background-card border border-border shadow-sm flex items-center justify-center text-foreground-muted hover:text-emerald-600 hover:border-emerald-200 hover:shadow-md disabled:opacity-30 disabled:cursor-not-allowed transition-all duration-200"
+              className="w-10 h-10 rounded-xl bg-background-card border border-border shadow-sm flex items-center justify-center text-foreground-muted hover:text-success-600 hover:border-success-500/50 hover:shadow-md disabled:opacity-30 disabled:cursor-not-allowed transition-all duration-200"
             >
               <Plus className="w-4 h-4" />
             </button>
@@ -266,12 +267,12 @@ export function PricePreviewWidget({
 
         {/* ── Détail prix ─────────────────────────────────────────────── */}
         {nights > 0 && (
-          <div className="bg-neutral-900 rounded-[1.5rem] p-5 space-y-3 shadow-xl shadow-neutral-900/10 animate-in fade-in slide-in-from-bottom-3 duration-300">
+          <div className="bg-forest-950 rounded-[1.5rem] p-5 space-y-3 shadow-xl shadow-forest-950/10 animate-in fade-in slide-in-from-bottom-3 duration-300">
 
             {/* Ligne nuits */}
             <div className="flex items-center justify-between text-sm">
-              <div className="flex items-center gap-2 text-foreground-muted">
-                <Moon className="w-4 h-4 text-foreground-muted" />
+              <div className="flex items-center gap-2 text-forest-200">
+                <Moon className="w-4 h-4 text-forest-200" />
                 <span className="font-medium">
                   {fmt(prixAffiche)} × {nights} nuit{nights > 1 ? 's' : ''}
                 </span>
@@ -282,8 +283,8 @@ export function PricePreviewWidget({
             {/* Supplément personnes */}
             {preview && preview.supplementPersonnes > 0 && (
               <div className="flex items-center justify-between text-sm">
-                <div className="flex items-center gap-2 text-foreground-muted">
-                  <Users className="w-4 h-4 text-foreground-muted" />
+                <div className="flex items-center gap-2 text-forest-200">
+                  <Users className="w-4 h-4 text-forest-200" />
                   <span className="font-medium">
                     Supplément {nbPersonnes} voyageur{nbPersonnes > 1 ? 's' : ''}
                   </span>
@@ -294,26 +295,26 @@ export function PricePreviewWidget({
 
             {preview && preview.reductionNuits > 0 && (
               <div className="flex items-center justify-between text-sm">
-                <div className="flex items-center gap-2 text-foreground-muted">
-                  <Moon className="w-4 h-4 text-foreground-muted" />
+                <div className="flex items-center gap-2 text-forest-200">
+                  <Moon className="w-4 h-4 text-forest-200" />
                   <span className="font-medium">Réduction séjour long</span>
                 </div>
-                <span className="font-bold text-emerald-400">−{fmt(preview.reductionNuits)} FCFA</span>
+                <span className="font-bold text-lime-400">−{fmt(preview.reductionNuits)} FCFA</span>
               </div>
             )}
 
             {/* Total */}
-            <div className="border-t border-neutral-800 pt-3 flex items-center justify-between">
+            <div className="border-t border-forest-800 pt-3 flex items-center justify-between">
               <span className="font-black text-white">Total estimé</span>
               <div className="flex items-center gap-2">
-                {isPending && <Loader2 className="w-3.5 h-3.5 animate-spin text-neutral-500" />}
+                {isPending && <Loader2 className="w-3.5 h-3.5 animate-spin text-lime-400" />}
                 <span className="font-black text-white text-xl tracking-tight">
                   {fmt(estimatedTotal)} FCFA
                 </span>
               </div>
             </div>
 
-            <p className="text-[10px] font-medium text-foreground-muted text-right">Aucune surprise · Prix fixe garanti</p>
+            <p className="text-[10px] font-medium text-forest-200 text-right">Aucune surprise · Prix fixe garanti</p>
           </div>
         )}
 
@@ -326,8 +327,8 @@ export function PricePreviewWidget({
                 onClick={() => setCguAccepted((v) => !v)}
                 className={`w-5 h-5 rounded-md border-2 flex items-center justify-center transition-all duration-200 ${
                   cguAccepted
-                    ? 'bg-emerald-500 border-emerald-500 shadow-[0_0_0_3px_rgba(20,101,76,0.15)]'
-                    : 'border-border bg-background-card group-hover:border-emerald-400'
+                    ? 'bg-success-600 border-success-600 shadow-[0_0_0_3px_rgba(46,158,82,0.15)]'
+                    : 'border-border bg-background-card group-hover:border-success-500'
                 }`}
               >
                 {cguAccepted && <CheckCircle2 className="w-3 h-3 text-white fill-white" />}
@@ -335,11 +336,11 @@ export function PricePreviewWidget({
             </div>
             <p className="text-xs font-medium text-foreground-muted leading-relaxed">
               J&apos;accepte les{' '}
-              <Link href="/cgu" target="_blank" className="text-emerald-600 font-bold hover:underline underline-offset-2">
+              <Link href="/cgu" target="_blank" className="text-success-600 font-bold hover:underline underline-offset-2">
                 conditions de location
               </Link>{' '}
               et le{' '}
-              <span className="text-emerald-600 font-bold">contrat de réservation</span>{' '}
+              <span className="text-success-600 font-bold">contrat de réservation</span>{' '}
               qui seront envoyés à la confirmation.
             </p>
           </label>
@@ -359,7 +360,7 @@ export function PricePreviewWidget({
           disabled={!canBook || !hasHydrated}
           className={`w-full flex items-center justify-center gap-2.5 py-4 px-6 font-black rounded-2xl text-[15px] transition-all duration-300 ${
             canBook && hasHydrated
-              ? 'bg-emerald-600 text-white shadow-[0_8px_25px_rgba(20,101,76,0.30)] hover:bg-emerald-700 hover:shadow-[0_12px_32px_rgba(20,101,76,0.40)] hover:-translate-y-0.5 active:translate-y-0'
+              ? 'bg-lime-400 text-forest-950 shadow-[0_8px_25px_rgba(211,242,110,0.40)] hover:bg-lime-300 hover:shadow-[0_12px_32px_rgba(211,242,110,0.50)] hover:-translate-y-0.5 active:translate-y-0'
               : 'bg-background-alt text-foreground-muted cursor-not-allowed'
           }`}
         >
@@ -399,8 +400,8 @@ export function PricePreviewWidget({
             { icon: CheckCircle2, text: 'Annulation', sub: 'flexible' },
           ].map(({ icon: Icon, text, sub }, i) => (
             <div key={i} className="flex flex-col items-center gap-1">
-              <div className="w-8 h-8 rounded-xl bg-emerald-50 border border-emerald-100 flex items-center justify-center">
-                <Icon className="w-4 h-4 text-emerald-500" />
+              <div className="w-8 h-8 rounded-xl bg-success-50 border border-success-500/30 flex items-center justify-center">
+                <Icon className="w-4 h-4 text-success-600" />
               </div>
               <span className="text-[10px] font-black text-foreground">{text}</span>
               <span className="text-[10px] font-medium text-foreground-muted">{sub}</span>
@@ -411,6 +412,42 @@ export function PricePreviewWidget({
         <p className="text-center text-[11px] font-medium text-foreground-muted">
           Aucun débit avant confirmation du propriétaire
         </p>
+      </div>
+
+      {/* ── Sticky Mobile Bottom Navigation Bar ─────────────────────────────────────────── */}
+      <div className="lg:hidden fixed bottom-0 left-0 right-0 z-50 bg-background-card/95 backdrop-blur-md border-t border-border p-4 shadow-[0_-10px_30px_rgba(0,0,0,0.1)] flex items-center justify-between gap-4">
+        <div>
+          <div className="flex items-baseline gap-1">
+            <span className="font-display text-lg font-bold text-forest-900">
+              {fmt(prixAffiche)} FCFA
+            </span>
+            <span className="text-xs text-foreground-muted">/ nuit</span>
+          </div>
+          <p className="text-[11px] text-foreground-muted font-medium truncate max-w-[170px] sm:max-w-none">
+            {hasRange
+              ? `${nights} nuit${nights > 1 ? 's' : ''} · ${nbPersonnes} voyageur${nbPersonnes > 1 ? 's' : ''}`
+              : `Minimum ${nuitesMinimum} nuit${nuitesMinimum > 1 ? 's' : ''}`}
+          </p>
+        </div>
+
+        <button
+          type="button"
+          onClick={() => {
+            if (hasRange) {
+              handleBook();
+            } else {
+              const defaultFrom = new Date();
+              const defaultTo = new Date();
+              defaultTo.setDate(defaultFrom.getDate() + Math.max(nuitesMinimum, 1));
+              const fromStr = range?.from ? range.from.toISOString().split('T')[0] : defaultFrom.toISOString().split('T')[0];
+              const toStr = range?.to ? range.to.toISOString().split('T')[0] : defaultTo.toISOString().split('T')[0];
+              router.push(`/reserver?listingId=${listingId}&dateDebut=${fromStr}&dateFin=${toStr}&personnes=${nbPersonnes}`);
+            }
+          }}
+          className="bg-lime-400 text-forest-950 hover:bg-lime-300 font-bold px-6 py-3 rounded-pill text-sm shadow-md transition-transform active:scale-95 flex items-center gap-1.5 shrink-0"
+        >
+          Réserver
+        </button>
       </div>
 
       {gateState.open && (

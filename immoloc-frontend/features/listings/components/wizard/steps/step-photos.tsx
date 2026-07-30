@@ -2,10 +2,10 @@
 
 import { useRef, useCallback, useState } from 'react';
 import {
-  Camera, Upload, X, Star, AlertCircle, CheckCircle2, ChevronDown,
+  Camera, Upload, Trash2, Star, AlertCircle, CheckCircle2, ChevronDown,
 } from 'lucide-react';
 import { useListingFormStore } from '@/stores/listing-form.store';
-import { CATEGORIE_PHOTO, type PhotoItem } from '@/schemas/listing.schema';
+import { type PhotoItem } from '@/schemas/listing.schema';
 import { cn } from '@/lib/utils/cn';
 
 const CAT_LABELS: Record<string, string> = {
@@ -19,41 +19,29 @@ interface Props {
   submitRef: React.RefObject<HTMLButtonElement | null>;
 }
 
-/* ── SectionCard ──────────────────────────────────────────────────────────── */
-
 function SectionCard({
-  icon: Icon, title, description,
-  accent = 'bg-sky-500', headerBg = 'bg-sky-50',
-  iconBg = 'bg-sky-100', iconColor = 'text-sky-600',
-  children,
+  icon: Icon, title, description, children,
 }: {
   icon: React.ComponentType<{ className?: string }>;
   title: string;
   description?: string;
-  accent?: string;
-  headerBg?: string;
-  iconBg?: string;
-  iconColor?: string;
   children: React.ReactNode;
 }) {
   return (
-    <div className="bg-white rounded-2xl border border-neutral-200 shadow-sm">
-      <div className={cn('h-[3px] w-full rounded-t-2xl', accent)} />
-      <div className={cn('flex items-center gap-3.5 px-5 py-4 border-b border-neutral-100', headerBg)}>
-        <div className={cn('w-10 h-10 rounded-xl flex items-center justify-center shrink-0', iconBg)}>
-          <Icon className={cn('w-5 h-5', iconColor)} />
+    <div className="card p-0 overflow-hidden shadow-sm">
+      <div className="flex items-center gap-3.5 px-6 py-4.5 border-b border-border/80 bg-background-alt">
+        <div className="w-10 h-10 rounded-inner bg-forest-950 border border-forest-800 text-lime-400 flex items-center justify-center shrink-0 shadow-xs">
+          <Icon className="w-5 h-5 text-lime-400" />
         </div>
         <div>
-          <p className="font-bold text-neutral-900 text-[15px] tracking-tight">{title}</p>
-          {description && <p className="text-[12px] text-neutral-400 mt-0.5 font-medium">{description}</p>}
+          <p className="font-display text-base font-bold text-foreground tracking-tight">{title}</p>
+          {description && <p className="text-xs text-foreground-muted mt-0.5 font-medium">{description}</p>}
         </div>
       </div>
-      <div className="px-5 py-5 space-y-4">{children}</div>
+      <div className="p-6 space-y-6">{children}</div>
     </div>
   );
 }
-
-/* ── Main Component ───────────────────────────────────────────────────────── */
 
 export function StepPhotos({ onNext, submitRef }: Props) {
   const { photos, addPhoto, removePhoto, updatePhoto, setPrincipalPhoto } = useListingFormStore();
@@ -94,69 +82,71 @@ export function StepPhotos({ onNext, submitRef }: Props) {
   const principal = list.find((p) => p.estPrincipale) ?? list[0];
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-4">
+    <form onSubmit={handleSubmit} className="space-y-6">
 
       <SectionCard
         icon={Camera}
-        title={`Photos (${list.length}/10)`}
-        description="Minimum 5 photos de qualité pour continuer"
+        title={`Galerie Photos (${list.length}/10)`}
+        description="Veuillez importer au minimum 5 photos de haute qualité de votre logement"
       >
-        {/* ── Status bar ── */}
+        {/* Status bar */}
         <div className={cn(
-          'flex items-center justify-between p-4 rounded-2xl border transition-all duration-300',
+          'flex items-center justify-between p-4 rounded-inner border transition-all duration-300',
           isComplete
-            ? 'bg-emerald-50 border-emerald-200'
+            ? 'bg-forest-950/5 border-forest-600/30'
             : hasTriedSubmit
-              ? 'bg-red-50 border-red-200'
-              : 'bg-neutral-50 border-neutral-200',
+              ? 'bg-error-50 border-error-500/30'
+              : 'bg-background-alt border-border',
         )}>
           <div className="flex items-center gap-3">
             <div className={cn(
-              'w-10 h-10 rounded-xl flex items-center justify-center transition-all',
-              isComplete ? 'bg-emerald-500 text-white' : hasTriedSubmit ? 'bg-red-500 text-white' : 'bg-white border border-neutral-200 text-neutral-400',
+              'w-10 h-10 rounded-inner flex items-center justify-center transition-all',
+              isComplete ? 'bg-forest-600 text-lime-300' : hasTriedSubmit ? 'bg-error-600 text-white' : 'bg-background-card border border-border text-foreground-muted',
             )}>
               {isComplete ? <CheckCircle2 className="w-5 h-5" /> : <Camera className="w-5 h-5" />}
             </div>
             <div>
-              <p className={cn('text-sm font-black', isComplete ? 'text-emerald-800' : hasTriedSubmit ? 'text-red-700' : 'text-neutral-700')}>
-                {isComplete ? 'Critère minimum atteint !' : `Ajoutez encore ${remaining} photo${remaining > 1 ? 's' : ''}`}
+              <p className={cn('text-xs font-bold', isComplete ? 'text-forest-600 font-extrabold' : hasTriedSubmit ? 'text-error-600 font-extrabold' : 'text-foreground')}>
+                {isComplete ? 'Minimum de 5 photos atteint !' : `Encore ${remaining} photo${remaining > 1 ? 's' : ''} requise${remaining > 1 ? 's' : ''}`}
               </p>
-              <p className="text-[11px] text-neutral-400 font-medium mt-0.5">{list.length} / 10 photos ajoutées</p>
+              <p className="text-[11px] text-foreground-muted font-semibold mt-0.5">{list.length} / 10 photos sélectionnées</p>
             </div>
           </div>
-          {/* Progress dots */}
+          {/* Dots */}
           <div className="flex gap-1">
             {Array.from({ length: 10 }).map((_, i) => (
               <div key={i} className={cn(
-                'rounded-full transition-all duration-500',
+                'rounded-pill transition-all duration-500',
                 i < list.length
-                  ? 'w-1.5 h-5 bg-emerald-500'
-                  : i < 5 ? (hasTriedSubmit ? 'w-1.5 h-3 bg-red-200' : 'w-1.5 h-3 bg-neutral-200') : 'w-1.5 h-2 bg-neutral-100'
+                  ? 'w-1.5 h-5 bg-forest-600'
+                  : i < 5 ? (hasTriedSubmit ? 'w-1.5 h-3 bg-error-400' : 'w-1.5 h-3 bg-border') : 'w-1.5 h-2 bg-border/40'
               )} />
             ))}
           </div>
         </div>
 
-        {/* ── Hero photo (première/principale) ── */}
+        {/* Hero Cover Photo */}
         {list.length > 0 && principal && (
-          <div className="relative w-full aspect-video rounded-2xl overflow-hidden bg-neutral-100 border border-neutral-200">
+          <div className="relative w-full aspect-16/10 sm:aspect-video rounded-inner overflow-hidden border-2 border-gold-400 bg-background-alt shadow-md">
             <img src={principal.previewUrl} alt="Photo principale" className="w-full h-full object-cover" />
-            <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent" />
-            <div className="absolute bottom-0 left-0 right-0 p-3 flex items-end justify-between gap-2">
-              <span className="flex items-center gap-1.5 text-xs font-bold text-white">
-                <Star className="w-3.5 h-3.5 text-amber-400 fill-amber-400" />
-                Photo de couverture
-              </span>
-              <span className="text-[10px] font-semibold text-white/70 bg-black/30 px-2 py-0.5 rounded-full backdrop-blur-sm">
+            <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent" />
+            <div className="absolute top-3 left-3">
+              <div className="badge-verified shadow-md">
+                <Star className="w-3.5 h-3.5 text-gold-600 fill-gold-600" />
+                <span className="font-bold">Photo de couverture</span>
+              </div>
+            </div>
+            <div className="absolute bottom-3 left-3 right-3 flex items-center justify-between">
+              <span className="text-xs font-bold text-lime-300 bg-forest-950/90 px-3 py-1.5 rounded-pill backdrop-blur-sm border border-forest-800">
                 {CAT_LABELS[principal.categorie] ?? principal.categorie}
               </span>
             </div>
           </div>
         )}
 
-        {/* ── Grille photos ── */}
+        {/* Grid Photos */}
         {list.length > 0 && (
-          <div className="grid grid-cols-3 sm:grid-cols-4 gap-2">
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3.5">
             {list.map((photo, index) => (
               <PhotoCard
                 key={photo.previewUrl}
@@ -171,35 +161,41 @@ export function StepPhotos({ onNext, submitRef }: Props) {
           </div>
         )}
 
-        {/* ── Drop zone ── */}
+        {/* Drop zone */}
         {list.length < 10 && (
           <div
             onDrop={handleDrop}
             onDragOver={(e) => e.preventDefault()}
             onClick={() => fileInputRef.current?.click()}
-            className="group flex items-center justify-center gap-3 py-5 rounded-2xl border-2 border-dashed border-sky-200 hover:border-sky-400 bg-sky-50/50 hover:bg-sky-50 cursor-pointer transition-all"
+            className="flex flex-col items-center justify-center gap-2 py-8 rounded-field border-2 border-dashed border-border bg-background-alt hover:border-forest-600 hover:bg-background-card cursor-pointer transition-all text-center"
           >
-            <div className="w-10 h-10 rounded-xl bg-sky-100 border border-sky-200 flex items-center justify-center group-hover:scale-110 transition-transform">
-              <Upload className="w-4 h-4 text-sky-500" />
+            <div className="w-10 h-10 rounded-inner bg-forest-950 border border-forest-800 text-lime-400 flex items-center justify-center shadow-xs">
+              <Upload className="w-5 h-5" />
             </div>
             <div>
-              <p className="text-sm font-bold text-sky-700">
-                {list.length === 0 ? 'Cliquez ou glissez vos photos' : 'Ajouter des photos'}
+              <p className="text-xs font-bold text-foreground">
+                {list.length === 0 ? 'Cliquez ou glissez vos photos ici' : 'Ajouter d\'autres photos'}
               </p>
-              <p className="text-[11px] text-sky-500/70 font-medium mt-0.5">
-                {10 - list.length} emplacement{10 - list.length > 1 ? 's' : ''} restant{10 - list.length > 1 ? 's' : ''}
+              <p className="text-[11px] text-foreground-muted font-medium mt-0.5">
+                Format JPG ou PNG ({10 - list.length} restante{10 - list.length > 1 ? 's' : ''})
               </p>
             </div>
-            <input ref={fileInputRef} type="file" accept="image/*" multiple className="hidden"
-              onChange={(e) => handleFiles(e.target.files)} />
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept="image/*"
+              multiple
+              className="hidden"
+              onChange={(e) => handleFiles(e.target.files)}
+            />
           </div>
         )}
 
-        {/* Validation error */}
+        {/* Validation Error */}
         {!isComplete && (hasTriedSubmit || list.length > 0) && (
-          <div className="flex items-center gap-2 p-3.5 bg-red-50 border border-red-200 rounded-xl">
-            <AlertCircle className="w-4 h-4 text-red-500 shrink-0" />
-            <p className="text-xs text-red-600 font-bold">
+          <div className="flex items-center gap-2.5 p-3.5 bg-error-50 border border-error-500/30 rounded-inner">
+            <AlertCircle className="w-4 h-4 text-error-600 shrink-0" />
+            <p className="text-xs text-error-600 font-bold">
               {list.length === 0 ? 'Veuillez ajouter au moins 5 photos' : `Il manque encore ${remaining} photo${remaining > 1 ? 's' : ''}`}
             </p>
           </div>
@@ -210,8 +206,6 @@ export function StepPhotos({ onNext, submitRef }: Props) {
     </form>
   );
 }
-
-/* ── Photo Card ───────────────────────────────────────────────────────────── */
 
 function PhotoCard({
   photo, index, isPrincipal, onRemove, onSetPrincipal, onCategorieChange,
@@ -227,63 +221,68 @@ function PhotoCard({
 
   return (
     <div className={cn(
-      'group relative aspect-square rounded-xl overflow-hidden bg-neutral-100 border-2 transition-all duration-200',
-      isPrincipal ? 'border-amber-400 shadow-md shadow-amber-400/20' : 'border-transparent',
+      'group relative aspect-16/10 sm:aspect-4/3 rounded-inner overflow-hidden border-2 bg-background-alt transition-all shadow-xs flex flex-col justify-end',
+      isPrincipal ? 'border-gold-400 ring-2 ring-gold-400/20 shadow-md' : 'border-border',
     )}>
-      <img src={photo.previewUrl} alt={`Photo ${index + 1}`}
-        className="w-full h-full object-cover transition-all duration-200 group-active:brightness-75" />
+      <img src={photo.previewUrl} alt={`Photo ${index + 1}`} className="w-full h-full object-cover" />
 
-      {/* Badge principale */}
       {isPrincipal && (
-        <div className="absolute top-1 left-1 w-5 h-5 rounded-full bg-amber-400 flex items-center justify-center shadow">
-          <Star className="w-2.5 h-2.5 text-white fill-white" />
+        <div className="absolute top-2.5 left-2.5 badge-verified shadow-md z-10">
+          <Star className="w-3.5 h-3.5 text-gold-600 fill-gold-600" />
+          <span className="font-bold">Couverture</span>
         </div>
       )}
 
-      {/* Actions overlay */}
-      <div className="absolute inset-0 opacity-0 group-hover:opacity-100 active:opacity-100 transition-opacity bg-black/40 flex flex-col items-center justify-center gap-1.5 p-1">
-        {!isPrincipal && (
-          <button type="button" onClick={onSetPrincipal}
-            className="w-full flex items-center justify-center gap-1 py-1.5 rounded-lg bg-amber-400/90 text-white text-[10px] font-bold active:scale-95 transition-transform">
-            <Star className="w-3 h-3 fill-white" />
-            Principale
+      {/* Action bar overlay (persistent sur mobile, hover sur desktop) */}
+      <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/40 to-transparent sm:opacity-0 sm:group-hover:opacity-100 transition-opacity flex items-end justify-between p-2.5 z-10 gap-2">
+        <div className="flex items-center gap-1.5 flex-wrap">
+          {!isPrincipal && (
+            <button
+              type="button"
+              onClick={onSetPrincipal}
+              className="px-3 py-1.5 rounded-pill bg-lime-400 text-forest-950 text-xs font-bold shadow-md cursor-pointer flex items-center gap-1 active:scale-95 transition-transform"
+            >
+              <Star className="w-3.5 h-3.5 fill-forest-950 text-forest-950" />
+              <span>Couverture</span>
+            </button>
+          )}
+
+          <button
+            type="button"
+            onClick={() => setShowCat((v) => !v)}
+            className="px-2.5 py-1.5 rounded-pill bg-forest-950/90 text-lime-300 text-xs font-semibold flex items-center gap-1 border border-forest-800 cursor-pointer"
+          >
+            <span>{CAT_LABELS[photo.categorie]}</span>
+            <ChevronDown className="w-3.5 h-3.5 text-lime-400" />
           </button>
-        )}
-        <button type="button" onClick={() => setShowCat((v) => !v)}
-          className="w-full flex items-center justify-center gap-1 py-1.5 rounded-lg bg-white/20 text-white text-[10px] font-bold active:scale-95 transition-transform">
-          <ChevronDown className="w-3 h-3" />
-          Catégorie
-        </button>
-        <button type="button" onClick={onRemove}
-          className="w-full flex items-center justify-center gap-1 py-1.5 rounded-lg bg-red-500/90 text-white text-[10px] font-bold active:scale-95 transition-transform">
-          <X className="w-3 h-3" />
-          Supprimer
+        </div>
+
+        <button
+          type="button"
+          onClick={onRemove}
+          className="w-8 h-8 rounded-full bg-error-600 text-white hover:bg-error-700 cursor-pointer shadow-md flex items-center justify-center shrink-0 active:scale-95 transition-transform ml-auto"
+          title="Supprimer la photo"
+        >
+          <Trash2 className="w-4 h-4" />
         </button>
       </div>
 
-      {/* Category picker (inline) */}
       {showCat && (
-        <div className="absolute inset-0 bg-black/70 backdrop-blur-sm flex flex-col overflow-y-auto rounded-xl z-10">
+        <div className="absolute inset-0 bg-forest-950/95 p-3 flex flex-col overflow-y-auto z-30 rounded-inner space-y-1">
+          <p className="eyebrow text-lime-300 mb-1 text-[10px]">Catégorie de la photo</p>
           {Object.entries(CAT_LABELS).map(([key, lbl]) => (
-            <button key={key} type="button"
+            <button
+              key={key}
+              type="button"
               onClick={() => { onCategorieChange(key); setShowCat(false); }}
               className={cn(
-                'w-full py-2 px-3 text-[10px] font-bold text-left transition-colors',
-                photo.categorie === key ? 'bg-white/20 text-amber-300' : 'text-white/80 hover:bg-white/10',
-              )}>
+                'w-full py-2 px-3 text-xs font-semibold text-left rounded-inner transition-colors cursor-pointer',
+                photo.categorie === key ? 'bg-forest-800 text-lime-300 font-bold' : 'text-on-inverse-muted hover:bg-forest-900',
+              )}
+            >
               {lbl}
             </button>
           ))}
-        </div>
-      )}
-
-      {/* Static category badge */}
-      {!showCat && (
-        <div className="absolute bottom-1.5 left-1.5 right-1.5 opacity-100 group-hover:opacity-0 transition-opacity pointer-events-none">
-          <div className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-black/40 backdrop-blur-sm text-white text-[9px] font-semibold">
-            <div className="w-1 h-1 rounded-full bg-sky-400" />
-            {CAT_LABELS[photo.categorie]}
-          </div>
         </div>
       )}
     </div>

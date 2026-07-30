@@ -11,31 +11,31 @@ function TransactionRow({ tx }: { tx: WalletTransaction }) {
   const isCredit = tx.sens === 'CREDIT';
 
   return (
-    <div className="flex items-start gap-3 py-3 border-b border-border last:border-0 group/row hover:bg-background-alt -mx-2 px-2 rounded-xl transition-colors">
+    <div className="flex items-start gap-3 py-3.5 border-b border-border last:border-0 hover:bg-background-alt/60 -mx-2 px-3 rounded-inner transition-colors">
       {/* Icône sens */}
-      <div className={`w-8 h-8 sm:w-9 sm:h-9 rounded-xl flex items-center justify-center flex-shrink-0 border ${
-        isCredit ? 'bg-success-50 border-success-200' : 'bg-error-50 border-error-200'
+      <div className={`w-9 h-9 rounded-inner flex items-center justify-center shrink-0 border ${
+        isCredit ? 'bg-success-50 border-success-500/30 dark:bg-success-700/20' : 'bg-error-50 border-error-500/30 dark:bg-error-700/20'
       }`}>
         {isCredit
-          ? <ArrowDownLeft className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-success-600" />
-          : <ArrowUpRight className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-error-600" />
+          ? <ArrowDownLeft className="w-4 h-4 text-success-600 dark:text-success-500" />
+          : <ArrowUpRight className="w-4 h-4 text-error-600 dark:text-error-500" />
         }
       </div>
 
       {/* Infos + Montant */}
-      <div className="flex-1 min-w-0 flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-4">
+      <div className="flex-1 min-w-0 flex flex-col sm:flex-row sm:items-center justify-between gap-2">
         {/* Infos */}
-        <div className="flex-1 min-w-0">
+        <div className="min-w-0">
           <div className="flex items-center gap-2 mb-0.5 flex-wrap">
-            <span className="text-xs sm:text-sm font-bold text-foreground">{meta.label}</span>
-            <span className={`hidden sm:inline text-[10px] font-black uppercase tracking-wider px-2 py-0.5 rounded-full border ${meta.bgClass}`}>
+            <span className="text-sm font-semibold text-foreground">{meta.label}</span>
+            <span className="text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-pill border bg-background-alt border-border text-foreground-muted">
               {tx.type.replace('_', ' ')}
             </span>
           </div>
           {tx.description && (
-            <p className="text-[11px] sm:text-xs font-medium text-foreground-muted truncate">{tx.description}</p>
+            <p className="text-xs text-foreground-muted truncate">{tx.description}</p>
           )}
-          <p className="text-[10px] sm:text-xs font-medium text-foreground-muted/70 mt-0.5">
+          <p className="text-[11px] text-foreground-faint mt-0.5">
             {new Date(tx.creeLe).toLocaleDateString('fr-FR', {
               day: 'numeric', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit',
             })}
@@ -43,11 +43,11 @@ function TransactionRow({ tx }: { tx: WalletTransaction }) {
         </div>
 
         {/* Montant */}
-        <div className="text-left sm:text-right flex-shrink-0">
-          <p className={`text-sm sm:text-base font-black ${isCredit ? 'text-success-600' : 'text-error-600'}`}>
+        <div className="text-left sm:text-right shrink-0">
+          <p className={`text-sm sm:text-base font-bold tabular-nums ${isCredit ? 'text-success-600 dark:text-success-500' : 'text-error-600 dark:text-error-500'}`}>
             {meta.sign}{formatFCFA(tx.montant)}
           </p>
-          <p className="text-[10px] font-medium text-foreground-muted mt-0.5">
+          <p className="text-[11px] text-foreground-muted mt-0.5 tabular-nums">
             Solde : {formatFCFA(tx.soldeApres)}
           </p>
         </div>
@@ -58,13 +58,13 @@ function TransactionRow({ tx }: { tx: WalletTransaction }) {
 
 function TransactionRowSkeleton() {
   return (
-    <div className="flex items-center gap-4 py-4 border-b border-border animate-pulse">
-      <div className="w-9 h-9 rounded-xl bg-background-alt flex-shrink-0" />
+    <div className="flex items-center gap-3 py-3.5 border-b border-border animate-pulse">
+      <div className="w-9 h-9 rounded-inner bg-background-alt shrink-0" />
       <div className="flex-1 space-y-2">
-        <div className="h-3.5 bg-background-alt rounded-full w-1/3" />
-        <div className="h-3 bg-background-alt rounded-full w-1/2" />
+        <div className="h-4 bg-background-alt rounded-pill w-1/3" />
+        <div className="h-3 bg-background-alt rounded-pill w-1/2" />
       </div>
-      <div className="h-4 bg-background-alt rounded-full w-24" />
+      <div className="h-5 bg-background-alt rounded-pill w-24" />
     </div>
   );
 }
@@ -73,16 +73,16 @@ export function TransactionHistory({ transactions }: Props) {
   if (transactions.length === 0) {
     return (
       <div className="text-center py-12">
-        <p className="text-sm font-bold text-foreground-muted">Aucune transaction pour l'instant</p>
-        <p className="text-xs font-medium text-foreground-muted/70 mt-1">
-          Les revenus de vos locations apparaîtront ici.
+        <p className="text-sm font-semibold text-foreground-muted">Aucune transaction pour l'instant</p>
+        <p className="text-xs text-foreground-faint mt-1">
+          Les revenus de vos locations et vos retraits apparaîtront ici.
         </p>
       </div>
     );
   }
 
   return (
-    <div>
+    <div className="divide-y divide-border">
       {transactions.map((tx) => (
         <TransactionRow key={tx.id} tx={tx} />
       ))}

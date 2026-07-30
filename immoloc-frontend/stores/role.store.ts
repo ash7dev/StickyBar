@@ -28,7 +28,7 @@ export function isTokenFullyExpired(expiresAt: number | null): boolean {
 // ── Persistance du rôle actif dans localStorage ─────────────────────────────
 // Le store utilise sessionStorage pour les tokens (sécurité),
 // mais le rôle actif doit survivre entre les sessions/onglets.
-const ACTIVE_ROLE_KEY = 'immoloc-active-role';
+const ACTIVE_ROLE_KEY = 'klef-active-role';
 
 export function getPersistedActiveRole(): Role | null {
   if (typeof window === 'undefined') return null;
@@ -202,7 +202,7 @@ export const useRoleStore = create<RoleState>()(
       },
     }),
     {
-      name: 'immoloc-session',
+      name: 'klef-session',
       storage: createJSONStorage(() => sessionStorage),
       onRehydrateStorage: () => (state) => {
         state?.setHasHydrated(true);

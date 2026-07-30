@@ -1,7 +1,7 @@
 'use client';
 
 import { useRef, useState } from 'react';
-import { Upload, CheckCircle2, X } from 'lucide-react';
+import { Upload, CheckCircle2, X, Loader2 } from 'lucide-react';
 import { nestFetch } from '@/lib/nestjs/api-client';
 import { NEST_API } from '@/lib/nestjs/endpoints';
 import { useRoleStore } from '@/stores/role.store';
@@ -63,14 +63,14 @@ export function StepKyc({ onDone }: Props) {
     <div className="space-y-4">
       <div className="grid grid-cols-2 gap-3">
         <UploadSlot
-          label="Recto CNI"
+          label="Recto CNI / Passeport"
           file={rectoFile}
           inputRef={rectoRef}
           onSelect={setRectoFile}
           onClear={() => setRectoFile(null)}
         />
         <UploadSlot
-          label="Verso CNI"
+          label="Verso CNI / Passeport"
           file={versoFile}
           inputRef={versoRef}
           onSelect={setVersoFile}
@@ -78,22 +78,27 @@ export function StepKyc({ onDone }: Props) {
         />
       </div>
 
-      <p className="text-[11px] text-neutral-400 text-center leading-relaxed">
+      <p className="text-[11px] text-foreground-muted text-center leading-relaxed font-medium">
         Formats acceptés : JPG, PNG, WebP · Max 5 Mo par fichier
       </p>
 
       {error && (
-        <p className="text-[11px] font-medium text-rose-500 bg-rose-50 border border-rose-100 rounded-lg px-3 py-2">
+        <p className="text-[11px] font-semibold text-error-600 bg-error-50 border border-error-500/30 rounded-inner px-3 py-2">
           {error}
         </p>
       )}
 
       <button
+        type="button"
         onClick={handleSubmit}
         disabled={loading || !rectoFile || !versoFile}
-        className="w-full bg-emerald-600 hover:bg-emerald-700 disabled:opacity-50 text-white text-sm font-bold rounded-xl py-3 transition-colors"
+        className="btn-action w-full text-xs justify-center cursor-pointer disabled:opacity-50"
       >
-        {loading ? 'Envoi en cours…' : 'Soumettre mes documents'}
+        {loading ? (
+          <><Loader2 className="w-4 h-4 animate-spin" /> Envoi en cours…</>
+        ) : (
+          'Soumettre mes pièces d\'identité'
+        )}
       </button>
     </div>
   );
@@ -118,32 +123,32 @@ function UploadSlot({
 
   return (
     <div className="space-y-1.5">
-      <p className="text-xs font-bold text-neutral-600">{label}</p>
+      <p className="eyebrow block">{label}</p>
       <div
         className={cn(
-          'relative rounded-xl border-2 border-dashed transition-colors',
+          'relative rounded-field border-2 border-dashed transition-all',
           hasFile
-            ? 'border-emerald-300 bg-emerald-50'
-            : 'border-border bg-neutral-50 hover:border-emerald-300 hover:bg-emerald-50',
+            ? 'border-forest-600 bg-forest-50/40 dark:bg-forest-950/60'
+            : 'border-border bg-background-alt hover:border-forest-600 hover:bg-background-card',
         )}
       >
         <button
           type="button"
           onClick={() => !hasFile && inputRef.current?.click()}
-          className="w-full flex flex-col items-center justify-center gap-2 py-5 px-3"
+          className="w-full flex flex-col items-center justify-center gap-2 py-5 px-3 cursor-pointer"
         >
           {hasFile ? (
             <>
-              <CheckCircle2 className="w-6 h-6 text-emerald-500 shrink-0" />
-              <span className="text-[11px] font-bold text-emerald-700 text-center leading-tight break-all line-clamp-2">
+              <CheckCircle2 className="w-6 h-6 text-forest-600 dark:text-lime-400 shrink-0" />
+              <span className="text-[11px] font-bold text-foreground text-center leading-tight break-all line-clamp-2">
                 {file.name}
               </span>
             </>
           ) : (
             <>
-              <Upload className="w-5 h-5 text-neutral-400" />
-              <span className="text-[11px] font-bold text-neutral-400 text-center">
-                Choisir
+              <Upload className="w-5 h-5 text-foreground-muted" />
+              <span className="text-[11px] font-bold text-foreground-muted text-center">
+                Choisir un fichier
               </span>
             </>
           )}
@@ -153,9 +158,9 @@ function UploadSlot({
           <button
             type="button"
             onClick={onClear}
-            className="absolute top-1.5 right-1.5 w-5 h-5 rounded-full bg-white border border-border flex items-center justify-center hover:bg-rose-50 hover:border-rose-200 transition-colors"
+            className="absolute top-1.5 right-1.5 w-5 h-5 rounded-full bg-background-card border border-border flex items-center justify-center hover:bg-error-50 hover:border-error-200 text-foreground-muted hover:text-error-600 transition-colors cursor-pointer"
           >
-            <X className="w-2.5 h-2.5 text-neutral-400 hover:text-rose-500" />
+            <X className="w-3 h-3" />
           </button>
         )}
       </div>

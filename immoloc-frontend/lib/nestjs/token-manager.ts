@@ -38,7 +38,7 @@ class TokenManager {
     if (typeof window === 'undefined') return;
 
     try {
-      this.broadcastChannel = new BroadcastChannel('immoloc-auth');
+      this.broadcastChannel = new BroadcastChannel('klef-auth');
 
       this.broadcastChannel.onmessage = (event) => {
         const { type, payload } = event.data;

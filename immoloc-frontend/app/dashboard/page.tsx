@@ -3,6 +3,7 @@
 
 import { useEffect, useState } from 'react';
 import { dashboardApi } from '@/lib/nestjs';
+import { HostWelcomeBanner } from '@/features/dashboard/components/owner/HostWelcomeBanner';
 import { KpiSection } from '@/features/dashboard/components/owner/KpiSection';
 import { RevenueChart } from '@/features/dashboard/components/owner/RevenueChart';
 import { WalletSnapshot } from '@/features/dashboard/components/owner/WalletSnapshot';
@@ -10,39 +11,9 @@ import { PendingActions } from '@/features/dashboard/components/owner/PendingAct
 import { RecentBookings } from '@/features/dashboard/components/owner/RecentBookings';
 import { ActivitySidebar } from '@/features/dashboard/components/owner/ActivitySidebar';
 import { DashboardCalendar } from '@/features/dashboard/components/owner/DashboardCalendar';
-
-// ── Skeleton ────────────────────────────────────────────────────────────────
-
-function Skeleton({ className }: { className?: string }) {
-  return <div className={`bg-neutral-100 animate-pulse rounded-2xl ${className}`} />;
-}
-
-function DashboardSkeleton() {
-  return (
-    <div className="space-y-6 pb-10">
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-        {[1, 2, 3, 4].map(i => <Skeleton key={i} className="h-28" />)}
-      </div>
-      <div className="grid lg:grid-cols-[1fr_420px] gap-6">
-        <Skeleton className="h-64" />
-        <Skeleton className="h-64" />
-      </div>
-      <div className="grid lg:grid-cols-[1fr_420px] gap-6">
-        <Skeleton className="h-72" />
-        <Skeleton className="h-72" />
-      </div>
-      <div className="grid lg:grid-cols-[1fr_420px] gap-6">
-        <div className="space-y-6">
-          <Skeleton className="h-64" />
-          <Skeleton className="h-80" />
-        </div>
-        <div className="space-y-6">
-          <Skeleton className="h-64" />
-        </div>
-      </div>
-    </div>
-  );
-}
+import { MobileKpiGrid } from '@/features/dashboard/components/owner/MobileKpiGrid';
+import { MobileQuickActionsMenu } from '@/features/dashboard/components/owner/MobileQuickActionsMenu';
+import DashboardLoading from './loading';
 
 // ── Page ─────────────────────────────────────────────────────────────────────
 
@@ -69,63 +40,96 @@ export default function DashboardPage() {
     load();
   }, []);
 
-  if (loading) return <DashboardSkeleton />;
+  if (loading) return <DashboardLoading />;
   if (!data) return null;
 
   const { stats, pending, recent, upcoming } = data;
 
   return (
-    <div className="space-y-6 pb-10">
+    <div className="space-y-6 sm:space-y-8 pb-12">
 
-      {/* ── KPIs ──────────────────────────────────────────────────── */}
-      <KpiSection
-        stats={{
-          revenue: Number(stats.bookings.revenue ?? 0),
-          totalBookings: stats.bookings.total ?? 0,
-          activeDisputes: pending.activeDisputes ?? 0,
-          activeListings: stats.listings.active ?? 0,
-        }}
-        pendingConfirmations={pending.pendingConfirmations ?? 0}
-      />
+      {/* ── Vue Mobile : Synthèse KPIs 2x2 & Actions Rapides Menu ── */}
+      <div className="block sm:hidden space-y-6">
+        <MobileKpiGrid
+          stats={{
+            revenue: Number(stats.bookings.revenue ?? 0),
+            totalBookings: stats.bookings.total ?? 0,
+            activeListings: stats.listings.active ?? 0,
+            pendingConfirmations: pending.pendingConfirmations ?? 0,
+            activeDisputes: pending.activeDisputes ?? 0,
+            noteMoyenne: stats.bookings.averageRating ?? 4.9,
+          }}
+        />
 
-      {/* ── Wallet + Revenus (même ligne, même hauteur) ─────────── */}
-      <div className="grid lg:grid-cols-[420px_1fr] gap-6 items-stretch min-h-[380px]">
-        <WalletSnapshot
-          available={Number(stats.wallet?.balance ?? 0)}
-          pending={Number(stats.wallet?.pending ?? 0)}
-          processing={Number(stats.wallet?.processing ?? 0)}
-        />
-        <RevenueChart
-          revenue={Number(stats.bookings.revenue ?? 0)}
-          totalBookings={stats.bookings.total ?? 0}
-        />
+        <MobileQuickActionsMenu />
       </div>
 
-      {/* ── Activité Hub — Layout Premium avec Sidebar Unifiée ──────── */}
-      <div className="grid lg:grid-cols-[1fr_420px] gap-6 items-stretch">
-        {/* Colonne principale gauche : Activité récente + Actions requises */}
-        <div className="flex flex-col gap-6">
-          <RecentBookings bookings={recent} />
-          <PendingActions
-            confirmations={pending.pendingConfirmations ?? 0}
-            disputes={pending.activeDisputes ?? 0}
-            recentBookings={recent}
-          />
-        </div>
-
-        {/* Sidebar droite unifiée : Quick Actions + Stats + Performance */}
-        <ActivitySidebar
-          bookings={recent}
-          conversionRate={stats.bookings.conversionRate ?? 0}
+      {/* ── Vue Desktop ──────────────────────────────────────────── */}
+      <div className="hidden sm:block space-y-8">
+        {/* ── Section 0 : Bandeau de bienvenue & Synthèse Hôte ─────── */}
+        <HostWelcomeBanner
+          pendingConfirmations={pending.pendingConfirmations ?? 0}
           activeListings={stats.listings.active ?? 0}
+          availableBalance={Number(stats.wallet?.balance ?? 0)}
         />
+
+        {/* ── Section 1 : KPIs de Synthèse ──────────────────────────── */}
+        <section className="space-y-3">
+          <KpiSection
+            stats={{
+              revenue: Number(stats.bookings.revenue ?? 0),
+              totalBookings: stats.bookings.total ?? 0,
+              activeDisputes: pending.activeDisputes ?? 0,
+              activeListings: stats.listings.active ?? 0,
+            }}
+            pendingConfirmations={pending.pendingConfirmations ?? 0}
+          />
+        </section>
+
+        {/* ── Section 2 : Financement & Performance ─────────────────── */}
+        <section className="space-y-3">
+          <div className="grid lg:grid-cols-[1fr_380px] gap-6 items-stretch">
+            <RevenueChart
+              revenue={Number(stats.bookings.revenue ?? 0)}
+              totalBookings={stats.bookings.total ?? 0}
+            />
+            <WalletSnapshot
+              available={Number(stats.wallet?.balance ?? 0)}
+              pending={Number(stats.wallet?.pending ?? 0)}
+              processing={Number(stats.wallet?.processing ?? 0)}
+            />
+          </div>
+        </section>
+
+        {/* ── Section 3 : Opérations & Hub d'Activité ──────────────── */}
+        <section className="space-y-3">
+          <div className="grid lg:grid-cols-[1fr_380px] gap-6 items-stretch">
+            <div className="flex flex-col gap-6">
+              <PendingActions
+                confirmations={pending.pendingConfirmations ?? 0}
+                disputes={pending.activeDisputes ?? 0}
+                recentBookings={recent}
+              />
+              <RecentBookings bookings={recent} />
+            </div>
+
+            <ActivitySidebar
+              bookings={recent}
+              conversionRate={stats.bookings.conversionRate ?? 0}
+              activeListings={stats.listings.active ?? 0}
+            />
+          </div>
+        </section>
+
+        {/* ── Section 4 : Agenda Logistique ─────────────────────────── */}
+        <section className="space-y-3">
+          <DashboardCalendar
+            checkins={upcoming.checkins}
+            checkouts={upcoming.checkouts}
+          />
+        </section>
       </div>
 
-      {/* ── Calendrier — pleine largeur ───────────────────────────── */}
-      <DashboardCalendar
-        checkins={upcoming.checkins}
-        checkouts={upcoming.checkouts}
-      />
     </div>
   );
 }

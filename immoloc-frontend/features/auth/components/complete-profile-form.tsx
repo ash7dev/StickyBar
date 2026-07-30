@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import { useRouter } from 'next/navigation';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { Loader2, User, Phone, Info } from 'lucide-react';
@@ -15,6 +16,7 @@ interface CompleteProfileFormProps {
 }
 
 export function CompleteProfileForm({ accessToken, userEmail, next }: CompleteProfileFormProps) {
+  const router = useRouter();
   const { completeGoogleProfile } = useAuth();
   const [error, setError] = useState<string | null>(null);
   const [skipped, setSkipped] = useState(false);
@@ -62,7 +64,7 @@ export function CompleteProfileForm({ accessToken, userEmail, next }: CompletePr
               <input
                 {...register('prenom')}
                 placeholder="Amadou"
-                className="w-full pl-9 pr-3 py-2.5 border border-border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                className="w-full pl-9 pr-3 py-2.5 border border-border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-success-600"
               />
             </div>
             {errors.prenom && <p className="text-error-500 text-xs mt-1">{errors.prenom.message}</p>}
@@ -72,7 +74,7 @@ export function CompleteProfileForm({ accessToken, userEmail, next }: CompletePr
             <input
               {...register('nom')}
               placeholder="Diallo"
-              className="w-full px-3 py-2.5 border border-border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500"
+              className="w-full px-3 py-2.5 border border-border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-success-600"
             />
             {errors.nom && <p className="text-error-500 text-xs mt-1">{errors.nom.message}</p>}
           </div>
@@ -86,7 +88,7 @@ export function CompleteProfileForm({ accessToken, userEmail, next }: CompletePr
               {...register('telephone')}
               type="tel"
               placeholder="+221771234567"
-              className="w-full pl-10 pr-3 py-2.5 border border-border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500"
+              className="w-full pl-10 pr-3 py-2.5 border border-border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-success-600"
             />
           </div>
           <p className="text-neutral-400 text-xs mt-1">Format international : +221 Sénégal, +33 France…</p>
@@ -102,7 +104,7 @@ export function CompleteProfileForm({ accessToken, userEmail, next }: CompletePr
         <button
           type="submit"
           disabled={isSubmitting}
-          className="w-full flex items-center justify-center gap-2 py-2.5 bg-emerald-700 hover:bg-emerald-800 disabled:bg-emerald-500 text-white rounded-lg text-sm font-medium transition-all duration-200 active:scale-[0.98]"
+          className="w-full flex items-center justify-center gap-2 py-2.5 bg-success-700 hover:bg-success-800 disabled:bg-success-500 text-white rounded-lg text-sm font-medium transition-all duration-200 active:scale-[0.98]"
         >
           {isSubmitting && <Loader2 className="h-4 w-4 animate-spin" />}
           {isSubmitting ? 'Enregistrement...' : 'Terminer l\'inscription'}
@@ -114,15 +116,24 @@ export function CompleteProfileForm({ accessToken, userEmail, next }: CompletePr
         <button
           type="button"
           onClick={() => setSkipped(true)}
-          className="w-full text-sm text-neutral-400 hover:text-neutral-600"
+          className="w-full text-sm text-neutral-400 hover:text-neutral-600 transition-colors"
         >
           Passer pour l&apos;instant
         </button>
       )}
 
       {skipped && (
-        <div className="bg-warning-500/10 border border-warning-500/20 rounded-lg p-3 text-sm text-warning-700">
-          Sans téléphone, vous ne pourrez pas effectuer de réservation ni recevoir les notifications. Vous pourrez compléter votre profil dans les paramètres.
+        <div className="space-y-3">
+          <div className="bg-warning-500/10 border border-warning-500/20 rounded-lg p-3 text-sm text-warning-700">
+            Sans téléphone, vous ne pourrez pas effectuer de réservation ni recevoir les notifications. Vous pourrez compléter votre profil dans les paramètres.
+          </div>
+          <button
+            type="button"
+            onClick={() => router.push(next || '/')}
+            className="w-full flex items-center justify-center gap-2 py-2.5 bg-neutral-100 hover:bg-neutral-200 text-neutral-700 rounded-lg text-sm font-medium transition-all duration-200"
+          >
+            Continuer sans numéro
+          </button>
         </div>
       )}
     </div>

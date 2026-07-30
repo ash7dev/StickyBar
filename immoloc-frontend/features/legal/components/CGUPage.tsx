@@ -4,12 +4,14 @@ import { useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
 import {
   FileText, Shield, CreditCard, Users, Home, Star,
-  AlertTriangle, Scale, Lock, Mail, ChevronRight, ArrowUp,
+  Scale, Lock, Mail, ChevronRight, ArrowUp,
   Banknote, Clock, CheckCircle2, XCircle, BookOpen,
-  Building2, Phone,
+  Building2,
 } from 'lucide-react';
 import { cn } from '@/lib/utils/cn';
 import { BRAND } from '@/lib/config';
+import { Navbar } from '@/components/layout/navbar';
+import { Footer } from '@/features/home/components/web/Footer';
 
 /* ─── TOC items ───────────────────────────────────────────────────────────── */
 
@@ -37,14 +39,14 @@ function ArticleHeading({ id, number, title, icon: Icon }: {
 }) {
   return (
     <div id={id} className="flex items-start gap-4 mb-6 scroll-mt-28">
-      <div className="shrink-0 w-12 h-12 rounded-2xl bg-gradient-to-br from-emerald-500 to-emerald-700 flex items-center justify-center shadow-lg shadow-emerald-500/20">
+      <div className="shrink-0 w-12 h-12 rounded-2xl bg-gradient-to-br from-forest-600 to-forest-800 flex items-center justify-center shadow-md shadow-forest-900/10">
         <Icon className="w-5 h-5 text-white" />
       </div>
       <div>
-        <p className="text-[11px] font-black text-emerald-500 uppercase tracking-widest mb-0.5">
+        <p className="text-[11px] font-bold text-forest-600 uppercase tracking-widest mb-0.5">
           Article {number}
         </p>
-        <h2 className="text-xl sm:text-2xl font-black text-neutral-900 leading-tight">{title}</h2>
+        <h2 className="text-xl sm:text-2xl font-display font-semibold text-foreground leading-tight">{title}</h2>
       </div>
     </div>
   );
@@ -55,27 +57,27 @@ function InfoBox({ type = 'info', children }: {
   children: React.ReactNode;
 }) {
   const cfg = {
-    info:    { bg: 'bg-emerald-50 border-emerald-200/60',   icon: '💡', text: 'text-emerald-800' },
-    warning: { bg: 'bg-amber-50 border-amber-200/60',       icon: '⚠️',  text: 'text-amber-900' },
-    key:     { bg: 'bg-violet-50 border-violet-200/60',     icon: '🔑',  text: 'text-violet-900' },
-    success: { bg: 'bg-emerald-50 border-emerald-200/60',   icon: '✅',  text: 'text-emerald-900' },
+    info:    { bg: 'bg-forest-50/80 border-forest-200/70',   icon: '💡', text: 'text-forest-900' },
+    warning: { bg: 'bg-warning-50 border-warning-500/30',   icon: '⚠️',  text: 'text-warning-700' },
+    key:     { bg: 'bg-lime-50/80 border-lime-200/80',      icon: '🔑',  text: 'text-forest-900' },
+    success: { bg: 'bg-success-50 border-success-500/30',   icon: '✅',  text: 'text-success-700' },
   }[type];
 
   return (
-    <div className={cn('flex gap-3 p-4 rounded-2xl border my-4', cfg.bg)}>
+    <div className={cn('flex gap-3 p-4 rounded-2xl border my-5 shadow-xs', cfg.bg)}>
       <span className="text-lg shrink-0 mt-0.5">{cfg.icon}</span>
-      <div className={cn('text-sm leading-relaxed font-medium', cfg.text)}>{children}</div>
+      <div className={cn('text-sm leading-relaxed font-sans font-medium', cfg.text)}>{children}</div>
     </div>
   );
 }
 
 function Dl({ items }: { items: { term: string; desc: string }[] }) {
   return (
-    <dl className="space-y-3 my-4">
+    <dl className="space-y-3 my-5">
       {items.map(({ term, desc }) => (
-        <div key={term} className="flex gap-3 p-3.5 bg-neutral-50 rounded-xl border border-neutral-100">
-          <dt className="shrink-0 font-black text-sm text-emerald-600 min-w-[120px]">{term}</dt>
-          <dd className="text-sm text-neutral-600 leading-relaxed">{desc}</dd>
+        <div key={term} className="flex flex-col sm:flex-row sm:items-baseline gap-2 sm:gap-4 p-4 bg-background-card rounded-2xl border border-border shadow-xs">
+          <dt className="shrink-0 font-bold text-sm text-forest-600 sm:min-w-[140px]">{term}</dt>
+          <dd className="text-sm text-foreground-muted leading-relaxed">{desc}</dd>
         </div>
       ))}
     </dl>
@@ -83,16 +85,16 @@ function Dl({ items }: { items: { term: string; desc: string }[] }) {
 }
 
 function Para({ children }: { children: React.ReactNode }) {
-  return <p className="text-[15px] text-neutral-600 leading-[1.85] mb-4">{children}</p>;
+  return <p className="text-sm sm:text-base text-foreground-muted leading-[1.8] mb-4 font-sans">{children}</p>;
 }
 
 function Ul({ items }: { items: string[] }) {
   return (
-    <ul className="space-y-2 my-4 ml-1">
+    <ul className="space-y-2.5 my-5 ml-1">
       {items.map((item, i) => (
-        <li key={i} className="flex gap-2.5 text-[14px] text-neutral-600 leading-relaxed">
-          <span className="mt-2 shrink-0 w-1.5 h-1.5 rounded-full bg-emerald-400" />
-          {item}
+        <li key={i} className="flex gap-3 text-sm text-foreground-muted leading-relaxed font-sans">
+          <span className="mt-2 shrink-0 w-1.5 h-1.5 rounded-full bg-forest-500" />
+          <span>{item}</span>
         </li>
       ))}
     </ul>
@@ -101,18 +103,18 @@ function Ul({ items }: { items: string[] }) {
 
 function RateCard({ label, rate, desc }: { label: string; rate: string; desc: string }) {
   return (
-    <div className="flex items-center gap-4 p-4 bg-white border border-neutral-100 rounded-2xl shadow-sm">
-      <div className="text-2xl font-black text-emerald-600 min-w-[60px] text-center">{rate}</div>
+    <div className="flex items-center gap-4 p-4 bg-background-card border border-border rounded-2xl shadow-xs">
+      <div className="text-2xl font-display font-bold text-forest-600 min-w-[65px] text-center">{rate}</div>
       <div>
-        <p className="text-sm font-bold text-neutral-900">{label}</p>
-        <p className="text-xs text-neutral-500 mt-0.5">{desc}</p>
+        <p className="text-sm font-bold text-foreground">{label}</p>
+        <p className="text-xs text-foreground-muted mt-0.5">{desc}</p>
       </div>
     </div>
   );
 }
 
 function Divider() {
-  return <div className="h-px bg-gradient-to-r from-transparent via-neutral-200 to-transparent my-10" />;
+  return <div className="h-px bg-gradient-to-r from-transparent via-border to-transparent my-10" />;
 }
 
 /* ─── Main ────────────────────────────────────────────────────────────────── */
@@ -149,41 +151,42 @@ export function CGUPage() {
   }, []);
 
   return (
-    <div className="bg-white min-h-screen">
+    <div className="bg-background min-h-screen text-foreground font-sans">
+      <Navbar />
 
       {/* ══ Hero ═══════════════════════════════════════════════════════════════ */}
-      <div className="relative overflow-hidden bg-[#07090f]">
+      <div className="relative overflow-hidden bg-forest-950 text-white">
         {/* Background layers */}
-        <div className="absolute inset-0">
-          <div className="absolute top-0 left-[20%] w-[500px] h-[500px] rounded-full bg-emerald-600/20 blur-[120px]" />
-          <div className="absolute bottom-0 right-[10%] w-[400px] h-[300px] rounded-full bg-accent-500/10 blur-[100px]" />
-          <div className="absolute inset-0 bg-[url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNDAiIGhlaWdodD0iNDAiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+PGNpcmNsZSBjeD0iMSIgY3k9IjEiIHI9IjEiIGZpbGw9InJnYmEoMjU1LDI1NSwyNTUsMC4wNCkiLz48L3N2Zz4=')] opacity-60" />
+        <div className="absolute inset-0 pointer-events-none">
+          <div className="absolute top-0 left-[20%] w-[500px] h-[500px] rounded-full bg-forest-600/20 blur-[120px]" />
+          <div className="absolute bottom-0 right-[10%] w-[400px] h-[300px] rounded-full bg-lime-400/10 blur-[100px]" />
+          <div className="absolute inset-0 bg-[url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNDAiIGhlaWdodD0iNDAiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+PGNpcmNsZSBjeD0iMSIgY3k9IjEiIHI9IjEiIGZpbGw9InJnYmEoMjU1LDI1NSwyNTUsMC4wNCkiLz48L3N2Zz4=')] opacity-40" />
         </div>
 
-        <div className="relative max-w-6xl mx-auto px-4 py-20 sm:py-28">
+        <div className="relative max-w-6xl mx-auto px-4 py-16 sm:py-24">
           {/* Breadcrumb */}
-          <div className="flex items-center gap-2 text-[12px] font-semibold text-white/40 mb-8">
-            <Link href="/" className="hover:text-white/70 transition-colors">{BRAND.name}</Link>
-            <ChevronRight className="w-3 h-3" />
-            <span className="text-white/60">Conditions Générales d&apos;Utilisation</span>
+          <div className="flex items-center gap-2 text-xs font-semibold text-neutral-400 mb-8">
+            <Link href="/" className="hover:text-white transition-colors">{BRAND.name}</Link>
+            <ChevronRight className="w-3 h-3 text-neutral-500" />
+            <span className="text-lime-300">Conditions Générales d&apos;Utilisation</span>
           </div>
 
           <div className="max-w-3xl">
             {/* Badge */}
-            <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-emerald-500/15 border border-emerald-500/25 text-emerald-300 text-[11px] font-bold uppercase tracking-widest mb-6">
-              <FileText className="w-3 h-3" />
+            <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-forest-900/80 border border-forest-700/60 text-lime-300 text-[11px] font-bold uppercase tracking-widest mb-6 shadow-sm">
+              <FileText className="w-3.5 h-3.5 text-lime-400" />
               Document légal
             </div>
 
-            <h1 className="text-4xl sm:text-5xl lg:text-6xl font-black text-white leading-[1.05] tracking-tight mb-6">
+            <h1 className="text-4xl sm:text-5xl lg:text-6xl font-display font-bold text-white leading-[1.05] tracking-tight mb-6">
               Conditions<br />
-              <span className="text-transparent bg-clip-text bg-gradient-to-r from-emerald-400 to-accent-400">
+              <span className="text-transparent bg-clip-text bg-gradient-to-r from-lime-300 via-lime-400 to-forest-300">
                 Générales
               </span>{' '}
               d&apos;Utilisation
             </h1>
 
-            <p className="text-lg text-white/60 leading-relaxed mb-8 max-w-xl">
+            <p className="text-base sm:text-lg text-forest-100/80 leading-relaxed mb-8 max-w-xl">
               En utilisant {BRAND.name}, vous acceptez les présentes conditions qui régissent
               l&apos;ensemble des services proposés sur notre plateforme.
             </p>
@@ -195,10 +198,10 @@ export function CGUPage() {
                 { icon: FileText, label: 'Version',            value: '2.1' },
                 { icon: Building2, label: 'Droit applicable',  value: 'République du Sénégal' },
               ].map(({ icon: Icon, label, value }) => (
-                <div key={label} className="flex items-center gap-2.5 px-4 py-2.5 bg-white/[0.06] border border-white/10 rounded-xl">
-                  <Icon className="w-3.5 h-3.5 text-emerald-400" />
+                <div key={label} className="flex items-center gap-2.5 px-4 py-2.5 bg-forest-900/60 border border-forest-800/80 rounded-xl shadow-xs">
+                  <Icon className="w-4 h-4 text-lime-400" />
                   <div>
-                    <p className="text-[10px] text-white/40 font-semibold uppercase tracking-wide">{label}</p>
+                    <p className="text-[10px] text-forest-300 font-bold uppercase tracking-wide">{label}</p>
                     <p className="text-[13px] font-bold text-white">{value}</p>
                   </div>
                 </div>
@@ -208,7 +211,7 @@ export function CGUPage() {
         </div>
 
         {/* Bottom wave */}
-        <div className="absolute bottom-0 left-0 right-0 h-12 bg-gradient-to-t from-white to-transparent" />
+        <div className="h-12 bg-gradient-to-t from-background to-transparent" />
       </div>
 
       {/* ══ Body ══════════════════════════════════════════════════════════════ */}
@@ -218,7 +221,7 @@ export function CGUPage() {
           {/* ── Sticky TOC sidebar ──────────────────────────────────────────── */}
           <aside className="hidden lg:block w-64 shrink-0">
             <div className="sticky top-24">
-              <p className="text-[10px] font-black text-neutral-400 uppercase tracking-widest mb-3 px-3">
+              <p className="text-xs font-bold text-foreground-muted uppercase tracking-widest mb-3 px-3">
                 Sommaire
               </p>
               <nav className="space-y-0.5">
@@ -229,27 +232,27 @@ export function CGUPage() {
                       key={id}
                       href={`#${id}`}
                       className={cn(
-                        'flex items-center gap-2.5 px-3 py-2.5 rounded-xl text-[13px] font-semibold transition-all duration-200 group',
+                        'flex items-center gap-2.5 px-3 py-2.5 rounded-xl text-[13px] transition-all duration-200 group',
                         active
-                          ? 'bg-emerald-50 text-emerald-700 border border-emerald-100'
-                          : 'text-neutral-500 hover:bg-neutral-50 hover:text-neutral-900',
+                          ? 'bg-forest-50 text-forest-800 border border-forest-200/80 font-bold shadow-xs'
+                          : 'text-foreground-muted hover:bg-neutral-100 hover:text-foreground font-medium',
                       )}
                     >
                       <Icon className={cn('w-3.5 h-3.5 shrink-0 transition-colors',
-                        active ? 'text-emerald-500' : 'text-neutral-400 group-hover:text-neutral-600'
+                        active ? 'text-forest-600' : 'text-neutral-400 group-hover:text-neutral-600'
                       )} />
                       <span className="leading-tight">{label}</span>
-                      {active && <div className="ml-auto w-1.5 h-1.5 rounded-full bg-emerald-500" />}
+                      {active && <div className="ml-auto w-1.5 h-1.5 rounded-full bg-forest-600" />}
                     </a>
                   );
                 })}
               </nav>
 
-              <div className="mt-6 p-4 bg-neutral-50 border border-neutral-100 rounded-2xl">
-                <p className="text-[11px] font-bold text-neutral-500 mb-2">Besoin d&apos;aide ?</p>
+              <div className="mt-6 p-4 bg-background-card border border-border rounded-2xl shadow-xs">
+                <p className="text-xs font-bold text-foreground-muted mb-2">Besoin d&apos;aide ?</p>
                 <a
                   href={`mailto:legal@${BRAND.domain}`}
-                  className="flex items-center gap-2 text-xs font-semibold text-emerald-600 hover:text-emerald-700 transition-colors"
+                  className="flex items-center gap-2 text-xs font-bold text-forest-600 hover:text-forest-700 transition-colors"
                 >
                   <Mail className="w-3.5 h-3.5" />
                   legal@{BRAND.domain}
@@ -265,8 +268,8 @@ export function CGUPage() {
             <ArticleHeading id="objet" number="1" title="Objet et champ d'application" icon={FileText} />
             <Para>
               Les présentes Conditions Générales d&apos;Utilisation (ci-après « CGU ») régissent
-              l&apos;accès et l&apos;utilisation de la plateforme <strong>{BRAND.name}</strong> (ci-après « la Plateforme »),
-              accessible à l&apos;adresse <strong>{BRAND.domain}</strong>, éditée par la société {BRAND.name} SAS,
+              l&apos;accès et l&apos;utilisation de la plateforme <strong className="text-foreground">{BRAND.name}</strong> (ci-après « la Plateforme »),
+              accessible à l&apos;adresse <strong className="text-foreground">{BRAND.domain}</strong>, éditée par la société {BRAND.name} SAS,
               immatriculée au Registre du Commerce et du Crédit Mobilier de Dakar.
             </Para>
             <Para>
@@ -312,7 +315,7 @@ export function CGUPage() {
               exactes, complètes et à jour.
             </Para>
             <Para>
-              L&apos;inscription peut s&apos;effectuer via :<br />
+              L&apos;inscription peut s&apos;effectuer via :
             </Para>
             <Ul items={[
               'Numéro de téléphone mobile (OTP par SMS)',
@@ -331,7 +334,7 @@ export function CGUPage() {
               Vous êtes seul responsable de la confidentialité de vos identifiants de connexion.
               Toute activité effectuée depuis votre compte vous est entièrement imputable. En cas
               de compromission de votre compte, vous devez nous en informer immédiatement à l&apos;adresse
-              {' '}<strong>security@{BRAND.domain}</strong>.
+              {' '}<strong className="text-foreground">security@{BRAND.domain}</strong>.
             </Para>
 
             <Divider />
@@ -374,20 +377,20 @@ export function CGUPage() {
               La réservation d&apos;un logement via {BRAND.name} est un engagement contractuel entre le
               Locataire et le Propriétaire. Elle se déroule en plusieurs étapes :
             </Para>
-            <div className="space-y-3 my-4">
+            <div className="space-y-3 my-5">
               {[
                 { step: '1', label: 'Sélection', desc: 'Le Locataire choisit le logement, les dates et le nombre de voyageurs.' },
-                { step: '2', label: 'Paiement', desc: 'Le montant total est débité et placé en séquestre par ImmoLoc.' },
+                { step: '2', label: 'Paiement', desc: 'Le montant total est débité et placé en séquestre par Klef.' },
                 { step: '3', label: 'Confirmation', desc: 'Le Propriétaire dispose de 24h pour confirmer la réservation.' },
                 { step: '4', label: 'Check-in', desc: 'Les deux parties valident l\'arrivée via la Plateforme. Le séquestre est libéré après 48h.' },
               ].map(({ step, label, desc }) => (
-                <div key={step} className="flex gap-4 p-4 bg-neutral-50 rounded-2xl border border-neutral-100">
-                  <div className="w-8 h-8 rounded-full bg-emerald-500 text-white font-black text-sm flex items-center justify-center shrink-0">
+                <div key={step} className="flex gap-4 p-4 bg-background-card rounded-2xl border border-border shadow-xs">
+                  <div className="w-8 h-8 rounded-full bg-forest-600 text-white font-bold text-sm flex items-center justify-center shrink-0">
                     {step}
                   </div>
                   <div>
-                    <p className="font-bold text-sm text-neutral-900">{label}</p>
-                    <p className="text-sm text-neutral-500 mt-0.5">{desc}</p>
+                    <p className="font-bold text-sm text-foreground">{label}</p>
+                    <p className="text-sm text-foreground-muted mt-0.5">{desc}</p>
                   </div>
                 </div>
               ))}
@@ -421,28 +424,28 @@ export function CGUPage() {
               'Carte bancaire (via Stripe — Visa, Mastercard)',
             ]} />
 
-            <div className="my-6 p-5 bg-gradient-to-br from-emerald-900 to-emerald-950 rounded-3xl border border-emerald-800/50 text-white">
+            <div className="my-6 p-6 bg-gradient-to-br from-forest-900 via-forest-950 to-forest-900 rounded-2xl border border-forest-800 text-white shadow-lg">
               <div className="flex items-center gap-3 mb-4">
-                <div className="w-10 h-10 rounded-xl bg-emerald-500/20 flex items-center justify-center">
-                  <Shield className="w-5 h-5 text-emerald-300" />
+                <div className="w-10 h-10 rounded-xl bg-lime-400/10 border border-lime-400/20 flex items-center justify-center">
+                  <Shield className="w-5 h-5 text-lime-300" />
                 </div>
                 <div>
-                  <p className="font-black text-sm">Système de Séquestre {BRAND.name}</p>
-                  <p className="text-[11px] text-emerald-300 font-semibold">Protection maximale pour les deux parties</p>
+                  <p className="font-display font-bold text-base text-white">Système de Séquestre {BRAND.name}</p>
+                  <p className="text-xs text-lime-300 font-semibold">Protection maximale pour les deux parties</p>
                 </div>
               </div>
-              <div className="space-y-3 text-[13px] text-emerald-200 leading-relaxed">
+              <div className="space-y-3 text-sm text-forest-100/90 leading-relaxed font-sans">
                 <p>
-                  À la réservation, le montant total est <strong className="text-white">bloqué</strong> sur
+                  À la réservation, le montant total est <strong className="text-lime-300 font-semibold">bloqué</strong> sur
                   le compte de séquestre {BRAND.name}. Le Propriétaire ne reçoit son paiement qu&apos;après
                   validation du check-in par les deux parties.
                 </p>
                 <p>
                   En cas de litige, les fonds restent bloqués jusqu&apos;à résolution par notre équipe de
-                  médiation (délai maximum : <strong className="text-white">7 jours ouvrés</strong>).
+                  médiation (délai maximum : <strong className="text-white font-semibold">7 jours ouvrés</strong>).
                 </p>
                 <p>
-                  La référence séquestre (format <strong className="text-white">SEQ-XXXXXXXX</strong>) figure
+                  La référence séquestre (format <strong className="text-white font-semibold">SEQ-XXXXXXXX</strong>) figure
                   sur le contrat de location et constitue la preuve du paiement sécurisé.
                 </p>
               </div>
@@ -462,7 +465,7 @@ export function CGUPage() {
             <Para>
               {BRAND.name} perçoit une commission sur chaque réservation confirmée, répartie comme suit :
             </Para>
-            <div className="grid sm:grid-cols-2 gap-3 my-4">
+            <div className="grid sm:grid-cols-2 gap-3 my-5">
               <RateCard
                 label="Frais Locataire"
                 rate="8 %"
@@ -495,17 +498,17 @@ export function CGUPage() {
               La politique d&apos;annulation applicable est celle choisie par le Propriétaire lors de
               la création de l&apos;annonce. Trois niveaux sont disponibles :
             </Para>
-            <div className="space-y-3 my-4">
+            <div className="space-y-3 my-5">
               {[
-                { name: 'Flexible',   color: 'bg-emerald-50 border-emerald-200', dot: 'bg-emerald-500', rule: 'Remboursement intégral si annulation ≥ 24h avant le check-in.' },
-                { name: 'Modérée',    color: 'bg-amber-50 border-amber-200',     dot: 'bg-amber-500',   rule: 'Remboursement intégral si annulation ≥ 5 jours avant. 50 % si annulation entre 1 et 5 jours avant.' },
-                { name: 'Stricte',    color: 'bg-rose-50 border-rose-200',       dot: 'bg-rose-500',    rule: 'Remboursement intégral si annulation dans les 48h suivant la réservation (et ≥ 14 jours avant check-in). Aucun remboursement au-delà.' },
+                { name: 'Flexible',   color: 'bg-forest-50/80 border-forest-200/80', dot: 'bg-forest-500', rule: 'Remboursement intégral si annulation ≥ 24h avant le check-in.' },
+                { name: 'Modérée',    color: 'bg-warning-50/80 border-warning-500/30', dot: 'bg-warning-500', rule: 'Remboursement intégral si annulation ≥ 5 jours avant. 50 % si annulation entre 1 et 5 jours avant.' },
+                { name: 'Stricte',    color: 'bg-error-50/80 border-error-500/30',     dot: 'bg-error-500',   rule: 'Remboursement intégral si annulation dans les 48h suivant la réservation (et ≥ 14 jours avant check-in). Aucun remboursement au-delà.' },
               ].map(({ name, color, dot, rule }) => (
-                <div key={name} className={cn('flex gap-3 p-4 rounded-xl border', color)}>
+                <div key={name} className={cn('flex gap-3 p-4 rounded-2xl border shadow-xs', color)}>
                   <div className={cn('w-2 h-2 rounded-full shrink-0 mt-2', dot)} />
                   <div>
-                    <p className="font-bold text-sm text-neutral-900 mb-0.5">{name}</p>
-                    <p className="text-sm text-neutral-600">{rule}</p>
+                    <p className="font-bold text-sm text-foreground mb-0.5">{name}</p>
+                    <p className="text-sm text-foreground-muted">{rule}</p>
                   </div>
                 </div>
               ))}
@@ -528,7 +531,7 @@ export function CGUPage() {
               l&apos;état du logement à l&apos;arrivée (check-in) et au départ (check-out).
             </Para>
             <Ul items={[
-              'Les photos d\'état des lieux sont stockées et horodatées par ImmoLoc',
+              'Les photos d\'état des lieux sont stockées et horodatées par Klef',
               'Elles constituent une preuve en cas de litige sur l\'état du logement',
               'Le Propriétaire dispose de 48h après le check-out pour déclarer tout dommage',
               'Passé ce délai, aucune réclamation relative à l\'état du logement ne sera recevable',
@@ -618,7 +621,7 @@ export function CGUPage() {
             <Para>
               Vous disposez d&apos;un droit d&apos;accès, de rectification, de suppression et de portabilité
               de vos données. Pour exercer ces droits, contactez-nous à{' '}
-              <strong>privacy@{BRAND.domain}</strong>.
+              <strong className="text-foreground">privacy@{BRAND.domain}</strong>.
             </Para>
 
             <Divider />
@@ -640,14 +643,14 @@ export function CGUPage() {
             </Para>
 
             {/* Last updated */}
-            <div className="mt-12 pt-8 border-t border-neutral-100 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+            <div className="mt-12 pt-8 border-t border-border flex flex-col sm:flex-row sm:items-center justify-between gap-4">
               <div>
-                <p className="text-xs text-neutral-400 font-semibold">Dernière mise à jour</p>
-                <p className="text-sm font-bold text-neutral-700">1er janvier 2025 — Version 2.1</p>
+                <p className="text-xs text-foreground-muted font-bold">Dernière mise à jour</p>
+                <p className="text-sm font-bold text-foreground">1er janvier 2025 — Version 2.1</p>
               </div>
               <div className="flex items-center gap-3">
                 <a href={`mailto:legal@${BRAND.domain}`}
-                  className="flex items-center gap-2 px-4 py-2.5 bg-emerald-50 hover:bg-emerald-100 border border-emerald-100 text-emerald-700 rounded-xl text-sm font-bold transition-colors">
+                  className="btn-ghost !px-4 !py-2.5 !text-sm flex items-center gap-2">
                   <Mail className="w-4 h-4" />
                   Nous contacter
                 </a>
@@ -661,12 +664,14 @@ export function CGUPage() {
       {showScrollTop && (
         <button
           onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
-          className="fixed bottom-8 right-6 z-50 w-11 h-11 rounded-full bg-emerald-500 hover:bg-emerald-600 text-white shadow-lg shadow-emerald-500/30 flex items-center justify-center transition-all hover:-translate-y-0.5 active:scale-95"
+          className="fixed bottom-8 right-6 z-50 w-11 h-11 rounded-full bg-forest-600 hover:bg-forest-700 text-white shadow-lg shadow-forest-900/30 flex items-center justify-center transition-all hover:-translate-y-0.5 active:scale-95"
           aria-label="Retour en haut"
         >
           <ArrowUp className="w-5 h-5" />
         </button>
       )}
+
+      <Footer />
     </div>
   );
 }

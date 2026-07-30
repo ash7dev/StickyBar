@@ -58,26 +58,26 @@ function CustomDropdown({
         type="button"
         onClick={() => setOpen((o) => !o)}
         className={cn(
-          'w-full flex items-center justify-between gap-3 px-4 py-3.5 rounded-xl border bg-white text-sm transition-all duration-150',
-          open ? 'border-emerald-400 ring-2 ring-emerald-400/15'
-               : error ? 'border-red-300' : 'border-neutral-200 hover:border-neutral-300 hover:shadow-sm',
-          value ? 'text-neutral-900 font-semibold' : 'text-neutral-400 font-normal',
+          'w-full flex items-center justify-between gap-3 px-4 py-3 rounded-field border bg-background-alt text-sm transition-all duration-150 cursor-pointer',
+          open ? 'border-forest-600 ring-2 ring-forest-500/20 shadow-xs'
+               : error ? 'border-error-500/60' : 'border-border hover:border-border-hover hover:bg-background-card',
+          value ? 'text-foreground font-semibold' : 'text-foreground-faint font-normal',
         )}
       >
         <span className="truncate">{value || placeholder}</span>
-        <ChevronDown className={cn('w-4 h-4 flex-shrink-0 text-neutral-400 transition-transform duration-200', open && 'rotate-180')} />
+        <ChevronDown className={cn('w-4 h-4 flex-shrink-0 text-foreground-muted transition-transform duration-200', open && 'rotate-180')} />
       </button>
 
       <div
         style={{ zIndex }}
         className={cn(
-          'absolute left-0 right-0 bg-white rounded-2xl border border-neutral-100/80',
-          'shadow-[0_16px_48px_rgba(0,0,0,0.12)] overflow-hidden transition-all duration-200',
+          'absolute left-0 right-0 bg-background-card rounded-card border border-border',
+          'shadow-2xl overflow-hidden transition-all duration-200',
           placement === 'top' ? 'bottom-full mb-2 origin-bottom' : 'top-full mt-2 origin-top',
           open ? 'opacity-100 scale-y-100 pointer-events-auto' : 'opacity-0 scale-y-95 pointer-events-none',
         )}
       >
-        <div className="max-h-56 overflow-y-auto overscroll-contain divide-y divide-neutral-50">
+        <div className="max-h-56 overflow-y-auto overscroll-contain divide-y divide-border/50">
           {options.map((opt) => {
             const selected = value === opt;
             return (
@@ -86,19 +86,19 @@ function CustomDropdown({
                 type="button"
                 onClick={() => { onChange(opt); setOpen(false); }}
                 className={cn(
-                  'w-full flex items-center justify-between px-4 py-3 text-sm transition-colors duration-100',
-                  selected ? 'bg-emerald-500 text-white' : 'text-neutral-700 hover:bg-neutral-50',
+                  'w-full flex items-center justify-between px-4 py-3 text-sm transition-colors duration-100 cursor-pointer',
+                  selected ? 'bg-forest-950 text-lime-300 font-bold' : 'text-foreground hover:bg-background-alt',
                 )}
               >
-                <span className={cn('font-medium', selected && 'font-semibold')}>{opt}</span>
-                {selected && <Check className="w-3.5 h-3.5 text-white flex-shrink-0" strokeWidth={2.5} />}
+                <span className={cn('font-medium', selected && 'font-bold')}>{opt}</span>
+                {selected && <Check className="w-4 h-4 text-lime-400 flex-shrink-0" strokeWidth={2.5} />}
               </button>
             );
           })}
         </div>
       </div>
 
-      {error && <p className="text-[11px] text-red-500 mt-1.5 font-medium">{error}</p>}
+      {error && <p className="text-[11px] text-error-600 mt-1.5 font-semibold">{error}</p>}
     </div>
   );
 }
@@ -116,7 +116,6 @@ const TYPE_META: Record<string, { label: string; Icon: React.ComponentType<{ cla
   AUTRES:      { label: 'Autres',      Icon: Home },
 };
 
-
 const CAT_ICONS: Record<string, React.ComponentType<{ className?: string }>> = {
   CONFORT: Armchair, CUISINE: ChefHat, CONNECTIVITE: Wifi,
   SECURITE: Shield, EXTERIEUR: Trees, ACCESSIBILITE: Accessibility,
@@ -128,12 +127,12 @@ const CAT_PHOTO_LABELS: Record<string, string> = {
 };
 
 const NAV_SECTIONS = [
-  { id: 'section-bien',         label: 'Logement',     icon: Home,       dot: 'bg-emerald-400' },
-  { id: 'section-presentation', label: 'Présentation', icon: Pen,        dot: 'bg-accent-400' },
-  { id: 'section-equipements',  label: 'Équipements',  icon: Armchair,   dot: 'bg-emerald-400' },
-  { id: 'section-tarification', label: 'Tarification', icon: TrendingUp, dot: 'bg-violet-400' },
-  { id: 'section-photos',       label: 'Photos',       icon: Camera,     dot: 'bg-sky-400' },
-  { id: 'section-conditions',   label: 'Conditions',   icon: Shield,     dot: 'bg-rose-400' },
+  { id: 'section-bien',         label: 'Logement',     icon: Home },
+  { id: 'section-presentation', label: 'Présentation', icon: Pen },
+  { id: 'section-equipements',  label: 'Équipements',  icon: Armchair },
+  { id: 'section-tarification', label: 'Tarification', icon: TrendingUp },
+  { id: 'section-photos',       label: 'Photos',       icon: Camera },
+  { id: 'section-conditions',   label: 'Conditions',   icon: Shield },
 ] as const;
 
 function computeQuality(listing: ListingDetail): number {
@@ -149,40 +148,35 @@ function computeQuality(listing: ListingDetail): number {
 
 /* ─── Shared styles ───────────────────────────────────────────────────────── */
 
-const INPUT_CLS = 'w-full px-4 py-3 rounded-xl border border-border bg-white text-foreground placeholder:text-neutral-400 text-sm outline-none focus:border-emerald-400 focus:ring-2 focus:ring-emerald-400/20 transition-all';
-const INPUT_ERR = 'w-full px-4 py-3 rounded-xl border border-error-500/60 bg-white text-foreground placeholder:text-neutral-400 text-sm outline-none focus:border-error-500 focus:ring-2 focus:ring-error-500/15 transition-all';
+const INPUT_CLS = 'w-full px-4 py-3 rounded-field border border-border bg-background-alt text-foreground placeholder:text-foreground-faint text-sm font-semibold outline-none focus:border-forest-600 focus:ring-2 focus:ring-forest-500/20 transition-all';
+const INPUT_ERR = 'w-full px-4 py-3 rounded-field border border-error-500/60 bg-background-alt text-foreground placeholder:text-foreground-faint text-sm font-semibold outline-none focus:border-error-600 focus:ring-2 focus:ring-error-500/20 transition-all';
 
 /* ─── Shared UI ───────────────────────────────────────────────────────────── */
 
-function SectionCard({ title, icon: Icon, headerBg = 'bg-emerald-50', iconBg = 'bg-emerald-100', iconColor = 'text-emerald-600', accent = 'bg-emerald-500', children }: {
+function SectionCard({ title, icon: Icon, children }: {
   title: string;
   icon: React.ComponentType<{ className?: string }>;
-  headerBg?: string;
-  iconBg?: string;
-  iconColor?: string;
-  accent?: string;
   children: React.ReactNode;
 }) {
   return (
-    <div className="bg-white rounded-2xl border border-border shadow-sm">
-      <div className={cn('h-[3px] w-full rounded-t-2xl', accent)} />
-      <div className={cn('flex items-center gap-3.5 px-5 py-4 border-b border-border', headerBg)}>
-        <div className={cn('w-10 h-10 rounded-xl flex items-center justify-center shrink-0', iconBg)}>
-          <Icon className={cn('w-5 h-5', iconColor)} />
+    <div className="card p-0 overflow-hidden shadow-sm">
+      <div className="flex items-center gap-3.5 px-6 py-4.5 border-b border-border/80 bg-background-alt">
+        <div className="w-10 h-10 rounded-inner bg-forest-950 border border-forest-800 text-lime-400 flex items-center justify-center shrink-0 shadow-xs">
+          <Icon className="w-5 h-5 text-lime-400" />
         </div>
-        <p className="font-bold text-neutral-900 text-[15px] tracking-tight">{title}</p>
+        <p className="font-display text-base font-bold text-foreground tracking-tight">{title}</p>
       </div>
-      <div className="px-5 py-6 space-y-5">{children}</div>
+      <div className="p-6 sm:p-7 space-y-6">{children}</div>
     </div>
   );
 }
 
 function FieldLabel({ children, required, optional }: { children: React.ReactNode; required?: boolean; optional?: boolean }) {
   return (
-    <label className="block text-xs font-semibold uppercase tracking-widest text-neutral-400 mb-2.5">
+    <label className="eyebrow block mb-2 font-semibold">
       {children}
-      {required && <span className="text-error-500 ml-0.5">*</span>}
-      {optional && <span className="ml-2 text-neutral-300 normal-case font-normal text-[10px] tracking-normal">optionnel</span>}
+      {required && <span className="text-error-600 ml-1">*</span>}
+      {optional && <span className="ml-2 text-foreground-faint normal-case font-medium text-xs">optionnel</span>}
     </label>
   );
 }
@@ -190,14 +184,22 @@ function FieldLabel({ children, required, optional }: { children: React.ReactNod
 function Counter({ value, onChange, min = 0, max = 30 }: { value: number; onChange: (v: number) => void; min?: number; max?: number }) {
   return (
     <div className="flex items-center gap-2">
-      <button type="button" onClick={() => onChange(Math.max(min, value - 1))} disabled={value <= min}
-        className="w-8 h-8 rounded-full border border-border bg-white flex items-center justify-center text-neutral-400 hover:border-emerald-400 hover:text-emerald-500 hover:bg-emerald-50 disabled:opacity-30 transition-all active:scale-90">
-        <Minus className="w-3 h-3" />
+      <button
+        type="button"
+        onClick={() => onChange(Math.max(min, value - 1))}
+        disabled={value <= min}
+        className="w-8 h-8 rounded-full border border-border bg-background-card text-foreground-muted hover:border-forest-600 hover:text-forest-600 hover:bg-background-alt disabled:opacity-30 transition-all active:scale-90 cursor-pointer"
+      >
+        <Minus className="w-3.5 h-3.5" />
       </button>
-      <span className="w-8 text-center font-black text-neutral-900 text-[15px] tabular-nums">{value}</span>
-      <button type="button" onClick={() => onChange(Math.min(max, value + 1))} disabled={value >= max}
-        className="w-8 h-8 rounded-full border border-border bg-white flex items-center justify-center text-neutral-400 hover:border-emerald-400 hover:text-emerald-500 hover:bg-emerald-50 disabled:opacity-30 transition-all active:scale-90">
-        <Plus className="w-3 h-3" />
+      <span className="w-8 text-center font-display font-bold text-foreground text-base tabular-nums">{value}</span>
+      <button
+        type="button"
+        onClick={() => onChange(Math.min(max, value + 1))}
+        disabled={value >= max}
+        className="w-8 h-8 rounded-full border border-border bg-background-card text-foreground-muted hover:border-forest-600 hover:text-forest-600 hover:bg-background-alt disabled:opacity-30 transition-all active:scale-90 cursor-pointer"
+      >
+        <Plus className="w-3.5 h-3.5" />
       </button>
     </div>
   );
@@ -208,10 +210,10 @@ function CounterRow({ icon: Icon, label, value, onChange, min, max }: {
   value: number; onChange: (v: number) => void; min?: number; max?: number;
 }) {
   return (
-    <div className="flex items-center justify-between px-4 py-3 rounded-xl border border-border bg-neutral-50 hover:bg-white transition-colors">
-      <div className="flex items-center gap-2.5">
-        <Icon className="w-4 h-4 text-neutral-400" />
-        <span className="text-sm text-neutral-700 font-semibold">{label}</span>
+    <div className="flex items-center justify-between px-4.5 py-3.5 rounded-inner border border-border bg-background-alt hover:bg-background-card transition-colors">
+      <div className="flex items-center gap-3">
+        <Icon className="w-4 h-4 text-foreground-muted" />
+        <span className="text-sm font-semibold text-foreground">{label}</span>
       </div>
       <Counter value={value} onChange={onChange} min={min} max={max} />
     </div>
@@ -223,10 +225,10 @@ type SaveState = 'idle' | 'saving' | 'saved' | 'error';
 function SaveButton({ state, error, onSave, disabled }: { state: SaveState; error?: string | null; onSave: () => void; disabled?: boolean }) {
   const isDisabled = disabled || state === 'saving' || state === 'saved';
   return (
-    <div className="flex items-center justify-between pt-5 border-t border-border">
+    <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 pt-5 border-t border-border/80">
       {error ? (
-        <div className="flex items-center gap-2 text-xs text-error-600 font-medium bg-error-500/8 border border-error-500/20 rounded-lg px-3 py-1.5">
-          <AlertCircle className="w-3.5 h-3.5 shrink-0" />
+        <div className="flex items-center gap-2 text-xs text-error-600 font-semibold bg-error-50 border border-error-500/30 rounded-inner px-3.5 py-2.5">
+          <AlertCircle className="w-4 h-4 shrink-0" />
           {error}
         </div>
       ) : <div />}
@@ -235,17 +237,14 @@ function SaveButton({ state, error, onSave, disabled }: { state: SaveState; erro
         onClick={onSave}
         disabled={isDisabled}
         className={cn(
-          'flex items-center gap-2 px-6 py-2.5 rounded-xl text-sm font-bold tracking-wide transition-all duration-300',
-          state === 'saved'
-            ? 'bg-success-500 text-white shadow-md shadow-success-500/25'
-            : isDisabled
-              ? 'bg-emerald-300 text-white cursor-not-allowed opacity-60'
-              : 'bg-emerald-500 hover:bg-emerald-600 text-white shadow-md shadow-emerald-500/25 hover:-translate-y-0.5 active:scale-95',
+          'btn-action px-8 sm:px-10 py-3.5 sm:py-3 text-xs sm:text-sm font-bold min-w-full sm:min-w-[220px] justify-center cursor-pointer transition-all duration-300 shadow-action active:scale-98',
+          state === 'saved' && 'bg-forest-600 text-lime-300 font-bold border border-lime-400/30 shadow-none',
+          isDisabled && state !== 'saved' && 'opacity-50 cursor-not-allowed',
         )}
       >
         {state === 'saving' && <Loader2 className="w-4 h-4 animate-spin" />}
-        {state === 'saved' && <Check className="w-4 h-4" />}
-        {state === 'saved' ? 'Sauvegardé !' : state === 'saving' ? 'Sauvegarde…' : 'Sauvegarder'}
+        {state === 'saved' && <Check className="w-4 h-4 text-lime-300" />}
+        {state === 'saved' ? 'Modifications enregistrées !' : state === 'saving' ? 'Enregistrement…' : 'Enregistrer les modifications'}
       </button>
     </div>
   );
@@ -254,28 +253,18 @@ function SaveButton({ state, error, onSave, disabled }: { state: SaveState; erro
 /* ─── Quality meter ───────────────────────────────────────────────────────── */
 
 function QualityMeter({ score }: { score: number }) {
-  const bar   = score >= 80 ? 'bg-success-500' : score >= 50 ? 'bg-warning-500' : 'bg-error-500';
-  const ring  = score >= 80 ? 'stroke-success-500' : score >= 50 ? 'stroke-warning-500' : 'stroke-error-500';
-  const tc    = score >= 80 ? 'text-success-600' : score >= 50 ? 'text-warning-600' : 'text-error-600';
-  const label = score >= 80 ? 'Excellent' : score >= 50 ? 'Bon' : 'À compléter';
-  const circ  = 2 * Math.PI * 22;
+  const label = score >= 80 ? 'Excellente' : score >= 50 ? 'Bonne' : 'À optimiser';
   return (
-    <div className="bg-white rounded-2xl border border-border p-4 shadow-sm">
-      <p className="text-[10px] font-bold uppercase tracking-widest text-neutral-400 mb-3">Qualité annonce</p>
+    <div className="card p-5 space-y-3 shadow-xs">
+      <p className="eyebrow block">Qualité de l&apos;annonce</p>
       <div className="flex items-center gap-4">
-        <div className="relative w-14 h-14 shrink-0">
-          <svg viewBox="0 0 50 50" className="-rotate-90 w-14 h-14">
-            <circle cx="25" cy="25" r="22" fill="none" stroke="currentColor" strokeWidth="4" className="text-neutral-100" />
-            <circle cx="25" cy="25" r="22" fill="none" strokeWidth="4"
-              strokeDasharray={circ} strokeDashoffset={circ - (score / 100) * circ}
-              strokeLinecap="round" className={cn('transition-all duration-700', ring)} />
-          </svg>
-          <span className={cn('absolute inset-0 flex items-center justify-center text-base font-black tabular-nums', tc)}>{score}</span>
+        <div className="w-12 h-12 rounded-inner bg-forest-950 border border-forest-800 text-lime-300 font-display font-extrabold text-lg flex items-center justify-center shrink-0 shadow-xs tabular-nums">
+          {score}%
         </div>
         <div>
-          <p className={cn('text-lg font-black leading-none mb-0.5', tc)}>{label}</p>
-          <div className="h-1.5 w-24 bg-neutral-100 rounded-full overflow-hidden mt-2">
-            <div className={cn('h-full rounded-full transition-all duration-700', bar)} style={{ width: `${score}%` }} />
+          <p className="font-display text-base font-bold text-foreground">{label}</p>
+          <div className="h-2 w-28 bg-background-alt border border-border rounded-pill overflow-hidden mt-1.5">
+            <div className="h-full rounded-pill bg-forest-600 transition-all duration-700" style={{ width: `${score}%` }} />
           </div>
         </div>
       </div>
@@ -322,42 +311,37 @@ function SectionBien({ listing }: { listing: ListingDetail }) {
   }
 
   return (
-    <SectionCard title="Informations du logement" icon={Home} accent="bg-emerald-500" headerBg="bg-emerald-50" iconBg="bg-emerald-100" iconColor="text-emerald-600">
-
-      {/* ── Type de logement ── */}
-      <div className="space-y-2.5">
-        <div className="flex items-center gap-2">
-          <div className="w-7 h-7 rounded-lg bg-emerald-100 flex items-center justify-center shrink-0">
-            <Home className="w-3.5 h-3.5 text-emerald-600" />
-          </div>
-          <span className="text-sm font-black text-neutral-800">Type de logement</span>
-          <span className="text-[10px] font-bold text-rose-400 ml-0.5">*</span>
-        </div>
-
+    <SectionCard title="Informations du logement" icon={Home}>
+      {/* Type de logement */}
+      <div className="space-y-3">
+        <FieldLabel required>Type de logement</FieldLabel>
         <Controller name="type" control={control} render={({ field }) => (
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
             {TYPE_LOGEMENT.map((t) => {
               const { label, Icon } = TYPE_META[t];
               const active = field.value === t;
               return (
-                <button key={t} type="button"
+                <button
+                  key={t}
+                  type="button"
                   onClick={() => { field.onChange(t); setValue('sousType', ''); }}
                   className={cn(
-                    'relative flex flex-col items-center gap-2.5 py-4 px-3 rounded-2xl border-2 text-xs font-bold transition-all duration-200 active:scale-95',
+                    'relative flex flex-col items-center gap-2.5 py-4 px-3 rounded-inner border text-xs font-semibold transition-all duration-150 cursor-pointer',
                     active
-                      ? 'border-transparent bg-[#0a0a0a] text-white shadow-lg'
-                      : 'border-neutral-100 bg-neutral-50 text-neutral-500 hover:bg-white hover:border-neutral-200',
-                  )}>
+                      ? 'bg-forest-950 text-lime-300 border-forest-900 shadow-md'
+                      : 'bg-background-alt text-foreground-muted border-border hover:bg-background-card hover:border-border-hover',
+                  )}
+                >
                   <div className={cn(
-                    'w-10 h-10 rounded-xl flex items-center justify-center transition-all',
-                    active ? 'bg-white/10' : 'bg-white border border-neutral-200',
+                    'w-10 h-10 rounded-inner flex items-center justify-center transition-all',
+                    active ? 'bg-forest-900 border border-lime-400/20 text-lime-400' : 'bg-background-card border border-border text-foreground-muted',
                   )}>
-                    <Icon className={cn('w-5 h-5', active ? 'text-white' : 'text-neutral-400')} />
+                    <Icon className="w-5 h-5" />
                   </div>
                   <span>{label}</span>
                   {active && (
-                    <div className="absolute -top-1.5 -right-1.5 w-5 h-5 rounded-full bg-emerald-500 flex items-center justify-center shadow-sm shadow-emerald-500/40">
-                      <Check className="w-3 h-3 text-white" strokeWidth={3} />
+                    <div className="absolute -top-1.5 -right-1.5 w-5 h-5 rounded-full bg-lime-400 text-forest-950 flex items-center justify-center shadow-xs">
+                      <Check className="w-3.5 h-3.5 text-forest-950" strokeWidth={3} />
                     </div>
                   )}
                 </button>
@@ -365,25 +349,19 @@ function SectionBien({ listing }: { listing: ListingDetail }) {
             })}
           </div>
         )} />
-        {errors.type && <p className="text-xs text-error-500">{errors.type.message}</p>}
+        {errors.type && <p className="text-xs text-error-600 font-semibold">{errors.type.message}</p>}
       </div>
 
-      {/* ── Type précis ── */}
+      {/* Sous-type */}
       {sousTypes.length > 0 && (
         <div className="space-y-2">
-          <div className="flex items-center gap-2">
-            <div className="w-7 h-7 rounded-lg bg-neutral-100 flex items-center justify-center shrink-0">
-              <ChevronRight className="w-3.5 h-3.5 text-neutral-500" />
-            </div>
-            <span className="text-sm font-black text-neutral-800">Type précis</span>
-            <span className="text-[10px] font-bold text-rose-400 ml-0.5">*</span>
-          </div>
+          <FieldLabel required>Type précis</FieldLabel>
           <Controller name="sousType" control={control} render={({ field }) => (
             <CustomDropdown
               options={sousTypes}
               value={field.value}
               onChange={field.onChange}
-              placeholder="Sélectionnez un type"
+              placeholder="Sélectionnez le sous-type précis"
               error={errors.sousType?.message}
               zIndex={120}
             />
@@ -391,23 +369,18 @@ function SectionBien({ listing }: { listing: ListingDetail }) {
         </div>
       )}
 
-      {/* ── Capacité & composition ── */}
-      <div className="space-y-2.5">
-        <div className="flex items-center gap-2">
-          <div className="w-7 h-7 rounded-lg bg-sky-100 flex items-center justify-center shrink-0">
-            <Users className="w-3.5 h-3.5 text-sky-600" />
-          </div>
-          <span className="text-sm font-black text-neutral-800">Capacité & composition</span>
-        </div>
-        <div className="rounded-2xl border border-border overflow-hidden divide-y divide-border">
+      {/* Capacité & composition */}
+      <div className="space-y-3">
+        <FieldLabel>Capacité & composition</FieldLabel>
+        <div className="rounded-inner border border-border overflow-hidden divide-y divide-border">
           <Controller name="capaciteMax" control={control} render={({ field }) => (
-            <CounterRow icon={Users} label="Capacité max" value={field.value ?? 1} onChange={field.onChange} min={1} max={50} />
+            <CounterRow icon={Users} label="Capacité d'accueil max" value={field.value ?? 1} onChange={field.onChange} min={1} max={50} />
           )} />
           <Controller name="nombrePieces" control={control} render={({ field }) => (
-            <CounterRow icon={DoorOpen} label="Pièces" value={field.value ?? 1} onChange={field.onChange} min={1} max={30} />
+            <CounterRow icon={DoorOpen} label="Nombre de pièces" value={field.value ?? 1} onChange={field.onChange} min={1} max={30} />
           )} />
           <Controller name="nombreChambres" control={control} render={({ field }) => (
-            <CounterRow icon={BedSingle} label="Chambres" value={field.value ?? 1} onChange={field.onChange} min={0} max={20} />
+            <CounterRow icon={BedSingle} label="Nombre de chambres" value={field.value ?? 1} onChange={field.onChange} min={0} max={20} />
           )} />
           <Controller name="nombreSallesBain" control={control} render={({ field }) => (
             <CounterRow icon={Bath} label="Salles de bain" value={field.value ?? 1} onChange={field.onChange} min={0} max={20} />
@@ -415,20 +388,12 @@ function SectionBien({ listing }: { listing: ListingDetail }) {
         </div>
       </div>
 
-      {/* ── Localisation ── */}
-      <div className="space-y-2.5">
-        <div className="flex items-center gap-2">
-          <div className="w-7 h-7 rounded-lg bg-rose-100 flex items-center justify-center shrink-0">
-            <MapPin className="w-3.5 h-3.5 text-rose-500" />
-          </div>
-          <span className="text-sm font-black text-neutral-800">Localisation</span>
-          <span className="text-[10px] font-bold text-rose-400 ml-0.5">*</span>
-        </div>
-
-        <div className="space-y-2">
-          {/* Zone */}
+      {/* Localisation */}
+      <div className="space-y-3">
+        <FieldLabel required>Localisation au Sénégal</FieldLabel>
+        <div className="space-y-3">
           <div>
-            <p className="text-[10px] font-bold text-neutral-400 uppercase tracking-widest mb-1.5">Zone</p>
+            <label className="eyebrow block mb-1.5 text-[10px]">Zone / Région</label>
             <CustomDropdown
               options={Object.keys(ZONES_SENEGAL) as ZoneSenegal[]}
               value={selectedZone}
@@ -436,23 +401,20 @@ function SectionBien({ listing }: { listing: ListingDetail }) {
                 setSelectedZone(z as ZoneSenegal);
                 setValue('ville', '', { shouldValidate: false });
               }}
-              placeholder="Sélectionnez une zone"
+              placeholder="Sélectionnez la zone"
               zIndex={150}
             />
           </div>
 
-          {/* Quartier / Destination */}
           {selectedZone && (
             <div>
-              <p className="text-[10px] font-bold text-neutral-400 uppercase tracking-widest mb-1.5">
-                {selectedZone === 'Dakar' ? 'Quartier' : 'Destination'}
-              </p>
+              <label className="eyebrow block mb-1.5 text-[10px]">{selectedZone === 'Dakar' ? 'Quartier' : 'Ville / Destination'}</label>
               <Controller name="ville" control={control} render={({ field }) => (
                 <CustomDropdown
                   options={destinationsInZone}
                   value={field.value}
                   onChange={field.onChange}
-                  placeholder={selectedZone === 'Dakar' ? 'Sélectionnez un quartier' : 'Sélectionnez une destination'}
+                  placeholder={selectedZone === 'Dakar' ? 'Sélectionnez le quartier' : 'Sélectionnez la ville'}
                   error={errors.ville?.message}
                   zIndex={300}
                   placement="top"
@@ -461,21 +423,14 @@ function SectionBien({ listing }: { listing: ListingDetail }) {
             </div>
           )}
 
-          {/* Adresse */}
           <div>
-            <p className="text-[10px] font-bold text-neutral-400 uppercase tracking-widest mb-1.5">Adresse précise</p>
-            <div className={cn(
-              'flex items-center gap-3 px-4 py-3 rounded-xl border-2 bg-white transition-all',
-              errors.adresse ? 'border-error-400' : 'border-neutral-200 focus-within:border-rose-400',
-            )}>
-              <MapPin className="w-4 h-4 text-neutral-300 shrink-0" />
-              <input
-                {...register('adresse')}
-                placeholder="Rue, résidence ou description précise"
-                className="flex-1 min-w-0 text-sm font-medium text-neutral-900 outline-none bg-transparent placeholder:text-neutral-300"
-              />
-            </div>
-            {errors.adresse && <p className="text-xs text-error-500 mt-1">{errors.adresse.message}</p>}
+            <label className="eyebrow block mb-1.5 text-[10px]">Adresse précise</label>
+            <input
+              {...register('adresse')}
+              placeholder="Rue, résidence ou point de repère précis"
+              className={INPUT_CLS}
+            />
+            {errors.adresse && <p className="text-xs text-error-600 font-semibold mt-1">{errors.adresse.message}</p>}
           </div>
         </div>
       </div>
@@ -517,137 +472,103 @@ function SectionPresentation({ listing }: { listing: ListingDetail }) {
   }
 
   return (
-    <SectionCard title="Présentation & Tarif" icon={Pen}>
-
-      {/* ── Titre ── */}
+    <SectionCard title="Présentation & Tarif de base" icon={Pen}>
+      {/* Titre */}
       <div className="space-y-2">
-        <div className="flex items-center gap-2">
-          <div className="w-7 h-7 rounded-lg bg-accent-100 flex items-center justify-center shrink-0">
-            <Pen className="w-3.5 h-3.5 text-accent-600" />
-          </div>
-          <span className="text-sm font-black text-neutral-800">Titre de l&apos;annonce</span>
-          <span className="text-[10px] font-bold text-rose-400 ml-0.5">*</span>
-        </div>
+        <FieldLabel required>Titre commercial de l&apos;annonce</FieldLabel>
         <input
           {...register('titre')}
-          placeholder="Ex: Villa avec piscine à Saly, vue mer"
-          className={cn(errors.titre ? INPUT_ERR : INPUT_CLS, 'font-semibold')}
+          placeholder="Ex: Superbe villa avec piscine à Saly Niakh Niakhal"
+          className={cn(errors.titre ? INPUT_ERR : INPUT_CLS)}
         />
-        {errors.titre && <p className="text-xs text-error-500">{errors.titre.message}</p>}
+        {errors.titre && <p className="text-xs text-error-600 font-semibold">{errors.titre.message}</p>}
       </div>
 
-      {/* ── Description ── */}
+      {/* Description */}
       <div className="space-y-2">
-        <div className="flex items-center gap-2">
-          <div className="w-7 h-7 rounded-lg bg-neutral-100 flex items-center justify-center shrink-0">
-            <FileText className="w-3.5 h-3.5 text-neutral-500" />
-          </div>
-          <span className="text-sm font-black text-neutral-800">Description</span>
-          <span className="text-[10px] font-bold text-rose-400 ml-0.5">*</span>
-        </div>
+        <FieldLabel required>Description détaillée</FieldLabel>
         <textarea
           {...register('description')}
           rows={6}
-          placeholder="Décrivez votre logement en détail : ambiance, points forts, accès…"
+          placeholder="Décrivez votre logement en détail : ambiance, aménagements, points forts, accès…"
           className={cn(errors.description ? INPUT_ERR : INPUT_CLS, 'resize-none leading-relaxed')}
         />
-        <div className="space-y-1.5">
-          {errors.description && <p className="text-xs text-error-500">{errors.description.message}</p>}
-          <div className="flex items-center gap-2.5">
-            <div className="flex-1 h-1.5 rounded-full bg-neutral-100 overflow-hidden">
-              <div
-                className={cn('h-full rounded-full transition-all duration-300',
-                  descLength === 0 ? 'w-0'
-                  : descLength > 1800 ? 'bg-amber-400'
-                  : descLength > 800 ? 'bg-emerald-400'
-                  : 'bg-emerald-400'
-                )}
-                style={{ width: `${Math.min(100, (descLength / 2000) * 100)}%` }}
-              />
-            </div>
-            <span className={cn('text-[11px] tabular-nums font-bold shrink-0',
-              descLength > 1800 ? 'text-amber-600' : descLength > 800 ? 'text-emerald-600' : 'text-neutral-400'
-            )}>
-              {descLength} / 2000
-            </span>
-          </div>
-          {descLength > 0 && descLength < 100 && (
-            <p className="text-[11px] text-neutral-400">💡 Minimum 100 caractères recommandés</p>
-          )}
+        <div className="flex justify-between items-center text-xs text-foreground-muted">
+          <span>Minimum 100 caractères recommandés</span>
+          <span className="tabular-nums font-semibold">{descLength} / 2000</span>
         </div>
+        {errors.description && <p className="text-xs text-error-600 font-semibold">{errors.description.message}</p>}
       </div>
 
-      {/* ── Prix de base ── */}
+      {/* Prix de base */}
       <div className="space-y-2">
-        <div className="flex items-center gap-2">
-          <div className="w-7 h-7 rounded-lg bg-emerald-100 flex items-center justify-center shrink-0">
-            <Tag className="w-3.5 h-3.5 text-emerald-600" />
-          </div>
-          <span className="text-sm font-black text-neutral-800">Prix par nuit</span>
-          <span className="text-[10px] font-bold text-rose-400 ml-0.5">*</span>
-        </div>
-
-        <div className="relative overflow-hidden rounded-2xl bg-[#0a0a0a] border border-white/[0.07] p-4">
-          <div className="absolute -top-10 -right-10 w-36 h-36 rounded-full bg-emerald-500/10 blur-3xl pointer-events-none" />
-          <p className="text-[10px] font-bold uppercase tracking-widest text-white/40 mb-2">Prix de base / nuit</p>
-          <div className={cn(
-            'flex items-center gap-3 px-4 py-3 rounded-xl border-2 bg-white/[0.06] transition-all',
-            errors.prixBase ? 'border-rose-500/50' : 'border-white/10 focus-within:border-emerald-400/60',
-          )}>
+        <FieldLabel required>Prix de nuitée de base (FCFA)</FieldLabel>
+        <div className="section-inverse p-5 relative overflow-hidden border border-forest-800 rounded-card space-y-2">
+          <p className="eyebrow text-lime-300">Prix de base par nuit</p>
+          <div className="flex items-center gap-3">
             <input
-              {...register('prixBase')}
+              {...register('prixBase', { valueAsNumber: true })}
               type="number"
-              placeholder="25 000"
-              className="flex-1 min-w-0 text-2xl font-black text-white tracking-tight outline-none bg-transparent placeholder:text-white/20"
+              placeholder="25000"
+              className="w-full text-3xl font-display font-bold text-lime-300 bg-transparent outline-none tabular-nums"
             />
-            <span className="text-xs font-bold text-white/40 bg-white/[0.06] border border-white/10 px-2.5 py-1.5 rounded-lg shrink-0">FCFA</span>
+            <span className="text-xs font-bold text-lime-400 bg-forest-900 border border-lime-400/20 px-3 py-1.5 rounded-pill shrink-0">FCFA / nuit</span>
           </div>
-          {errors.prixBase && <p className="text-xs text-rose-400 mt-2">{errors.prixBase.message}</p>}
-          {prix > 0 && !errors.prixBase && (
-            <p className="text-[11px] text-emerald-400 font-semibold mt-2 flex items-center gap-1.5">
-              <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 inline-block" />
-              ≈ {(prix / 655).toFixed(0)} € / nuit
+          {prix > 0 && (
+            <p className="text-xs text-on-inverse-muted font-medium pt-1">
+              ≈ {fcfa(prix / 655)} € par nuitée
             </p>
           )}
         </div>
+        {errors.prixBase && <p className="text-xs text-error-600 font-semibold">{errors.prixBase.message}</p>}
       </div>
 
-      {/* ── Durée minimum ── */}
-      <div className="space-y-2">
-        <div className="flex items-center gap-2">
-          <div className="w-7 h-7 rounded-lg bg-emerald-100 flex items-center justify-center shrink-0">
-            <Moon className="w-3.5 h-3.5 text-emerald-600" />
-          </div>
-          <span className="text-sm font-black text-neutral-800">Durée minimum de séjour</span>
-        </div>
-
-        <Controller name="nuitesMinimum" control={control} render={({ field }) => (<>
-          <div className="flex items-center gap-4 px-5 py-4 bg-neutral-50 rounded-2xl border border-border">
-            <button type="button" onClick={() => field.onChange(Math.max(1, (field.value ?? 1) - 1))} disabled={(field.value ?? 1) <= 1}
-              className="w-12 h-12 rounded-xl bg-white border border-border shadow-sm flex items-center justify-center text-neutral-500 hover:border-emerald-400 hover:text-emerald-500 hover:bg-emerald-50 transition-all disabled:opacity-30 shrink-0 active:scale-90">
-              <Minus className="w-4 h-4" />
-            </button>
-            <div className="flex-1 text-center">
-              <span className="text-4xl font-black text-neutral-900 tabular-nums">{field.value ?? 1}</span>
-              <p className="text-[10px] font-bold text-neutral-400 uppercase tracking-wider mt-1">Nuit{(field.value ?? 1) > 1 ? 's' : ''} minimum</p>
-            </div>
-            <button type="button" onClick={() => field.onChange(Math.min(365, (field.value ?? 1) + 1))} disabled={(field.value ?? 1) >= 365}
-              className="w-12 h-12 rounded-xl bg-white border border-border shadow-sm flex items-center justify-center text-neutral-500 hover:border-emerald-400 hover:text-emerald-500 hover:bg-emerald-50 transition-all disabled:opacity-30 shrink-0 active:scale-90">
-              <Plus className="w-4 h-4" />
-            </button>
-          </div>
-          <div className="grid grid-cols-3 sm:grid-cols-6 gap-2">
-            {([1, 2, 3, 7, 14, 30] as const).map((n) => (
-              <button key={n} type="button" onClick={() => field.onChange(n)}
-                className={cn('py-2.5 rounded-xl text-xs font-bold border transition-all active:scale-95',
-                  field.value === n
-                    ? 'border-emerald-400 bg-emerald-500 text-white shadow-sm shadow-emerald-500/20'
-                    : 'border-border bg-neutral-50 text-neutral-500 hover:bg-white hover:border-neutral-300')}>
-                {n === 1 ? '1 nuit' : n === 7 ? '1 sem.' : n === 14 ? '2 sem.' : n === 30 ? '1 mois' : `${n} nuits`}
+      {/* Durée minimum */}
+      <div className="space-y-3">
+        <FieldLabel>Durée minimum de séjour (Nuitées)</FieldLabel>
+        <Controller name="nuitesMinimum" control={control} render={({ field }) => (
+          <div className="space-y-3">
+            <div className="flex items-center gap-4 px-5 py-4 bg-background-alt rounded-inner border border-border">
+              <button
+                type="button"
+                onClick={() => field.onChange(Math.max(1, (field.value ?? 1) - 1))}
+                disabled={(field.value ?? 1) <= 1}
+                className="w-10 h-10 rounded-full bg-background-card border border-border flex items-center justify-center text-foreground-muted hover:text-foreground disabled:opacity-30 cursor-pointer"
+              >
+                <Minus className="w-4 h-4" />
               </button>
-            ))}
+              <div className="flex-1 text-center">
+                <span className="text-3xl font-display font-bold text-foreground tabular-nums">{field.value ?? 1}</span>
+                <p className="eyebrow text-[10px] mt-0.5">Nuit{(field.value ?? 1) > 1 ? 's' : ''} minimum</p>
+              </div>
+              <button
+                type="button"
+                onClick={() => field.onChange(Math.min(365, (field.value ?? 1) + 1))}
+                disabled={(field.value ?? 1) >= 365}
+                className="w-10 h-10 rounded-full bg-background-card border border-border flex items-center justify-center text-foreground-muted hover:text-foreground disabled:opacity-30 cursor-pointer"
+              >
+                <Plus className="w-4 h-4" />
+              </button>
+            </div>
+            <div className="grid grid-cols-3 sm:grid-cols-6 gap-2">
+              {([1, 2, 3, 7, 14, 30] as const).map((n) => (
+                <button
+                  key={n}
+                  type="button"
+                  onClick={() => field.onChange(n)}
+                  className={cn(
+                    'py-2.5 rounded-pill text-xs font-semibold border transition-all cursor-pointer',
+                    field.value === n
+                      ? 'bg-forest-600 border-forest-600 text-lime-300 font-bold shadow-xs'
+                      : 'border-border bg-background-alt text-foreground-muted hover:bg-background-card',
+                  )}
+                >
+                  {n === 1 ? '1 nuit' : n === 7 ? '1 sem.' : n === 14 ? '2 sem.' : n === 30 ? '1 mois' : `${n} nuits`}
+                </button>
+              ))}
+            </div>
           </div>
-        </>)} />
+        )} />
       </div>
 
       <SaveButton state={state} error={apiError} onSave={handleSubmit(onSave)} />
@@ -664,7 +585,6 @@ function SectionEquipements({ listing }: { listing: ListingDetail }) {
   const [selected, setSelected] = useState<Set<string>>(new Set(listing.equipements.map((e) => e.nom)));
   const [catalogue, setCatalogue] = useState<{ id: string; nom: string }[] | null>(null);
   const [catalogueError, setCatalogueError] = useState(false);
-  const [openCats, setOpenCats] = useState<Set<string>>(new Set());
 
   useEffect(() => {
     nestFetch<{ id: string; nom: string }[]>(NEST_API.LISTINGS.LIST_EQUIPEMENTS, { method: 'GET' })
@@ -700,114 +620,54 @@ function SectionEquipements({ listing }: { listing: ListingDetail }) {
 
   return (
     <SectionCard title="Équipements & Services" icon={Armchair}>
-
-      {/* Statut du catalogue */}
       {catalogueError && (
-        <div className="flex items-center gap-2 text-xs text-error-600 bg-error-500/8 border border-error-500/20 rounded-xl px-3 py-2.5">
-          <AlertCircle className="w-3.5 h-3.5 shrink-0" />
-          Impossible de charger le catalogue — la sauvegarde est désactivée.
+        <div className="flex items-center gap-2 text-xs text-error-600 bg-error-50 border border-error-500/30 rounded-inner px-3 py-2">
+          <AlertCircle className="w-4 h-4 shrink-0" />
+          Impossible de charger le catalogue des équipements.
         </div>
       )}
 
-      {/* Barre de statut */}
       <div className="flex items-center gap-3">
-        <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-emerald-50 border border-emerald-200 text-emerald-700 text-xs font-bold">
-          <Check className="w-3 h-3" />
-          {selected.size} sélectionné{selected.size > 1 ? 's' : ''}
+        <span className="badge-verified">
+          <Check className="w-3.5 h-3.5 text-gold-600" />
+          {selected.size} équipement{selected.size > 1 ? 's' : ''} sélectionné{selected.size > 1 ? 's' : ''}
         </span>
         {!catalogue && !catalogueError && (
-          <span className="inline-flex items-center gap-1.5 text-xs text-neutral-400">
-            <Loader2 className="w-3 h-3 animate-spin" />
-            Chargement du catalogue…
+          <span className="inline-flex items-center gap-1.5 text-xs text-foreground-muted">
+            <Loader2 className="w-3.5 h-3.5 animate-spin" />
+            Chargement…
           </span>
         )}
       </div>
 
-      {/* ── Mobile : accordéons ── */}
-      <div className="sm:hidden space-y-2">
-        {Object.entries(EQUIPEMENTS_PAR_CATEGORIE).map(([cat, items]) => {
-          const Icon = CAT_ICONS[cat] ?? Tag;
-          const catItems = items as readonly string[];
-          const selCount = catItems.filter((n) => selected.has(n)).length;
-          const isOpen = openCats.has(cat);
-          return (
-            <div key={cat} className="rounded-2xl border border-neutral-100 overflow-hidden">
-              <button
-                type="button"
-                onClick={() => setOpenCats((prev) => {
-                  const next = new Set(prev);
-                  next.has(cat) ? next.delete(cat) : next.add(cat);
-                  return next;
-                })}
-                className="w-full flex items-center gap-3 px-4 py-3.5 bg-white active:bg-neutral-50 transition-colors"
-              >
-                <div className="w-8 h-8 rounded-xl bg-neutral-100 flex items-center justify-center shrink-0">
-                  <Icon className="w-4 h-4 text-neutral-500" />
-                </div>
-                <span className="flex-1 text-sm font-bold text-neutral-800 text-left">
-                  {CATEGORIE_EQUIPEMENT_LABELS[cat]}
-                </span>
-                {selCount > 0 && (
-                  <span className="px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-700 text-xs font-bold shrink-0">
-                    {selCount}
-                  </span>
-                )}
-                <ChevronDown className={cn('w-4 h-4 text-neutral-400 transition-transform duration-200 shrink-0', isOpen && 'rotate-180')} />
-              </button>
-              {isOpen && (
-                <div className="border-t border-neutral-100 divide-y divide-neutral-50">
-                  {catItems.map((nom) => {
-                    const active = selected.has(nom);
-                    return (
-                      <button
-                        key={nom}
-                        type="button"
-                        onClick={() => toggle(nom)}
-                        className={cn('w-full flex items-center gap-3 px-4 py-3.5 transition-colors text-left active:opacity-80', active ? 'bg-emerald-50' : 'bg-white')}
-                      >
-                        <div className={cn('w-5 h-5 rounded-md border-2 flex items-center justify-center shrink-0 transition-all', active ? 'bg-emerald-500 border-emerald-500' : 'border-neutral-300')}>
-                          {active && <Check className="w-3 h-3 text-white" strokeWidth={3} />}
-                        </div>
-                        <span className={cn('text-sm font-medium flex-1', active ? 'text-emerald-800 font-semibold' : 'text-neutral-700')}>
-                          {nom}
-                        </span>
-                      </button>
-                    );
-                  })}
-                </div>
-              )}
-            </div>
-          );
-        })}
-      </div>
-
-      {/* ── Desktop : pills ── */}
-      <div className="hidden sm:block space-y-4">
+      <div className="space-y-5">
         {Object.entries(EQUIPEMENTS_PAR_CATEGORIE).map(([cat, items]) => {
           const Icon = CAT_ICONS[cat] ?? Tag;
           return (
-            <div key={cat}>
-              <div className="flex items-center gap-2 mb-2.5">
-                <div className="w-6 h-6 rounded-md bg-neutral-100 flex items-center justify-center">
-                  <Icon className="w-3.5 h-3.5 text-neutral-500" />
+            <div key={cat} className="space-y-2.5">
+              <div className="flex items-center gap-2">
+                <div className="w-6 h-6 rounded-inner bg-forest-950 text-lime-400 flex items-center justify-center shrink-0">
+                  <Icon className="w-3.5 h-3.5" />
                 </div>
-                <span className="text-[11px] font-bold text-neutral-500 uppercase tracking-wider">
-                  {CATEGORIE_EQUIPEMENT_LABELS[cat]}
-                </span>
+                <span className="eyebrow text-foreground">{CATEGORIE_EQUIPEMENT_LABELS[cat]}</span>
               </div>
               <div className="flex flex-wrap gap-2">
                 {(items as readonly string[]).map((nom) => {
                   const active = selected.has(nom);
                   return (
-                    <button key={nom} type="button" onClick={() => toggle(nom)}
+                    <button
+                      key={nom}
+                      type="button"
+                      onClick={() => toggle(nom)}
                       className={cn(
-                        'flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold border transition-all',
+                        'flex items-center gap-2 px-3.5 py-2 rounded-pill text-xs font-semibold border transition-all cursor-pointer',
                         active
-                          ? 'bg-emerald-500 border-emerald-500 text-white shadow-sm shadow-emerald-500/20'
-                          : 'bg-neutral-50 border-border text-neutral-600 hover:bg-white hover:border-neutral-300',
-                      )}>
-                      {active && <Check className="w-3 h-3" />}
-                      {nom}
+                          ? 'bg-forest-600 border-forest-600 text-lime-300 font-bold shadow-xs'
+                          : 'bg-background-alt border-border text-foreground-muted hover:bg-background-card hover:text-foreground',
+                      )}
+                    >
+                      {active && <Check className="w-3.5 h-3.5 text-lime-300" />}
+                      <span>{nom}</span>
                     </button>
                   );
                 })}
@@ -816,6 +676,7 @@ function SectionEquipements({ listing }: { listing: ListingDetail }) {
           );
         })}
       </div>
+
       <SaveButton state={state} error={apiError} onSave={onSave} disabled={!catalogue || catalogueError} />
     </SectionCard>
   );
@@ -844,24 +705,19 @@ function SectionConditions({ listing }: { listing: ListingDetail }) {
   }
 
   return (
-    <SectionCard title="Règles & Conditions" icon={Shield} accent="bg-rose-500" headerBg="bg-rose-50" iconBg="bg-rose-100" iconColor="text-rose-600">
+    <SectionCard title="Règles & Conditions d'accueil" icon={Shield}>
       <div>
-        <FieldLabel optional>Règles de la maison</FieldLabel>
+        <FieldLabel optional>Règles intérieures de la maison</FieldLabel>
         <textarea
           value={reglesMaison}
           onChange={(e) => setReglesMaison(e.target.value.slice(0, MAX))}
           rows={5}
-          placeholder={`Ex :\n• Pas de fêtes ou d'événements\n• Animaux non admis\n• Interdiction de fumer à l'intérieur\n• Silence après 22h`}
+          placeholder={`Ex :\n• Pas de soirées ou fêtes bruyantes\n• Animaux domestiques non admis\n• Interdiction de fumer à l'intérieur\n• Respect du voisinage après 22h`}
           className={cn(INPUT_CLS, 'resize-none leading-relaxed')}
         />
-        <div className="flex justify-between items-center px-1 mt-1.5">
-          <p className="text-[10px] text-neutral-400 flex items-center gap-1">
-            <Info className="w-3 h-3" />
-            Affiché sur votre annonce
-          </p>
-          <p className={cn('text-[10px] font-bold tabular-nums', reglesMaison.length > 900 ? 'text-error-500' : 'text-neutral-400')}>
-            {reglesMaison.length} / {MAX}
-          </p>
+        <div className="flex justify-between items-center px-1 mt-1.5 text-xs text-foreground-muted">
+          <span>Affiché clairement aux voyageurs avant réservation</span>
+          <span className="tabular-nums font-semibold">{reglesMaison.length} / {MAX}</span>
         </div>
       </div>
       <SaveButton state={state} error={apiError} onSave={onSave} />
@@ -890,14 +746,19 @@ function SectionPhotos({ listing }: { listing: ListingDetail }) {
     if (!files || !canAdd) return;
     setGlobalError(null);
     const toAdd = Array.from(files).slice(0, 10 - photos.length);
+    const initialCount = photos.length;
+    let addedIndex = 0;
 
     for (const file of toAdd) {
+      const isFirstPhoto = initialCount === 0 && addedIndex === 0;
+      addedIndex++;
+
       const tempId = `temp-${Date.now()}-${Math.random()}`;
       const previewUrl = URL.createObjectURL(file);
       const tempPhoto: LocalPhoto = {
         id: tempId, url: previewUrl, publicId: '',
-        categorie: newCategory, estPrincipale: photos.length === 0,
-        position: photos.length, uploading: true,
+        categorie: newCategory, estPrincipale: isFirstPhoto,
+        position: initialCount + addedIndex - 1, uploading: true,
       };
       setPhotos((prev) => [...prev, tempPhoto]);
 
@@ -918,12 +779,11 @@ function SectionPhotos({ listing }: { listing: ListingDetail }) {
         if (!upRes.ok) throw new Error('Échec upload Cloudinary');
         const upData = await upRes.json() as { secure_url: string; public_id: string };
 
-        const isFirst = photos.filter((p) => !p.uploading).length === 0;
         const saved = await nestFetch<ListingPhoto>(NEST_API.LISTINGS.ADD_PHOTO(listing.id), {
           method: 'POST',
           body: JSON.stringify({
             url: upData.secure_url, publicId: upData.public_id,
-            categorie: newCategory, estPrincipale: isFirst, position: photos.length,
+            categorie: newCategory, estPrincipale: isFirstPhoto, position: initialCount + addedIndex - 1,
           }),
         });
 
@@ -964,149 +824,102 @@ function SectionPhotos({ listing }: { listing: ListingDetail }) {
   }
 
   return (
-    <SectionCard title={`Photos (${photos.length}/10)`} icon={Camera}>
+    <SectionCard title={`Galerie Photos (${photos.length}/10)`} icon={Camera}>
       {globalError && (
-        <div className="flex items-center gap-2 text-xs text-error-600 bg-error-500/8 border border-error-500/20 rounded-xl px-3 py-2.5">
-          <AlertCircle className="w-3.5 h-3.5 shrink-0" />
+        <div className="flex items-center gap-2 text-xs text-error-600 bg-error-50 border border-error-500/30 rounded-inner px-3 py-2">
+          <AlertCircle className="w-4 h-4 shrink-0" />
           {globalError}
         </div>
       )}
 
-      {photos.length > 0 ? (<>
+      {photos.length > 0 ? (
+        <div className="space-y-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-3.5">
+            {photos.map((photo) => (
+              <div
+                key={photo.id}
+                className={cn(
+                  'group relative aspect-16/10 sm:aspect-4/3 rounded-inner overflow-hidden border-2 bg-background-alt transition-all shadow-xs flex flex-col justify-end',
+                  photo.estPrincipale ? 'border-gold-400 ring-2 ring-gold-400/20 shadow-md' : 'border-border',
+                )}
+              >
+                <Image
+                  src={photo.url} alt={photo.categorie} fill
+                  className={cn('object-cover transition-all duration-200', photo.uploading && 'opacity-50')}
+                  sizes="(max-width: 640px) 100vw, 25vw"
+                />
 
-        {/* ── Photo principale (hero) ── */}
-        {(() => {
-          const main = photos.find((p) => p.estPrincipale) ?? photos[0];
-          return (
-            <div className="relative w-full aspect-video rounded-2xl overflow-hidden bg-neutral-100 border border-border">
-              <Image src={main.url} alt="Photo principale" fill className="object-cover" sizes="100vw" />
-              <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent" />
-              <div className="absolute bottom-0 left-0 right-0 p-3 flex items-end justify-between gap-2">
-                <span className="flex items-center gap-1.5 text-xs font-bold text-white">
-                  <Star className="w-3.5 h-3.5 text-amber-400 fill-amber-400" />
-                  Photo de couverture
-                </span>
-                <span className="text-[10px] font-semibold text-white/70 bg-black/30 px-2 py-0.5 rounded-full backdrop-blur-sm">
-                  {CAT_PHOTO_LABELS[main.categorie] ?? main.categorie}
-                </span>
-              </div>
-            </div>
-          );
-        })()}
+                {photo.estPrincipale && (
+                  <div className="absolute top-2.5 left-2.5 badge-verified shadow-md z-10">
+                    <Star className="w-3.5 h-3.5 text-gold-600 fill-gold-600" />
+                    <span className="font-bold">Couverture</span>
+                  </div>
+                )}
 
-        {/* ── Grille des autres photos ── */}
-        <div className="grid grid-cols-3 sm:grid-cols-4 gap-2">
-          {photos.map((photo) => (
-            <div
-              key={photo.id}
-              className={cn(
-                'group relative aspect-square rounded-xl overflow-hidden bg-neutral-100 border-2 transition-all',
-                photo.estPrincipale ? 'border-amber-400 shadow-md shadow-amber-400/20' : 'border-transparent',
-              )}
-            >
-              <Image
-                src={photo.url} alt={photo.categorie} fill
-                className={cn('object-cover transition-all duration-200 group-active:brightness-75', photo.uploading && 'opacity-50')}
-                sizes="(max-width: 640px) 33vw, 25vw"
-              />
+                {photo.uploading && (
+                  <div className="absolute inset-0 bg-black/60 flex items-center justify-center z-20">
+                    <Loader2 className="w-6 h-6 text-lime-400 animate-spin" />
+                  </div>
+                )}
 
-              {/* Overlay uploading */}
-              {photo.uploading && (
-                <div className="absolute inset-0 flex items-center justify-center bg-black/30">
-                  <Loader2 className="w-5 h-5 text-white animate-spin" />
-                </div>
-              )}
-
-              {/* Overlay erreur */}
-              {photo.uploadError && (
-                <div className="absolute inset-0 flex items-center justify-center bg-error-500/60 backdrop-blur-sm">
-                  <p className="text-[9px] font-bold text-white text-center px-1">{photo.uploadError}</p>
-                </div>
-              )}
-
-              {/* Badge principale */}
-              {photo.estPrincipale && (
-                <div className="absolute top-1 left-1 w-5 h-5 rounded-full bg-amber-400 flex items-center justify-center shadow">
-                  <Star className="w-2.5 h-2.5 text-white fill-white" />
-                </div>
-              )}
-
-              {/* Actions au tap (mobile) / hover (desktop) */}
-              {!photo.uploading && !photo.uploadError && (
-                <div className="absolute inset-0 opacity-0 group-hover:opacity-100 sm:group-hover:opacity-100 active:opacity-100 transition-opacity bg-black/40 flex flex-col items-center justify-center gap-1.5 p-1">
-                  {!photo.estPrincipale && (
+                {/* Overlays / Action Bar (Persistent sur mobile, hover sur desktop) */}
+                <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/30 to-transparent sm:opacity-0 sm:group-hover:opacity-100 transition-opacity flex items-end justify-between p-2.5 z-10">
+                  {!photo.estPrincipale ? (
                     <button
                       type="button"
                       onClick={() => setMainPhoto(photo)}
                       disabled={settingMain === photo.id}
-                      className="w-full flex items-center justify-center gap-1 py-1.5 rounded-lg bg-amber-400/90 text-white text-[10px] font-bold active:scale-95 transition-transform"
+                      className="px-3 py-1.5 rounded-pill bg-lime-400 text-forest-950 text-xs font-bold shadow-md cursor-pointer flex items-center gap-1.5 active:scale-95 transition-transform"
                     >
-                      {settingMain === photo.id
-                        ? <Loader2 className="w-3 h-3 animate-spin" />
-                        : <Star className="w-3 h-3 fill-white" />}
-                      Principale
+                      <Star className="w-3.5 h-3.5 fill-forest-950 text-forest-950" />
+                      <span>Définir couverture</span>
                     </button>
+                  ) : (
+                    <span className="text-[11px] font-bold text-lime-300 bg-forest-950/80 px-2.5 py-1 rounded-pill backdrop-blur-sm border border-forest-800">
+                      Photo principale
+                    </span>
                   )}
+
                   <button
                     type="button"
                     onClick={() => deletePhoto(photo)}
-                    className="w-full flex items-center justify-center gap-1 py-1.5 rounded-lg bg-red-500/90 text-white text-[10px] font-bold active:scale-95 transition-transform"
+                    className="w-8 h-8 rounded-full bg-error-600 text-white hover:bg-error-700 cursor-pointer shadow-md flex items-center justify-center shrink-0 active:scale-95 transition-transform ml-auto"
+                    title="Supprimer la photo"
                   >
-                    <Trash2 className="w-3 h-3" />
-                    Supprimer
+                    <Trash2 className="w-4 h-4" />
                   </button>
                 </div>
-              )}
-            </div>
-          ))}
-        </div>
-
-        <p className="text-[11px] text-neutral-400 text-center">
-          Appuyez sur une photo pour la définir en couverture ou la supprimer
-        </p>
-      </>) : (
-        <div className="flex flex-col items-center justify-center py-12 gap-4 bg-neutral-50 rounded-2xl border border-dashed border-neutral-200">
-          <div className="w-14 h-14 rounded-2xl bg-neutral-100 border border-border flex items-center justify-center">
-            <ImageOff className="w-6 h-6 text-neutral-300" />
+              </div>
+            ))}
           </div>
-          <p className="text-sm text-neutral-400 font-medium">Aucune photo pour l&apos;instant</p>
+        </div>
+      ) : (
+        <div className="flex flex-col items-center justify-center py-10 gap-3 bg-background-alt rounded-inner border border-dashed border-border text-center">
+          <ImageOff className="w-8 h-8 text-foreground-muted" />
+          <p className="text-xs font-semibold text-foreground-muted">Aucune photo ajoutée pour l&apos;instant</p>
         </div>
       )}
 
       {canAdd && (
-        <div className="space-y-3 pt-3 border-t border-border">
-          <div>
-            <FieldLabel optional>Catégorie des nouvelles photos</FieldLabel>
-            <div className="relative inline-block">
-              <select
-                value={newCategory}
-                onChange={(e) => setNewCategory(e.target.value as typeof CATEGORIE_PHOTO[number])}
-                className="appearance-none pl-3 pr-8 py-2 rounded-lg border border-border bg-white text-neutral-700 text-xs font-semibold outline-none focus:border-emerald-400 cursor-pointer">
-                {CATEGORIE_PHOTO.map((c) => (
-                  <option key={c} value={c}>{CAT_PHOTO_LABELS[c]}</option>
-                ))}
-              </select>
-              <ChevronDown className="absolute right-2 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-neutral-400 pointer-events-none" />
-            </div>
-          </div>
+        <div className="space-y-3 pt-2">
           <button
             type="button"
             onClick={() => fileInputRef.current?.click()}
-            className="w-full flex items-center justify-center gap-3 py-5 rounded-2xl border-2 border-dashed border-emerald-200 hover:border-emerald-400 bg-emerald-50/50 hover:bg-emerald-50 text-emerald-600 font-semibold text-sm transition-all group">
-            <div className="w-10 h-10 rounded-xl bg-emerald-100 flex items-center justify-center group-hover:scale-110 transition-transform border border-emerald-200">
-              <Upload className="w-4 h-4 text-emerald-500" />
-            </div>
-            Ajouter des photos — {10 - photos.length} restante{10 - photos.length > 1 ? 's' : ''}
+            className="w-full flex items-center justify-center gap-2.5 py-4 rounded-field border-2 border-dashed border-border bg-background-alt hover:border-forest-600 hover:bg-background-card text-foreground font-semibold text-xs transition-all cursor-pointer"
+          >
+            <Upload className="w-4 h-4 text-forest-600" />
+            <span>Ajouter de nouvelles photos ({10 - photos.length} restantes)</span>
           </button>
-          <input ref={fileInputRef} type="file" accept="image/*" multiple className="hidden"
-            onChange={(e) => handleFiles(e.target.files)} />
+          <input
+            ref={fileInputRef}
+            type="file"
+            accept="image/*"
+            multiple
+            className="hidden"
+            onChange={(e) => handleFiles(e.target.files)}
+          />
         </div>
       )}
-
-      <div className="flex items-start gap-2 text-[11px] text-neutral-500 bg-neutral-50 rounded-xl px-3 py-2.5 border border-border">
-        <Info className="w-3.5 h-3.5 shrink-0 mt-0.5 text-neutral-400" />
-        <span>Minimum 5 photos recommandées. Appuyez sur une photo pour la mettre en couverture.</span>
-      </div>
     </SectionCard>
   );
 }
@@ -1123,7 +936,7 @@ function SectionTarification({ listing }: { listing: ListingDetail }) {
   function addTarifNuit() {
     const last = tarifsNuits[tarifsNuits.length - 1];
     const nextMin = last ? (last.nuitsMax ? last.nuitsMax + 1 : last.nuitsMin + 7) : listing.nuitesMinimum + 1;
-    setTarifsNuits((prev) => [...prev, { nuitsMin: Math.max(listing.nuitesMinimum + 1, nextMin), nuitsMax: null, prix: listing.prixBase }]);
+    setTarifsNuits((prev) => [...prev, { nuitsMin: Math.max(listing.nuitesMinimum + 1, nextMin), nuitsMax: null, prix: Math.round(listing.prixBase * 0.9) }]);
   }
   function removeTarifNuit(i: number) { setTarifsNuits((prev) => prev.filter((_, idx) => idx !== i)); }
   function updateTarifNuit(i: number, patch: Partial<TarifNuit>) {
@@ -1155,188 +968,183 @@ function SectionTarification({ listing }: { listing: ListingDetail }) {
   }
 
   return (
-    <SectionCard title="Tarification avancée" icon={TrendingUp}>
-
-      {/* ── Prix de base (dark hero card) ── */}
-      <div className="relative overflow-hidden rounded-2xl bg-[#0a0a0a] border border-white/[0.07] p-4">
-        <div className="absolute -top-10 -right-10 w-36 h-36 rounded-full bg-violet-500/10 blur-3xl pointer-events-none" />
-        <p className="text-[10px] font-bold uppercase tracking-widest text-white/40 mb-1.5">Prix de base</p>
-        <div className="flex items-end gap-2">
-          <span className="text-3xl font-black text-white tracking-tight">{fcfa(listing.prixBase)}</span>
-          <span className="text-sm font-bold text-white/40 mb-0.5">FCFA / nuit</span>
-        </div>
-        <p className="text-[11px] text-white/30 mt-1">
-          {listing.nuitesMinimum} nuit{listing.nuitesMinimum > 1 ? 's' : ''} minimum · {listing.personnesBase} voyageur{listing.personnesBase > 1 ? 's' : ''} inclus
+    <SectionCard title="Tarification dynamique & Paliers" icon={TrendingUp}>
+      <div className="section-inverse p-5 border border-forest-800 rounded-card space-y-1">
+        <p className="eyebrow text-lime-300">Prix de base par nuit</p>
+        <p className="text-2xl sm:text-3xl font-display font-bold text-lime-300 tabular-nums">
+          {fcfa(listing.prixBase)} FCFA <span className="text-xs text-on-inverse-muted font-normal">/ nuit (couvre {listing.personnesBase} pers.)</span>
         </p>
       </div>
 
-      {/* ── Réductions longs séjours ── */}
-      <div className="space-y-3">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <div className="w-7 h-7 rounded-lg bg-violet-100 flex items-center justify-center">
-              <Moon className="w-3.5 h-3.5 text-violet-600" />
+      {/* Paliers Suppléments Voyageurs */}
+      <div className="space-y-3 pt-2">
+        <div className="p-3.5 rounded-inner bg-forest-950 border border-forest-800 flex items-center justify-between shadow-xs">
+          <div className="flex items-center gap-3">
+            <div className="w-8 h-8 rounded-inner bg-forest-900 border border-lime-400/20 text-lime-400 flex items-center justify-center shrink-0">
+              <Users className="w-4 h-4 text-lime-400" />
             </div>
-            <span className="text-sm font-black text-neutral-800">Réductions longs séjours</span>
+            <div>
+              <p className="font-display text-sm font-bold text-lime-300">Suppléments par voyageur additionnel</p>
+              <p className="text-[11px] text-on-inverse-muted font-medium">Au-delà de {listing.personnesBase} personne{listing.personnesBase > 1 ? 's' : ''} incluse{listing.personnesBase > 1 ? 's' : ''}</p>
+            </div>
           </div>
+          <span className="text-[10px] font-bold text-lime-300 bg-forest-900 border border-lime-400/20 px-2.5 py-1 rounded-pill hidden sm:inline-block">
+            Optionnel
+          </span>
         </div>
 
-        <p className="text-[11px] text-neutral-500 leading-relaxed bg-violet-50 border border-violet-100 rounded-xl px-3 py-2.5">
-          S&apos;applique à partir de <strong className="text-violet-700">{listing.nuitesMinimum + 1} nuits</strong>. Plus le séjour est long, plus le prix peut être attractif.
-        </p>
-
-        {tarifsNuits.length > 0 && (
-          <div className="space-y-2.5">
-            {tarifsNuits.map((t, i) => {
-              const reductPct = listing.prixBase > 0 ? Math.round((1 - t.prix / listing.prixBase) * 100) : 0;
-              return (
-                <div key={i} className="rounded-2xl border border-violet-100 overflow-hidden">
-                  {/* Header palier */}
-                  <div className="flex items-center justify-between px-4 py-2.5 bg-violet-50">
-                    <div className="flex items-center gap-2">
-                      <span className="text-[10px] font-black text-violet-600 uppercase tracking-widest">Palier {i + 1}</span>
-                      {reductPct > 0 && (
-                        <span className="px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-700 text-[10px] font-black">
-                          -{reductPct}%
-                        </span>
-                      )}
-                      {reductPct < 0 && (
-                        <span className="px-2 py-0.5 rounded-full bg-rose-100 text-rose-600 text-[10px] font-black">
-                          +{Math.abs(reductPct)}%
-                        </span>
-                      )}
-                    </div>
-                    <button type="button" onClick={() => removeTarifNuit(i)}
-                      className="w-7 h-7 rounded-lg bg-white border border-rose-200 flex items-center justify-center text-rose-400 active:scale-90 transition-transform">
-                      <X className="w-3 h-3" />
-                    </button>
-                  </div>
-
-                  {/* Champs — vertical mobile / horizontal desktop */}
-                  <div className="p-3.5 bg-white">
-                    <div className="flex flex-col sm:flex-row sm:items-end gap-3">
-                      {/* Range nuits */}
-                      <div className="sm:flex-1">
-                        <p className="text-[10px] font-bold text-neutral-400 uppercase tracking-widest mb-2">Durée du séjour</p>
-                        <div className="flex items-center gap-2">
-                          <div className="flex-1">
-                            <input type="number" min={listing.nuitesMinimum + 1} value={t.nuitsMin}
-                              onChange={(e) => updateTarifNuit(i, { nuitsMin: Math.max(listing.nuitesMinimum + 1, +e.target.value) })}
-                              className={cn(INPUT_CLS, 'text-center font-bold')} />
-                            <p className="text-[9px] text-neutral-400 text-center mt-1 font-medium">nuits min</p>
-                          </div>
-                          <span className="text-neutral-300 font-bold text-lg shrink-0">—</span>
-                          <div className="flex-1">
-                            <input type="number" value={t.nuitsMax ?? ''} placeholder="∞"
-                              onChange={(e) => updateTarifNuit(i, { nuitsMax: e.target.value ? +e.target.value : null })}
-                              className={cn(INPUT_CLS, 'text-center font-bold')} />
-                            <p className="text-[9px] text-neutral-400 text-center mt-1 font-medium">nuits max</p>
-                          </div>
-                        </div>
-                      </div>
-
-                      {/* Séparateur vertical desktop */}
-                      <div className="hidden sm:block w-px h-10 bg-neutral-100 self-center" />
-
-                      {/* Prix */}
-                      <div className="sm:flex-1">
-                        <p className="text-[10px] font-bold text-neutral-400 uppercase tracking-widest mb-2">Prix par nuit</p>
-                        <div className="flex items-center gap-2 px-4 py-3 rounded-xl border-2 border-neutral-200 focus-within:border-violet-400 bg-neutral-50 transition-colors">
-                          <input type="number" value={t.prix}
-                            onChange={(e) => updateTarifNuit(i, { prix: +e.target.value })}
-                            className="flex-1 min-w-0 text-xl font-black text-neutral-900 outline-none bg-transparent" />
-                          <span className="text-[10px] font-bold text-neutral-400 shrink-0">FCFA</span>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              );
-            })}
-          </div>
-        )}
-
-        <button type="button" onClick={addTarifNuit}
-          className="w-full flex items-center justify-center gap-2 py-3.5 rounded-2xl border-2 border-dashed border-violet-200 hover:border-violet-400 bg-violet-50/50 hover:bg-violet-50 text-violet-600 text-sm font-bold transition-all active:scale-[0.98]">
-          <Plus className="w-4 h-4" />
-          {tarifsNuits.length === 0 ? 'Ajouter une réduction' : 'Ajouter un palier'}
-        </button>
-      </div>
-
-      {/* ── Suppléments voyageurs ── */}
-      <div className="space-y-3">
-        <div className="flex items-center gap-2">
-          <div className="w-7 h-7 rounded-lg bg-accent-100 flex items-center justify-center">
-            <Users className="w-3.5 h-3.5 text-accent-600" />
-          </div>
-          <span className="text-sm font-black text-neutral-800">Suppléments voyageurs</span>
-        </div>
-
-        <p className="text-[11px] text-neutral-500 leading-relaxed bg-accent-50 border border-accent-100 rounded-xl px-3 py-2.5">
-          Le tarif de base couvre <strong className="text-accent-700">{listing.personnesBase} voyageur{listing.personnesBase > 1 ? 's' : ''}</strong>. Ajoutez un supplément par personne supplémentaire.
-        </p>
-
-        {tarifsPersonnes.length > 0 && (
-          <div className="space-y-2.5">
+        {tarifsPersonnes.length > 0 ? (
+          <div className="space-y-3">
             {tarifsPersonnes.map((t, i) => (
-              <div key={i} className="rounded-2xl border border-accent-100 overflow-hidden">
-                {/* Header palier */}
-                <div className="flex items-center justify-between px-4 py-2.5 bg-accent-50">
-                  <span className="text-[10px] font-black text-accent-600 uppercase tracking-widest">Palier {i + 1}</span>
-                  <button type="button" onClick={() => removeTarifPersonne(i)}
-                    className="w-7 h-7 rounded-lg bg-white border border-rose-200 flex items-center justify-center text-rose-400 active:scale-90 transition-transform">
-                    <X className="w-3 h-3" />
+              <div key={i} className="p-3.5 sm:p-4 rounded-inner bg-background-alt border border-border space-y-3 shadow-xs">
+                <div className="flex items-center justify-between gap-2 border-b border-border/60 pb-2.5">
+                  <span className="badge-verified text-xs">
+                    <Users className="w-3.5 h-3.5 text-gold-600" />
+                    <span>Palier #{i + 1} ({t.personnesMin} à {t.personnesMax} pers.)</span>
+                  </span>
+                  <button
+                    type="button"
+                    onClick={() => removeTarifPersonne(i)}
+                    className="w-8 h-8 rounded-full bg-background-card border border-border text-error-600 hover:bg-error-50 flex items-center justify-center cursor-pointer transition-colors"
+                    title="Supprimer ce palier"
+                  >
+                    <Trash2 className="w-4 h-4" />
                   </button>
                 </div>
 
-                {/* Champs — vertical mobile / horizontal desktop */}
-                <div className="p-3.5 bg-white">
-                  <div className="flex flex-col sm:flex-row sm:items-end gap-3">
-                    {/* Range personnes */}
-                    <div className="sm:flex-1">
-                      <p className="text-[10px] font-bold text-neutral-400 uppercase tracking-widest mb-2">Nombre de voyageurs</p>
-                      <div className="flex items-center gap-2">
-                        <div className="flex-1">
-                          <input type="number" min={listing.personnesBase + 1} value={t.personnesMin}
-                            onChange={(e) => updateTarifPersonne(i, { personnesMin: Math.max(listing.personnesBase + 1, +e.target.value) })}
-                            className={cn(INPUT_CLS, 'text-center font-bold')} />
-                          <p className="text-[9px] text-neutral-400 text-center mt-1 font-medium">pers. min</p>
-                        </div>
-                        <span className="text-neutral-300 font-bold text-lg shrink-0">—</span>
-                        <div className="flex-1">
-                          <input type="number" value={t.personnesMax}
-                            onChange={(e) => updateTarifPersonne(i, { personnesMax: Math.max(t.personnesMin, +e.target.value) })}
-                            className={cn(INPUT_CLS, 'text-center font-bold')} />
-                          <p className="text-[9px] text-neutral-400 text-center mt-1 font-medium">pers. max</p>
-                        </div>
-                      </div>
-                    </div>
-
-                    {/* Séparateur vertical desktop */}
-                    <div className="hidden sm:block w-px h-10 bg-neutral-100 self-center" />
-
-                    {/* Supplément */}
-                    <div className="sm:flex-1">
-                      <p className="text-[10px] font-bold text-neutral-400 uppercase tracking-widest mb-2">Supplément par nuit</p>
-                      <div className="flex items-center gap-2 px-4 py-3 rounded-xl border-2 border-neutral-200 focus-within:border-accent-400 bg-neutral-50 transition-colors">
-                        <span className="text-sm font-black text-accent-500 shrink-0">+</span>
-                        <input type="number" value={t.supplement}
-                          onChange={(e) => updateTarifPersonne(i, { supplement: +e.target.value })}
-                          className="flex-1 min-w-0 text-xl font-black text-neutral-900 outline-none bg-transparent" />
-                        <span className="text-[10px] font-bold text-neutral-400 shrink-0">FCFA</span>
-                      </div>
-                    </div>
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5 text-xs">
+                  <div>
+                    <label className="eyebrow block text-[10px] mb-1">Pers. min</label>
+                    <input
+                      type="number"
+                      min={listing.personnesBase + 1}
+                      value={t.personnesMin}
+                      onChange={(e) => updateTarifPersonne(i, { personnesMin: +e.target.value })}
+                      className="w-full px-3 py-2 rounded-field border border-border bg-background-card text-foreground font-semibold"
+                    />
+                  </div>
+                  <div>
+                    <label className="eyebrow block text-[10px] mb-1">Pers. max</label>
+                    <input
+                      type="number"
+                      min={t.personnesMin}
+                      value={t.personnesMax}
+                      onChange={(e) => updateTarifPersonne(i, { personnesMax: +e.target.value })}
+                      className="w-full px-3 py-2 rounded-field border border-border bg-background-card text-foreground font-semibold"
+                    />
+                  </div>
+                  <div>
+                    <label className="eyebrow block text-[10px] mb-1">Supplément (FCFA / nuit)</label>
+                    <input
+                      type="number"
+                      value={t.supplement}
+                      onChange={(e) => updateTarifPersonne(i, { supplement: +e.target.value })}
+                      className="w-full px-3 py-2 rounded-field border border-border bg-background-card text-foreground font-bold tabular-nums"
+                    />
                   </div>
                 </div>
               </div>
             ))}
           </div>
+        ) : (
+          <p className="text-xs text-foreground-muted italic bg-background-alt p-3 rounded-inner border border-border">
+            Aucun supplément voyageur configuré. Les personnes supplémentaires voyageront gratuitement.
+          </p>
         )}
 
-        <button type="button" onClick={addTarifPersonne}
-          className="w-full flex items-center justify-center gap-2 py-3.5 rounded-2xl border-2 border-dashed border-accent-200 hover:border-accent-400 bg-accent-50/50 hover:bg-accent-50 text-accent-600 text-sm font-bold transition-all active:scale-[0.98]">
-          <Plus className="w-4 h-4" />
-          {tarifsPersonnes.length === 0 ? 'Ajouter un supplément' : 'Ajouter un palier'}
+        <button
+          type="button"
+          onClick={addTarifPersonne}
+          className="inline-flex items-center gap-2 px-4.5 py-2.5 rounded-pill bg-forest-950 hover:bg-forest-900 border border-forest-800 text-lime-300 text-xs font-bold shadow-xs cursor-pointer transition-all active:scale-95"
+        >
+          <Plus className="w-4 h-4 text-lime-400" />
+          <span>Ajouter un palier de personnes</span>
+        </button>
+      </div>
+
+      {/* Paliers Longs Séjours */}
+      <div className="space-y-3 pt-5 border-t border-border/80">
+        <div className="p-3.5 rounded-inner bg-forest-950 border border-forest-800 flex items-center justify-between shadow-xs">
+          <div className="flex items-center gap-3">
+            <div className="w-8 h-8 rounded-inner bg-forest-900 border border-lime-400/20 text-lime-400 flex items-center justify-center shrink-0">
+              <TrendingUp className="w-4 h-4 text-lime-400" />
+            </div>
+            <div>
+              <p className="font-display text-sm font-bold text-lime-300">Réductions longs séjours</p>
+              <p className="text-[11px] text-on-inverse-muted font-medium">Tarifs réduits à partir de {listing.nuitesMinimum + 1} nuits</p>
+            </div>
+          </div>
+          <span className="text-[10px] font-bold text-lime-300 bg-forest-900 border border-lime-400/20 px-2.5 py-1 rounded-pill hidden sm:inline-block">
+            Optionnel
+          </span>
+        </div>
+
+        {tarifsNuits.length > 0 ? (
+          <div className="space-y-3">
+            {tarifsNuits.map((t, i) => (
+              <div key={i} className="p-3.5 sm:p-4 rounded-inner bg-background-alt border border-border space-y-3 shadow-xs">
+                <div className="flex items-center justify-between gap-2 border-b border-border/60 pb-2.5">
+                  <span className="badge-verified text-xs">
+                    <TrendingUp className="w-3.5 h-3.5 text-gold-600" />
+                    <span>Séjour de {t.nuitsMin} {t.nuitsMax ? `à ${t.nuitsMax}` : '+'} nuits</span>
+                  </span>
+                  <button
+                    type="button"
+                    onClick={() => removeTarifNuit(i)}
+                    className="w-8 h-8 rounded-full bg-background-card border border-border text-error-600 hover:bg-error-50 flex items-center justify-center cursor-pointer transition-colors"
+                    title="Supprimer ce palier"
+                  >
+                    <Trash2 className="w-4 h-4" />
+                  </button>
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5 text-xs">
+                  <div>
+                    <label className="eyebrow block text-[10px] mb-1">Nuits min</label>
+                    <input
+                      type="number"
+                      min={listing.nuitesMinimum + 1}
+                      value={t.nuitsMin}
+                      onChange={(e) => updateTarifNuit(i, { nuitsMin: +e.target.value })}
+                      className="w-full px-3 py-2 rounded-field border border-border bg-background-card text-foreground font-semibold"
+                    />
+                  </div>
+                  <div>
+                    <label className="eyebrow block text-[10px] mb-1">Nuits max (Optionnel)</label>
+                    <input
+                      type="number"
+                      value={t.nuitsMax ?? ''}
+                      placeholder="Illimité (∞)"
+                      onChange={(e) => updateTarifNuit(i, { nuitsMax: e.target.value ? +e.target.value : null })}
+                      className="w-full px-3 py-2 rounded-field border border-border bg-background-card text-foreground font-semibold"
+                    />
+                  </div>
+                  <div>
+                    <label className="eyebrow block text-[10px] mb-1">Prix réduit (FCFA / nuit)</label>
+                    <input
+                      type="number"
+                      value={t.prix}
+                      onChange={(e) => updateTarifNuit(i, { prix: +e.target.value })}
+                      className="w-full px-3 py-2 rounded-field border border-border bg-background-card text-foreground font-bold tabular-nums"
+                    />
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        ) : (
+          <p className="text-xs text-foreground-muted italic bg-background-alt p-3 rounded-inner border border-border">
+            Aucun palier de réduction configuré.
+          </p>
+        )}
+
+        <button
+          type="button"
+          onClick={addTarifNuit}
+          className="inline-flex items-center gap-2 px-4.5 py-2.5 rounded-pill bg-forest-950 hover:bg-forest-900 border border-forest-800 text-lime-300 text-xs font-bold shadow-xs cursor-pointer transition-all active:scale-95"
+        >
+          <Plus className="w-4 h-4 text-lime-400" />
+          <span>Ajouter un palier de nuitées</span>
         </button>
       </div>
 
@@ -1352,132 +1160,74 @@ export function EditListingForm({ listing }: { listing: ListingDetail }) {
   const quality = computeQuality(listing);
 
   return (
-    <div className="min-h-screen bg-background-alt">
-
-      {/* ─── Hero ─────────────────────────────────────────────────────────────── */}
-      <div className="relative h-64 sm:h-80">
-        {principale ? (
-          <Image src={principale.url} alt="" fill className="object-cover" priority />
-        ) : (
-          <div className="absolute inset-0 bg-[#0a0a0a]" />
-        )}
-        <div className="absolute inset-0 bg-gradient-to-t from-[#0a0a0a] via-black/50 to-black/10" />
-        <div className="absolute inset-0 bg-gradient-to-r from-black/70 via-black/20 to-transparent" />
-
-        {/* Top bar */}
-        <div className="absolute top-0 left-0 right-0 px-4 sm:px-6 pt-4 sm:pt-5 flex items-center justify-between">
+    <div className="space-y-6 pb-16">
+      {/* Hero Banner en section-inverse ImmoLoc v2 */}
+      <div className="section-inverse p-6 sm:p-8 relative overflow-hidden border border-forest-800 shadow-xl space-y-4">
+        <div className="flex items-center justify-between gap-4 flex-wrap">
           <Link
             href={`/dashboard/annonces/${listing.id}`}
-            className="group w-9 h-9 rounded-xl bg-white/10 backdrop-blur-md border border-white/20 flex items-center justify-center hover:bg-white/20 transition-all active:scale-90"
+            className="inline-flex items-center gap-2 px-4 py-2 rounded-pill bg-forest-900/90 hover:bg-forest-800 border border-lime-400/20 hover:border-lime-400/40 text-lime-300 font-semibold text-xs transition-all shadow-xs cursor-pointer"
           >
-            <ArrowLeft className="w-4 h-4 text-white transition-transform group-hover:-translate-x-0.5" />
+            <ArrowLeft className="w-4 h-4 text-lime-400" />
+            <span>Retour aux détails</span>
           </Link>
           <div className="flex items-center gap-2">
             <Link
               href={`/dashboard/annonces/${listing.id}`}
-              className="flex items-center gap-1.5 text-xs font-bold text-white/80 bg-white/10 backdrop-blur-md border border-white/15 rounded-xl px-3 py-2 hover:bg-white/20 transition-all"
+              className="inline-flex items-center gap-2 px-4 py-2 rounded-pill bg-forest-900/90 hover:bg-forest-800 border border-lime-400/20 hover:border-lime-400/40 text-lime-300 font-semibold text-xs transition-all shadow-xs cursor-pointer"
             >
-              <Eye className="w-3.5 h-3.5" />
-              <span className="hidden sm:inline">Aperçu</span>
+              <Eye className="w-4 h-4 text-lime-400" />
+              <span>Aperçu</span>
             </Link>
             <ListingStatusBadge statut={listing.statut} size="sm" />
           </div>
         </div>
 
-        {/* Hero content */}
-        <div className="absolute bottom-0 left-0 right-0 px-4 sm:px-6 pb-5">
-          <div className="max-w-5xl mx-auto">
-            {/* Label */}
-            <div className="flex items-center gap-1.5 mb-2">
-              <Sparkles className="w-3 h-3 text-emerald-300" />
-              <span className="text-[10px] font-black text-emerald-300 uppercase tracking-[0.2em]">Modifier l&apos;annonce</span>
-            </div>
+        <div className="space-y-2">
+          <span className="eyebrow text-lime-300">Édition de votre bien</span>
+          <h1 className="font-display text-2xl sm:text-3xl font-bold text-on-inverse-display tracking-tight">
+            {listing.titre}
+          </h1>
+          <p className="text-xs sm:text-sm text-on-inverse-muted">{listing.adresse}, {listing.ville}</p>
+        </div>
 
-            {/* Titre */}
-            <h1 className="text-xl sm:text-2xl lg:text-3xl font-black text-white leading-tight line-clamp-2 mb-4 max-w-xl">
-              {listing.titre}
-            </h1>
-
-            {/* KPI chips */}
-            <div className="flex items-center gap-2 flex-wrap">
-              {/* Quality score — visible surtout mobile (sidebar cachée) */}
-              <div className={cn(
-                'flex items-center gap-1.5 px-3 py-1.5 rounded-xl backdrop-blur-md border text-xs font-black',
-                quality >= 70 ? 'bg-emerald-500/20 border-emerald-400/30 text-emerald-300'
-                : quality >= 40 ? 'bg-amber-500/20 border-amber-400/30 text-amber-300'
-                : 'bg-rose-500/20 border-rose-400/30 text-rose-300',
-              )}>
-                <Sparkles className="w-3 h-3" />
-                {quality}%
-              </div>
-
-              <div className="w-px h-4 bg-white/15" />
-
-              {[
-                { icon: MapPin,    text: listing.ville },
-                { icon: Users,     text: `${listing.capaciteMax} pers.` },
-                { icon: Camera,    text: `${listing.photos.length} photos` },
-              ].map(({ icon: Icon, text }) => (
-                <div key={text} className="flex items-center gap-1.5 text-white/65 text-xs font-semibold bg-black/30 backdrop-blur-sm rounded-lg px-2.5 py-1.5 border border-white/10">
-                  <Icon className="w-3.5 h-3.5" />
-                  {text}
-                </div>
-              ))}
-
-              <div className="flex items-center gap-1.5 text-white text-xs font-black bg-emerald-500/70 backdrop-blur-sm border border-emerald-400/30 rounded-lg px-2.5 py-1.5">
-                <TrendingUp className="w-3.5 h-3.5" />
-                {fcfa(listing.prixBase)} FCFA
-              </div>
-            </div>
-          </div>
+        <div className="flex items-center gap-3 pt-2 flex-wrap">
+          <span className="btn-action text-xs px-4 py-1.5 shadow-action tabular-nums">
+            <TrendingUp className="w-3.5 h-3.5" />
+            {fcfa(listing.prixBase)} FCFA / nuit
+          </span>
+          <span className="px-3.5 py-1.5 rounded-pill bg-forest-800 border border-border-inverse text-xs font-semibold text-lime-300">
+            Qualité {quality}%
+          </span>
         </div>
       </div>
 
-      {/* ─── Nav mobile ───────────────────────────────────────────────────────── */}
-      <div className="lg:hidden bg-[#0a0a0a] border-b border-white/[0.06]">
-        <div className="flex gap-1 overflow-x-auto px-3 py-2.5" style={{ scrollbarWidth: 'none' }}>
-          {NAV_SECTIONS.map(({ id, label, icon: Icon, dot }) => (
-            <a key={id} href={`#${id}`}
-              className="flex items-center gap-1.5 px-3 py-2 rounded-xl text-white/50 text-xs font-semibold whitespace-nowrap hover:text-white hover:bg-white/8 transition-all shrink-0">
-              <span className={cn('w-1.5 h-1.5 rounded-full shrink-0', dot)} />
-              <Icon className="w-3.5 h-3.5" />
-              {label}
-            </a>
-          ))}
+      {/* Layout principal avec Sidebar et Sections */}
+      <div className="flex flex-col lg:flex-row gap-6 items-start">
+        <div className="hidden lg:block w-64 shrink-0 space-y-4 sticky top-6">
+          <QualityMeter score={quality} />
+          <div className="card p-3 rounded-card border border-border shadow-xs space-y-1">
+            <p className="eyebrow px-3 py-1.5 block">Navigation Rapide</p>
+            {NAV_SECTIONS.map(({ id, label, icon: Icon }) => (
+              <a
+                key={id}
+                href={`#${id}`}
+                className="flex items-center gap-3 px-3 py-2.5 rounded-inner text-xs font-semibold text-foreground-muted hover:text-foreground hover:bg-background-alt transition-colors"
+              >
+                <Icon className="w-4 h-4 text-forest-600" />
+                <span>{label}</span>
+              </a>
+            ))}
+          </div>
         </div>
-      </div>
 
-      {/* ─── Content ──────────────────────────────────────────────────────────── */}
-      <div className="max-w-5xl mx-auto px-4 sm:px-6 py-8">
-
-        <div className="flex gap-7 items-start">
-
-          {/* Sidebar desktop */}
-          <div className="hidden lg:flex flex-col gap-3 w-52 shrink-0 sticky top-8">
-            <QualityMeter score={quality} />
-            <div className="bg-white rounded-2xl border border-border shadow-sm p-2">
-              <p className="text-[10px] font-bold uppercase tracking-widest text-neutral-400 px-3 py-2">Navigation</p>
-              {NAV_SECTIONS.map(({ id, label, icon: Icon, dot }) => (
-                <a key={id} href={`#${id}`}
-                  className="group flex items-center gap-3 px-3 py-2.5 rounded-xl text-[13px] font-semibold text-neutral-500 hover:text-neutral-900 hover:bg-neutral-50 transition-all">
-                  <span className={cn('w-2 h-2 rounded-full shrink-0', dot)} />
-                  <Icon className="w-[15px] h-[15px] shrink-0" />
-                  <span className="flex-1">{label}</span>
-                  <ChevronRight className="w-3 h-3 opacity-0 group-hover:opacity-35 -translate-x-1 group-hover:translate-x-0 transition-all" />
-                </a>
-              ))}
-            </div>
-          </div>
-
-          {/* Sections */}
-          <div className="flex-1 min-w-0 space-y-6">
-            <div id="section-bien" className="scroll-mt-6"><SectionBien listing={listing} /></div>
-            <div id="section-presentation" className="scroll-mt-6"><SectionPresentation listing={listing} /></div>
-            <div id="section-equipements" className="scroll-mt-6"><SectionEquipements listing={listing} /></div>
-            <div id="section-tarification" className="scroll-mt-6"><SectionTarification listing={listing} /></div>
-            <div id="section-photos" className="scroll-mt-6"><SectionPhotos listing={listing} /></div>
-            <div id="section-conditions" className="scroll-mt-6"><SectionConditions listing={listing} /></div>
-          </div>
+        <div className="flex-1 w-full space-y-6">
+          <div id="section-bien" className="scroll-mt-6"><SectionBien listing={listing} /></div>
+          <div id="section-presentation" className="scroll-mt-6"><SectionPresentation listing={listing} /></div>
+          <div id="section-equipements" className="scroll-mt-6"><SectionEquipements listing={listing} /></div>
+          <div id="section-tarification" className="scroll-mt-6"><SectionTarification listing={listing} /></div>
+          <div id="section-photos" className="scroll-mt-6"><SectionPhotos listing={listing} /></div>
+          <div id="section-conditions" className="scroll-mt-6"><SectionConditions listing={listing} /></div>
         </div>
       </div>
     </div>

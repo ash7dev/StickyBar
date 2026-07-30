@@ -3,7 +3,7 @@
 import { useRef, useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { ArrowLeft, ArrowRight } from 'lucide-react';
+import { ArrowLeft, ArrowRight, AlertTriangle } from 'lucide-react';
 import { WizardStepper, WIZARD_STEPS } from './wizard-stepper';
 import { StepBien } from './steps/step-bien';
 import { StepAnnonce } from './steps/step-annonce';
@@ -26,12 +26,12 @@ const STEP_TITLES = [
 ];
 
 const STEP_SUBTITLES = [
-  'Décrivez votre bien et sa localisation',
-  'Rédigez votre annonce et fixez votre prix',
-  'Sélectionnez ce que vous proposez aux voyageurs',
-  'Définissez vos conditions de réservation',
+  'Décrivez votre bien et sa localisation au Sénégal',
+  'Rédigez votre annonce et fixez votre tarif de base',
+  'Sélectionnez ce que vous mettez à disposition des voyageurs',
+  'Définissez vos conditions et règles intérieures',
   'Ajoutez au minimum 5 photos de qualité',
-  'Vérifiez et soumettez votre annonce',
+  'Vérifiez l\'ensemble des informations puis soumettez votre annonce',
 ];
 
 interface ListingWizardProps {
@@ -91,7 +91,6 @@ export function ListingWizard({ editMode = false }: ListingWizardProps) {
     try {
       let listingId = draftListingId;
 
-      // Payload commun CREATE / UPDATE
       const listingPayload = {
         titre: annonce.titre,
         description: annonce.description,
@@ -124,11 +123,10 @@ export function ListingWizard({ editMode = false }: ListingWizardProps) {
         });
       }
 
-      // ── Photos : 1 signature → uploads Cloudinary en parallèle → saves en parallèle ──
+      // Photos Cloudinary
       const photosToUpload = photos.photos.filter((p) => p.file && !p.url);
 
       if (photosToUpload.length > 0) {
-        // Une seule signature pour tous les fichiers (même folder/timestamp)
         const params = await nestFetch<{ uploadUrl: string; signature: string; timestamp: number; apiKey: string; cloudName: string; folder: string }>(
           NEST_API.LISTINGS.PHOTO_UPLOAD_PARAMS(listingId),
           { method: 'GET' },
@@ -153,7 +151,6 @@ export function ListingWizard({ editMode = false }: ListingWizardProps) {
           }),
         );
 
-        // Saves en parallèle
         await Promise.all(
           cloudinaryResults.map(({ photo, url, publicId }) =>
             nestFetch(NEST_API.LISTINGS.ADD_PHOTO(listingId), {
@@ -170,7 +167,7 @@ export function ListingWizard({ editMode = false }: ListingWizardProps) {
         );
       }
 
-      // ── Tarifs + équipements en parallèle ──────────────────────────────────
+      // Tarifs + Équipements
       await Promise.all([
         tarifsPersonnes.length > 0
           ? nestFetch(NEST_API.LISTINGS.SET_TARIFS_PERSONNES(listingId), {
@@ -188,7 +185,6 @@ export function ListingWizard({ editMode = false }: ListingWizardProps) {
 
         equipements.equipements.length > 0
           ? (
-              // IDs pré-calculés au step 2 ; fallback fetch si le cache est vide (ex: rechargement de page)
               equipementIds.length > 0
                 ? Promise.resolve(equipementIds)
                 : nestFetch<{ id: string; nom: string }[]>(NEST_API.LISTINGS.LIST_EQUIPEMENTS, { method: 'GET' })
@@ -218,46 +214,37 @@ export function ListingWizard({ editMode = false }: ListingWizardProps) {
   }
 
   return (
-    <div className="min-h-screen bg-background relative overflow-x-hidden">
+    <div className="min-h-screen bg-background relative overflow-x-hidden pb-16">
 
-      {/* ── Background Blobs for Glass Effect ──────────────── */}
-      <div className="fixed inset-0 pointer-events-none z-0">
-        <div className="absolute top-[-10%] left-[-10%] w-[40%] h-[40%] rounded-full bg-emerald-200/20 blur-[120px]" />
-        <div className="absolute top-[20%] right-[-10%] w-[35%] h-[35%] rounded-full bg-accent-200/20 blur-[100px]" />
-        <div className="absolute bottom-[-5%] left-[20%] w-[30%] h-[30%] rounded-full bg-emerald-300/10 blur-[80px]" />
-      </div>
-
-      {/* ── Sticky header (Glass) ──────────────────────────── */}
+      {/* Sticky header (Glass ImmoLoc v2) */}
       <div className="sticky top-0 z-50 transition-all duration-300">
-        <div className="absolute inset-0 bg-background-card/60 backdrop-blur-xl border-b border-border/20 shadow-sm" />
-        <div className="relative max-w-3xl mx-auto px-4">
-          <div className="flex items-center justify-between h-16">
+        <div className="absolute inset-0 bg-background-card/85 backdrop-blur-xl border-b border-border/80 shadow-xs" />
+        <div className="relative max-w-3xl mx-auto px-3 sm:px-4">
+          <div className="flex items-center justify-between h-14 sm:h-16">
             <Link
               href="/dashboard/annonces"
-              className="group flex items-center gap-2 text-sm font-bold text-foreground-muted hover:text-emerald-500 transition-all"
+              className="btn-ghost text-xs px-3 sm:px-3.5 py-1.5 rounded-pill flex items-center gap-1.5 sm:gap-2"
             >
-              <div className="w-8 h-8 rounded-lg bg-background-card/40 flex items-center justify-center group-hover:bg-emerald-50 transition-colors border border-border/20">
-                <ArrowLeft className="w-4 h-4 transition-transform group-hover:-translate-x-1" />
-              </div>
-              <span className="hidden sm:inline">Quitter</span>
+              <ArrowLeft className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-foreground-muted" />
+              <span className="text-xs font-semibold">Quitter</span>
             </Link>
 
             <div className="flex flex-col items-center">
-              <span className="text-[10px] font-black text-emerald-500 uppercase tracking-widest">
+              <span className="eyebrow text-forest-600 font-bold text-[9px] sm:text-[10px]">
                 Étape {currentStep + 1} / {WIZARD_STEPS.length}
               </span>
-              <div className="h-1 w-12 bg-emerald-100 rounded-full mt-1 overflow-hidden">
+              <div className="h-1.5 w-12 sm:w-16 bg-background-alt border border-border rounded-pill mt-0.5 sm:mt-1 overflow-hidden">
                 <div
-                  className="h-full bg-emerald-400 transition-all duration-500"
+                  className="h-full bg-forest-600 transition-all duration-500 rounded-pill"
                   style={{ width: `${((currentStep + 1) / WIZARD_STEPS.length) * 100}%` }}
                 />
               </div>
             </div>
 
-            <div className="w-8" />
+            <div className="w-12 sm:w-16" />
           </div>
 
-          <div className="pb-4">
+          <div className="pb-3 sm:pb-4">
             <WizardStepper
               currentStep={currentStep}
               completedSteps={completedSteps}
@@ -269,34 +256,34 @@ export function ListingWizard({ editMode = false }: ListingWizardProps) {
         </div>
       </div>
 
-      {/* ── Content Area ────────────────────────────────────── */}
-      <div className="relative z-10 max-w-3xl mx-auto px-4 py-12">
+      {/* Content Area */}
+      <div className="relative z-10 max-w-3xl mx-auto px-3.5 sm:px-4 py-6 sm:py-10">
 
         {/* Page Header */}
-        <div className="text-center mb-12 animate-in fade-in slide-in-from-bottom-4 duration-700">
-          <p className="text-xs font-black uppercase tracking-[0.2em] text-emerald-500 mb-3">
-            {editMode ? "Modification de l'annonce" : "Création d'annonce"}
+        <div className="text-center mb-6 sm:mb-10">
+          <p className="eyebrow text-forest-600 font-bold tracking-[0.2em] mb-1.5 sm:mb-2 text-[10px] sm:text-xs">
+            {editMode ? "Modification d'annonce" : "Création d'annonce"}
           </p>
-          <h1 className="text-3xl sm:text-4xl font-black text-foreground tracking-tight mb-3">
+          <h1 className="font-display text-2xl sm:text-4xl font-bold text-foreground tracking-tight mb-1.5 sm:mb-2">
             {STEP_TITLES[currentStep]}
           </h1>
-          <p className="text-base text-foreground-muted max-w-xl mx-auto leading-relaxed">
+          <p className="text-xs sm:text-base text-foreground-muted max-w-xl mx-auto font-medium leading-relaxed">
             {STEP_SUBTITLES[currentStep]}
           </p>
         </div>
 
-        {/* Error */}
+        {/* Erreur API */}
         {apiError && (
-          <div className="mb-8 p-4 bg-error-500/5 backdrop-blur-md border border-error-500/20 rounded-2xl flex items-center gap-3 animate-in fade-in zoom-in duration-300">
-            <div className="w-10 h-10 rounded-full bg-error-500/10 flex items-center justify-center flex-shrink-0">
-              <span className="text-error-500 text-xl font-bold">!</span>
+          <div className="mb-6 sm:mb-8 p-3.5 sm:p-4 bg-error-50 border border-error-500/30 rounded-inner flex items-center gap-3">
+            <div className="w-8 h-8 sm:w-9 sm:h-9 rounded-full bg-error-500/10 flex items-center justify-center shrink-0">
+              <AlertTriangle className="w-4 h-4 sm:w-5 sm:h-5 text-error-600" />
             </div>
-            <p className="text-sm text-error-600 font-semibold">{apiError}</p>
+            <p className="text-xs text-error-600 font-semibold">{apiError}</p>
           </div>
         )}
 
-        {/* Step Container */}
-        <div className="space-y-6">
+        {/* Dynamic Step Component */}
+        <div className="space-y-5 sm:space-y-6">
           {currentStep === 0 && <StepBien onNext={handleStepValidated} submitRef={submitRef} />}
           {currentStep === 1 && <StepAnnonce onNext={handleStepValidated} submitRef={submitRef} />}
           {currentStep === 2 && <StepEquipements onNext={handleStepValidated} submitRef={submitRef} />}
@@ -311,47 +298,44 @@ export function ListingWizard({ editMode = false }: ListingWizardProps) {
           )}
         </div>
 
-        {/* ── Floating Nav (Glass) ─────────────────────────── */}
+        {/* Floating Nav Bar (Glass Responsive) */}
         {!isConfirmation && (
-          <div className="mt-12 sticky bottom-8 z-50">
-            <div className="absolute inset-0 bg-background-card/70 backdrop-blur-xl border border-border shadow-xl rounded-3xl" />
-            <div className="relative p-4 flex items-center justify-between">
+          <div className="mt-8 sm:mt-10 sticky bottom-4 sm:bottom-6 z-40">
+            <div className="card p-2.5 sm:p-3 bg-background-card/90 backdrop-blur-xl border border-border shadow-2xl rounded-card flex items-center justify-between gap-2">
               <button
                 type="button"
                 onClick={handlePrev}
                 disabled={currentStep === 0}
                 className={cn(
-                  'flex items-center gap-2 px-6 py-4 rounded-2xl text-sm font-bold transition-all duration-300',
-                  currentStep === 0
-                    ? 'text-neutral-300 cursor-not-allowed'
-                    : 'text-foreground-muted hover:bg-background-alt',
+                  'btn-ghost text-xs px-3.5 sm:px-5 py-2.5 rounded-pill font-semibold cursor-pointer shrink-0',
+                  currentStep === 0 && 'opacity-40 cursor-not-allowed',
                 )}
               >
-                <ArrowLeft className="w-4 h-4" />
-                Précédent
+                <ArrowLeft className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+                <span>Précédent</span>
               </button>
 
               <button
                 type="button"
                 onClick={handleNext}
-                className="group flex items-center gap-3 px-10 py-4 rounded-2xl bg-emerald-500 hover:bg-emerald-600 text-white text-sm font-black shadow-xl shadow-emerald-500/30 hover:shadow-emerald-500/40 hover:-translate-y-1 transition-all duration-300 active:scale-95"
+                className="btn-action text-xs px-5 sm:px-8 py-2.5 sm:py-3 font-bold flex items-center gap-2 cursor-pointer shadow-action"
               >
-                {currentStep === 4 ? 'Récapitulatif' : 'Continuer'}
-                <ArrowRight className="w-4 h-4 transition-transform group-hover:translate-x-1" />
+                <span>{currentStep === 4 ? 'Vérifier l\'annonce' : 'Continuer'}</span>
+                <ArrowRight className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
               </button>
             </div>
           </div>
         )}
 
         {isConfirmation && (
-          <div className="mt-12 flex justify-start">
+          <div className="mt-8 sm:mt-10 flex justify-start">
             <button
               type="button"
               onClick={handlePrev}
-              className="flex items-center gap-2 px-6 py-4 rounded-2xl text-sm font-bold text-foreground-muted bg-background-card/40 backdrop-blur-md border border-border hover:bg-background-card/60 transition-all active:scale-95 shadow-sm"
+              className="btn-ghost text-xs px-4 sm:px-5 py-2.5 rounded-pill font-semibold flex items-center gap-2 cursor-pointer"
             >
               <ArrowLeft className="w-4 h-4" />
-              Revenir aux réglages
+              <span>Modifier les informations</span>
             </button>
           </div>
         )}

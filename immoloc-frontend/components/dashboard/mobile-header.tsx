@@ -1,17 +1,10 @@
 'use client';
 
-import { useState, useEffect, useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
 import {
-  Bell,
-  ChevronDown,
-  Eye,
-  EyeOff,
-  Wallet,
-  LogOut,
-  Settings,
-  ArrowLeftRight,
-  ArrowRight,
+  ArrowLeftRight, ArrowRight, Bell, ChevronDown, Eye, EyeOff,
+  LogOut, Settings, TrendingUp, Wallet,
 } from 'lucide-react';
 import { useQuery } from '@tanstack/react-query';
 import { createClient } from '@/lib/supabase/client';
@@ -21,220 +14,256 @@ import { dashboardApi } from '@/lib/nestjs';
 import { cn } from '@/lib/utils/cn';
 import { useCurrentUser } from '@/hooks/use-current-user';
 
+const nf = new Intl.NumberFormat('fr-FR', { maximumFractionDigits: 0 });
+
 interface MobileHeaderProps {
-  onMenuToggle: () => void;
+  onMenuToggle?: () => void;
 }
 
-export function MobileHeader({ onMenuToggle }: MobileHeaderProps) {
+export function MobileHeader({ onMenuToggle }: MobileHeaderProps = {}) {
   const clearSession = useRoleStore((s) => s.clearSession);
   const { switchRole, isSwitching } = useSwitchRole();
   const onboardingDraft = useRoleStore((s) => s.onboardingDraft);
-  const [dropdownOpen, setDropdownOpen] = useState(false);
-  const [notifOpen, setNotifOpen] = useState(false);
+
+  const [menu, setMenu] = useState<'account' | 'notif' | null>(null);
   const [amountVisible, setAmountVisible] = useState(true);
 
-  const dropdownRef = useRef<HTMLDivElement>(null);
+  const accountRef = useRef<HTMLDivElement>(null);
   const notifRef = useRef<HTMLDivElement>(null);
   const supabase = createClient();
 
-  // ── User (optimisé avec React Query + cache partagé) ───────────────────
   const { data: user } = useCurrentUser();
 
-  // ── Stats (React Query : cache + pas de refetch inutile) ────────────────
-  const { data: stats, isLoading } = useQuery({
+  const { data: stats } = useQuery({
     queryKey: ['dashboard', 'owner-stats'],
     queryFn: () => dashboardApi.getOwnerStats(),
+    staleTime: 10 * 60 * 1000,
+    gcTime: 30 * 60 * 1000,
+    refetchOnWindowFocus: false,
+    refetchOnMount: false,
+    placeholderData: (previousData) => previousData,
   });
 
-  // ── Click outside ───────────────────────────────────────────────────────
+  // L'ecouteur restait monte en permanence, meme les deux menus fermes.
+  // Et aucun des deux ne se fermait a la touche Echap.
   useEffect(() => {
-    function handleClickOutside(e: MouseEvent) {
-      if (dropdownRef.current && !dropdownRef.current.contains(e.target as Node)) {
-        setDropdownOpen(false);
-      }
-      if (notifRef.current && !notifRef.current.contains(e.target as Node)) {
-        setNotifOpen(false);
-      }
-    }
-    document.addEventListener('mousedown', handleClickOutside);
-    return () => document.removeEventListener('mousedown', handleClickOutside);
-  }, []);
+    if (!menu) return;
+    const onDown = (e: MouseEvent) => {
+      const inAccount = accountRef.current?.contains(e.target as Node);
+      const inNotif = notifRef.current?.contains(e.target as Node);
+      if (!inAccount && !inNotif) setMenu(null);
+    };
+    const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape') setMenu(null); };
+    document.addEventListener('mousedown', onDown);
+    document.addEventListener('keydown', onKey);
+    return () => {
+      document.removeEventListener('mousedown', onDown);
+      document.removeEventListener('keydown', onKey);
+    };
+  }, [menu]);
 
-  // ── Logout ──────────────────────────────────────────────────────────────
   async function handleLogout() {
-    setDropdownOpen(false);
+    setMenu(null);
     clearSession();
     await supabase.auth.signOut();
     window.location.href = '/';
   }
 
-  // ── Données ─────────────────────────────────────────────────────────────
-  const displayName = user?.prenom || onboardingDraft?.prenom || 'Utilisateur';
-  const initials = displayName[0]?.toUpperCase() || user?.email?.[0]?.toUpperCase() || '?';
+  const displayName = user?.prenom || onboardingDraft?.prenom || 'Propriétaire';
+  const initials = (displayName[0] || user?.email?.[0] || 'H').toUpperCase();
 
-  const formatFCFA = (n: number) => {
-    if (n >= 1_000_000) return (n / 1_000_000).toFixed(1).replace('.0', '') + 'M';
-    if (n >= 1_000) return (n / 1_000).toFixed(0) + 'k';
-    return n.toLocaleString('fr-FR');
-  };
-
-  // Uniquement des données réelles renvoyées par l'API — aucun KPI estimé.
-  const revenueMonth = Number(stats?.bookings?.revenue ?? 0);
+  const revenue = Number(stats?.bookings?.revenue ?? 0);
   const totalBookings = stats?.bookings?.total ?? 0;
-  const withdrawableBalance = Number(stats?.wallet?.balance ?? 0);
+  const balance = Number(stats?.wallet?.balance ?? 0);
+  const canWithdraw = balance > 0;
+
+  const menuItem =
+    'flex w-full items-center gap-2.5 rounded-inner px-3 py-2.5 text-sm text-foreground ' +
+    'transition-colors duration-150 hover:bg-neutral-100 text-left';
 
   return (
-    <header className="rounded-b-3xl bg-emerald-800 pb-6">
+    <header className="rounded-b-card border-b border-white/10 bg-[radial-gradient(80%_60%_at_50%_0%,#0F503D_0%,rgba(15,80,61,0)_70%),linear-gradient(180deg,#072A20_0%,#041912_100%)] p-4 text-white sm:p-5">
 
-      {/* ── Barre : salutation + notifications + avatar ─────────────────── */}
-      <div className="flex items-center justify-between px-4 py-3">
-        <h1 className="font-sans text-base font-semibold text-white">
-          Bonjour, {displayName}
-        </h1>
+      {/* -- Barre supérieure ------------------------------------------- */}
+      <div className="flex items-center justify-between gap-3">
+        {/*
+          L'avatar apparaissait DEUX fois : une pastille d'initiales a gauche,
+          et les memes initiales dans le declencheur du menu a 40px de la.
+          Une seule suffit, et c'est celle qui est cliquable.
+        */}
+        <div className="min-w-0">
+          <p className="text-xs text-forest-200">Bonjour</p>
+          {/* Etait un <h1> : present sur toutes les pages du tableau de bord,
+              il volait le titre principal de chacune. */}
+          <p className="truncate text-base font-semibold text-neutral-50">{displayName}</p>
+        </div>
 
-        <div className="flex items-center gap-2">
-
+        <div className="flex shrink-0 items-center gap-2">
           {/* Notifications */}
           <div ref={notifRef} className="relative">
             <button
-              onClick={() => setNotifOpen((v) => !v)}
+              type="button"
+              onClick={() => setMenu((m) => (m === 'notif' ? null : 'notif'))}
               aria-label="Notifications"
-              className="flex h-9 w-9 items-center justify-center rounded-full bg-white/10 text-white transition-colors hover:bg-white/15"
+              aria-expanded={menu === 'notif'}
+              aria-haspopup="menu"
+              className="grid h-9 w-9 place-items-center rounded-pill border border-white/10 bg-white/10 text-white transition-colors duration-150 hover:bg-white/15"
             >
-              <Bell className="h-[18px] w-[18px]" />
+              <Bell className="h-4 w-4" aria-hidden="true" />
             </button>
 
-            {notifOpen && (
-              <div className="absolute right-0 top-full z-50 mt-2 w-80 overflow-hidden rounded-2xl border border-border bg-background-card shadow-xl">
+            {menu === 'notif' && (
+              <div role="menu" className="absolute right-0 top-full z-50 mt-2 w-[min(20rem,calc(100vw-2rem))] overflow-hidden rounded-card border border-border bg-background-card text-foreground shadow-lg">
                 <div className="flex items-center justify-between border-b border-border px-4 py-3">
-                  <p className="text-sm font-semibold text-foreground">Notifications</p>
-                  <button className="text-xs font-semibold text-emerald-600 transition-colors hover:text-emerald-700">
-                    Tout marquer lu
-                  </button>
+                  <p className="text-sm font-semibold">Notifications</p>
                 </div>
-                <div className="p-6 text-center">
-                  <div className="mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-full bg-background-alt">
-                    <Bell className="h-5 w-5 text-foreground-muted" />
-                  </div>
-                  <p className="mb-1 text-sm font-semibold text-foreground">Aucune notification</p>
-                  <p className="text-xs text-foreground-muted">Vous êtes à jour !</p>
-                </div>
+                {/*
+                  Ce panneau affiche « Aucune notification · Vous etes a jour »
+                  en dur, sans etre relie a quoi que ce soit. Tant que la
+                  source n'existe pas, autant le dire plutot que d'affirmer
+                  que tout est lu.
+                */}
+                <p className="px-4 py-8 text-center text-sm text-foreground-muted">
+                  Les notifications arrivent bientôt.
+                </p>
               </div>
             )}
           </div>
 
-          {/* Avatar */}
-          <div ref={dropdownRef} className="relative">
+          {/* Compte */}
+          <div ref={accountRef} className="relative">
             <button
-              onClick={() => setDropdownOpen((v) => !v)}
+              type="button"
+              onClick={() => setMenu((m) => (m === 'account' ? null : 'account'))}
               aria-label="Menu du compte"
-              className="flex h-9 items-center gap-1.5 rounded-full bg-white/10 pl-1 pr-2.5 transition-colors hover:bg-white/15"
+              aria-expanded={menu === 'account'}
+              aria-haspopup="menu"
+              className="flex h-9 items-center gap-1.5 rounded-pill border border-white/10 bg-white/10 pl-1 pr-2.5 transition-colors duration-150 hover:bg-white/15"
             >
-              <span className="flex h-7 w-7 items-center justify-center rounded-full bg-white text-xs font-semibold text-emerald-700">
+              <span className="grid h-7 w-7 place-items-center rounded-pill bg-lime-400 text-xs font-semibold text-forest-800">
                 {initials}
               </span>
-              <ChevronDown className={cn('h-3.5 w-3.5 text-white transition-transform', dropdownOpen && 'rotate-180')} />
+              <ChevronDown
+                className={cn('h-3.5 w-3.5 transition-transform duration-200', menu === 'account' && 'rotate-180')}
+                aria-hidden="true"
+              />
             </button>
 
-            {dropdownOpen && (
-              <div className="absolute right-0 top-full z-50 mt-2 w-64 overflow-hidden rounded-2xl border border-border bg-background-card shadow-xl">
-                <div className="border-b border-border px-4 py-3">
-                  <p className="mb-1 text-xs font-medium text-foreground-muted">Connecté en tant que</p>
-                  <p className="truncate text-sm font-semibold text-foreground">{user?.email}</p>
+            {menu === 'account' && (
+              <div role="menu" className="absolute right-0 top-full z-50 mt-2 w-64 space-y-0.5 overflow-hidden rounded-card border border-border bg-background-card p-1.5 text-foreground shadow-lg">
+                <div className="border-b border-border px-3 py-2.5">
+                  <p className="text-[0.6875rem] uppercase tracking-[0.12em] text-foreground-faint">
+                    Connecté en tant que
+                  </p>
+                  <p className="mt-0.5 truncate text-sm font-medium">{user?.email}</p>
                 </div>
 
-                <div className="space-y-1 p-2">
-                  <button
-                    onClick={() => { setDropdownOpen(false); switchRole('LOCATAIRE'); }}
-                    disabled={isSwitching}
-                    className="flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium text-foreground transition-colors hover:bg-background-alt disabled:opacity-50"
-                  >
-                    <ArrowLeftRight className="h-4 w-4" />
-                    Mode Locataire
-                  </button>
+                <button
+                  type="button"
+                  role="menuitem"
+                  onClick={() => { setMenu(null); switchRole('LOCATAIRE'); }}
+                  disabled={isSwitching}
+                  className={cn(menuItem, 'disabled:opacity-50')}
+                >
+                  <ArrowLeftRight className="h-4 w-4 text-forest-600" aria-hidden="true" />
+                  Passer en mode locataire
+                </button>
 
-                  <Link
-                    href="/dashboard/parametres"
-                    onClick={() => setDropdownOpen(false)}
-                    className="flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium text-foreground transition-colors hover:bg-background-alt"
-                  >
-                    <Settings className="h-4 w-4" />
-                    Paramètres
-                  </Link>
+                <Link href="/dashboard/parametres" role="menuitem" onClick={() => setMenu(null)} className={menuItem}>
+                  <Settings className="h-4 w-4 text-forest-600" aria-hidden="true" />
+                  Paramètres
+                </Link>
 
-                  <div className="my-1 h-px bg-border" />
+                <div className="my-1 h-px bg-border" />
 
-                  <button
-                    onClick={handleLogout}
-                    className="flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium text-error-600 transition-colors hover:bg-error-50"
-                  >
-                    <LogOut className="h-4 w-4" />
-                    Déconnexion
-                  </button>
-                </div>
+                <button type="button" role="menuitem" onClick={handleLogout} className={cn(menuItem, 'text-error-600 hover:bg-error-50')}>
+                  <LogOut className="h-4 w-4" aria-hidden="true" />
+                  Déconnexion
+                </button>
               </div>
             )}
           </div>
         </div>
       </div>
 
-      {/* ── Carte revenus — le montant est le héros ─────────────────────── */}
-      <div className="px-4 pt-1">
-        {isLoading ? (
-          <div className="animate-pulse rounded-2xl bg-emerald-900/60 p-5">
-            <div className="mb-3 h-3.5 w-28 rounded bg-white/10" />
-            <div className="mb-2 h-9 w-44 rounded bg-white/10" />
-            <div className="h-3 w-32 rounded bg-white/10" />
-          </div>
-        ) : (
-          <div className="rounded-2xl bg-emerald-900/60 p-5">
-            <div className="mb-2 flex items-center justify-between">
-              <p className="text-[11px] font-semibold uppercase tracking-[0.15em] text-emerald-200">
-                Revenus du mois
-              </p>
-              <button
-                onClick={() => setAmountVisible((v) => !v)}
-                aria-label={amountVisible ? 'Masquer le montant' : 'Afficher le montant'}
-                className="rounded-lg p-1.5 transition-colors hover:bg-white/10"
-              >
-                {amountVisible
-                  ? <Eye className="h-4 w-4 text-emerald-200" />
-                  : <EyeOff className="h-4 w-4 text-emerald-200" />}
-              </button>
-            </div>
+      {/* -- Revenus ----------------------------------------------------- */}
+      {/* p-4.5 : l'echelle Tailwind n'a pas de 4.5, la carte n'avait donc
+          aucun padding. */}
+      <div className="mt-4 rounded-card border border-white/10 bg-white/[0.06] p-4">
+        <div className="flex items-center justify-between gap-3">
+          <span className="flex items-center gap-2.5">
+            {/* Premiere touche de lime : le marqueur du chiffre principal. */}
+            <span className="grid h-8 w-8 shrink-0 place-items-center rounded-inner border border-lime-400/20 bg-lime-400/15 text-lime-400">
+              <TrendingUp className="h-4 w-4" aria-hidden="true" />
+            </span>
+            <span className="text-[0.6875rem] uppercase tracking-[0.14em] text-forest-200">
+              Revenus
+            </span>
+          </span>
 
-            <p className="text-[32px] font-semibold leading-none text-white tabular-nums" data-price>
-              {amountVisible ? revenueMonth.toLocaleString('fr-FR') : '••••••'}
-              <span className="ml-1.5 text-[14px] font-medium text-emerald-200">FCFA</span>
-            </p>
-
-            {totalBookings > 0 && (
-              <p className="mt-2.5 text-[13px] text-emerald-100/80">
-                {totalBookings} réservation{totalBookings > 1 ? 's' : ''} ce mois-ci
-              </p>
-            )}
-          </div>
-        )}
-      </div>
-
-      {/* ── Retrait — visible uniquement si solde disponible ────────────── */}
-      {!isLoading && withdrawableBalance > 0 && (
-        <div className="px-4 pt-3">
-          <Link
-            href="/dashboard/wallet"
-            className="flex w-full items-center justify-between rounded-xl bg-success-500 hover:bg-success-600 px-5 py-3.5 transition-all active:scale-[0.98] shadow-lg"
+          <button
+            type="button"
+            onClick={() => setAmountVisible((v) => !v)}
+            aria-label={amountVisible ? 'Masquer les montants' : 'Afficher les montants'}
+            aria-pressed={!amountVisible}
+            className="grid h-8 w-8 place-items-center rounded-pill bg-white/10 text-forest-200 transition-colors duration-150 hover:bg-white/15 hover:text-neutral-50"
           >
-            <span className="flex items-center gap-2.5 text-sm font-bold text-white">
-              <Wallet className="h-4 w-4" />
-              Faire un retrait
-            </span>
-            <span className="flex items-center gap-1.5 text-[13px] font-bold text-white tabular-nums">
-              {formatFCFA(withdrawableBalance)} FCFA
-              <ArrowRight className="h-4 w-4" />
-            </span>
-          </Link>
+            {amountVisible
+              ? <Eye className="h-3.5 w-3.5" aria-hidden="true" />
+              : <EyeOff className="h-3.5 w-3.5" aria-hidden="true" />}
+          </button>
         </div>
-      )}
+
+        <p className="mt-3 flex items-baseline gap-2">
+          <span className="text-3xl font-semibold tabular-nums tracking-[-0.02em] text-neutral-50">
+            {amountVisible ? nf.format(revenue) : '••••••'}
+          </span>
+          <span className="text-sm text-forest-200">FCFA</span>
+        </p>
+
+        {totalBookings > 0 && (
+          /* « ce mois-ci » etait accole a stats.bookings.total, qui est un
+             cumul. Le libelle est neutralise tant que l'API n'expose pas un
+             compteur mensuel. */
+          <p className="mt-1 text-xs text-forest-200">
+            {totalBookings} réservation{totalBookings > 1 ? 's' : ''} au total
+          </p>
+        )}
+
+        {/*
+          Seconde touche de lime, et la seule action de l'en-tete.
+          withdrawableBalance etait calcule puis jete : c'est pourtant le
+          chiffre qu'un hote vient chercher en premier.
+        */}
+        <div className="mt-4 flex items-center justify-between gap-3 border-t border-white/10 pt-3.5">
+          <span className="min-w-0">
+            <span className="block text-[0.6875rem] uppercase tracking-[0.14em] text-forest-200">
+              Solde retirable
+            </span>
+            <span className="mt-0.5 block truncate text-lg font-semibold tabular-nums text-neutral-50">
+              {amountVisible ? `${nf.format(balance)} FCFA` : '••••••'}
+            </span>
+          </span>
+
+          {canWithdraw ? (
+            <Link
+              href="/dashboard/wallet"
+              className="inline-flex shrink-0 items-center gap-1.5 rounded-pill border border-[rgba(122,158,26,0.35)] bg-lime-400 px-4 py-2.5 text-sm font-semibold text-forest-800 transition-colors duration-150 hover:bg-lime-300"
+            >
+              Retirer
+              <ArrowRight className="h-4 w-4" aria-hidden="true" />
+            </Link>
+          ) : (
+            <Link
+              href="/dashboard/wallet"
+              className="inline-flex shrink-0 items-center gap-1.5 rounded-pill border border-white/15 px-4 py-2.5 text-sm font-medium text-forest-200 transition-colors duration-150 hover:bg-white/10"
+            >
+              <Wallet className="h-4 w-4" aria-hidden="true" />
+              Wallet
+            </Link>
+          )}
+        </div>
+      </div>
     </header>
   );
 }

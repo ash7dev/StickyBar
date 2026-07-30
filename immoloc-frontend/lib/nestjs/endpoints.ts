@@ -67,9 +67,12 @@ export const NEST_API = {
     RATE_TENANT:            (id: string) => `${BASE}/reservations/${id}/rate-tenant`,
     RATE_OWNER:             (id: string) => `${BASE}/reservations/${id}/rate-owner`,
     SIGNAL_NOSHOW:          (id: string) => `${BASE}/reservations/${id}/signal-noshow`,
+    REOPEN_LATE_CHECKIN:    (id: string) => `${BASE}/reservations/${id}/reopen-late-checkin`,
+    EXTEND_ABSENT_TIMEOUT:  (id: string) => `${BASE}/reservations/${id}/extend-absent-timeout`,
   },
   USERS: {
     ME: `${BASE}/users/me`,
+    DELETE_ME: `${BASE}/users/me`,
   },
   KYC: {
     SUBMIT: `${BASE}/kyc/submit`,
@@ -83,6 +86,7 @@ export const NEST_API = {
   },
   CALENDRIER: {
     GET:    (logementId: string) => `${BASE}/calendrier/${logementId}`,
+    LIST:   (logementId: string) => `${BASE}/calendrier/${logementId}`,
     CREATE: (logementId: string) => `${BASE}/calendrier/${logementId}`,
     DELETE: (logementId: string, indispoId: string) => `${BASE}/calendrier/${logementId}/${indispoId}`,
   },

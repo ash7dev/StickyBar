@@ -1,6 +1,6 @@
 import { RegisterForm } from '@/features/auth/components/register-form';
 
-export const metadata = { title: 'Inscription — ImmoLoc' };
+export const metadata = { title: 'Inscription — Klef' };
 
 interface Props {
   searchParams: Promise<{ next?: string }>;

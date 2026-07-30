@@ -17,108 +17,93 @@ export function WalletSnapshot({ available, pending, processing }: Props) {
   const availPct = total > 0 ? Math.round((available / total) * 100) : 100;
 
   return (
-    <div className="bg-[#0a0a0a] rounded-2xl p-6 border border-white/[0.06] relative overflow-hidden group h-full min-h-[420px] flex flex-col hover:shadow-2xl hover:shadow-black/30 hover:-translate-y-1 transition-all duration-500">
+    <div className="bg-gradient-to-b from-forest-950 via-[#072A20] to-forest-950 text-white rounded-card p-6 border border-forest-800/90 shadow-xl relative overflow-hidden flex flex-col h-full min-h-[380px]">
 
-      {/* ── Ambient glows ───────────────────────────────────────── */}
-      <div className="absolute -top-20 -right-20 w-56 h-56 bg-emerald-500/8 rounded-full blur-[80px] group-hover:bg-emerald-500/12 transition-all duration-700 pointer-events-none" />
-      <div className="absolute -bottom-16 -left-16 w-40 h-40 bg-emerald-400/5 rounded-full blur-[60px] pointer-events-none" />
-
-      {/* ── Grid pattern overlay ────────────────────────────────── */}
-      <div
-        className="absolute inset-0 opacity-[0.03] pointer-events-none"
-        style={{
-          backgroundImage: 'linear-gradient(rgba(255,255,255,.1) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,.1) 1px, transparent 1px)',
-          backgroundSize: '24px 24px',
-        }}
-      />
+      {/* Halos lumineux de fond */}
+      <div className="pointer-events-none absolute -top-20 -right-20 w-56 h-56 rounded-full bg-lime-400/10 blur-3xl" />
+      <div className="pointer-events-none absolute -bottom-16 -left-16 w-40 h-40 rounded-full bg-forest-600/20 blur-3xl" />
 
       <div className="relative z-10 flex flex-col flex-1">
 
-        {/* ── Header ─────────────────────────────────────────────── */}
-        <div className="flex items-center justify-between mb-8">
+        {/* Header */}
+        <div className="flex items-center justify-between mb-6 pb-3 border-b border-forest-800/80">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-2xl bg-background-card/[0.08] backdrop-blur-sm flex items-center justify-center border border-white/[0.08] group-hover:scale-110 transition-transform duration-500">
-              <Wallet className="w-[18px] h-[18px] text-emerald-400" />
+            <div className="w-10 h-10 rounded-inner bg-forest-900 border border-lime-400/20 text-lime-400 flex items-center justify-center shrink-0 shadow-2xs">
+              <Wallet className="w-5 h-5 text-lime-400" />
             </div>
             <div>
-              <p className="text-[10px] font-bold text-white/40 uppercase tracking-[0.12em]">Mon portefeuille</p>
-              <p className="text-sm font-bold text-white">Solde & Retraits</p>
+              <p className="text-[10px] font-extrabold text-forest-300 uppercase tracking-wider">Mon portefeuille</p>
+              <h3 className="font-display text-base font-bold text-white">Solde &amp; Retraits</h3>
             </div>
           </div>
           <Link
             href="/dashboard/wallet"
-            className="p-2 rounded-xl bg-background-card/[0.06] border border-white/[0.06] hover:bg-background-card/[0.12] transition-all"
+            className="p-2 rounded-inner bg-forest-900/60 border border-forest-800 hover:bg-forest-900 transition-all text-lime-400"
           >
-            <ArrowUpRight className="w-4 h-4 text-white/50" />
+            <ArrowUpRight className="w-4 h-4 text-lime-400" />
           </Link>
         </div>
 
-        {/* ── Main Balance ───────────────────────────────────────── */}
-        <div className="mb-8">
-          <p className="text-[10px] font-bold text-white/30 uppercase tracking-widest mb-2">Solde disponible</p>
+        {/* Solde principal */}
+        <div className="mb-6">
+          <p className="text-[10px] font-extrabold text-forest-300 uppercase tracking-widest mb-1">Solde disponible</p>
           <div className="flex items-baseline gap-2">
-            <span className="text-4xl font-black text-white tracking-tight">{fmt(available)}</span>
-            <span className="text-xs font-bold text-white/30 uppercase">fcfa</span>
+            <span className="font-display text-3xl sm:text-4xl font-extrabold text-white tracking-tight">{fmt(available)}</span>
+            <span className="text-xs font-extrabold text-lime-400 uppercase">FCFA</span>
           </div>
           <div className="flex items-center gap-1.5 mt-2">
-            <ShieldCheck className="w-3.5 h-3.5 text-emerald-400" />
-            <span className="text-[11px] font-semibold text-emerald-400">Retirable immédiatement</span>
+            <ShieldCheck className="w-4 h-4 text-lime-400" />
+            <span className="text-xs font-bold text-lime-300">Retirable immédiatement</span>
           </div>
         </div>
 
-        {/* ── Progress bar ───────────────────────────────────────── */}
+        {/* Répartition */}
         <div className="mb-6">
           <div className="flex items-center justify-between mb-2">
-            <span className="text-[10px] font-bold text-white/30 uppercase tracking-wider">Répartition</span>
-            <span className="text-[10px] font-bold text-emerald-400">{availPct}% disponible</span>
+            <span className="text-[10px] font-extrabold text-forest-300 uppercase tracking-wider">Répartition</span>
+            <span className="text-[10px] font-extrabold text-lime-300">{availPct}% disponible</span>
           </div>
-          <div className="h-1.5 rounded-full bg-background-card/[0.06] overflow-hidden">
+          <div className="h-2 rounded-pill bg-forest-900 overflow-hidden border border-forest-800">
             <div
-              className="h-full rounded-full bg-gradient-to-r from-emerald-400 to-emerald-500 transition-all duration-1000 ease-out"
+              className="h-full rounded-pill bg-lime-400 transition-all duration-1000 ease-out"
               style={{ width: `${availPct}%` }}
             />
           </div>
         </div>
 
-        {/* ── Stats Cards ────────────────────────────────────────── */}
+        {/* Grille de sous-statuts */}
         <div className="grid grid-cols-2 gap-3 mb-6">
-          <div className="p-4 rounded-xl bg-background-card/[0.04] border border-white/[0.06] hover:bg-background-card/[0.06] transition-colors">
-            <div className="flex items-center gap-2 mb-2.5">
-              <div className="w-7 h-7 rounded-lg bg-amber-500/10 flex items-center justify-center">
-                <Clock className="w-3.5 h-3.5 text-amber-400" />
+          <div className="p-3.5 rounded-inner bg-forest-900/60 border border-forest-800">
+            <div className="flex items-center gap-2 mb-2">
+              <div className="w-6 h-6 rounded-inner bg-warning-500/20 flex items-center justify-center">
+                <Clock className="w-3.5 h-3.5 text-warning-400" />
               </div>
-              <span className="text-[10px] font-bold text-white/40 uppercase">En attente</span>
+              <span className="text-[10px] font-extrabold text-forest-300 uppercase">En attente</span>
             </div>
-            <p className="text-lg font-black text-white">{fmt(pending)}</p>
-            <p className="text-[9px] text-white/25 mt-0.5 uppercase">Séquestre</p>
+            <p className="font-display text-lg font-extrabold text-white">{fmt(pending)}</p>
+            <p className="text-[9px] text-forest-300 font-bold uppercase mt-0.5">Séquestre</p>
           </div>
-          <div className="p-4 rounded-xl bg-background-card/[0.04] border border-white/[0.06] hover:bg-background-card/[0.06] transition-colors">
-            <div className="flex items-center gap-2 mb-2.5">
-              <div className="w-7 h-7 rounded-lg bg-emerald-500/10 flex items-center justify-center">
-                <Landmark className="w-3.5 h-3.5 text-emerald-400" />
+
+          <div className="p-3.5 rounded-inner bg-forest-900/60 border border-forest-800">
+            <div className="flex items-center gap-2 mb-2">
+              <div className="w-6 h-6 rounded-inner bg-lime-400/20 flex items-center justify-center">
+                <Landmark className="w-3.5 h-3.5 text-lime-400" />
               </div>
-              <span className="text-[10px] font-bold text-white/40 uppercase">Traitement</span>
+              <span className="text-[10px] font-extrabold text-forest-300 uppercase">Traitement</span>
             </div>
-            <p className="text-lg font-black text-white">{fmt(processing)}</p>
-            <p className="text-[9px] text-white/25 mt-0.5 uppercase">Retraits en cours</p>
+            <p className="font-display text-lg font-extrabold text-white">{fmt(processing)}</p>
+            <p className="text-[9px] text-forest-300 font-bold uppercase mt-0.5">Retraits en cours</p>
           </div>
         </div>
 
-        {/* ── Spacer + CTA ───────────────────────────────────────── */}
+        {/* CTA */}
         <div className="flex-1" />
         <Link
           href="/dashboard/wallet"
-          className="w-full flex items-center justify-center gap-2.5 py-3.5 rounded-xl
-                     bg-gradient-to-r from-emerald-500 to-emerald-600
-                     text-white text-sm font-bold
-                     shadow-lg shadow-emerald-500/20
-                     hover:shadow-xl hover:shadow-emerald-500/30
-                     hover:from-emerald-400 hover:to-emerald-500
-                     active:scale-[0.98]
-                     transition-all duration-300"
+          className="w-full inline-flex items-center justify-center gap-2 py-3 rounded-pill bg-lime-400 hover:bg-lime-300 text-forest-950 font-extrabold text-xs shadow-md transition-all active:scale-95"
         >
-          <Sparkles className="w-4 h-4" />
-          Retirer mes fonds
+          <Sparkles className="w-4 h-4 text-forest-950" />
+          <span>Retirer mes fonds</span>
         </Link>
       </div>
     </div>

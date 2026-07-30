@@ -105,12 +105,25 @@ export class LogementsService {
       tarifsPersonnes: {
         select: { personnesMin: true, personnesMax: true, supplement: true },
       },
+      proprietaire: {
+        select: { id: true, prenom: true, nom: true, avatarUrl: true },
+      },
+      equipements: {
+        select: {
+          equipement: { select: { id: true, nom: true, categorie: true } },
+        },
+        take: 6,
+      },
     } satisfies Prisma.LogementSelect;
 
-    const [total, logements] = await Promise.all([
-      this.prisma.logement.count({ where }),
-      this.prisma.logement.findMany({ where, select, orderBy: { note: 'desc' }, skip: (page - 1) * limit, take: limit }),
-    ]);
+    const total = await this.prisma.logement.count({ where });
+    const logements = await this.prisma.logement.findMany({
+      where,
+      select,
+      orderBy: { note: 'desc' },
+      skip: (page - 1) * limit,
+      take: limit,
+    });
 
     const results = logements.map((l) => {
       let supplementPersonnes = 0;
@@ -134,11 +147,18 @@ export class LogementsService {
         totalSejours: l.totalSejours,
         photos: l.photos,
         prixNuitEffectif,
+        proprietaire: l.proprietaire,
+        equipements: l.equipements
+          .map((e) => e.equipement)
+          .filter((e): e is NonNullable<typeof e> => e != null),
       };
     });
 
     const payload = {
       data: results,
+      total,
+      page,
+      limit,
       meta: { total, page, limit, totalPages: Math.ceil(total / limit) },
     };
 
@@ -163,7 +183,7 @@ export class LogementsService {
         .sort(([a], [b]) => a.localeCompare(b)),
     );
     const hash = createHash('md5').update(JSON.stringify(stable)).digest('hex').slice(0, 16);
-    return `listings:search:${hash}`;
+    return `listings:search:v4:${hash}`;
   }
 
   // ── Feed public — toutes les sections en un seul appel ─────────────────────
@@ -193,6 +213,12 @@ export class LogementsService {
         where:  { estPrincipale: true },
         select: { url: true, estPrincipale: true },
         take:   1,
+      },
+      equipements: {
+        select: {
+          equipement: { select: { id: true, nom: true, categorie: true } },
+        },
+        take: 6,
       },
     } satisfies Prisma.LogementSelect;
 
@@ -235,38 +261,48 @@ export class LogementsService {
       { id: 'zone-somone',       where: { ...base, ville: { contains: 'Somone',      mode: 'insensitive' } },                           orderBy: { note: 'desc' } },
     ];
 
-    const results = await Promise.all(
-      sections.map(async (s) => {
-        const logements = await this.prisma.logement.findMany({
-          where:   s.where,
-          select:  cardSelect,
-          orderBy: s.orderBy,
-          take:    POOL,
-        });
-        // Shuffle Fisher-Yates puis on prend les LIMIT premiers
-        for (let i = logements.length - 1; i > 0; i--) {
-          const j = Math.floor(Math.random() * (i + 1));
-          [logements[i], logements[j]] = [logements[j], logements[i]];
-        }
-        return {
-          id: s.id,
-          listings: logements.slice(0, LIMIT).map((l) => ({
-            id:           l.id,
-            titre:        l.titre,
-            type:         l.type,
-            sousType:     l.sousType,
-            ville:        l.ville,
-            quartier:     l.quartier,
-            prixBase:     Number(l.prixBase),
-            capaciteMax:  l.capaciteMax,
-            note:         l.note ? Number(l.note) : null,
-            totalSejours: l.totalSejours,
-            createdAt:    l.creeLe.toISOString(),
-            photos:       l.photos,
-          })),
-        };
-      }),
-    );
+    const BATCH_SIZE = 4;
+    const results = [];
+
+    for (let i = 0; i < sections.length; i += BATCH_SIZE) {
+      const batch = sections.slice(i, i + BATCH_SIZE);
+      const batchResults = await Promise.all(
+        batch.map(async (s) => {
+          const logements = await this.prisma.logement.findMany({
+            where:   s.where,
+            select:  cardSelect,
+            orderBy: s.orderBy,
+            take:    POOL,
+          });
+          // Shuffle Fisher-Yates puis on prend les LIMIT premiers
+          for (let k = logements.length - 1; k > 0; k--) {
+            const j = Math.floor(Math.random() * (k + 1));
+            [logements[k], logements[j]] = [logements[j], logements[k]];
+          }
+          return {
+            id: s.id,
+            listings: logements.slice(0, LIMIT).map((l) => ({
+              id:           l.id,
+              titre:        l.titre,
+              type:         l.type,
+              sousType:     l.sousType,
+              ville:        l.ville,
+              quartier:     l.quartier,
+              prixBase:     Number(l.prixBase),
+              capaciteMax:  l.capaciteMax,
+              note:         l.note ? Number(l.note) : null,
+              totalSejours: l.totalSejours,
+              createdAt:    l.creeLe.toISOString(),
+              photos:       l.photos,
+              equipements:  l.equipements
+                .map((e) => e.equipement)
+                .filter((e): e is NonNullable<typeof e> => e != null),
+            })),
+          };
+        }),
+      );
+      results.push(...batchResults);
+    }
 
     return { sections: results };
   }
@@ -360,6 +396,34 @@ export class LogementsService {
             dateFin: true,
           },
         },
+        // Informations propriétaire enrichies
+        proprietaire: {
+          select: {
+            id: true,
+            prenom: true,
+            nom: true,
+            avatarUrl: true,
+            statutKyc: true,
+            noteProprietaire: true,
+            totalAvis: true,
+            creeLe: true,
+            _count: {
+              select: {
+                reservationsProprietaire: {
+                  where: {
+                    statut: {
+                      in: [
+                        StatutReservation.CONFIRMED,
+                        StatutReservation.CHECKED_IN,
+                        StatutReservation.COMPLETED,
+                      ],
+                    },
+                  },
+                },
+              },
+            },
+          },
+        },
       },
     });
 
@@ -373,12 +437,29 @@ export class LogementsService {
       throw new NotFoundException('Logement introuvable');
     }
 
+    const { proprietaire, ...rest } = logement;
+
+    const proprietaireData = proprietaire
+      ? {
+          id: proprietaire.id,
+          prenom: proprietaire.prenom,
+          nom: proprietaire.nom,
+          avatarUrl: proprietaire.avatarUrl,
+          statutKyc: proprietaire.statutKyc,
+          noteProprietaire: Number(proprietaire.noteProprietaire || 0),
+          totalAvis: proprietaire.totalAvis || 0,
+          totalSejours: proprietaire._count?.reservationsProprietaire || 0,
+          creeLe: proprietaire.creeLe,
+        }
+      : undefined;
+
     return {
-      ...logement,
+      ...rest,
+      proprietaire: proprietaireData,
       equipements: logement.equipements
         .map(e => e.equipement)
         .filter((e): e is NonNullable<typeof e> => e != null),
-    } as LogementWithRelations;
+    } as unknown as LogementWithRelations;
   }
 
   async update(id: string, userId: string, dto: UpdateLogementDto): Promise<Logement> {
@@ -666,6 +747,32 @@ export class LogementsService {
     }
 
     this.logger.log(`Photo [${photoId}] supprimée du logement [${id}]`);
+  }
+
+  async setMainPhoto(id: string, photoId: string, userId: string): Promise<PhotoLogement> {
+    await this.assertOwner(id, userId);
+
+    const photo = await this.prisma.photoLogement.findFirst({
+      where: { id: photoId, logementId: id },
+    });
+
+    if (!photo) {
+      throw new NotFoundException('Photo introuvable');
+    }
+
+    await this.prisma.$transaction([
+      this.prisma.photoLogement.updateMany({
+        where: { logementId: id, estPrincipale: true },
+        data: { estPrincipale: false },
+      }),
+      this.prisma.photoLogement.update({
+        where: { id: photoId },
+        data: { estPrincipale: true },
+      }),
+    ]);
+
+    this.logger.log(`Photo [${photoId}] définie comme principale pour logement [${id}]`);
+    return this.prisma.photoLogement.findUniqueOrThrow({ where: { id: photoId } });
   }
 
   async listEquipements() {

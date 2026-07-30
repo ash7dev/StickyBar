@@ -189,7 +189,7 @@ export function MobileReservationSheet({
           {/* CTA */}
           <button
             onClick={() => setOpen(true)}
-            className="flex items-center gap-2 px-5 py-3 bg-emerald-600 hover:bg-emerald-700 text-white text-sm font-black rounded-xl shadow-lg shadow-emerald-500/30 active:scale-[0.97] transition-all"
+            className="flex items-center gap-2 px-5 py-3 bg-success-600 hover:bg-success-700 text-white text-sm font-black rounded-xl shadow-lg shadow-success-500/30 active:scale-[0.97] transition-all"
           >
             Réserver
             <ChevronRight className="w-4 h-4" />
@@ -245,7 +245,7 @@ export function MobileReservationSheet({
                 {/* Date d'arrivée */}
                 <button
                   onClick={() => setShowCalendar(true)}
-                  className="flex flex-col gap-1.5 p-3 rounded-xl bg-background-card border-2 border-border hover:border-emerald-300 transition-colors active:scale-95"
+                  className="flex flex-col gap-1.5 p-3 rounded-xl bg-background-card border-2 border-border hover:border-success-300 transition-colors active:scale-95"
                 >
                   <span className="text-[10px] font-bold text-foreground-muted uppercase tracking-wide">Arrivée</span>
                   <span className="text-sm font-black text-foreground">
@@ -256,7 +256,7 @@ export function MobileReservationSheet({
                 {/* Date de départ */}
                 <button
                   onClick={() => setShowCalendar(true)}
-                  className="flex flex-col gap-1.5 p-3 rounded-xl bg-background-card border-2 border-border hover:border-emerald-300 transition-colors active:scale-95"
+                  className="flex flex-col gap-1.5 p-3 rounded-xl bg-background-card border-2 border-border hover:border-success-300 transition-colors active:scale-95"
                 >
                   <span className="text-[10px] font-bold text-foreground-muted uppercase tracking-wide">Départ</span>
                   <span className="text-sm font-black text-foreground">
@@ -267,8 +267,8 @@ export function MobileReservationSheet({
 
               {nights > 0 && (
                 <div className="flex items-center justify-center gap-1.5 pt-1">
-                  <Moon className="w-3.5 h-3.5 text-emerald-500" />
-                  <span className="text-xs font-bold text-emerald-600">
+                  <Moon className="w-3.5 h-3.5 text-success-500" />
+                  <span className="text-xs font-bold text-success-600">
                     {nights} nuit{nights > 1 ? 's' : ''}
                   </span>
                 </div>
@@ -277,7 +277,7 @@ export function MobileReservationSheet({
 
             {/* ── Calendrier (affiché conditionnellement) ── */}
             {showCalendar && (
-              <div className="bg-background-card border-2 border-emerald-200 rounded-2xl p-4 space-y-3">
+              <div className="bg-background-card border-2 border-success-200 rounded-2xl p-4 space-y-3">
                 <div className="flex items-center justify-between mb-2">
                   <span className="text-sm font-black text-foreground">Sélectionnez vos dates</span>
                   <button

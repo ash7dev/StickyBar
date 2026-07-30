@@ -5,8 +5,6 @@ import { useQueryStates, parseAsString, parseAsInteger } from 'nuqs';
 import { LayoutGrid, Building2, TreePine, BedDouble, Home, ChevronDown } from 'lucide-react';
 import { listingsApi } from '@/lib/nestjs/listings.api';
 import type { Listing, ListingType } from '@/lib/nestjs/types';
-import { MobileHeroBanner } from '@/features/home/components/mobile/MobileHeroBanner';
-import { MobileListingGridCard } from '@/features/home/components/mobile/MobileListingGridCard';
 import { ListingFiltersMobile } from '../web/ListingFilters';
 
 const TYPE_CHIPS = [
@@ -30,6 +28,29 @@ const PAGE_SIZE = 12;
 function SkeletonCard() {
   return (
     <div className="rounded-[1.4rem] bg-neutral-100 animate-pulse" style={{ aspectRatio: '3/4' }} />
+  );
+}
+
+function MobileListingGridCard({ listing }: { listing: Listing }) {
+  return (
+    <div className="card overflow-hidden">
+      <div className="aspect-[3/4] bg-neutral-200 relative">
+        {listing.photos?.[0] && (
+          <img
+            src={listing.photos[0]?.url}
+            alt={listing.titre}
+            className="w-full h-full object-cover"
+          />
+        )}
+      </div>
+      <div className="p-3">
+        <h4 className="font-semibold text-sm mb-1 line-clamp-1">{listing.titre}</h4>
+        <p className="text-xs text-foreground-muted mb-2">{listing.ville}</p>
+        <p className="font-bold text-forest-600 text-sm">
+          {listing.prixBase?.toLocaleString()} FCFA<span className="text-xs font-normal">/nuit</span>
+        </p>
+      </div>
+    </div>
   );
 }
 
@@ -111,8 +132,6 @@ export function MobileLogementsClient() {
 
   return (
     <div className="flex flex-col bg-background">
-
-      <MobileHeroBanner showCta={false} />
 
       {/* ── Type filter chips — sticky ── */}
       <div className="sticky top-0 z-30 bg-background/95 backdrop-blur-md border-b border-border">

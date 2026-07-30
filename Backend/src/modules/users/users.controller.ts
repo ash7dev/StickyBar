@@ -1,4 +1,4 @@
-import { Body, Controller, Get, Patch, UseGuards } from '@nestjs/common';
+import { Body, Controller, Delete, Get, Patch, UseGuards } from '@nestjs/common';
 import { ApiTags, ApiBearerAuth, ApiOperation } from '@nestjs/swagger';
 import { JwtAuthGuard } from '@shared/guards/jwt-auth.guard';
 import { CurrentUser } from '@shared/decorators/current-user.decorator';
@@ -23,5 +23,11 @@ export class UsersController {
   @ApiOperation({ summary: 'Mettre à jour le profil (prénom, nom) et marquer profileCompleted' })
   updateProfile(@CurrentUser() user: AuthUser, @Body() dto: UpdateProfileDto) {
     return this.usersService.updateProfile(user.id, dto);
+  }
+
+  @Delete('me')
+  @ApiOperation({ summary: 'Supprimer définitivement mon compte et toutes mes données' })
+  deleteAccount(@CurrentUser() user: AuthUser) {
+    return this.usersService.deleteAccount(user.id);
   }
 }

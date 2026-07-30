@@ -15,36 +15,26 @@ const STEP_META: Record<GateStep, {
   title: string;
   subtitle: string;
   icon: React.ComponentType<{ className?: string }>;
-  color: string;
-  bg: string;
 }> = {
   profile: {
     title:    'Complétez votre profil',
     subtitle: 'Votre prénom, nom et date de naissance sont requis pour continuer.',
     icon:     UserCheck,
-    color:    'text-emerald-600',
-    bg:       'bg-emerald-50 border-emerald-100',
   },
   phone: {
     title:    'Vérifiez votre numéro',
     subtitle: 'Un code SMS sera envoyé pour confirmer votre identité.',
     icon:     Smartphone,
-    color:    'text-emerald-600',
-    bg:       'bg-emerald-50 border-emerald-100',
   },
   kyc: {
     title:    'Vérification d\'identité',
     subtitle: 'Uploadez le recto et le verso de votre CNI pour sécuriser votre compte.',
     icon:     FileText,
-    color:    'text-violet-600',
-    bg:       'bg-violet-50 border-violet-100',
   },
   selfie: {
     title:    'Selfie de vérification',
     subtitle: 'Prenez une photo de votre visage pour confirmer votre identité.',
     icon:     Camera,
-    color:    'text-blue-600',
-    bg:       'bg-blue-50 border-blue-100',
   },
 };
 
@@ -53,18 +43,18 @@ const STEP_META: Record<GateStep, {
 function BlockScreen({ block }: { block: GateBlock }) {
   return (
     <div className="flex flex-col items-center gap-4 py-6 text-center">
-      <div className="w-16 h-16 rounded-2xl bg-rose-50 border border-rose-100 flex items-center justify-center">
-        <ShieldAlert className="w-7 h-7 text-rose-500" />
+      <div className="w-14 h-14 rounded-inner bg-error-50 border border-error-500/30 flex items-center justify-center">
+        <ShieldAlert className="w-7 h-7 text-error-600" />
       </div>
       <div>
-        <p className="text-base font-bold text-neutral-900">Compte suspendu</p>
-        <p className="text-sm text-neutral-400 mt-1.5 max-w-xs leading-relaxed">
-          Votre compte a été suspendu. Contactez le support ImmoLoc pour plus d&apos;informations.
+        <h3 className="font-display text-lg font-bold text-foreground">Compte suspendu</h3>
+        <p className="text-xs text-foreground-muted mt-1.5 max-w-xs leading-relaxed">
+          Votre compte a été temporairement suspendu. Contactez le support Klef pour plus d&apos;informations.
         </p>
       </div>
       <a
-        href="mailto:support@immoloc.sn"
-        className="inline-flex items-center gap-2 px-5 py-2.5 bg-rose-600 hover:bg-rose-700 text-white text-sm font-bold rounded-xl transition-colors"
+        href="mailto:support@klef.sn"
+        className="btn-action text-xs px-6 justify-center"
       >
         Contacter le support
       </a>
@@ -81,8 +71,8 @@ function ProgressBar({ total, current }: { total: number; current: number }) {
         <div
           key={i}
           className={cn(
-            'h-1 rounded-full flex-1 transition-all duration-400',
-            i <= current ? 'bg-emerald-500' : 'bg-neutral-200',
+            'h-1.5 rounded-pill flex-1 transition-all duration-300',
+            i <= current ? 'bg-forest-600' : 'bg-border/80',
           )}
         />
       ))}
@@ -120,22 +110,23 @@ export function ActionGateModal({ steps, block, onComplete, onCancel }: Props) {
     <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
       {/* Backdrop */}
       <div
-        className="absolute inset-0 bg-black/50 backdrop-blur-sm"
+        className="absolute inset-0 bg-overlay backdrop-blur-xs"
         onClick={onCancel}
       />
 
       {/* Card */}
-      <div className="relative z-10 w-full max-w-md bg-white rounded-3xl shadow-2xl shadow-black/10">
+      <div className="relative z-10 w-full max-w-md bg-background-card rounded-card border border-border/80 shadow-2xl overflow-visible">
 
         {/* Close button */}
         <button
+          type="button"
           onClick={onCancel}
-          className="absolute right-4 top-4 w-8 h-8 rounded-full bg-neutral-100 hover:bg-neutral-200 flex items-center justify-center transition-colors z-10"
+          className="absolute right-4 top-4 w-8 h-8 rounded-full bg-background-alt hover:bg-background-card border border-border text-foreground-muted hover:text-foreground flex items-center justify-center transition-colors z-10 cursor-pointer"
         >
-          <X className="w-4 h-4 text-neutral-500" />
+          <X className="w-4 h-4" />
         </button>
 
-        <div className="px-7 pb-7 pt-7 space-y-6">
+        <div className="p-6 sm:p-7 space-y-6">
 
           {block ? (
             <BlockScreen block={block} />
@@ -145,20 +136,20 @@ export function ActionGateModal({ steps, block, onComplete, onCancel }: Props) {
               {steps.length > 1 && (
                 <div className="space-y-1.5">
                   <ProgressBar total={steps.length} current={currentIdx} />
-                  <p className="text-[10px] font-bold text-neutral-400 uppercase tracking-widest text-right">
-                    {currentIdx + 1} / {steps.length}
+                  <p className="eyebrow text-[10px] text-right">
+                    Étape {currentIdx + 1} / {steps.length}
                   </p>
                 </div>
               )}
 
               {/* Icon + texte */}
-              <div className="flex flex-col items-center gap-4 text-center pt-1">
-                <div className={cn('w-16 h-16 rounded-2xl border flex items-center justify-center', meta.bg)}>
-                  <Icon className={cn('w-7 h-7', meta.color)} />
+              <div className="flex flex-col items-center gap-3.5 text-center pt-1">
+                <div className="w-14 h-14 rounded-inner bg-forest-950 border border-forest-800 text-lime-400 flex items-center justify-center shrink-0 shadow-xs">
+                  <Icon className="w-7 h-7 text-lime-400" />
                 </div>
                 <div>
-                  <h2 className="text-lg font-black text-neutral-900">{meta.title}</h2>
-                  <p className="text-sm text-neutral-400 mt-1.5 max-w-sm leading-relaxed">{meta.subtitle}</p>
+                  <h2 className="font-display text-xl font-bold text-foreground">{meta.title}</h2>
+                  <p className="text-xs text-foreground-muted mt-1 max-w-sm leading-relaxed">{meta.subtitle}</p>
                 </div>
               </div>
 
@@ -171,10 +162,11 @@ export function ActionGateModal({ steps, block, onComplete, onCancel }: Props) {
               </div>
 
               {/* Annuler */}
-              <div className="flex justify-center">
+              <div className="flex justify-center pt-1">
                 <button
+                  type="button"
                   onClick={onCancel}
-                  className="text-xs font-medium text-neutral-400 hover:text-neutral-600 transition-colors"
+                  className="text-xs font-semibold text-foreground-muted hover:text-foreground transition-colors cursor-pointer"
                 >
                   Annuler
                 </button>

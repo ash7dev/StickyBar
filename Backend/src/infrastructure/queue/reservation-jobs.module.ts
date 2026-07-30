@@ -18,6 +18,7 @@ import { CreditWalletJob } from './jobs/credit-wallet.job';
 import { AutoCheckinJob } from './jobs/auto-checkin.job';
 import { CheckinReminderJob } from './jobs/checkin-reminder.job';
 import { CleanupEtatLieuxPhotosJob } from './jobs/cleanup-etat-lieux-photos.job';
+import { TenantNoshowJob } from './jobs/tenant-noshow.job';
 
 const ALL_JOBS = [
   PendingExpiryJob,
@@ -34,6 +35,7 @@ const ALL_JOBS = [
   AutoCheckinJob,
   CheckinReminderJob,
   CleanupEtatLieuxPhotosJob,
+  TenantNoshowJob,
 ];
 
 @Module({

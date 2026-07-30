@@ -1,5 +1,5 @@
 {
-  "name": "immoloc-frontend",
+  "name": "klef-frontend",
   "version": "0.1.0",
   "private": true,
   "scripts": {
@@ -15,10 +15,12 @@
     "@supabase/supabase-js": "^2.105.1",
     "@tanstack/react-query": "^5.100.9",
     "@tanstack/react-query-devtools": "^5.101.1",
+    "@types/leaflet": "^1.9.21",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
     "embla-carousel-autoplay": "^8.6.0",
     "embla-carousel-react": "^8.6.0",
+    "leaflet": "^1.9.4",
     "lucide-react": "^0.577.0",
     "next": "16.2.4",
     "nuqs": "^2.8.9",

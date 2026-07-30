@@ -8,22 +8,23 @@ interface Props {
 
 export function WalletWithdrawalCard({ soldeDisponible, isLoading }: Props) {
   return (
-    <div className="bg-background-card rounded-2xl border border-border p-4 sm:p-7 lg:sticky lg:top-24 relative overflow-hidden hover:shadow-lg transition-all duration-300 w-full">
-      <div className="absolute -top-8 -right-8 w-32 h-32 bg-emerald-50 rounded-full blur-3xl pointer-events-none" />
-
-      <div className="relative z-10 flex items-center gap-2 mb-4 sm:mb-6 min-w-0">
-        <div className="w-8 h-8 sm:w-9 sm:h-9 rounded-xl bg-emerald-50 border border-emerald-100 flex items-center justify-center flex-shrink-0">
-          <ArrowDownToLine className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-emerald-600" />
+    <div className="card p-5 sm:p-7 lg:sticky lg:top-24 relative overflow-hidden transition-all w-full">
+      <div className="flex items-center gap-3 mb-6 min-w-0">
+        <div className="w-10 h-10 rounded-inner bg-forest-950 border border-forest-800 text-lime-400 flex items-center justify-center shrink-0 shadow-sm">
+          <ArrowDownToLine className="w-5 h-5" />
         </div>
-        <h2 className="text-sm sm:text-base font-bold text-foreground truncate">Demander un retrait</h2>
+        <div>
+          <h2 className="font-display text-lg font-semibold text-foreground truncate">Demander un retrait</h2>
+          <p className="text-xs text-foreground-muted">Transfert immédiat vers Wave ou Orange Money</p>
+        </div>
       </div>
 
-      <div className="relative z-10 min-w-0">
+      <div className="min-w-0">
         {isLoading ? (
           <div className="space-y-4 animate-pulse">
-            {[80, 60, 70].map((w, i) => (
-              <div key={i} className={`h-12 bg-background-alt rounded-xl w-${w === 80 ? 'full' : `${w}%`}`} />
-            ))}
+            <div className="h-12 bg-background-alt rounded-field w-full" />
+            <div className="h-12 bg-background-alt rounded-field w-full" />
+            <div className="h-12 bg-background-alt rounded-pill w-full" />
           </div>
         ) : (
           <WithdrawalForm soldeDisponible={soldeDisponible} />

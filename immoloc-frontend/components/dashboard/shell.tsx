@@ -1,15 +1,20 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
-import { LayoutDashboard, Building2, CalendarDays, Wallet, Plus } from 'lucide-react';
+import { Building2, CalendarDays, LayoutDashboard, Settings, Wallet } from 'lucide-react';
 import { DashboardSidebar } from './sidebar';
 import { DashboardHeader } from './header';
 import { useRoleStore } from '@/stores/role.store';
 import { cn } from '@/lib/utils/cn';
+import DashboardLoading from '@/app/dashboard/loading';
 
-// ── Barre de navigation mobile (bottom - PROPRIETAIRE) ───────────────────────
+/* -- Barre de navigation basse (mobile) -----------------------------------
+   Elle reste sombre : c'est du chrome flottant au-dessus d'un contenu de
+   couleur imprevisible (photos, cartes blanches, graphiques). Une barre
+   claire exigerait bordure epaisse et ombre lourde pour se detacher.
+   -------------------------------------------------------------------- */
 
 type BottomNavItem = {
   href: string;
@@ -21,8 +26,9 @@ type BottomNavItem = {
 const BOTTOM_NAV: BottomNavItem[] = [
   { href: '/dashboard', label: 'Accueil', icon: LayoutDashboard, exact: true },
   { href: '/dashboard/annonces', label: 'Biens', icon: Building2 },
-  { href: '/dashboard/reservations', label: 'Réservations', icon: CalendarDays },
+  { href: '/dashboard/reservations', label: 'Séjours', icon: CalendarDays },
   { href: '/dashboard/wallet', label: 'Wallet', icon: Wallet },
+  { href: '/dashboard/parametres', label: 'Réglages', icon: Settings },
 ];
 
 function BottomNav() {
@@ -30,138 +36,134 @@ function BottomNav() {
 
   return (
     <nav
-      className="lg:hidden fixed bottom-0 left-0 right-0 z-30 bg-background-card/80 backdrop-blur-xl border-t border-border"
-      style={{ paddingBottom: 'env(safe-area-inset-bottom, 8px)' }}
+      aria-label="Navigation principale"
+      className="fixed inset-x-0 z-40 mx-auto w-[calc(100%-1.5rem)] max-w-md lg:hidden"
+      // marginBottom sur un element fixe positionne par `bottom` fonctionne,
+      // mais melange deux systemes. Le decalage appartient a l'offset.
+      style={{ bottom: 'calc(0.75rem + env(safe-area-inset-bottom, 0px))' }}
     >
-      <div className="flex items-center justify-around px-4 pt-2 pb-1 relative">
-        {/* Items gauche */}
-        {BOTTOM_NAV.slice(0, 2).map((item) => {
-          const active = item.exact ? pathname === item.href : pathname.startsWith(item.href);
+      <ul
+        className={cn(
+          'flex items-stretch justify-between gap-0.5 rounded-card border border-white/10 p-1.5',
+          // backdrop-blur-2xl vaut 40px de flou sur un element fixe present
+          // pendant tout le scroll : compositing continu sur mobile bas de
+          // gamme. blur-lg suffit visuellement et coute nettement moins.
+          'bg-forest-950/92 shadow-lg backdrop-blur-lg',
+        )}
+      >
+        {BOTTOM_NAV.map(({ href, label, icon: Icon, exact }) => {
+          const active = exact ? pathname === href : pathname.startsWith(href);
+
           return (
-            <Link
-              key={item.href}
-              href={item.href}
-              className="flex flex-col items-center gap-1 py-2 px-3 min-w-0 flex-1"
-            >
-              <div className={cn(
-                'flex items-center justify-center w-10 h-10 rounded-xl transition-all duration-200',
-                active && 'bg-emerald-600 shadow-md shadow-emerald-600/20'
-              )}>
-                <item.icon
+            <li key={href} className="flex-1">
+              <Link
+                href={href}
+                aria-current={active ? 'page' : undefined}
+                className={cn(
+                  // py-2.5 px-3 donnait environ 40px de haut, sous le minimum
+                  // de 44px recommande pour une cible tactile.
+                  'flex min-h-[3.25rem] flex-col items-center justify-center gap-1 rounded-inner px-1 py-1.5',
+                  'transition-colors duration-150',
+                  active ? 'text-lime-400' : 'text-forest-200 hover:text-neutral-50',
+                )}
+              >
+                <span
                   className={cn(
-                    'w-5 h-5 transition-colors',
-                    active ? 'text-white' : 'text-foreground-muted'
+                    'grid h-6 w-10 place-items-center rounded-pill transition-colors duration-150',
+                    // L'etat actif etait une pastille lime PLEINE avec halo
+                    // colore. Ici l'indicateur est une teinte : le lime reste
+                    // present sans devenir le bloc le plus lourd de l'ecran.
+                    active && 'bg-lime-400/15',
                   )}
-                  strokeWidth={2.5}
-                />
-              </div>
-              <span className={cn(
-                'text-[9px] font-semibold truncate',
-                active ? 'text-emerald-700' : 'text-foreground-muted'
-              )}>
-                {item.label}
-              </span>
-            </Link>
+                >
+                  <Icon className="h-5 w-5" strokeWidth={active ? 2.25 : 1.9} />
+                </span>
+
+                {/*
+                  Avant, seul l'onglet actif affichait son libelle, et il
+                  passait en flex-1 pendant que les autres restaient shrink-0.
+                  Consequence : la largeur des cinq elements changeait a chaque
+                  navigation, la barre se reorganisait sous le doigt.
+                  Et une navigation en icones seules s'apprend mal : rien ne
+                  distingue « Sejours » de « Wallet » au premier usage.
+                */}
+                <span className="text-[0.625rem] font-medium leading-none">
+                  {label}
+                </span>
+              </Link>
+            </li>
           );
         })}
-
-        {/* FAB central */}
-        <Link
-          href="/dashboard/annonces/nouvelle"
-          className="flex flex-col items-center -mt-6 px-3"
-        >
-          <div className="w-14 h-14 rounded-full bg-gradient-to-br from-emerald-600 to-emerald-700 flex items-center justify-center shadow-xl shadow-emerald-600/30 active:scale-95 transition-all mb-1 border-4 border-background">
-            <Plus className="w-6 h-6 text-white" strokeWidth={3} />
-          </div>
-          <span className="text-[9px] font-semibold text-emerald-700">
-            Nouveau
-          </span>
-        </Link>
-
-        {/* Items droite */}
-        {BOTTOM_NAV.slice(2, 4).map((item) => {
-          const active = item.exact ? pathname === item.href : pathname.startsWith(item.href);
-          return (
-            <Link
-              key={item.href}
-              href={item.href}
-              className="flex flex-col items-center gap-1 py-2 px-3 min-w-0 flex-1"
-            >
-              <div className={cn(
-                'flex items-center justify-center w-10 h-10 rounded-xl transition-all duration-200',
-                active && 'bg-emerald-600 shadow-md shadow-emerald-600/20'
-              )}>
-                <item.icon
-                  className={cn(
-                    'w-5 h-5 transition-colors',
-                    active ? 'text-white' : 'text-foreground-muted'
-                  )}
-                  strokeWidth={2.5}
-                />
-              </div>
-              <span className={cn(
-                'text-[9px] font-semibold truncate',
-                active ? 'text-emerald-700' : 'text-foreground-muted'
-              )}>
-                {item.label}
-              </span>
-            </Link>
-          );
-        })}
-      </div>
+      </ul>
     </nav>
   );
 }
 
-// ── Shell principal ───────────────────────────────────────────────────────────
+/* -- Shell ---------------------------------------------------------------- */
 
 const DETAIL_PAGE_RE = /^\/dashboard\/(annonces|reservations)\/[^/]+(\/.*)?$/;
+
+// Hauteur de la barre + son decalage bas. L'ancien pb-20 (80px) etait juste
+// en dessous : barre a 12px du bas + 52px de haut + safe area = jusqu'a 100px
+// sur un appareil a indicateur d'accueil. Le dernier element etait masque.
+const CONTENT_PAD_BOTTOM = 'pb-[calc(6rem+env(safe-area-inset-bottom,0px))] lg:pb-8';
 
 export function DashboardShell({ children }: { children: React.ReactNode }) {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const pathname = usePathname();
   const router = useRouter();
-  const { activeRole, nestToken } = useRoleStore();
-  const hideHeader = DETAIL_PAGE_RE.test(pathname);
+  const { activeRole, nestToken, hasHydrated } = useRoleStore();
 
-  // Compute authorization directly without state
-  const isAuthorized = nestToken && activeRole === 'PROPRIETAIRE';
+  const hideHeader = DETAIL_PAGE_RE.test(pathname);
+  const isAuthorized = Boolean(nestToken) && activeRole === 'PROPRIETAIRE';
 
   useEffect(() => {
-    // Protection du dashboard : seulement si le rôle actif est PROPRIETAIRE
-    if (nestToken && activeRole !== 'PROPRIETAIRE') {
+    if (!hasHydrated) return;
+
+    // Bug corrige : la condition exigeait `nestToken`, donc un visiteur
+    // deconnecte ne declenchait aucune redirection et restait bloque sur le
+    // squelette de chargement indefiniment.
+    if (!nestToken) {
+      router.replace(`/login?next=${encodeURIComponent(pathname)}`);
+      return;
+    }
+    if (activeRole !== 'PROPRIETAIRE') {
       router.replace('/');
     }
-  }, [activeRole, nestToken, router]);
+  }, [activeRole, nestToken, hasHydrated, pathname, router]);
 
-  if (!isAuthorized) {
-    return (
-      <div className="flex items-center justify-center h-screen bg-background-alt">
-        <div className="w-8 h-8 border-4 border-emerald-700 border-t-transparent rounded-full animate-spin" />
-      </div>
-    );
-  }
+  const ready = hasHydrated && isAuthorized;
 
+  // La structure du shell etait ecrite deux fois, a l'identique, pour la
+  // branche chargement et la branche prete. Toute modification de mise en
+  // page devait etre faite aux deux endroits.
   return (
-    <div className="flex h-dvh overflow-hidden bg-background-alt">
-      {/* Sidebar — overlay sur mobile, dans le flux sur desktop */}
+    <div className="flex h-dvh overflow-hidden bg-background">
+      <a
+        href="#contenu"
+        className="sr-only focus:not-sr-only focus:fixed focus:left-4 focus:top-4 focus:z-[80] focus:rounded-pill focus:bg-forest-600 focus:px-5 focus:py-3 focus:font-semibold focus:text-white"
+      >
+        Aller au contenu
+      </a>
+
       <DashboardSidebar
-        isOpen={sidebarOpen}
+        isOpen={ready ? sidebarOpen : false}
         onClose={() => setSidebarOpen(false)}
       />
 
-      {/* Zone contenu */}
-      <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
-        {!hideHeader && <DashboardHeader onMenuToggle={() => setSidebarOpen((v) => !v)} />}
-        <main className="flex-1 overflow-y-auto pb-20 lg:pb-0">
-          <div className="max-w-[1440px] mx-auto px-4 sm:px-6 py-6">
-            {children}
+      <div className="flex min-w-0 flex-1 flex-col overflow-hidden">
+        {!hideHeader && (
+          <DashboardHeader onMenuToggle={ready ? () => setSidebarOpen((v) => !v) : () => { }} />
+        )}
+
+        <main id="contenu" className={cn('flex-1 overflow-y-auto', CONTENT_PAD_BOTTOM)}>
+          <div className="mx-auto max-w-[1440px] px-4 py-6 sm:px-6">
+            {ready ? children : <DashboardLoading />}
           </div>
         </main>
       </div>
 
-      {/* Barre mobile bas */}
-      <BottomNav />
+      {ready && <BottomNav />}
     </div>
   );
 }

@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { usePathname } from 'next/navigation';
 import { DesktopHeader } from './desktop-header';
 import { MobileHeader } from './mobile-header';
 
@@ -9,26 +9,20 @@ interface HeaderProps {
 }
 
 export function DashboardHeader({ onMenuToggle }: HeaderProps) {
-  const [isMobile, setIsMobile] = useState(false);
+  const pathname = usePathname();
+  const isDashboardHome = pathname === '/dashboard';
 
-  useEffect(() => {
-    // Check if screen is mobile
-    const checkMobile = () => {
-      setIsMobile(window.innerWidth < 640); // sm breakpoint = 640px
-    };
+  return (
+    <>
+      {/* Version Mobile (< 640px) : MobileHeader uniquement sur l'Accueil /dashboard */}
+      <div className="block sm:hidden">
+        {isDashboardHome && <MobileHeader onMenuToggle={onMenuToggle} />}
+      </div>
 
-    // Initial check
-    checkMobile();
-
-    // Listen for resize
-    window.addEventListener('resize', checkMobile);
-    return () => window.removeEventListener('resize', checkMobile);
-  }, []);
-
-  // Render mobile or desktop header based on screen size
-  return isMobile ? (
-    <MobileHeader onMenuToggle={onMenuToggle} />
-  ) : (
-    <DesktopHeader onMenuToggle={onMenuToggle} />
+      {/* Version Desktop (>= 640px) */}
+      <div className="hidden sm:block">
+        <DesktopHeader onMenuToggle={onMenuToggle} />
+      </div>
+    </>
   );
 }

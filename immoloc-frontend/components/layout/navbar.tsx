@@ -321,7 +321,7 @@ export function Navbar() {
                         <div className="h-px bg-gradient-to-r from-transparent via-neutral-200 to-transparent my-1.5" />
                         
                         <button
-                          onClick={logout}
+                          onClick={() => logout()}
                           className="w-full dropdown-item flex items-center gap-3 px-3 py-2.5 text-sm font-medium text-red-500 rounded-xl hover:!bg-red-50/60"
                         >
                           <div className="w-8 h-8 rounded-lg bg-red-50 flex items-center justify-center">
@@ -459,7 +459,7 @@ export function Navbar() {
                   <div className="h-px bg-gradient-to-r from-transparent via-neutral-200/60 to-transparent my-2" />
 
                   <button
-                    onClick={logout}
+                    onClick={() => logout()}
                     className="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium text-red-500 hover:bg-red-50/40 transition-colors"
                   >
                     <div className="w-8 h-8 rounded-lg bg-red-50/80 flex items-center justify-center">

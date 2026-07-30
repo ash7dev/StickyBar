@@ -2,7 +2,7 @@ import { redirect } from 'next/navigation';
 import { createClient } from '@/lib/supabase/server';
 import { CompleteProfileForm } from '@/features/auth/components/complete-profile-form';
 
-export const metadata = { title: 'Compléter mon profil — ImmoLoc' };
+export const metadata = { title: 'Compléter mon profil — Klef' };
 
 interface Props {
   searchParams: Promise<{ next?: string }>;

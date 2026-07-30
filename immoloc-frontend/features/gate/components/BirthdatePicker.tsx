@@ -72,28 +72,24 @@ export function BirthdatePicker({ value, onChange, error }: Props) {
     day: 'numeric', month: 'long', year: 'numeric',
   });
 
-  /* ─────────────────────────────────────────────────────────────────────── */
-
   return (
     <div ref={ref} className="relative">
-
-      {/* ── Trigger ─────────────────────────────────────────────────────── */}
+      {/* Trigger */}
       <button
         type="button"
         onClick={() => setOpen(v => !v)}
         className={cn(
-          'w-full flex items-center gap-3 rounded-xl border px-4 py-3 bg-white text-left',
-          'transition-all duration-200',
+          'w-full flex items-center gap-3 rounded-field border px-4 py-3 bg-background-alt text-left font-semibold transition-all duration-200 cursor-pointer',
           open
-            ? 'border-emerald-400 ring-2 ring-emerald-100 shadow-sm'
+            ? 'border-forest-600 ring-2 ring-forest-500/20 shadow-xs'
             : error
-            ? 'border-rose-300 ring-1 ring-rose-100'
-            : 'border-border hover:border-neutral-300 hover:shadow-sm',
+            ? 'border-error-500/50 ring-1 ring-error-500/20'
+            : 'border-border hover:border-border-hover hover:bg-background-card',
         )}
       >
         <div className={cn(
-          'w-8 h-8 rounded-lg flex items-center justify-center shrink-0 transition-colors duration-200',
-          selected ? 'bg-emerald-50 text-emerald-500' : 'bg-neutral-100 text-neutral-400',
+          'w-8 h-8 rounded-inner flex items-center justify-center shrink-0 transition-colors',
+          selected ? 'bg-forest-950 text-lime-400 border border-lime-400/20' : 'bg-background-card text-foreground-muted border border-border',
         )}>
           <CalendarDays className="w-4 h-4" />
         </div>
@@ -101,46 +97,41 @@ export function BirthdatePicker({ value, onChange, error }: Props) {
         <div className="flex-1 min-w-0">
           {displayDate ? (
             <>
-              <p className="text-[10px] font-black text-neutral-400 uppercase tracking-widest leading-none mb-0.5">
+              <p className="eyebrow text-[10px] leading-none mb-0.5">
                 Date de naissance
               </p>
-              <p className="text-sm font-bold text-neutral-900 capitalize">{displayDate}</p>
+              <p className="text-sm font-bold text-foreground capitalize">{displayDate}</p>
             </>
           ) : (
-            <p className="text-sm text-neutral-400">Sélectionnez votre date de naissance</p>
+            <p className="text-sm text-foreground-faint font-medium">Sélectionnez votre date de naissance</p>
           )}
         </div>
 
         <ChevronDown className={cn(
-          'w-4 h-4 shrink-0 text-neutral-400 transition-transform duration-200',
+          'w-4 h-4 shrink-0 text-foreground-muted transition-transform duration-200',
           open && 'rotate-180',
         )} />
       </button>
 
-      {/* ── Popover ──────────────────────────────────────────────────────── */}
+      {/* Popover (Ouverture vers le haut au-dessus du champ pour éviter d'être masqué par la modale) */}
       {open && (
-        <div className="absolute left-0 right-0 z-50 mt-2 overflow-hidden rounded-2xl border border-neutral-100 bg-white shadow-2xl shadow-black/10">
-
-          {/* ── Dark header ── */}
-          <div className="flex items-center gap-2 bg-neutral-900 px-4 py-3.5">
-
+        <div className="absolute bottom-full left-0 right-0 z-[120] mb-2 overflow-hidden rounded-card border border-border bg-background-card shadow-2xl animate-in fade-in zoom-in-95 duration-200">
+          {/* Dark header */}
+          <div className="flex items-center gap-2 bg-forest-950 px-4 py-3.5 border-b border-forest-800">
             {/* Month select */}
             <div className="relative flex items-center">
               <select
                 value={monthIdx}
                 onChange={e => setCurrentMonth(new Date(year, Number(e.target.value)))}
-                className={cn(
-                  'appearance-none bg-transparent text-white font-black text-base',
-                  'cursor-pointer outline-none border-0 pr-5 py-0 leading-tight',
-                )}
+                className="appearance-none bg-transparent text-lime-300 font-display font-bold text-sm cursor-pointer outline-none border-0 pr-5 py-0 leading-tight"
               >
                 {MOIS_FR.map((m, i) => (
-                  <option key={i} value={i} className="bg-white text-neutral-900 font-normal text-sm">
+                  <option key={i} value={i} className="bg-forest-950 text-white font-normal text-sm">
                     {m}
                   </option>
                 ))}
               </select>
-              <ChevronDown className="absolute right-0 w-3.5 h-3.5 text-white/40 pointer-events-none" />
+              <ChevronDown className="absolute right-0 w-3.5 h-3.5 text-lime-400/60 pointer-events-none" />
             </div>
 
             {/* Year select */}
@@ -148,32 +139,24 @@ export function BirthdatePicker({ value, onChange, error }: Props) {
               <select
                 value={year}
                 onChange={e => setCurrentMonth(new Date(Number(e.target.value), monthIdx))}
-                className={cn(
-                  'appearance-none bg-transparent text-white/65 font-semibold text-sm',
-                  'cursor-pointer outline-none border-0 pr-5 py-0 leading-tight',
-                )}
+                className="appearance-none bg-transparent text-on-inverse-muted font-semibold text-xs cursor-pointer outline-none border-0 pr-5 py-0 leading-tight"
               >
                 {years.map(y => (
-                  <option key={y} value={y} className="bg-white text-neutral-900 font-normal">
+                  <option key={y} value={y} className="bg-forest-950 text-white font-normal">
                     {y}
                   </option>
                 ))}
               </select>
-              <ChevronDown className="absolute right-0 w-3 h-3 text-white/35 pointer-events-none" />
+              <ChevronDown className="absolute right-0 w-3 h-3 text-on-inverse-muted/60 pointer-events-none" />
             </div>
 
             {/* Navigation */}
-            <div className="ml-auto flex items-center gap-0.5">
+            <div className="ml-auto flex items-center gap-1">
               <button
                 type="button"
                 onClick={prevMonth}
                 disabled={!canGoPrev}
-                className={cn(
-                  'w-8 h-8 rounded-lg flex items-center justify-center',
-                  'text-white/60 hover:text-white hover:bg-white/10',
-                  'disabled:opacity-20 disabled:cursor-not-allowed',
-                  'transition-all duration-150',
-                )}
+                className="w-7 h-7 rounded-inner flex items-center justify-center text-on-inverse-muted hover:text-lime-300 hover:bg-forest-800 disabled:opacity-20 disabled:cursor-not-allowed transition-colors"
               >
                 <ChevronLeft className="w-4 h-4" />
               </button>
@@ -181,19 +164,14 @@ export function BirthdatePicker({ value, onChange, error }: Props) {
                 type="button"
                 onClick={nextMonth}
                 disabled={!canGoNext}
-                className={cn(
-                  'w-8 h-8 rounded-lg flex items-center justify-center',
-                  'text-white/60 hover:text-white hover:bg-white/10',
-                  'disabled:opacity-20 disabled:cursor-not-allowed',
-                  'transition-all duration-150',
-                )}
+                className="w-7 h-7 rounded-inner flex items-center justify-center text-on-inverse-muted hover:text-lime-300 hover:bg-forest-800 disabled:opacity-20 disabled:cursor-not-allowed transition-colors"
               >
                 <ChevronRight className="w-4 h-4" />
               </button>
             </div>
           </div>
 
-          {/* ── Calendar grid ── */}
+          {/* Calendar grid */}
           <DayPicker
             mode="single"
             locale={fr}
@@ -211,7 +189,7 @@ export function BirthdatePicker({ value, onChange, error }: Props) {
               nav:           'hidden',
               month_grid:    'w-full',
               weekdays:      'flex mb-2',
-              weekday:       'flex-1 text-center text-[10px] font-black text-neutral-400 uppercase tracking-wider py-1',
+              weekday:       'flex-1 text-center text-[10px] font-bold text-foreground-muted uppercase tracking-wider py-1',
               weeks:         'flex flex-col gap-0.5',
               week:          'flex',
               day:           'flex-1 flex items-center justify-center p-px',
@@ -228,17 +206,17 @@ export function BirthdatePicker({ value, onChange, error }: Props) {
                 <button
                   {...props}
                   className={cn(
-                    'w-full h-9 rounded-xl text-sm transition-all duration-100',
-                    'focus:outline-none focus-visible:ring-2 focus-visible:ring-emerald-200',
+                    'w-full h-8 rounded-inner text-xs font-semibold transition-all cursor-pointer',
+                    'focus:outline-none focus-visible:ring-2 focus-visible:ring-forest-500',
                     modifiers.selected
-                      ? 'bg-emerald-500 text-white font-black shadow-md shadow-emerald-500/30 scale-[1.08]'
+                      ? 'bg-forest-600 text-lime-300 font-bold shadow-xs scale-105'
                       : modifiers.disabled
-                      ? 'text-neutral-300 cursor-not-allowed'
+                      ? 'text-foreground-faint/40 cursor-not-allowed'
                       : modifiers.outside
-                      ? 'text-neutral-300 hover:bg-neutral-50 font-medium'
+                      ? 'text-foreground-faint/60 hover:bg-background-alt'
                       : modifiers.today
-                      ? 'text-emerald-600 font-black ring-2 ring-emerald-200 ring-inset hover:bg-emerald-50'
-                      : 'text-neutral-700 font-medium hover:bg-neutral-100 active:scale-95',
+                      ? 'text-forest-600 font-extrabold ring-1 ring-forest-500/30 hover:bg-background-alt'
+                      : 'text-foreground font-semibold hover:bg-background-alt active:scale-95',
                   )}
                 >
                   {children}
@@ -246,7 +224,6 @@ export function BirthdatePicker({ value, onChange, error }: Props) {
               ),
             }}
           />
-
         </div>
       )}
     </div>

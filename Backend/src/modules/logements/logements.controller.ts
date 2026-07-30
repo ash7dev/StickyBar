@@ -210,6 +210,20 @@ export class LogementsController {
     return this.logements.removePhoto(id, photoId, user.id);
   }
 
+  @Patch(':id/photos/:photoId/principal')
+  @Roles(Role.PROPRIETAIRE)
+  @HttpCode(200)
+  @ApiOperation({ summary: 'Définir une photo comme photo principale' })
+  @ApiParam({ name: 'id', description: 'UUID du logement' })
+  @ApiParam({ name: 'photoId', description: 'UUID de la photo' })
+  setMainPhoto(
+    @Param('id') id: string,
+    @Param('photoId') photoId: string,
+    @CurrentUser() user: AuthUser,
+  ) {
+    return this.logements.setMainPhoto(id, photoId, user.id);
+  }
+
   @Put(':id/equipements')
   @Roles(Role.PROPRIETAIRE)
   @HttpCode(200)

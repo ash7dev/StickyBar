@@ -1,73 +1,55 @@
 'use client';
 
+import { useId } from 'react';
 import { useForm, Controller } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
-import {
-  Pen, CircleDollarSign, Moon, Minus, Plus, FileText, Tag,
-} from 'lucide-react';
+import { CircleDollarSign, Minus, Moon, Pen, Plus } from 'lucide-react';
 import { stepAnnonceSchema, type StepAnnonceInput } from '@/schemas/listing.schema';
 import { useListingFormStore } from '@/stores/listing-form.store';
 import { cn } from '@/lib/utils/cn';
+import { FieldError, FieldLabel, INPUT_CLS, INPUT_ERR, SectionCard } from '../wizard-ui';
 
 interface Props {
   onNext: () => void;
   submitRef: React.RefObject<HTMLButtonElement | null>;
 }
 
-/* ── SectionCard ──────────────────────────────────────────────────────────── */
+const nf = new Intl.NumberFormat('fr-FR', { maximumFractionDigits: 0 });
 
-function SectionCard({
-  icon: Icon, title, description,
-  accent = 'bg-emerald-500', headerBg = 'bg-emerald-50',
-  iconBg = 'bg-emerald-100', iconColor = 'text-emerald-600',
-  children,
-}: {
-  icon: React.ComponentType<{ className?: string }>;
-  title: string;
-  description?: string;
-  accent?: string;
-  headerBg?: string;
-  iconBg?: string;
-  iconColor?: string;
-  children: React.ReactNode;
-}) {
-  return (
-    <div className="bg-white rounded-2xl border border-neutral-200 shadow-sm">
-      <div className={cn('h-[3px] w-full rounded-t-2xl', accent)} />
-      <div className={cn('flex items-center gap-3.5 px-5 py-4 border-b border-neutral-100', headerBg)}>
-        <div className={cn('w-10 h-10 rounded-xl flex items-center justify-center shrink-0', iconBg)}>
-          <Icon className={cn('w-5 h-5', iconColor)} />
-        </div>
-        <div>
-          <p className="font-bold text-neutral-900 text-[15px] tracking-tight">{title}</p>
-          {description && <p className="text-[12px] text-neutral-400 mt-0.5 font-medium">{description}</p>}
-        </div>
-      </div>
-      <div className="px-5 py-5 space-y-5">{children}</div>
-    </div>
-  );
-}
+// Le franc CFA est arrime a l'euro a 655,957. Le code utilisait 655, ce qui
+// fausse legerement une valeur presentee comme une conversion.
+const XOF_PER_EUR = 655.957;
 
-const INPUT_CLS = 'w-full px-4 py-3 rounded-xl border border-neutral-200 bg-white text-neutral-900 placeholder:text-neutral-400 text-sm outline-none focus:border-emerald-400 focus:ring-2 focus:ring-emerald-400/20 transition-all';
-const INPUT_ERR = 'w-full px-4 py-3 rounded-xl border border-red-300 bg-white text-neutral-900 placeholder:text-neutral-400 text-sm outline-none focus:border-red-400 focus:ring-2 focus:ring-red-400/15 transition-all';
+const DESC_MAX = 2000;
+const TITRE_MAX = 80;
 
-/* ── Main Component ───────────────────────────────────────────────────────── */
+const PRESETS = [
+  { n: 1, label: '1 nuit' },
+  { n: 2, label: '2 nuits' },
+  { n: 3, label: '3 nuits' },
+  { n: 7, label: '1 sem.' },
+  { n: 14, label: '2 sem.' },
+  { n: 30, label: '1 mois' },
+] as const;
 
 export function StepAnnonce({ onNext, submitRef }: Props) {
   const { annonce, setAnnonce } = useListingFormStore();
+  const ids = { titre: useId(), desc: useId(), prix: useId(), nuits: useId() };
 
-  const { register, control, handleSubmit, watch, formState: { errors } } = useForm<StepAnnonceInput>({
-    resolver: zodResolver(stepAnnonceSchema),
-    defaultValues: {
-      titre:         annonce.titre ?? '',
-      description:   annonce.description ?? '',
-      prixBase:      annonce.prixBase || undefined,
-      nuitesMinimum: annonce.nuitesMinimum ?? 1,
-    },
-  });
+  const { register, control, handleSubmit, watch, formState: { errors } } =
+    useForm<StepAnnonceInput>({
+      resolver: zodResolver(stepAnnonceSchema),
+      defaultValues: {
+        titre: annonce.titre ?? '',
+        description: annonce.description ?? '',
+        prixBase: annonce.prixBase || undefined,
+        nuitesMinimum: annonce.nuitesMinimum ?? 1,
+      },
+    });
 
+  const titreLength = watch('titre')?.length ?? 0;
   const descLength = watch('description')?.length ?? 0;
-  const prixBase   = watch('prixBase') ?? 0;
+  const prixBase = watch('prixBase') ?? 0;
 
   function onSubmit(data: StepAnnonceInput) {
     setAnnonce(data);
@@ -75,162 +57,195 @@ export function StepAnnonce({ onNext, submitRef }: Props) {
   }
 
   return (
-    <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
+    <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
 
-      {/* ── Présentation ── */}
+      {/* -- Présentation ------------------------------------------------ */}
       <SectionCard
         icon={Pen}
         title="Présentation"
-        description="Un titre accrocheur et une description détaillée"
+        description="Le titre et la description que verront vos voyageurs"
       >
-        {/* Titre */}
-        <div className="space-y-2">
-          <div className="flex items-center gap-2">
-            <div className="w-7 h-7 rounded-lg bg-accent-100 flex items-center justify-center shrink-0">
-              <Pen className="w-3.5 h-3.5 text-accent-600" />
-            </div>
-            <span className="text-sm font-black text-neutral-800">Titre de l&apos;annonce</span>
-            <span className="text-[10px] font-bold text-rose-400 ml-0.5">*</span>
-          </div>
+        <div>
+          <FieldLabel htmlFor={ids.titre} required>Titre de l&apos;annonce</FieldLabel>
           <input
             {...register('titre')}
+            id={ids.titre}
+            maxLength={TITRE_MAX}
             placeholder="Ex : Villa avec piscine à Saly, vue mer"
-            className={cn(errors.titre ? INPUT_ERR : INPUT_CLS, 'font-semibold')}
+            aria-invalid={!!errors.titre}
+            aria-describedby={errors.titre ? `${ids.titre}-error` : `${ids.titre}-count`}
+            className={errors.titre ? INPUT_ERR : INPUT_CLS}
           />
-          {errors.titre && <p className="text-xs text-red-500">{errors.titre.message}</p>}
+          <div className="mt-1.5 flex items-center justify-between text-xs text-foreground-muted">
+            <span>Mentionnez le quartier et l&apos;atout principal</span>
+            {/* Le titre n'avait aucun compteur : l'hote decouvrait la limite
+                au moment de la validation. */}
+            <span id={`${ids.titre}-count`} className={cn('tabular-nums', titreLength > TITRE_MAX - 10 && 'text-warning-600')}>
+              {titreLength} / {TITRE_MAX}
+            </span>
+          </div>
+          <FieldError id={`${ids.titre}-error`}>{errors.titre?.message}</FieldError>
         </div>
 
-        {/* Description */}
-        <div className="space-y-2">
-          <div className="flex items-center gap-2">
-            <div className="w-7 h-7 rounded-lg bg-neutral-100 flex items-center justify-center shrink-0">
-              <FileText className="w-3.5 h-3.5 text-neutral-500" />
-            </div>
-            <span className="text-sm font-black text-neutral-800">Description</span>
-            <span className="text-[10px] font-bold text-rose-400 ml-0.5">*</span>
-          </div>
+        <div>
+          <FieldLabel htmlFor={ids.desc} required>Description</FieldLabel>
           <textarea
             {...register('description')}
+            id={ids.desc}
             rows={6}
-            placeholder="Décrivez votre logement en détail : ambiance, points forts, accès…"
+            // Le compteur annoncait « / 2000 » mais rien ne bornait la saisie :
+            // on pouvait taper 3000 caracteres et ne l'apprendre qu'a la
+            // validation, apres avoir tout redige.
+            maxLength={DESC_MAX}
+            placeholder="Ambiance, aménagements, points forts, accès, voisinage…"
+            aria-invalid={!!errors.description}
+            aria-describedby={errors.description ? `${ids.desc}-error` : `${ids.desc}-count`}
             className={cn(errors.description ? INPUT_ERR : INPUT_CLS, 'resize-none leading-relaxed')}
           />
-          <div className="space-y-1.5">
-            {errors.description && <p className="text-xs text-red-500">{errors.description.message}</p>}
-            <div className="flex items-center gap-2.5">
-              <div className="flex-1 h-1.5 rounded-full bg-neutral-100 overflow-hidden">
-                <div
-                  className={cn('h-full rounded-full transition-all duration-300',
-                    descLength === 0 ? 'w-0'
-                    : descLength > 1800 ? 'bg-amber-400'
-                    : descLength > 800  ? 'bg-emerald-400'
-                    : 'bg-emerald-400'
-                  )}
-                  style={{ width: `${Math.min(100, (descLength / 2000) * 100)}%` }}
-                />
-              </div>
-              <span className={cn('text-[11px] tabular-nums font-bold shrink-0',
-                descLength > 1800 ? 'text-amber-600' : descLength > 800 ? 'text-emerald-600' : 'text-neutral-400'
-              )}>
-                {descLength} / 2000
-              </span>
-            </div>
-            {descLength > 0 && descLength < 100 && (
-              <p className="text-[11px] text-neutral-400">💡 Minimum 100 caractères recommandés</p>
-            )}
+          <div className="mt-1.5 flex items-center justify-between text-xs text-foreground-muted">
+            <span>{descLength < 100 ? '100 caractères minimum recommandés' : 'Bonne longueur'}</span>
+            <span id={`${ids.desc}-count`} className={cn('tabular-nums', descLength > DESC_MAX - 100 && 'text-warning-600')}>
+              {descLength} / {DESC_MAX}
+            </span>
           </div>
+          <FieldError id={`${ids.desc}-error`}>{errors.description?.message}</FieldError>
         </div>
       </SectionCard>
 
-      {/* ── Prix par nuit ── */}
+      {/* -- Tarif ------------------------------------------------------- */}
       <SectionCard
         icon={CircleDollarSign}
-        title="Votre tarif"
-        description="Fixez votre prix de base par nuitée"
+        title="Tarif de base"
+        description="Votre prix par nuit, hors suppléments et réductions"
       >
-        <div className="space-y-2">
-          <div className="flex items-center gap-2">
-            <div className="w-7 h-7 rounded-lg bg-emerald-100 flex items-center justify-center shrink-0">
-              <Tag className="w-3.5 h-3.5 text-emerald-600" />
-            </div>
-            <span className="text-sm font-black text-neutral-800">Prix par nuit</span>
-            <span className="text-[10px] font-bold text-rose-400 ml-0.5">*</span>
-          </div>
+        <div>
+          <FieldLabel htmlFor={ids.prix} required>Prix par nuit</FieldLabel>
 
-          <div className="relative overflow-hidden rounded-2xl bg-[#0a0a0a] border border-white/[0.07] p-4">
-            <div className="absolute -top-10 -right-10 w-36 h-36 rounded-full bg-emerald-500/10 blur-3xl pointer-events-none" />
-            <p className="text-[10px] font-bold uppercase tracking-widest text-white/40 mb-2">Prix de base / nuit</p>
-            <div className={cn(
-              'flex items-center gap-3 px-4 py-3 rounded-xl border-2 bg-white/[0.06] transition-all',
-              errors.prixBase ? 'border-rose-500/50' : 'border-white/10 focus-within:border-emerald-400/60',
-            )}>
-              <input
-                {...register('prixBase')}
-                type="number"
-                placeholder="25 000"
-                className="flex-1 min-w-0 text-2xl font-black text-white tracking-tight outline-none bg-transparent placeholder:text-white/20"
-              />
-              <span className="text-xs font-bold text-white/40 bg-white/[0.06] border border-white/10 px-2.5 py-1.5 rounded-lg shrink-0">FCFA</span>
-            </div>
-            {errors.prixBase && <p className="text-xs text-rose-400 mt-2">{errors.prixBase.message}</p>}
-            {prixBase > 0 && !errors.prixBase && (
-              <p className="text-[11px] text-emerald-400 font-semibold mt-2 flex items-center gap-1.5">
-                <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 inline-block" />
-                ≈ {(prixBase / 655).toFixed(0)} € / nuit
+          {/* La carte sombre est conservee : c'est le chiffre le plus
+              important du wizard, et c'est le seul bloc inverse de l'ecran.
+              En revanche le montant passe en blanc — il etait en lime-300,
+              donc l'accent portait le contenu central de l'etape. */}
+          <div className="section-inverse rounded-card p-5">
+            <p className="eyebrow">Prix de base</p>
+
+            <Controller
+              name="prixBase"
+              control={control}
+              render={({ field }) => (
+                <div className="mt-2 flex items-center gap-3">
+                  <input
+                    id={ids.prix}
+                    // type="number" laissait la molette modifier la valeur
+                    // quand le champ avait le focus, acceptait « e » et la
+                    // notation scientifique, et n'affichait aucun separateur.
+                    type="text"
+                    inputMode="numeric"
+                    autoComplete="off"
+                    value={field.value ? nf.format(field.value) : ''}
+                    onChange={(e) => {
+                      const digits = e.target.value.replace(/\D/g, '');
+                      field.onChange(digits ? Number(digits) : undefined);
+                    }}
+                    placeholder="25 000"
+                    aria-invalid={!!errors.prixBase}
+                    aria-describedby={errors.prixBase ? `${ids.prix}-error` : undefined}
+                    className="w-full bg-transparent font-display text-3xl font-semibold tabular-nums text-neutral-50 outline-none placeholder:text-forest-300"
+                  />
+                  <span className="shrink-0 rounded-pill bg-lime-400/15 px-3 py-1.5 text-xs font-semibold text-lime-400">
+                    FCFA / nuit
+                  </span>
+                </div>
+              )}
+            />
+
+            {prixBase > 0 && (
+              <p className="mt-2 text-xs text-forest-200">
+                Environ {nf.format(prixBase / XOF_PER_EUR)} € par nuit
               </p>
             )}
           </div>
+
+          <FieldError id={`${ids.prix}-error`}>{errors.prixBase?.message}</FieldError>
         </div>
       </SectionCard>
 
-      {/* ── Nuits minimum ── */}
+      {/* -- Durée minimale ---------------------------------------------- */}
       <SectionCard
         icon={Moon}
-        title="Durée de séjour"
-        description="Nombre de nuits minimum pour une réservation"
-        accent="bg-emerald-500"
-        headerBg="bg-emerald-50"
-        iconBg="bg-emerald-100"
-        iconColor="text-emerald-600"
+        title="Durée minimale de séjour"
+        description="Le nombre de nuits en dessous duquel vous n'acceptez pas de réservation"
       >
-        <div className="space-y-4">
-          <div className="flex items-center gap-2">
-            <div className="w-7 h-7 rounded-lg bg-emerald-100 flex items-center justify-center shrink-0">
-              <Moon className="w-3.5 h-3.5 text-emerald-600" />
-            </div>
-            <span className="text-sm font-black text-neutral-800">Durée minimum de séjour</span>
-          </div>
+        <Controller name="nuitesMinimum" control={control} render={({ field }) => {
+          const v = field.value ?? 1;
+          const btn =
+            'grid h-11 w-11 place-items-center rounded-pill border border-border bg-background-card ' +
+            'text-foreground-muted transition-colors duration-150 hover:border-forest-500 hover:text-forest-700 ' +
+            'disabled:pointer-events-none disabled:opacity-30';
 
-          <Controller name="nuitesMinimum" control={control} render={({ field }) => (<>
-            <div className="flex items-center gap-4 px-5 py-4 bg-neutral-50 rounded-2xl border border-neutral-200">
-              <button type="button" onClick={() => field.onChange(Math.max(1, (field.value ?? 1) - 1))} disabled={(field.value ?? 1) <= 1}
-                className="w-12 h-12 rounded-xl bg-white border border-neutral-200 shadow-sm flex items-center justify-center text-neutral-500 hover:border-emerald-400 hover:text-emerald-500 hover:bg-emerald-50 transition-all disabled:opacity-30 shrink-0 active:scale-90">
-                <Minus className="w-4 h-4" />
-              </button>
-              <div className="flex-1 text-center">
-                <span className="text-4xl font-black text-neutral-900 tabular-nums">{field.value ?? 1}</span>
-                <p className="text-[10px] font-bold text-neutral-400 uppercase tracking-wider mt-1">
-                  Nuit{(field.value ?? 1) > 1 ? 's' : ''} minimum
-                </p>
-              </div>
-              <button type="button" onClick={() => field.onChange(Math.min(365, (field.value ?? 1) + 1))} disabled={(field.value ?? 1) >= 365}
-                className="w-12 h-12 rounded-xl bg-white border border-neutral-200 shadow-sm flex items-center justify-center text-neutral-500 hover:border-emerald-400 hover:text-emerald-500 hover:bg-emerald-50 transition-all disabled:opacity-30 shrink-0 active:scale-90">
-                <Plus className="w-4 h-4" />
-              </button>
-            </div>
-            <div className="grid grid-cols-3 sm:grid-cols-6 gap-2">
-              {([1, 2, 3, 7, 14, 30] as const).map((n) => (
-                <button key={n} type="button" onClick={() => field.onChange(n)}
-                  className={cn('py-2.5 rounded-xl text-xs font-bold border transition-all active:scale-95',
-                    field.value === n
-                      ? 'border-emerald-400 bg-emerald-500 text-white shadow-sm shadow-emerald-500/20'
-                      : 'border-neutral-200 bg-neutral-50 text-neutral-500 hover:bg-white hover:border-neutral-300')}>
-                  {n === 1 ? '1 nuit' : n === 7 ? '1 sem.' : n === 14 ? '2 sem.' : n === 30 ? '1 mois' : `${n} nuits`}
+          return (
+            <div className="space-y-3">
+              <div className="flex items-center gap-4 rounded-inner border border-border bg-background-alt px-5 py-4">
+                <button
+                  type="button"
+                  onClick={() => field.onChange(Math.max(1, v - 1))}
+                  disabled={v <= 1}
+                  aria-label="Diminuer la durée minimale"
+                  className={btn}
+                >
+                  <Minus className="h-4 w-4" aria-hidden="true" />
                 </button>
-              ))}
+
+                <div className="flex-1 text-center">
+                  {/* aria-live : la valeur changeait sans qu'aucun lecteur
+                      d'ecran ne l'annonce. */}
+                  <span
+                    id={ids.nuits}
+                    aria-live="polite"
+                    className="block font-display text-3xl font-semibold tabular-nums text-forest-900"
+                  >
+                    {v}
+                  </span>
+                  <span className="mt-0.5 block text-xs text-foreground-muted">
+                    nuit{v > 1 ? 's' : ''} minimum
+                  </span>
+                </div>
+
+                <button
+                  type="button"
+                  onClick={() => field.onChange(Math.min(365, v + 1))}
+                  disabled={v >= 365}
+                  aria-label="Augmenter la durée minimale"
+                  className={btn}
+                >
+                  <Plus className="h-4 w-4" aria-hidden="true" />
+                </button>
+              </div>
+
+              <div className="grid grid-cols-3 gap-2 sm:grid-cols-6">
+                {PRESETS.map(({ n, label }) => (
+                  <button
+                    key={n}
+                    type="button"
+                    onClick={() => field.onChange(n)}
+                    // aria-pressed : rien n'indiquait quel raccourci etait
+                    // actif en dehors de la couleur.
+                    aria-pressed={v === n}
+                    className={cn(
+                      'rounded-pill border py-2.5 text-xs font-medium transition-colors duration-150',
+                      v === n
+                        // Etait bg-forest-600 text-lime-300 : accent sur du
+                        // texte, sur six pastilles.
+                        ? 'border-forest-600 bg-forest-100 text-forest-800'
+                        : 'border-border bg-background-card text-foreground-muted hover:border-border-hover hover:text-foreground',
+                    )}
+                  >
+                    {label}
+                  </button>
+                ))}
+              </div>
             </div>
-          </>)} />
-        </div>
+          );
+        }} />
       </SectionCard>
 
       <button type="submit" ref={submitRef} className="hidden" />

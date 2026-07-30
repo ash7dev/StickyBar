@@ -8,6 +8,7 @@ import { nestFetch } from '@/lib/nestjs/api-client';
 import { NEST_API } from '@/lib/nestjs/endpoints';
 import type { ReservationDetail } from '@/lib/nestjs/types';
 
+import { TenantReservationsGuard }     from '@/features/reservations/components/tenant/TenantReservationsGuard';
 import { TenantReservationSkeleton }  from '@/features/reservations/components/tenant/TenantReservationSkeleton';
 import { TenantReservationHero }      from '@/features/reservations/components/tenant/TenantReservationHero';
 import { TenantHostCard }             from '@/features/reservations/components/tenant/TenantHostCard';
@@ -19,10 +20,8 @@ import { ReservationPaymentCard }     from '@/features/reservations/components/s
 import { ReservationPhotos }          from '@/features/reservations/components/shared/ReservationPhotos';
 import { ReservationLitige }          from '@/features/reservations/components/shared/ReservationLitige';
 import { ReservationTimeline }        from '@/features/reservations/components/shared/ReservationTimeline';
-import { GlassCard }                  from '@/features/reservations/components/shared/reservation-cards';
 
-export default function TenantReservationDetailPage({ params }: { params: Promise<{ id: string }> }) {
-  const { id } = use(params);
+function TenantReservationDetailContent({ id }: { id: string }) {
   const queryClient = useQueryClient();
 
   const { data: res, isLoading, error } = useQuery<ReservationDetail>({
@@ -38,67 +37,73 @@ export default function TenantReservationDetailPage({ params }: { params: Promis
 
   if (error || !res) {
     return (
-      <div className="max-w-5xl mx-auto px-4 py-6">
-        <div className="flex items-start gap-3 bg-error-50 border border-error-200 rounded-2xl p-5">
-          <AlertTriangle className="w-5 h-5 text-error-500 shrink-0 mt-0.5" />
-          <p className="text-sm text-error-700 font-medium">Impossible de charger cette réservation.</p>
+      <div className="bg-error-50 border border-error-200 rounded-card p-6 text-center space-y-3 max-w-md mx-auto my-8">
+        <div className="w-12 h-12 rounded-inner bg-error-100 flex items-center justify-center mx-auto text-error-700">
+          <AlertTriangle className="w-6 h-6 text-error-600" />
         </div>
+        <p className="text-sm text-error-800 font-bold">Impossible de charger cette réservation.</p>
+        <Link
+          href="/reservations"
+          className="inline-flex items-center gap-2 px-5 py-2.5 rounded-pill bg-forest-900 text-white font-bold text-xs"
+        >
+          <ArrowLeft className="w-4 h-4" />
+          <span>Retour à mes séjours</span>
+        </Link>
       </div>
     );
   }
 
   return (
-    <div className="max-w-5xl mx-auto px-4 py-6 pb-16 space-y-4">
-
-      {/* Retour + ID */}
+    <div className="space-y-6">
+      {/* Navigation Retour + Réf */}
       <div className="flex items-center justify-between">
         <Link
           href="/reservations"
-          className="inline-flex items-center gap-2 text-sm font-semibold text-foreground-muted hover:text-foreground transition-colors group"
+          className="inline-flex items-center gap-2 text-xs font-bold text-foreground-muted hover:text-forest-950 transition-colors group"
         >
-          <span className="w-7 h-7 rounded-xl bg-neutral-100 border border-neutral-200 flex items-center justify-center group-hover:bg-neutral-200 transition-colors">
-            <ArrowLeft className="w-3.5 h-3.5" />
+          <span className="w-8 h-8 rounded-inner bg-background-alt border border-border flex items-center justify-center group-hover:border-forest-300 transition-colors">
+            <ArrowLeft className="w-4 h-4 text-forest-700" />
           </span>
-          Mes réservations
+          <span>Retour aux séjours</span>
         </Link>
-        <span className="text-[10px] font-mono font-bold text-foreground-muted bg-neutral-100 border border-neutral-200 px-3 py-1.5 rounded-xl tracking-wider">
-          #{res.id.slice(0, 8).toUpperCase()}
+
+        <span className="text-[11px] font-mono font-bold text-foreground-faint bg-background-alt border border-border/80 px-3.5 py-1.5 rounded-pill tracking-wider">
+          RÉF: #{res.id.slice(0, 8).toUpperCase()}
         </span>
       </div>
 
-      {/* Hero */}
+      {/* Hero Principal avec Lime accents */}
       <TenantReservationHero res={res} />
 
-      {/* Card horaires (uniquement si confirmé) */}
+      {/* Card Horaires */}
       <CheckInTimeCard res={res} />
 
-      {/* Actions locataire (contextuel — uniquement CONFIRMED) */}
+      {/* Actions locataire */}
       <TenantReservationActionPanel id={id} res={res} onRefetch={onRefetch} />
 
-      {/* Contrat */}
-      <GlassCard>
-        <div className="flex items-center justify-between p-5">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-2xl bg-emerald-50 border border-emerald-100 flex items-center justify-center">
-              <FileText className="w-4 h-4 text-emerald-600" />
-            </div>
-            <div>
-              <p className="text-sm font-bold text-foreground">Contrat de location</p>
-              <p className="text-xs text-foreground-muted">Généré automatiquement · Signé numériquement</p>
-            </div>
+      {/* Contrat de Location Klef */}
+      <div className="bg-forest-950 text-white rounded-card p-5 border border-forest-800/80 shadow-xs flex flex-wrap items-center justify-between gap-4">
+        <div className="flex items-center gap-3.5">
+          <div className="w-11 h-11 rounded-inner bg-forest-900 border border-forest-800 flex items-center justify-center text-lime-400 shrink-0">
+            <FileText className="w-5 h-5 text-lime-400" />
           </div>
-          <Link
-            href={`/reservations/${id}/contrat`}
-            className="inline-flex items-center gap-1.5 px-4 py-2 bg-emerald-800 hover:bg-neutral-900 text-white text-xs font-bold rounded-xl transition-colors shadow-sm border border-white/8"
-          >
-            <ExternalLink className="w-3.5 h-3.5" />
-            Consulter
-          </Link>
+          <div>
+            <p className="font-display text-base font-bold text-white">Contrat de location vérifié</p>
+            <p className="text-xs text-forest-300">Généré automatiquement par Klef · Horodaté & Signé numériquement</p>
+          </div>
         </div>
-      </GlassCard>
 
-      {/* Hôte + Logement */}
-      <div className="grid md:grid-cols-2 gap-4">
+        <Link
+          href={`/reservations/${id}/contrat`}
+          className="inline-flex items-center gap-2 px-5 py-2.5 rounded-pill bg-lime-400 hover:bg-lime-300 text-forest-950 font-extrabold text-xs shadow-md transition-all active:scale-95"
+        >
+          <ExternalLink className="w-4 h-4 text-forest-950" />
+          <span>Consulter le Contrat PDF</span>
+        </Link>
+      </div>
+
+      {/* Grille Hôte + Logement */}
+      <div className="grid md:grid-cols-2 gap-5">
         <TenantHostCard proprietaire={res.proprietaire} statut={res.statut} dateDebut={res.dateDebut} />
         <TenantPropertyCard logement={res.logement} />
       </div>
@@ -123,7 +128,18 @@ export default function TenantReservationDetailPage({ params }: { params: Promis
 
       {/* Chronologie */}
       <ReservationTimeline historique={res.historique} />
+    </div>
+  );
+}
 
+export default function TenantReservationDetailPage({ params }: { params: Promise<{ id: string }> }) {
+  const { id } = use(params);
+
+  return (
+    <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 pt-10 lg:pt-12 pb-24">
+      <TenantReservationsGuard>
+        <TenantReservationDetailContent id={id} />
+      </TenantReservationsGuard>
     </div>
   );
 }

@@ -34,6 +34,13 @@ export async function GET(request: Request) {
             onboardingRequired?: boolean;
             user?: { activeRole?: string; hasAnnonce?: boolean };
           };
+
+          // Si onboarding requis → compléter le profil
+          if (payload.onboardingRequired) {
+            const nextParam = next ? `?next=${encodeURIComponent(next)}` : '';
+            return NextResponse.redirect(`${origin}/complete-profile${nextParam}`);
+          }
+
           const role = payload.user?.activeRole;
           const hasAnnonce = payload.user?.hasAnnonce;
           if (role === 'PROPRIETAIRE') {

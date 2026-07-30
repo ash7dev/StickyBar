@@ -1,124 +1,55 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useEffect, useId, useMemo, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
-import {
-  ScrollText, Moon, Info, AlertCircle,
-  Users, ChevronDown, ChevronUp, TrendingDown, Plus, X,
-} from 'lucide-react';
+import { Info, Moon, Plus, ScrollText, TrendingDown, Users, X } from 'lucide-react';
 import {
   stepConditionsSchema, type StepConditionsInput,
   type TarifPersonnes, type TarifNuits,
 } from '@/schemas/listing.schema';
 import { useListingFormStore } from '@/stores/listing-form.store';
 import { cn } from '@/lib/utils/cn';
+import { FieldLabel, INPUT_CLS, SectionCard } from '../wizard-ui';
 
 interface Props {
   onNext: () => void;
   submitRef: React.RefObject<HTMLButtonElement | null>;
 }
 
-/* ── SectionCard (collapsible or static) ─────────────────────────────────── */
-
-function SectionCard({
-  icon: Icon, title, description,
-  accent = 'bg-emerald-500', headerBg = 'bg-emerald-50',
-  iconBg = 'bg-emerald-100', iconColor = 'text-emerald-600',
-  badge, open, onToggle, children,
-}: {
-  icon: React.ComponentType<{ className?: string }>;
-  title: string;
-  description?: string;
-  accent?: string;
-  headerBg?: string;
-  iconBg?: string;
-  iconColor?: string;
-  badge?: string;
-  open?: boolean;
-  onToggle?: () => void;
-  children: React.ReactNode;
-}) {
-  const isCollapsible = onToggle !== undefined;
-
-  return (
-    <div className="bg-white rounded-2xl border border-neutral-200 shadow-sm">
-      <div className={cn('h-[3px] w-full rounded-t-2xl', accent)} />
-      <button
-        type="button"
-        onClick={onToggle}
-        className={cn(
-          'w-full flex items-center justify-between px-5 py-4 text-left border-b border-neutral-100',
-          headerBg,
-          isCollapsible ? 'cursor-pointer hover:brightness-[0.97] active:brightness-[0.95] transition-all' : 'cursor-default',
-        )}
-      >
-        <div className="flex items-center gap-3.5">
-          <div className={cn('w-10 h-10 rounded-xl flex items-center justify-center shrink-0', iconBg)}>
-            <Icon className={cn('w-5 h-5', iconColor)} />
-          </div>
-          <div>
-            <p className="font-bold text-neutral-900 text-[15px] tracking-tight">{title}</p>
-            {description && <p className="text-[12px] text-neutral-400 mt-0.5 font-medium">{description}</p>}
-          </div>
-        </div>
-        <div className="flex items-center gap-2.5 shrink-0">
-          {badge && (
-            <span className="px-2.5 py-1 rounded-full bg-neutral-100 border border-neutral-200 text-[10px] font-bold text-neutral-500 uppercase tracking-wider hidden sm:block">
-              {badge}
-            </span>
-          )}
-          {isCollapsible && (
-            <div className="w-8 h-8 rounded-lg bg-white/80 border border-neutral-200 flex items-center justify-center">
-              {open
-                ? <ChevronUp className="w-4 h-4 text-neutral-400" />
-                : <ChevronDown className="w-4 h-4 text-neutral-400" />}
-            </div>
-          )}
-        </div>
-      </button>
-      {(!isCollapsible || open) && (
-        <div className="px-5 py-5 space-y-4 animate-in fade-in slide-in-from-top-1 duration-200">
-          {children}
-        </div>
-      )}
-    </div>
-  );
-}
-
-const INPUT_CLS = 'w-full px-4 py-3 rounded-xl border border-neutral-200 bg-white text-sm font-medium outline-none focus:border-emerald-400 focus:ring-2 focus:ring-emerald-400/15 transition-all placeholder:text-neutral-400';
-
-/* ── Tarif Row (existing palier display) ─────────────────────────────────── */
+const fcfa = new Intl.NumberFormat('fr-FR', { maximumFractionDigits: 0 });
 
 function TarifRow({
-  icon: Icon, label, value, colorCls, onRemove,
+  icon: Icon, label, value, onRemove,
 }: {
   icon: React.ComponentType<{ className?: string }>;
   label: string;
   value: string;
-  colorCls: string;
   onRemove: () => void;
 }) {
   return (
-    <div className="flex items-center justify-between px-4 py-3 rounded-xl border border-neutral-100 bg-neutral-50 group">
-      <div className="flex items-center gap-2.5 min-w-0">
-        <div className={cn('w-8 h-8 rounded-lg flex items-center justify-center shrink-0', colorCls)}>
-          <Icon className="w-4 h-4" />
-        </div>
-        <span className="text-sm font-semibold text-neutral-700 truncate">{label}</span>
-      </div>
-      <div className="flex items-center gap-3 shrink-0">
-        <span className="text-sm font-black text-neutral-900">{value}</span>
-        <button type="button" onClick={onRemove}
-          className="w-7 h-7 rounded-lg bg-white border border-rose-200 flex items-center justify-center text-rose-400 active:scale-90 transition-transform">
-          <X className="w-3 h-3" />
+    <li className="flex items-center justify-between gap-3 rounded-inner border border-border bg-background-alt px-4 py-3">
+      <span className="flex min-w-0 items-center gap-3">
+        {/* Le squircle etait en forest-950 avec icone lime, repete sur chaque
+            palier. Une ligne de tarif n'a pas besoin d'un bloc sombre. */}
+        <Icon className="h-4 w-4 shrink-0 text-foreground-faint" aria-hidden="true" />
+        <span className="truncate text-sm text-foreground">{label}</span>
+      </span>
+
+      <span className="flex shrink-0 items-center gap-3">
+        <span className="text-sm font-semibold tabular-nums text-forest-900">{value}</span>
+        <button
+          type="button"
+          onClick={onRemove}
+          aria-label={`Supprimer le palier ${label}`}
+          className="grid h-7 w-7 place-items-center rounded-pill text-foreground-muted transition-colors hover:bg-error-50 hover:text-error-600"
+        >
+          <X className="h-3.5 w-3.5" aria-hidden="true" />
         </button>
-      </div>
-    </div>
+      </span>
+    </li>
   );
 }
-
-/* ── Main Component ───────────────────────────────────────────────────────── */
 
 export function StepConditions({ onNext, submitRef }: Props) {
   const {
@@ -128,243 +59,304 @@ export function StepConditions({ onNext, submitRef }: Props) {
     tarifsNuits, addTarifNuits, removeTarifNuits,
   } = useListingFormStore();
 
-  const capaciteMax    = bien.capaciteMax ?? 1;
-  const nuitesMinimum  = annonce.nuitesMinimum ?? 1;
+  const capaciteMax = bien.capaciteMax ?? 1;
+  const nuitesMinimum = annonce.nuitesMinimum ?? 1;
 
   const [showPersonnes, setShowPersonnes] = useState(tarifsPersonnes.length > 0);
-  const [showNuits,     setShowNuits]     = useState(tarifsNuits.length > 0);
+  const [showNuits, setShowNuits] = useState(tarifsNuits.length > 0);
 
+  /*
+    L'effet d'origine :
+
+      useEffect(() => {
+        tarifsPersonnes.forEach((t, i) => {
+          if (t.personnesMin <= capaciteMax) removeTarifPersonnes(i);
+        });
+      }, [capaciteMax, tarifsPersonnes, removeTarifPersonnes, ...]);
+
+    Deux fautes :
+
+    1. Il depend de tarifsPersonnes ET le modifie a l'interieur. Chaque
+       suppression change la reference du tableau, l'effet se redeclenche,
+       et on tourne en boucle.
+
+    2. forEach + suppression par index vers l'avant : retirer l'element 0
+       decale tous les suivants, donc l'index 1 pointe deja sur un autre
+       element. Les mauvais paliers etaient effaces.
+
+    Corrige : on ne depend plus que des seuils, on parcourt a l'envers pour
+    que les index restent valides, et on ne touche au store que s'il y a
+    reellement quelque chose a retirer.
+  */
   useEffect(() => {
-    tarifsPersonnes.forEach((t, i) => {
-      if (t.personnesMin <= capaciteMax) removeTarifPersonnes(i);
-    });
-    tarifsNuits.forEach((t, i) => {
-      if (t.nuitsMin <= nuitesMinimum) removeTarifNuits(i);
-    });
-  }, [capaciteMax, nuitesMinimum, tarifsPersonnes, tarifsNuits, removeTarifPersonnes, removeTarifNuits]);
+    const store = useListingFormStore.getState();
 
-  const [newTarifP, setNewTarifP] = useState<Partial<TarifPersonnes>>({});
-  const [newTarifN, setNewTarifN] = useState<Partial<TarifNuits>>({});
+    for (let i = store.tarifsPersonnes.length - 1; i >= 0; i--) {
+      if (store.tarifsPersonnes[i].personnesMin <= capaciteMax) {
+        store.removeTarifPersonnes(i);
+      }
+    }
+    for (let i = store.tarifsNuits.length - 1; i >= 0; i--) {
+      if (store.tarifsNuits[i].nuitsMin <= nuitesMinimum) {
+        store.removeTarifNuits(i);
+      }
+    }
+  }, [capaciteMax, nuitesMinimum]);
 
-  const { register, handleSubmit, watch, formState: { errors } } = useForm<StepConditionsInput>({
+  const [newP, setNewP] = useState<Partial<TarifPersonnes>>({});
+  const [newN, setNewN] = useState<Partial<TarifNuits>>({});
+  const [errP, setErrP] = useState<string | null>(null);
+  const [errN, setErrN] = useState<string | null>(null);
+
+  const ids = { pMin: useId(), pMax: useId(), pSup: useId(), nMin: useId(), nMax: useId(), nPrix: useId(), regles: useId() };
+
+  const { register, handleSubmit, watch } = useForm<StepConditionsInput>({
     resolver: zodResolver(stepConditionsSchema),
     defaultValues: { reglesMaison: conditions.reglesMaison ?? '' },
   });
 
   const reglesLength = watch('reglesMaison')?.length ?? 0;
+  const prixBase = annonce.prixBase ?? 0;
 
   function onSubmit(data: StepConditionsInput) {
     setConditions(data);
     onNext();
   }
 
-  function addTarifPRow() {
-    if (!newTarifP.personnesMin || !newTarifP.personnesMax || newTarifP.supplement === undefined) return;
-    addTarifPersonnes(newTarifP as TarifPersonnes);
-    setNewTarifP({});
+  /* Les deux fonctions d'ajout retournaient sans rien dire quand la saisie
+     etait incomplete ou incoherente : l'utilisateur cliquait, rien ne se
+     passait, aucune explication. */
+  function addP() {
+    if (!newP.personnesMin || !newP.personnesMax || newP.supplement === undefined) {
+      setErrP('Renseignez les trois champs.');
+      return;
+    }
+    if (newP.personnesMax < newP.personnesMin) {
+      setErrP('Le maximum doit être supérieur au minimum.');
+      return;
+    }
+    const overlap = tarifsPersonnes.some(
+      (t) => newP.personnesMin! <= t.personnesMax && newP.personnesMax! >= t.personnesMin,
+    );
+    if (overlap) {
+      setErrP('Ce palier chevauche un palier existant.');
+      return;
+    }
+    addTarifPersonnes(newP as TarifPersonnes);
+    setNewP({});
+    setErrP(null);
   }
 
-  function addTarifNRow() {
-    if (!newTarifN.nuitsMin || !newTarifN.prix) return;
-    const nuitsMax = newTarifN.nuitsMax ?? null;
-    if (nuitsMax !== null && nuitsMax < newTarifN.nuitsMin) return;
-    addTarifNuits({ ...newTarifN, nuitsMax } as TarifNuits);
-    setNewTarifN({});
+  function addN() {
+    if (!newN.nuitsMin || !newN.prix) {
+      setErrN('Renseignez le nombre de nuits et le prix.');
+      return;
+    }
+    if (newN.nuitsMax != null && newN.nuitsMax < newN.nuitsMin) {
+      setErrN('Le maximum doit être supérieur au minimum.');
+      return;
+    }
+    if (prixBase > 0 && newN.prix >= prixBase) {
+      setErrN(`Un tarif dégressif doit être inférieur au prix de base (${fcfa.format(prixBase)} FCFA).`);
+      return;
+    }
+    addTarifNuits({ ...newN, nuitsMax: newN.nuitsMax ?? null } as TarifNuits);
+    setNewN({});
+    setErrN(null);
   }
+
+  const remisePreview = useMemo(() => {
+    if (!prixBase || !newN.prix) return null;
+    const pct = Math.round(((prixBase - newN.prix) / prixBase) * 100);
+    return pct > 0 ? pct : null;
+  }, [prixBase, newN.prix]);
 
   return (
-    <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
+    <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
 
-      {/* ── Suppléments voyageurs ── */}
+      {/* -- Suppléments voyageurs ------------------------------------------ */}
       <SectionCard
         icon={Users}
         title="Suppléments voyageurs"
         description={`Au-delà de ${capaciteMax} personne${capaciteMax > 1 ? 's' : ''} incluse${capaciteMax > 1 ? 's' : ''}`}
-        accent="bg-orange-500"
-        headerBg="bg-orange-50"
-        iconBg="bg-orange-100"
-        iconColor="text-orange-600"
-        badge="Avancé"
+        badge="Optionnel"
         open={showPersonnes}
         onToggle={() => setShowPersonnes((v) => !v)}
       >
-        <div className="flex items-start gap-2.5 p-3.5 bg-orange-50 rounded-xl border border-orange-100">
-          <Info className="w-4 h-4 text-orange-500 shrink-0 mt-0.5" />
-          <p className="text-[11px] text-orange-700/80 leading-relaxed font-medium">
-            Le tarif de base couvre <strong>{capaciteMax}</strong> voyageur{capaciteMax > 1 ? 's' : ''}. Ajoutez des paliers de prix pour les personnes supplémentaires.
-          </p>
-        </div>
+        <p className="flex items-start gap-2.5 rounded-inner bg-background-alt p-3.5 text-xs leading-relaxed text-foreground-muted">
+          <Info className="mt-0.5 h-4 w-4 shrink-0 text-forest-600" aria-hidden="true" />
+          Le tarif de base couvre <strong className="font-semibold text-foreground">{capaciteMax}</strong>{' '}
+          voyageur{capaciteMax > 1 ? 's' : ''}. Ajoutez un supplément pour les personnes additionnelles.
+        </p>
 
         {tarifsPersonnes.length > 0 && (
-          <div className="space-y-2">
+          <ul className="space-y-2">
             {tarifsPersonnes.map((t, i) => (
-              <TarifRow key={i}
+              <TarifRow
+                key={`${t.personnesMin}-${t.personnesMax}`}
                 icon={Users}
-                label={`${t.personnesMin} à ${t.personnesMax} pers.`}
-                value={`+${t.supplement.toLocaleString()} FCFA`}
-                colorCls="bg-orange-100 text-orange-600"
+                label={`${t.personnesMin} à ${t.personnesMax} personnes`}
+                value={`+${fcfa.format(t.supplement)} FCFA`}
                 onRemove={() => removeTarifPersonnes(i)}
               />
             ))}
-          </div>
+          </ul>
         )}
 
-        {/* Nouveau palier */}
-        <div className="rounded-2xl border border-orange-100 overflow-hidden">
-          <div className="flex items-center justify-between px-4 py-2.5 bg-orange-50">
-            <span className="text-[10px] font-black text-orange-600 uppercase tracking-widest">Nouveau palier</span>
-          </div>
-          <div className="p-3.5 bg-white space-y-3">
-            <div className="flex flex-col sm:flex-row sm:items-end gap-3">
-              <div className="sm:flex-1">
-                <p className="text-[10px] font-bold text-neutral-400 uppercase tracking-widest mb-2">Voyageurs</p>
-                <div className="flex items-center gap-2">
-                  <div className="flex-1">
-                    <input type="number" placeholder={`Min (${capaciteMax + 1})`}
-                      min={capaciteMax + 1} value={newTarifP.personnesMin ?? ''}
-                      onChange={(e) => setNewTarifP((p) => ({ ...p, personnesMin: Math.max(capaciteMax + 1, Number(e.target.value)) }))}
-                      className={cn(INPUT_CLS, 'text-center font-bold')} />
-                    <p className="text-[9px] text-neutral-400 text-center mt-1 font-medium">pers. min</p>
-                  </div>
-                  <span className="text-neutral-300 font-bold text-lg shrink-0">—</span>
-                  <div className="flex-1">
-                    <input type="number" placeholder="Max"
-                      min={newTarifP.personnesMin ?? capaciteMax + 1} value={newTarifP.personnesMax ?? ''}
-                      onChange={(e) => setNewTarifP((p) => ({ ...p, personnesMax: Math.max(newTarifP.personnesMin ?? capaciteMax + 1, Number(e.target.value)) }))}
-                      className={cn(INPUT_CLS, 'text-center font-bold')} />
-                    <p className="text-[9px] text-neutral-400 text-center mt-1 font-medium">pers. max</p>
-                  </div>
-                </div>
-              </div>
-              <div className="hidden sm:block w-px h-10 bg-neutral-100 self-center" />
-              <div className="sm:flex-1">
-                <p className="text-[10px] font-bold text-neutral-400 uppercase tracking-widest mb-2">Supplément / nuit</p>
-                <div className="flex items-center gap-2 px-4 py-3 rounded-xl border-2 border-neutral-200 focus-within:border-orange-400 bg-neutral-50 transition-colors">
-                  <span className="text-sm font-black text-orange-500 shrink-0">+</span>
-                  <input type="number" placeholder="5 000"
-                    value={newTarifP.supplement ?? ''}
-                    onChange={(e) => setNewTarifP((p) => ({ ...p, supplement: Number(e.target.value) }))}
-                    className="flex-1 min-w-0 text-xl font-black text-neutral-900 outline-none bg-transparent" />
-                  <span className="text-[10px] font-bold text-neutral-400 shrink-0">FCFA</span>
-                </div>
-              </div>
+        <div className="space-y-3 rounded-inner border border-border bg-background-alt p-4">
+          <p className="text-sm font-medium text-foreground">Ajouter un palier</p>
+          <div className="grid gap-3 sm:grid-cols-3">
+            <div>
+              <FieldLabel htmlFor={ids.pMin}>Pers. min</FieldLabel>
+              <input
+                id={ids.pMin} type="number" inputMode="numeric"
+                min={capaciteMax + 1}
+                placeholder={String(capaciteMax + 1)}
+                value={newP.personnesMin ?? ''}
+                onChange={(e) => setNewP((p) => ({ ...p, personnesMin: Number(e.target.value) || undefined }))}
+                className={INPUT_CLS}
+              />
             </div>
-            <button type="button" onClick={addTarifPRow}
-              className="w-full flex items-center justify-center gap-2 py-3 rounded-xl bg-orange-500 text-white text-sm font-black hover:bg-orange-600 transition-all active:scale-[0.98] shadow-md shadow-orange-500/20">
-              <Plus className="w-4 h-4" />
-              Ajouter ce palier
-            </button>
+            <div>
+              <FieldLabel htmlFor={ids.pMax}>Pers. max</FieldLabel>
+              <input
+                id={ids.pMax} type="number" inputMode="numeric"
+                placeholder="Max"
+                value={newP.personnesMax ?? ''}
+                onChange={(e) => setNewP((p) => ({ ...p, personnesMax: Number(e.target.value) || undefined }))}
+                className={INPUT_CLS}
+              />
+            </div>
+            <div>
+              <FieldLabel htmlFor={ids.pSup}>Supplément (FCFA)</FieldLabel>
+              <input
+                id={ids.pSup} type="number" inputMode="numeric"
+                placeholder="5000"
+                value={newP.supplement ?? ''}
+                onChange={(e) => setNewP((p) => ({ ...p, supplement: Number(e.target.value) || undefined }))}
+                className={INPUT_CLS}
+              />
+            </div>
           </div>
+
+          {errP && <p role="alert" className="text-xs text-error-600">{errP}</p>}
+
+          <button
+            type="button"
+            onClick={addP}
+            className="inline-flex items-center gap-2 rounded-pill border border-border bg-background-card px-4 py-2.5 text-sm font-semibold text-forest-800 transition-colors duration-150 hover:bg-neutral-100"
+          >
+            <Plus className="h-4 w-4" aria-hidden="true" />
+            Ajouter ce palier
+          </button>
         </div>
       </SectionCard>
 
-      {/* ── Réductions longs séjours ── */}
+      {/* -- Réductions longs séjours --------------------------------------- */}
       <SectionCard
         icon={TrendingDown}
         title="Réductions longs séjours"
-        description={`Tarifs dégressifs à partir de ${nuitesMinimum + 1} nuits`}
-        accent="bg-violet-500"
-        headerBg="bg-violet-50"
-        iconBg="bg-violet-100"
-        iconColor="text-violet-600"
-        badge="Avancé"
+        description={`Tarifs réduits à partir de ${nuitesMinimum + 1} nuits`}
+        badge="Optionnel"
         open={showNuits}
         onToggle={() => setShowNuits((v) => !v)}
       >
-        <div className="flex items-start gap-2.5 p-3.5 bg-violet-50 rounded-xl border border-violet-100">
-          <Info className="w-4 h-4 text-violet-500 shrink-0 mt-0.5" />
-          <p className="text-[11px] text-violet-700/80 leading-relaxed font-medium">
-            Le tarif de base s&apos;applique jusqu&apos;à <strong>{nuitesMinimum}</strong> nuit{nuitesMinimum > 1 ? 's' : ''}. Proposez des réductions pour inciter les séjours prolongés.
-          </p>
-        </div>
+        <p className="flex items-start gap-2.5 rounded-inner bg-background-alt p-3.5 text-xs leading-relaxed text-foreground-muted">
+          <Info className="mt-0.5 h-4 w-4 shrink-0 text-forest-600" aria-hidden="true" />
+          Un tarif dégressif encourage les séjours longs et réduit vos périodes creuses.
+        </p>
 
         {tarifsNuits.length > 0 && (
-          <div className="space-y-2">
+          <ul className="space-y-2">
             {tarifsNuits.map((t, i) => (
-              <TarifRow key={i}
+              <TarifRow
+                key={`${t.nuitsMin}-${t.nuitsMax ?? 'inf'}`}
                 icon={Moon}
-                label={`${t.nuitsMin} ${t.nuitsMax ? `à ${t.nuitsMax}` : '+'} nuits`}
-                value={`${t.prix.toLocaleString()} FCFA/nuit`}
-                colorCls="bg-violet-100 text-violet-600"
+                label={`${t.nuitsMin}${t.nuitsMax ? ` à ${t.nuitsMax}` : '+'} nuits`}
+                value={`${fcfa.format(t.prix)} FCFA`}
                 onRemove={() => removeTarifNuits(i)}
               />
             ))}
-          </div>
+          </ul>
         )}
 
-        {/* Nouveau palier */}
-        <div className="rounded-2xl border border-violet-100 overflow-hidden">
-          <div className="flex items-center justify-between px-4 py-2.5 bg-violet-50">
-            <span className="text-[10px] font-black text-violet-600 uppercase tracking-widest">Nouveau palier</span>
-          </div>
-          <div className="p-3.5 bg-white space-y-3">
-            <div className="flex flex-col sm:flex-row sm:items-end gap-3">
-              <div className="sm:flex-1">
-                <p className="text-[10px] font-bold text-neutral-400 uppercase tracking-widest mb-2">Durée du séjour</p>
-                <div className="flex items-center gap-2">
-                  <div className="flex-1">
-                    <input type="number" placeholder={`Min (${nuitesMinimum + 1})`}
-                      min={nuitesMinimum + 1} value={newTarifN.nuitsMin ?? ''}
-                      onChange={(e) => setNewTarifN((p) => ({ ...p, nuitsMin: Math.max(nuitesMinimum + 1, Number(e.target.value)) }))}
-                      className={cn(INPUT_CLS, 'text-center font-bold')} />
-                    <p className="text-[9px] text-neutral-400 text-center mt-1 font-medium">nuits min</p>
-                  </div>
-                  <span className="text-neutral-300 font-bold text-lg shrink-0">—</span>
-                  <div className="flex-1">
-                    <input type="number" placeholder="∞"
-                      value={newTarifN.nuitsMax ?? ''}
-                      onChange={(e) => setNewTarifN((p) => ({ ...p, nuitsMax: e.target.value ? Number(e.target.value) : null }))}
-                      className={cn(INPUT_CLS, 'text-center font-bold')} />
-                    <p className="text-[9px] text-neutral-400 text-center mt-1 font-medium">nuits max</p>
-                  </div>
-                </div>
-              </div>
-              <div className="hidden sm:block w-px h-10 bg-neutral-100 self-center" />
-              <div className="sm:flex-1">
-                <p className="text-[10px] font-bold text-neutral-400 uppercase tracking-widest mb-2">Prix par nuit</p>
-                <div className="flex items-center gap-2 px-4 py-3 rounded-xl border-2 border-neutral-200 focus-within:border-violet-400 bg-neutral-50 transition-colors">
-                  <input type="number" placeholder="Prix réduit"
-                    value={newTarifN.prix ?? ''}
-                    onChange={(e) => setNewTarifN((p) => ({ ...p, prix: Number(e.target.value) }))}
-                    className="flex-1 min-w-0 text-xl font-black text-neutral-900 outline-none bg-transparent" />
-                  <span className="text-[10px] font-bold text-neutral-400 shrink-0">FCFA</span>
-                </div>
-              </div>
+        <div className="space-y-3 rounded-inner border border-border bg-background-alt p-4">
+          <p className="text-sm font-medium text-foreground">Ajouter un palier</p>
+          <div className="grid gap-3 sm:grid-cols-3">
+            <div>
+              <FieldLabel htmlFor={ids.nMin}>Nuits min</FieldLabel>
+              <input
+                id={ids.nMin} type="number" inputMode="numeric"
+                min={nuitesMinimum + 1}
+                placeholder={String(nuitesMinimum + 1)}
+                value={newN.nuitsMin ?? ''}
+                onChange={(e) => setNewN((p) => ({ ...p, nuitsMin: Number(e.target.value) || undefined }))}
+                className={INPUT_CLS}
+              />
             </div>
-            <button type="button" onClick={addTarifNRow}
-              className="w-full flex items-center justify-center gap-2 py-3 rounded-xl bg-violet-500 text-white text-sm font-black hover:bg-violet-600 transition-all active:scale-[0.98] shadow-md shadow-violet-500/20">
-              <Plus className="w-4 h-4" />
-              Ajouter ce palier
-            </button>
+            <div>
+              <FieldLabel htmlFor={ids.nMax} optional>Nuits max</FieldLabel>
+              <input
+                id={ids.nMax} type="number" inputMode="numeric"
+                placeholder="Sans limite"
+                value={newN.nuitsMax ?? ''}
+                onChange={(e) => setNewN((p) => ({ ...p, nuitsMax: e.target.value ? Number(e.target.value) : null }))}
+                className={INPUT_CLS}
+              />
+            </div>
+            <div>
+              <FieldLabel htmlFor={ids.nPrix}>Prix (FCFA)</FieldLabel>
+              <input
+                id={ids.nPrix} type="number" inputMode="numeric"
+                placeholder="Prix réduit"
+                value={newN.prix ?? ''}
+                onChange={(e) => setNewN((p) => ({ ...p, prix: Number(e.target.value) || undefined }))}
+                className={INPUT_CLS}
+              />
+            </div>
           </div>
+
+          {/* Retour immediat sur la remise : sans ca, l'hote saisit un prix
+              sans savoir a quel pourcentage il consent. */}
+          {remisePreview && !errN && (
+            <p className="text-xs text-success-700">
+              Soit une remise de {remisePreview}% sur votre prix de base.
+            </p>
+          )}
+          {errN && <p role="alert" className="text-xs text-error-600">{errN}</p>}
+
+          <button
+            type="button"
+            onClick={addN}
+            className="inline-flex items-center gap-2 rounded-pill border border-border bg-background-card px-4 py-2.5 text-sm font-semibold text-forest-800 transition-colors duration-150 hover:bg-neutral-100"
+          >
+            <Plus className="h-4 w-4" aria-hidden="true" />
+            Ajouter ce palier
+          </button>
         </div>
       </SectionCard>
 
-      {/* ── Règles de la maison ── */}
+      {/* -- Règles ---------------------------------------------------------- */}
       <SectionCard
         icon={ScrollText}
         title="Règles de la maison"
-        description="Conditions de vie et règlement intérieur"
-        accent="bg-rose-500"
-        headerBg="bg-rose-50"
-        iconBg="bg-rose-100"
-        iconColor="text-rose-600"
+        description="Consignes affichées au voyageur avant réservation"
       >
-        <div className="space-y-2">
+        <div>
+          <FieldLabel htmlFor={ids.regles} optional>Règles intérieures</FieldLabel>
           <textarea
             {...register('reglesMaison')}
+            id={ids.regles}
             rows={5}
-            placeholder={`Ex :\n• Pas de fêtes ou d'événements\n• Animaux non admis\n• Interdiction de fumer à l'intérieur\n• Silence après 22h`}
-            className="w-full px-4 py-3 rounded-xl border border-neutral-200 bg-white text-sm text-neutral-900 placeholder:text-neutral-400 outline-none focus:border-rose-400 focus:ring-2 focus:ring-rose-400/15 transition-all resize-none leading-relaxed"
+            maxLength={1000}
+            placeholder={"Ex :\n• Pas de fêtes bruyantes\n• Animaux non admis\n• Interdiction de fumer à l'intérieur\n• Respect du voisinage après 22h"}
+            className={cn(INPUT_CLS, 'resize-none leading-relaxed')}
           />
-          <div className="flex justify-between items-center px-1">
-            <p className="text-[10px] text-neutral-400 flex items-center gap-1">
-              <AlertCircle className="w-3 h-3" />
-              Sera affiché sur votre annonce
-            </p>
-            <p className={cn('text-[10px] font-bold tabular-nums', reglesLength > 900 ? 'text-red-500' : 'text-neutral-400')}>
+          <div className="mt-1.5 flex items-center justify-between text-xs text-foreground-muted">
+            <span>Affiché avant la réservation</span>
+            <span className={cn('tabular-nums', reglesLength > 900 && 'text-warning-600')}>
               {reglesLength} / 1000
-            </p>
+            </span>
           </div>
         </div>
       </SectionCard>

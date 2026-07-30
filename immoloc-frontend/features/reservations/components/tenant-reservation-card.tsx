@@ -30,7 +30,7 @@ export interface TenantReservation {
   creeLe: string;
 }
 
-/* ─── Config statut (tokens ImmoLoc uniquement) ───────────────────────────── */
+/* ─── Config statut (tokens Klef uniquement) ───────────────────────────── */
 
 const STATUS_CFG: Record<string, {
   label: string;
@@ -261,7 +261,7 @@ export function TenantReservationsEmpty({ filtered }: { filtered?: boolean }) {
       </p>
       {!filtered && (
         <Link
-          href="/logements"
+          href="/explorer"
           className="inline-flex items-center gap-2 px-6 py-3 bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-sm rounded-xl shadow-md shadow-emerald-600/25 hover:-translate-y-0.5 active:scale-95 transition-all"
         >
           Parcourir les logements

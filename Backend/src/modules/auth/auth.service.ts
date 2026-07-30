@@ -733,115 +733,154 @@ export class AuthService {
       },
     });
 
-    if (!utilisateur) {
-      const email = user.email?.trim() || null;
-      const phone = user.phone?.trim() || null;
+      if (!utilisateur) {
+        const email = user.email?.trim() || '';
+        const phone = user.phone?.trim() || null;
 
-      const [existingProfileByEmail, existingProfileByPhone] = await Promise.all([
-        email
-          ? this.prisma.profile.findUnique({
-              where: { email },
-              select: { id: true, userId: true },
-            })
-          : null,
-        phone
-          ? this.prisma.profile.findUnique({
-              where: { phone },
-              select: { id: true, userId: true },
-            })
-          : null,
-      ]);
+        const [existingProfileByEmail, existingProfileByPhone] = await Promise.all([
+          email
+            ? this.prisma.profile.findUnique({
+                where: { email },
+                select: { id: true, userId: true },
+              })
+            : null,
+          phone
+            ? this.prisma.profile.findUnique({
+                where: { phone },
+                select: { id: true, userId: true },
+              })
+            : null,
+        ]);
 
-      const conflictingProfile = existingProfileByEmail || existingProfileByPhone;
-      if (conflictingProfile && conflictingProfile.userId !== user.id) {
-        const oldUserId = conflictingProfile.userId;
-        const newUserId = user.id;
-        this.logger.warn(`Conflit d'UID détecté pour l'email ${email}. Migration de l'ancien UID [${oldUserId}] vers le nouvel UID Supabase [${newUserId}].`);
-        
-        await this.prisma.$transaction(async (tx) => {
-          const oldProfile = await tx.profile.findUnique({ where: { userId: oldUserId } });
-          if (oldProfile) {
-            // Créer le profil temporaire avec le nouvel UID
-            await tx.profile.create({
-              data: {
-                userId: newUserId,
-                email: oldProfile.email,
-                phone: oldProfile.phone,
-                typeHote: oldProfile.typeHote,
-                ninea: oldProfile.ninea,
-                creeLe: oldProfile.creeLe,
+        const conflictingProfile = existingProfileByEmail || existingProfileByPhone;
+        if (conflictingProfile && conflictingProfile.userId !== user.id) {
+          const oldUserId = conflictingProfile.userId;
+          const newUserId = user.id;
+          this.logger.warn(`Conflit d'UID détecté pour l'email ${email}. Migration de l'ancien UID [${oldUserId}] vers le nouvel UID Supabase [${newUserId}].`);
+          
+          await this.prisma.$transaction(async (tx) => {
+            const oldProfile = await tx.profile.findUnique({ where: { userId: oldUserId } });
+            if (oldProfile) {
+              await tx.profile.create({
+                data: {
+                  userId: newUserId,
+                  email: oldProfile.email,
+                  phone: oldProfile.phone,
+                  typeHote: oldProfile.typeHote,
+                  ninea: oldProfile.ninea,
+                  creeLe: oldProfile.creeLe,
+                },
+              });
+
+              const oldUser = await tx.utilisateur.findUnique({ where: { userId: oldUserId } });
+              if (oldUser) {
+                await tx.utilisateur.update({
+                  where: { userId: oldUserId },
+                  data: { userId: newUserId },
+                });
+                
+                await tx.pushSubscription.updateMany({
+                  where: { userId: oldUserId },
+                  data: { userId: newUserId },
+                });
+              }
+
+              await tx.profile.delete({ where: { userId: oldUserId } });
+            }
+          });
+
+          utilisateur = await this.prisma.utilisateur.findUnique({
+            where: { userId: newUserId },
+            select: {
+              id: true,
+              userId: true,
+              email: true,
+              telephone: true,
+              prenom: true,
+              nom: true,
+              dateNaissance: true,
+              estProprietaire: true,
+              actif: true,
+              profileCompleted: true,
+              phoneVerified: true,
+              statutKyc: true,
+              selfieFaceDetected: true,
+              selfieMatchScore: true,
+              logements: {
+                where: { statut: 'PUBLISHED', archiveLe: null },
+                select: { id: true },
+              },
+            },
+          });
+        }
+
+        if (!utilisateur) {
+          const userMetadata = user.user_metadata || {};
+          const fullName = userMetadata.full_name || userMetadata.name || '';
+          const [prenom, ...nomParts] = fullName.trim().split(' ');
+          const nom = nomParts.join(' ') || prenom;
+          const avatarUrl = userMetadata.avatar_url || userMetadata.picture || null;
+
+          this.logger.log(`Création automatique de l'utilisateur Google: ${user.id}, nom: ${fullName}, avatar: ${avatarUrl}`);
+
+          const createdUser = await this.prisma.$transaction(async (tx) => {
+            await tx.profile.upsert({
+              where: { userId: user.id },
+              create: {
+                userId: user.id,
+                email,
+                phone,
+              },
+              update: {
+                email,
+                phone,
               },
             });
 
-            // Mettre à jour l'utilisateur si existant
-            const oldUser = await tx.utilisateur.findUnique({ where: { userId: oldUserId } });
-            if (oldUser) {
-              await tx.utilisateur.update({
-                where: { userId: oldUserId },
-                data: { userId: newUserId },
-              });
-              
-              // Mettre à jour les push subscriptions
-              await tx.pushSubscription.updateMany({
-                where: { userId: oldUserId },
-                data: { userId: newUserId },
-              });
-            }
+            return tx.utilisateur.create({
+              data: {
+                userId: user.id,
+                email,
+                telephone: phone || '',
+                prenom: prenom || 'Utilisateur',
+                nom: nom || 'Google',
+                dateNaissance: null,
+                estProprietaire: false,
+                actif: true,
+                profileCompleted: false,
+                phoneVerified: false,
+                avatarUrl: avatarUrl,
+              },
+              select: {
+                id: true,
+                userId: true,
+                email: true,
+                telephone: true,
+                prenom: true,
+                nom: true,
+                dateNaissance: true,
+                estProprietaire: true,
+                actif: true,
+                profileCompleted: true,
+                phoneVerified: true,
+                statutKyc: true,
+                selfieFaceDetected: true,
+                selfieMatchScore: true,
+                logements: {
+                  where: { statut: 'PUBLISHED', archiveLe: null },
+                  select: { id: true },
+                },
+              },
+            });
+          });
 
-            // Supprimer l'ancien profil
-            await tx.profile.delete({ where: { userId: oldUserId } });
-          }
-        });
-
-        // Recharger l'utilisateur migré
-        utilisateur = await this.prisma.utilisateur.findUnique({
-          where: { userId: newUserId },
-          select: {
-            id: true,
-            userId: true,
-            email: true,
-            telephone: true,
-            prenom: true,
-            nom: true,
-            dateNaissance: true,
-            estProprietaire: true,
-            actif: true,
-            profileCompleted: true,
-            phoneVerified: true,
-            statutKyc: true,
-            selfieFaceDetected: true,
-            selfieMatchScore: true,
-            logements: {
-              where: { statut: 'PUBLISHED', archiveLe: null },
-              select: { id: true },
-            },
-          },
-        });
+          utilisateur = createdUser;
+        }
       }
 
       if (!utilisateur) {
-        await this.prisma.profile.upsert({
-          where: { userId: user.id },
-          create: {
-            userId: user.id,
-            email,
-            phone,
-          },
-          update: {
-            email,
-            phone,
-          },
-        });
-
-        return {
-          onboardingRequired: true,
-          profile: {
-            email,
-            phone,
-          },
-        };
+        throw new UnauthorizedException('Impossible de créer ou récupérer l\'utilisateur');
       }
-    }
 
     if (!utilisateur.actif) {
       throw new UnauthorizedException('Compte désactivé');

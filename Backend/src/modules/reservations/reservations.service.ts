@@ -113,6 +113,51 @@ export class ReservationsService {
     return this.proprioAbsentUseCase.execute(id, userId);
   }
 
+  /**
+   * Extend owner absence timeout by +2 hours (tenant only)
+   */
+  async extendAbsentTimeout(userId: string, reservationId: string) {
+    return await this.prisma.$transaction(async (tx) => {
+      const reservation = await tx.reservation.findUnique({
+        where: { id: reservationId },
+      });
+
+      if (!reservation) {
+        throw new NotFoundException('Réservation introuvable');
+      }
+
+      if (reservation.locataireId !== userId) {
+        throw new BadRequestException('Seul le locataire peut prolonger l\'attente');
+      }
+
+      if (reservation.statut !== 'CONFIRMED' || !reservation.absenceSignaleeLe) {
+        throw new BadRequestException('Aucun signalement d\'absence actif sur cette réservation');
+      }
+
+      const currentSignalee = new Date(reservation.absenceSignaleeLe);
+      const extendedSignalee = new Date(currentSignalee.getTime() + 2 * 60 * 60 * 1000);
+
+      const updated = await tx.reservation.update({
+        where: { id: reservationId },
+        data: {
+          absenceSignaleeLe: extendedSignalee,
+        },
+      });
+
+      await tx.reservationHistorique.create({
+        data: {
+          reservationId,
+          ancienStatut: reservation.statut as StatutReservation,
+          nouveauStatut: reservation.statut as StatutReservation,
+          modifiePar: userId,
+          raison: 'Prolongation de l\'attente hôte accordée par le locataire (+2h)',
+        },
+      });
+
+      return updated;
+    });
+  }
+
   async uploadCheckOutPhotos(id: string, userId: string, photos: string[]) {
     return this.checkoutUploadUseCase.execute(id, userId, photos);
   }
@@ -193,6 +238,50 @@ export class ReservationsService {
 
       return { message: 'Absence signalée. La réservation sera annulée automatiquement si le locataire ne se présente pas.' };
     }, { isolationLevel: 'RepeatableRead' });
+  }
+
+  /**
+   * Reopen a no-show reservation for late check-in (owner only)
+   */
+  async reopenLateCheckin(userId: string, reservationId: string) {
+    return await this.prisma.$transaction(async (tx) => {
+      const reservation = await tx.reservation.findUnique({
+        where: { id: reservationId },
+      });
+
+      if (!reservation) {
+        throw new NotFoundException('Réservation introuvable');
+      }
+
+      if (reservation.proprietaireId !== userId) {
+        throw new BadRequestException('Seul le propriétaire peut réouvrir la réservation');
+      }
+
+      if (reservation.statut !== 'COMPLETED' && reservation.statut !== 'CANCELLED') {
+        throw new BadRequestException('La réservation n\'est pas dans un état clôturé/No-Show');
+      }
+
+      const now = new Date();
+      const updated = await tx.reservation.update({
+        where: { id: reservationId },
+        data: {
+          statut: 'CHECKED_IN',
+          checkinLocataireLe: now,
+        },
+      });
+
+      await tx.reservationHistorique.create({
+        data: {
+          reservationId,
+          ancienStatut: reservation.statut as StatutReservation,
+          nouveauStatut: 'CHECKED_IN',
+          modifiePar: userId,
+          raison: 'Accueilli tardivement par le propriétaire après signalement No-Show',
+        },
+      });
+
+      return updated;
+    });
   }
 
   /**

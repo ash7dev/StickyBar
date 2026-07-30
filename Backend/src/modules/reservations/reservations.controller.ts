@@ -139,6 +139,14 @@ export class ReservationsController {
     return this.reservationsService.reportProprioAbsent(id, user.id);
   }
 
+  @Post(':id/extend-absent-timeout')
+  @Roles(Role.LOCATAIRE)
+  @ApiOperation({ summary: 'Locataire accorde +2h d\'attente supplémentaires à l\'hôte' })
+  @ApiParam({ name: 'id', description: 'UUID de la réservation' })
+  extendAbsentTimeout(@Param('id') id: string, @CurrentUser() user: AuthUser) {
+    return this.reservationsService.extendAbsentTimeout(user.id, id);
+  }
+
   @Post(':id/checkout/upload')
   @Roles(Role.PROPRIETAIRE)
   @ApiOperation({ summary: 'Propriétaire uploade les photos de check-out' })
@@ -170,6 +178,17 @@ export class ReservationsController {
     @Body() dto: SignalTenantNoshowDto,
   ) {
     return this.reservationsService.signalTenantNoshow(user.id, id, dto.commentaire);
+  }
+
+  @Post(':id/reopen-late-checkin')
+  @Roles(Role.PROPRIETAIRE)
+  @ApiOperation({ summary: 'Accueillir le voyageur quand même après signalement No-Show (Check-in tardif)' })
+  @ApiParam({ name: 'id', description: 'UUID de la réservation' })
+  reopenLateCheckin(
+    @Param('id') id: string,
+    @CurrentUser() user: AuthUser,
+  ) {
+    return this.reservationsService.reopenLateCheckin(user.id, id);
   }
 
   @Post(':id/rate-tenant')

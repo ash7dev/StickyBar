@@ -10,6 +10,8 @@ import {
 } from 'lucide-react';
 import { cn } from '@/lib/utils/cn';
 import { BRAND } from '@/lib/config';
+import { Navbar } from '@/components/layout/navbar';
+import { Footer } from '@/features/home/components/web/Footer';
 
 /* ─── TOC ─────────────────────────────────────────────────────────────────── */
 
@@ -37,14 +39,14 @@ function ArticleHeading({ id, number, title, icon: Icon }: {
 }) {
   return (
     <div id={id} className="flex items-start gap-4 mb-6 scroll-mt-28">
-      <div className="shrink-0 w-12 h-12 rounded-2xl bg-gradient-to-br from-violet-500 to-violet-700 flex items-center justify-center shadow-lg shadow-violet-500/20">
+      <div className="shrink-0 w-12 h-12 rounded-2xl bg-gradient-to-br from-forest-600 to-forest-800 flex items-center justify-center shadow-md shadow-forest-900/10">
         <Icon className="w-5 h-5 text-white" />
       </div>
       <div>
-        <p className="text-[11px] font-black text-violet-500 uppercase tracking-widest mb-0.5">
+        <p className="text-[11px] font-bold text-forest-600 uppercase tracking-widest mb-0.5">
           Article {number}
         </p>
-        <h2 className="text-xl sm:text-2xl font-black text-neutral-900 leading-tight">{title}</h2>
+        <h2 className="text-xl sm:text-2xl font-display font-semibold text-foreground leading-tight">{title}</h2>
       </div>
     </div>
   );
@@ -55,29 +57,29 @@ function InfoBox({ type = 'info', children }: {
   children: React.ReactNode;
 }) {
   const cfg = {
-    info:    { bg: 'bg-violet-50 border-violet-200/60',   icon: '💡', text: 'text-violet-900' },
-    warning: { bg: 'bg-amber-50 border-amber-200/60',     icon: '⚠️',  text: 'text-amber-900' },
-    key:     { bg: 'bg-emerald-50 border-emerald-200/60', icon: '🔑',  text: 'text-emerald-900' },
-    success: { bg: 'bg-emerald-50 border-emerald-200/60', icon: '✅',  text: 'text-emerald-900' },
+    info:    { bg: 'bg-forest-50/80 border-forest-200/70',   icon: '💡', text: 'text-forest-900' },
+    warning: { bg: 'bg-warning-50 border-warning-500/30',   icon: '⚠️',  text: 'text-warning-700' },
+    key:     { bg: 'bg-lime-50/80 border-lime-200/80',      icon: '🔑',  text: 'text-forest-900' },
+    success: { bg: 'bg-success-50 border-success-500/30',   icon: '✅',  text: 'text-success-700' },
   }[type];
   return (
-    <div className={cn('flex gap-3 p-4 rounded-2xl border my-4', cfg.bg)}>
+    <div className={cn('flex gap-3 p-4 rounded-2xl border my-5 shadow-xs', cfg.bg)}>
       <span className="text-lg shrink-0 mt-0.5">{cfg.icon}</span>
-      <div className={cn('text-sm leading-relaxed font-medium', cfg.text)}>{children}</div>
+      <div className={cn('text-sm leading-relaxed font-sans font-medium', cfg.text)}>{children}</div>
     </div>
   );
 }
 
 function Para({ children }: { children: React.ReactNode }) {
-  return <p className="text-[15px] text-neutral-600 leading-[1.85] mb-4">{children}</p>;
+  return <p className="text-sm sm:text-base text-foreground-muted leading-[1.8] mb-4 font-sans">{children}</p>;
 }
 
 function Ul({ items }: { items: (string | React.ReactNode)[] }) {
   return (
-    <ul className="space-y-2 my-4 ml-1">
+    <ul className="space-y-2.5 my-5 ml-1">
       {items.map((item, i) => (
-        <li key={i} className="flex gap-2.5 text-[14px] text-neutral-600 leading-relaxed">
-          <span className="mt-2 shrink-0 w-1.5 h-1.5 rounded-full bg-violet-400" />
+        <li key={i} className="flex gap-3 text-sm text-foreground-muted leading-relaxed font-sans">
+          <span className="mt-2 shrink-0 w-1.5 h-1.5 rounded-full bg-forest-500" />
           <span>{item}</span>
         </li>
       ))}
@@ -87,11 +89,11 @@ function Ul({ items }: { items: (string | React.ReactNode)[] }) {
 
 function Dl({ items }: { items: { term: string; desc: string }[] }) {
   return (
-    <dl className="space-y-3 my-4">
+    <dl className="space-y-3 my-5">
       {items.map(({ term, desc }) => (
-        <div key={term} className="flex gap-3 p-3.5 bg-neutral-50 rounded-xl border border-neutral-100">
-          <dt className="shrink-0 font-black text-sm text-violet-600 min-w-[160px]">{term}</dt>
-          <dd className="text-sm text-neutral-600 leading-relaxed">{desc}</dd>
+        <div key={term} className="flex flex-col sm:flex-row sm:items-baseline gap-2 sm:gap-4 p-4 bg-background-card rounded-2xl border border-border shadow-xs">
+          <dt className="shrink-0 font-bold text-sm text-forest-600 sm:min-w-[160px]">{term}</dt>
+          <dd className="text-sm text-foreground-muted leading-relaxed">{desc}</dd>
         </div>
       ))}
     </dl>
@@ -103,30 +105,30 @@ function RightCard({ icon: Icon, title, desc, color }: {
   title: string; desc: string; color: string;
 }) {
   return (
-    <div className="flex gap-3 p-4 bg-white border border-neutral-100 rounded-2xl shadow-sm hover:shadow-md transition-shadow">
-      <div className={cn('w-9 h-9 rounded-xl flex items-center justify-center shrink-0', color)}>
-        <Icon className="w-4 h-4 text-white" />
+    <div className="flex gap-3 p-4 bg-background-card border border-border rounded-2xl shadow-xs hover:shadow-md transition-shadow">
+      <div className={cn('w-9 h-9 rounded-xl flex items-center justify-center shrink-0 text-white', color)}>
+        <Icon className="w-4 h-4" />
       </div>
       <div>
-        <p className="font-bold text-sm text-neutral-900">{title}</p>
-        <p className="text-xs text-neutral-500 mt-0.5 leading-relaxed">{desc}</p>
+        <p className="font-bold text-sm text-foreground">{title}</p>
+        <p className="text-xs text-foreground-muted mt-0.5 leading-relaxed">{desc}</p>
       </div>
     </div>
   );
 }
 
 function Divider() {
-  return <div className="h-px bg-gradient-to-r from-transparent via-neutral-200 to-transparent my-10" />;
+  return <div className="h-px bg-gradient-to-r from-transparent via-border to-transparent my-10" />;
 }
 
 function RetentionRow({ category, duration, reason }: { category: string; duration: string; reason: string }) {
   return (
-    <div className="grid grid-cols-[1fr_auto] sm:grid-cols-[1fr_120px_1fr] gap-3 items-start p-3.5 bg-neutral-50 rounded-xl border border-neutral-100">
-      <p className="text-sm font-semibold text-neutral-800">{category}</p>
-      <span className="inline-flex items-center px-2.5 py-1 rounded-lg bg-violet-100 text-violet-700 text-[11px] font-black whitespace-nowrap">
+    <div className="grid grid-cols-[1fr_auto] sm:grid-cols-[1fr_120px_1fr] gap-3 items-start p-3.5 bg-background-card rounded-xl border border-border shadow-xs">
+      <p className="text-sm font-semibold text-foreground">{category}</p>
+      <span className="inline-flex items-center px-2.5 py-1 rounded-lg bg-forest-50 text-forest-700 text-[11px] font-bold whitespace-nowrap">
         {duration}
       </span>
-      <p className="text-xs text-neutral-500 leading-relaxed col-span-2 sm:col-span-1">{reason}</p>
+      <p className="text-xs text-foreground-muted leading-relaxed col-span-2 sm:col-span-1">{reason}</p>
     </div>
   );
 }
@@ -158,41 +160,41 @@ export function PrivacyPage() {
   }, []);
 
   return (
-    <div className="bg-white min-h-screen">
+    <div className="bg-background min-h-screen text-foreground font-sans">
+      <Navbar />
 
       {/* ══ Hero ══════════════════════════════════════════════════════════════ */}
-      <div className="relative overflow-hidden bg-[#0d0714]">
-        <div className="absolute inset-0">
-          <div className="absolute top-0 left-[15%] w-[500px] h-[400px] rounded-full bg-violet-600/25 blur-[130px]" />
-          <div className="absolute bottom-0 right-[5%] w-[350px] h-[300px] rounded-full bg-emerald-500/15 blur-[100px]" />
-          <div className="absolute top-[40%] left-[60%] w-[200px] h-[200px] rounded-full bg-accent-400/10 blur-[80px]" />
-          <div className="absolute inset-0 bg-[url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNDAiIGhlaWdodD0iNDAiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+PGNpcmNsZSBjeD0iMSIgY3k9IjEiIHI9IjEiIGZpbGw9InJnYmEoMjU1LDI1NSwyNTUsMC4wMykiLz48L3N2Zz4=')] opacity-70" />
+      <div className="relative overflow-hidden bg-forest-950 text-white">
+        <div className="absolute inset-0 pointer-events-none">
+          <div className="absolute top-0 left-[15%] w-[500px] h-[400px] rounded-full bg-forest-600/25 blur-[130px]" />
+          <div className="absolute bottom-0 right-[5%] w-[350px] h-[300px] rounded-full bg-lime-400/15 blur-[100px]" />
+          <div className="absolute inset-0 bg-[url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNDAiIGhlaWdodD0iNDAiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+PGNpcmNsZSBjeD0iMSIgY3k9IjEiIHI9IjEiIGZpbGw9InJnYmEoMjU1LDI1NSwyNTUsMC4wMykiLz48L3N2Zz4=')] opacity-50" />
         </div>
 
-        <div className="relative max-w-6xl mx-auto px-4 py-20 sm:py-28">
+        <div className="relative max-w-6xl mx-auto px-4 py-16 sm:py-24">
           {/* Breadcrumb */}
-          <div className="flex items-center gap-2 text-[12px] font-semibold text-white/40 mb-8 flex-wrap">
-            <Link href="/" className="hover:text-white/70 transition-colors">{BRAND.name}</Link>
-            <ChevronRight className="w-3 h-3" />
-            <Link href="/cgu" className="hover:text-white/70 transition-colors">Légal</Link>
-            <ChevronRight className="w-3 h-3" />
-            <span className="text-white/60">Politique de confidentialité</span>
+          <div className="flex items-center gap-2 text-xs font-semibold text-neutral-400 mb-8 flex-wrap">
+            <Link href="/" className="hover:text-white transition-colors">{BRAND.name}</Link>
+            <ChevronRight className="w-3 h-3 text-neutral-500" />
+            <Link href="/cgu" className="hover:text-white transition-colors">Légal</Link>
+            <ChevronRight className="w-3 h-3 text-neutral-500" />
+            <span className="text-lime-300">Politique de confidentialité</span>
           </div>
 
           <div className="max-w-3xl">
-            <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-violet-500/15 border border-violet-500/25 text-violet-300 text-[11px] font-bold uppercase tracking-widest mb-6">
-              <Lock className="w-3 h-3" />
+            <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-forest-900/80 border border-forest-700/60 text-lime-300 text-[11px] font-bold uppercase tracking-widest mb-6 shadow-sm">
+              <Lock className="w-3.5 h-3.5 text-lime-400" />
               Protection des données
             </div>
 
-            <h1 className="text-4xl sm:text-5xl lg:text-6xl font-black text-white leading-[1.05] tracking-tight mb-6">
+            <h1 className="text-4xl sm:text-5xl lg:text-6xl font-display font-bold text-white leading-[1.05] tracking-tight mb-6">
               Politique de<br />
-              <span className="text-transparent bg-clip-text bg-gradient-to-r from-violet-400 to-emerald-400">
+              <span className="text-transparent bg-clip-text bg-gradient-to-r from-lime-300 via-lime-400 to-forest-300">
                 Confidentialité
               </span>
             </h1>
 
-            <p className="text-lg text-white/60 leading-relaxed mb-8 max-w-xl">
+            <p className="text-base sm:text-lg text-forest-100/80 leading-relaxed mb-8 max-w-xl">
               La protection de vos données personnelles est une priorité absolue pour {BRAND.name}.
               Ce document explique comment nous collectons, utilisons et protégeons vos informations.
             </p>
@@ -203,10 +205,10 @@ export function PrivacyPage() {
                 { icon: FileText,  label: 'Version',            value: '1.4' },
                 { icon: Shield,    label: 'Cadre juridique',    value: 'Loi sén. 2008-12 · RGPD' },
               ].map(({ icon: Icon, label, value }) => (
-                <div key={label} className="flex items-center gap-2.5 px-4 py-2.5 bg-white/[0.06] border border-white/10 rounded-xl">
-                  <Icon className="w-3.5 h-3.5 text-violet-400" />
+                <div key={label} className="flex items-center gap-2.5 px-4 py-2.5 bg-forest-900/60 border border-forest-800/80 rounded-xl shadow-xs">
+                  <Icon className="w-4 h-4 text-lime-400" />
                   <div>
-                    <p className="text-[10px] text-white/40 font-semibold uppercase tracking-wide">{label}</p>
+                    <p className="text-[10px] text-forest-300 font-bold uppercase tracking-wide">{label}</p>
                     <p className="text-[13px] font-bold text-white">{value}</p>
                   </div>
                 </div>
@@ -215,7 +217,7 @@ export function PrivacyPage() {
           </div>
         </div>
 
-        <div className="absolute bottom-0 left-0 right-0 h-12 bg-gradient-to-t from-white to-transparent" />
+        <div className="h-12 bg-gradient-to-t from-background to-transparent" />
       </div>
 
       {/* ══ Body ══════════════════════════════════════════════════════════════ */}
@@ -225,7 +227,7 @@ export function PrivacyPage() {
           {/* ── Sidebar TOC ─────────────────────────────────────────────────── */}
           <aside className="hidden lg:block w-64 shrink-0">
             <div className="sticky top-24">
-              <p className="text-[10px] font-black text-neutral-400 uppercase tracking-widest mb-3 px-3">
+              <p className="text-xs font-bold text-foreground-muted uppercase tracking-widest mb-3 px-3">
                 Sommaire
               </p>
               <nav className="space-y-0.5">
@@ -234,25 +236,25 @@ export function PrivacyPage() {
                   return (
                     <a key={id} href={`#${id}`}
                       className={cn(
-                        'flex items-center gap-2.5 px-3 py-2.5 rounded-xl text-[13px] font-semibold transition-all duration-200 group',
+                        'flex items-center gap-2.5 px-3 py-2.5 rounded-xl text-[13px] transition-all duration-200 group',
                         active
-                          ? 'bg-violet-50 text-violet-700 border border-violet-100'
-                          : 'text-neutral-500 hover:bg-neutral-50 hover:text-neutral-900',
+                          ? 'bg-forest-50 text-forest-800 border border-forest-200/80 font-bold shadow-xs'
+                          : 'text-foreground-muted hover:bg-neutral-100 hover:text-foreground font-medium',
                       )}>
                       <Icon className={cn('w-3.5 h-3.5 shrink-0 transition-colors',
-                        active ? 'text-violet-500' : 'text-neutral-400 group-hover:text-neutral-600'
+                        active ? 'text-forest-600' : 'text-neutral-400 group-hover:text-neutral-600'
                       )} />
                       <span className="leading-tight">{label}</span>
-                      {active && <div className="ml-auto w-1.5 h-1.5 rounded-full bg-violet-500" />}
+                      {active && <div className="ml-auto w-1.5 h-1.5 rounded-full bg-forest-600" />}
                     </a>
                   );
                 })}
               </nav>
 
-              <div className="mt-6 p-4 bg-violet-50 border border-violet-100 rounded-2xl">
-                <p className="text-[11px] font-bold text-violet-600 mb-1">Délégué à la protection des données</p>
+              <div className="mt-6 p-4 bg-background-card border border-border rounded-2xl shadow-xs">
+                <p className="text-xs font-bold text-foreground-muted mb-1">Délégué à la protection des données</p>
                 <a href={`mailto:dpo@${BRAND.domain}`}
-                  className="flex items-center gap-1.5 text-xs font-semibold text-violet-700 hover:text-violet-900 transition-colors">
+                  className="flex items-center gap-1.5 text-xs font-bold text-forest-600 hover:text-forest-700 transition-colors">
                   <Mail className="w-3.5 h-3.5" />
                   dpo@{BRAND.domain}
                 </a>
@@ -267,7 +269,7 @@ export function PrivacyPage() {
             <ArticleHeading id="responsable" number="1" title="Responsable du traitement" icon={Building2} />
             <Para>
               Le responsable du traitement de vos données personnelles est la société{' '}
-              <strong>{BRAND.name} SAS</strong>, dont le siège social est situé à Dakar, Sénégal,
+              <strong className="text-foreground">{BRAND.name} SAS</strong>, dont le siège social est situé à Dakar, Sénégal,
               immatriculée au Registre du Commerce et du Crédit Mobilier de Dakar.
             </Para>
             <Dl items={[
@@ -288,54 +290,54 @@ export function PrivacyPage() {
             {/* Art. 2 — Données collectées */}
             <ArticleHeading id="collecte" number="2" title="Données collectées" icon={Database} />
             <Para>
-              Nous collectons uniquement les données strictement nécessaires à la fourniture
+              Nous collectons uniquement les données strictly nécessaires à la fourniture
               de nos services. Ces données se répartissent en plusieurs catégories :
             </Para>
 
-            <div className="space-y-4 my-4">
+            <div className="space-y-4 my-5">
               {[
                 {
                   title: 'Données d\'identité',
-                  color: 'bg-blue-500',
+                  color: 'bg-forest-600',
                   icon: UserCheck,
                   items: ['Nom et prénom', 'Date de naissance', 'Numéro de pièce d\'identité (KYC)', 'Photo de la pièce d\'identité', 'Selfie de vérification'],
                 },
                 {
                   title: 'Données de contact',
-                  color: 'bg-emerald-500',
+                  color: 'bg-forest-700',
                   icon: Phone,
                   items: ['Numéro de téléphone mobile', 'Adresse e-mail', 'Adresse postale (optionnelle)'],
                 },
                 {
                   title: 'Données de transaction',
-                  color: 'bg-violet-500',
+                  color: 'bg-forest-800',
                   icon: Lock,
                   items: ['Historique des réservations', 'Montants des transactions', 'Références de paiement', 'Numéros de mobile money (masqués)'],
                 },
                 {
                   title: 'Données d\'usage',
-                  color: 'bg-amber-500',
+                  color: 'bg-forest-600',
                   icon: Eye,
                   items: ['Adresse IP', 'Type de navigateur et appareil', 'Pages visitées et durée', 'Recherches effectuées'],
                 },
                 {
                   title: 'Contenu généré',
-                  color: 'bg-rose-500',
+                  color: 'bg-forest-700',
                   icon: FileText,
                   items: ['Photos des logements', 'Photos d\'état des lieux', 'Avis et évaluations', 'Messages échangés via la Plateforme'],
                 },
               ].map(({ title, color, icon: Icon, items }) => (
-                <div key={title} className="bg-neutral-50 rounded-2xl border border-neutral-100 overflow-hidden">
-                  <div className="flex items-center gap-3 px-4 py-3 border-b border-neutral-100">
+                <div key={title} className="bg-background-card rounded-2xl border border-border overflow-hidden shadow-xs">
+                  <div className="flex items-center gap-3 px-4 py-3 border-b border-border bg-neutral-50/50">
                     <div className={cn('w-7 h-7 rounded-lg flex items-center justify-center', color)}>
                       <Icon className="w-3.5 h-3.5 text-white" />
                     </div>
-                    <p className="font-bold text-sm text-neutral-900">{title}</p>
+                    <p className="font-bold text-sm text-foreground">{title}</p>
                   </div>
-                  <ul className="p-4 space-y-1.5">
+                  <ul className="p-4 space-y-2">
                     {items.map((item) => (
-                      <li key={item} className="flex gap-2 text-[13px] text-neutral-600">
-                        <span className="mt-1.5 w-1 h-1 rounded-full bg-neutral-300 shrink-0" />
+                      <li key={item} className="flex gap-2.5 text-sm text-foreground-muted">
+                        <span className="mt-2 w-1.5 h-1.5 rounded-full bg-forest-400 shrink-0" />
                         {item}
                       </li>
                     ))}
@@ -374,18 +376,18 @@ export function PrivacyPage() {
             <Para>
               Chaque traitement de données s&apos;appuie sur l&apos;une des bases légales suivantes :
             </Para>
-            <div className="space-y-3 my-4">
+            <div className="space-y-3 my-5">
               {[
-                { base: 'Exécution du contrat',    color: 'bg-emerald-100 text-emerald-800 border-emerald-200', desc: 'Traitement nécessaire à l\'exécution des services que vous avez demandés (réservations, paiements, KYC).' },
-                { base: 'Obligation légale',        color: 'bg-blue-100 text-blue-800 border-blue-200',          desc: 'Conformité aux exigences de la loi 2008-12 et des réglementations fiscales sénégalaises.' },
-                { base: 'Intérêt légitime',         color: 'bg-violet-100 text-violet-800 border-violet-200',    desc: 'Prévention de la fraude, amélioration de nos services, sécurité de la Plateforme.' },
-                { base: 'Consentement',             color: 'bg-amber-100 text-amber-800 border-amber-200',       desc: 'Communications marketing, cookies non-essentiels. Retirable à tout moment.' },
+                { base: 'Exécution du contrat',    color: 'bg-forest-50 text-forest-800 border-forest-200', desc: 'Traitement nécessaire à l\'exécution des services que vous avez demandés (réservations, paiements, KYC).' },
+                { base: 'Obligation légale',        color: 'bg-info-50 text-info-700 border-info-500/30',          desc: 'Conformité aux exigences de la loi 2008-12 et des réglementations fiscales sénégalaises.' },
+                { base: 'Intérêt légitime',         color: 'bg-lime-50 text-forest-900 border-lime-200',    desc: 'Prévention de la fraude, amélioration de nos services, sécurité de la Plateforme.' },
+                { base: 'Consentement',             color: 'bg-warning-50 text-warning-700 border-warning-500/30',       desc: 'Communications marketing, cookies non-essentiels. Retirable à tout moment.' },
               ].map(({ base, color, desc }) => (
-                <div key={base} className="flex gap-3 items-start">
-                  <span className={cn('shrink-0 px-2.5 py-1 rounded-lg text-[11px] font-black border mt-0.5 whitespace-nowrap', color)}>
+                <div key={base} className="flex gap-3 items-start p-3 bg-background-card border border-border rounded-xl shadow-xs">
+                  <span className={cn('shrink-0 px-2.5 py-1 rounded-lg text-[11px] font-bold border mt-0.5 whitespace-nowrap', color)}>
                     {base}
                   </span>
-                  <p className="text-sm text-neutral-600 leading-relaxed">{desc}</p>
+                  <p className="text-sm text-foreground-muted leading-relaxed">{desc}</p>
                 </div>
               ))}
             </div>
@@ -398,7 +400,7 @@ export function PrivacyPage() {
               Nous conservons vos données uniquement pour la durée nécessaire aux finalités
               pour lesquelles elles ont été collectées, ou pour satisfaire à nos obligations légales.
             </Para>
-            <div className="space-y-2.5 my-4">
+            <div className="space-y-2.5 my-5">
               <RetentionRow category="Données de compte actif" duration="Durée du compte" reason="Maintenu tant que votre compte est actif" />
               <RetentionRow category="Données de compte supprimé" duration="3 ans" reason="Obligations légales et prévention des fraudes après suppression" />
               <RetentionRow category="Données de transaction" duration="10 ans" reason="Conformité fiscale et comptable (Code général des impôts sénégalais)" />
@@ -416,16 +418,16 @@ export function PrivacyPage() {
               Vos données peuvent être partagées avec les catégories de destinataires suivantes,
               dans la stricte limite des finalités définies :
             </Para>
-            <div className="grid sm:grid-cols-2 gap-3 my-4">
+            <div className="grid sm:grid-cols-2 gap-3 my-5">
               {[
                 { label: 'Prestataires de paiement', desc: 'Wave, Orange Money, PayDunya, Stripe — pour traiter vos transactions de manière sécurisée.' },
                 { label: 'Hébergement & cloud',       desc: 'Supabase (PostgreSQL), Cloudinary (médias) — hébergés en Europe ou en Afrique.' },
                 { label: 'Service client',             desc: 'Notre équipe support accède à vos données uniquement pour résoudre vos demandes.' },
                 { label: 'Autorités légales',          desc: 'Uniquement sur réquisition judiciaire ou obligation légale dûment établie.' },
               ].map(({ label, desc }) => (
-                <div key={label} className="p-4 bg-neutral-50 rounded-2xl border border-neutral-100">
-                  <p className="font-bold text-sm text-neutral-900 mb-1">{label}</p>
-                  <p className="text-xs text-neutral-500 leading-relaxed">{desc}</p>
+                <div key={label} className="p-4 bg-background-card rounded-2xl border border-border shadow-xs">
+                  <p className="font-bold text-sm text-foreground mb-1">{label}</p>
+                  <p className="text-xs text-foreground-muted leading-relaxed">{desc}</p>
                 </div>
               ))}
             </div>
@@ -461,18 +463,18 @@ export function PrivacyPage() {
               Conformément à la loi 2008-12 et au RGPD, vous bénéficiez des droits suivants
               sur vos données personnelles :
             </Para>
-            <div className="grid sm:grid-cols-2 gap-3 my-4">
-              <RightCard icon={Eye}      title="Droit d'accès"       color="bg-blue-500"    desc="Obtenir une copie de toutes les données que nous détenons vous concernant." />
-              <RightCard icon={FileText} title="Droit de rectification" color="bg-emerald-500" desc="Corriger des données inexactes ou incomplètes." />
-              <RightCard icon={Trash2}   title="Droit à l'effacement" color="bg-rose-500"    desc="Demander la suppression de vos données dans les cas prévus par la loi." />
-              <RightCard icon={Download} title="Droit à la portabilité" color="bg-violet-500" desc="Recevoir vos données dans un format structuré et lisible par machine." />
-              <RightCard icon={Lock}     title="Droit d'opposition"  color="bg-amber-500"   desc="Vous opposer au traitement basé sur notre intérêt légitime." />
-              <RightCard icon={Key}      title="Droit de limitation"  color="bg-slate-500"   desc="Demander la limitation du traitement dans certaines circonstances." />
+            <div className="grid sm:grid-cols-2 gap-3 my-5">
+              <RightCard icon={Eye}      title="Droit d'accès"       color="bg-forest-600"    desc="Obtenir une copie de toutes les données que nous détenons vous concernant." />
+              <RightCard icon={FileText} title="Droit de rectification" color="bg-forest-700" desc="Corriger des données inexactes ou incomplètes." />
+              <RightCard icon={Trash2}   title="Droit à l'effacement" color="bg-error-500 font-bold"    desc="Demander la suppression de vos données dans les cas prévus par la loi." />
+              <RightCard icon={Download} title="Droit à la portabilité" color="bg-forest-600" desc="Recevoir vos données dans un format structuré et lisible par machine." />
+              <RightCard icon={Lock}     title="Droit d'opposition"  color="bg-forest-700"   desc="Vous opposer au traitement basé sur notre intérêt légitime." />
+              <RightCard icon={Key}      title="Droit de limitation"  color="bg-forest-800"   desc="Demander la limitation du traitement dans certaines circonstances." />
             </div>
 
             <InfoBox type="info">
               Pour exercer l&apos;un de ces droits, envoyez votre demande à{' '}
-              <strong>privacy@{BRAND.domain}</strong> en joignant une copie de votre pièce
+              <strong className="text-foreground">privacy@{BRAND.domain}</strong> en joignant une copie de votre pièce
               d&apos;identité. Nous nous engageons à répondre dans un délai de{' '}
               <strong>30 jours</strong>. En cas de refus, vous pouvez saisir la Commission
               de Protection des Données Personnelles du Sénégal (CDP).
@@ -486,21 +488,21 @@ export function PrivacyPage() {
               {BRAND.name} utilise des cookies et technologies similaires pour faire fonctionner
               la Plateforme, analyser son utilisation et personnaliser votre expérience.
             </Para>
-            <div className="space-y-3 my-4">
+            <div className="space-y-3 my-5">
               {[
                 { name: 'Cookies essentiels',    required: true,  desc: 'Authentification, sécurité, préférences de session. Ne peuvent pas être désactivés.' },
                 { name: 'Cookies analytiques',   required: false, desc: 'Analyse anonymisée du trafic (pages vues, parcours). Peuvent être refusés.' },
                 { name: 'Cookies fonctionnels',  required: false, desc: 'Mémorisation de vos préférences (langue, ville, filtres). Peuvent être refusés.' },
               ].map(({ name, required, desc }) => (
-                <div key={name} className="flex gap-4 p-4 bg-neutral-50 rounded-xl border border-neutral-100 items-start">
-                  <span className={cn('shrink-0 px-2 py-0.5 rounded-md text-[10px] font-black mt-0.5',
-                    required ? 'bg-rose-100 text-rose-700' : 'bg-neutral-200 text-neutral-600'
+                <div key={name} className="flex gap-4 p-4 bg-background-card rounded-2xl border border-border items-start shadow-xs">
+                  <span className={cn('shrink-0 px-2.5 py-0.5 rounded-md text-[10px] font-bold mt-0.5',
+                    required ? 'bg-error-50 text-error-700' : 'bg-neutral-100 text-neutral-600'
                   )}>
                     {required ? 'Requis' : 'Optionnel'}
                   </span>
                   <div>
-                    <p className="font-bold text-sm text-neutral-900">{name}</p>
-                    <p className="text-xs text-neutral-500 mt-0.5">{desc}</p>
+                    <p className="font-bold text-sm text-foreground">{name}</p>
+                    <p className="text-xs text-foreground-muted mt-0.5">{desc}</p>
                   </div>
                 </div>
               ))}
@@ -544,7 +546,7 @@ export function PrivacyPage() {
               (18 ans ou plus). Nous ne collectons sciemment aucune donnée personnelle
               de mineurs. Si vous êtes parent ou tuteur légal et pensez que votre enfant
               nous a fourni des données, contactez-nous immédiatement à{' '}
-              <strong>privacy@{BRAND.domain}</strong> et nous procéderons à leur suppression.
+              <strong className="text-foreground">privacy@{BRAND.domain}</strong> et nous procéderons à leur suppression.
             </Para>
 
             <Divider />
@@ -570,19 +572,19 @@ export function PrivacyPage() {
               Pour toute question relative à la protection de vos données personnelles,
               ou pour exercer vos droits, vous pouvez nous contacter via les canaux suivants :
             </Para>
-            <div className="grid sm:grid-cols-3 gap-3 my-4">
+            <div className="grid sm:grid-cols-3 gap-3 my-5">
               {[
                 { icon: Mail,     label: 'E-mail DPO',    value: `dpo@${BRAND.domain}`,     href: `mailto:dpo@${BRAND.domain}` },
                 { icon: Mail,     label: 'Confidentialité', value: `privacy@${BRAND.domain}`, href: `mailto:privacy@${BRAND.domain}` },
                 { icon: Building2, label: 'Courrier',       value: 'Dakar, Sénégal',          href: '#' },
               ].map(({ icon: Icon, label, value, href }) => (
                 <a key={label} href={href}
-                  className="flex flex-col items-center text-center p-4 bg-neutral-50 hover:bg-violet-50 border border-neutral-100 hover:border-violet-200 rounded-2xl transition-all group">
-                  <div className="w-10 h-10 rounded-xl bg-violet-100 group-hover:bg-violet-200 flex items-center justify-center mb-2 transition-colors">
-                    <Icon className="w-5 h-5 text-violet-600" />
+                  className="flex flex-col items-center text-center p-4 bg-background-card hover:bg-forest-50/50 border border-border hover:border-forest-200 rounded-2xl transition-all group shadow-xs">
+                  <div className="w-10 h-10 rounded-xl bg-forest-100 group-hover:bg-forest-200 flex items-center justify-center mb-2 transition-colors">
+                    <Icon className="w-5 h-5 text-forest-600" />
                   </div>
-                  <p className="text-[10px] font-bold text-neutral-400 uppercase tracking-wide mb-0.5">{label}</p>
-                  <p className="text-xs font-bold text-neutral-800 break-all">{value}</p>
+                  <p className="text-[10px] font-bold text-foreground-muted uppercase tracking-wide mb-0.5">{label}</p>
+                  <p className="text-xs font-bold text-foreground break-all">{value}</p>
                 </a>
               ))}
             </div>
@@ -593,19 +595,19 @@ export function PrivacyPage() {
             </Para>
 
             {/* Footer */}
-            <div className="mt-12 pt-8 border-t border-neutral-100 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+            <div className="mt-12 pt-8 border-t border-border flex flex-col sm:flex-row sm:items-center justify-between gap-4">
               <div>
-                <p className="text-xs text-neutral-400 font-semibold">Dernière mise à jour</p>
-                <p className="text-sm font-bold text-neutral-700">1er janvier 2025 — Version 1.4</p>
+                <p className="text-xs text-foreground-muted font-bold">Dernière mise à jour</p>
+                <p className="text-sm font-bold text-foreground">1er janvier 2025 — Version 1.4</p>
               </div>
               <div className="flex items-center gap-3">
                 <Link href="/cgu"
-                  className="flex items-center gap-2 px-4 py-2.5 bg-neutral-50 hover:bg-neutral-100 border border-neutral-200 text-neutral-700 rounded-xl text-sm font-bold transition-colors">
+                  className="btn-ghost !px-4 !py-2.5 !text-sm flex items-center gap-2">
                   <FileText className="w-4 h-4" />
                   Voir les CGU
                 </Link>
                 <a href={`mailto:privacy@${BRAND.domain}`}
-                  className="flex items-center gap-2 px-4 py-2.5 bg-violet-50 hover:bg-violet-100 border border-violet-100 text-violet-700 rounded-xl text-sm font-bold transition-colors">
+                  className="btn-ghost !px-4 !py-2.5 !text-sm flex items-center gap-2">
                   <Mail className="w-4 h-4" />
                   Nous contacter
                 </a>
@@ -619,12 +621,14 @@ export function PrivacyPage() {
       {showScrollTop && (
         <button
           onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
-          className="fixed bottom-8 right-6 z-50 w-11 h-11 rounded-full bg-violet-500 hover:bg-violet-600 text-white shadow-lg shadow-violet-500/30 flex items-center justify-center transition-all hover:-translate-y-0.5 active:scale-95"
+          className="fixed bottom-8 right-6 z-50 w-11 h-11 rounded-full bg-forest-600 hover:bg-forest-700 text-white shadow-lg shadow-forest-900/30 flex items-center justify-center transition-all hover:-translate-y-0.5 active:scale-95"
           aria-label="Retour en haut"
         >
           <ArrowUp className="w-5 h-5" />
         </button>
       )}
+
+      <Footer />
     </div>
   );
 }

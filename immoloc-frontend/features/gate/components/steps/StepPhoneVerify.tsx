@@ -5,16 +5,17 @@ import { authApi } from '@/lib/nestjs';
 import { useRoleStore } from '@/stores/role.store';
 import { cn } from '@/lib/utils/cn';
 import { createClient } from '@/lib/supabase/client';
+import { Loader2, Smartphone, CheckCircle2 } from 'lucide-react';
 
 interface Props { onDone: () => void }
 
 const E164 = /^\+[1-9]\d{6,14}$/;
 
 const inputCls = cn(
-  'w-full rounded-xl border border-border px-4 py-3 text-sm text-neutral-900',
-  'placeholder:text-neutral-300',
+  'w-full rounded-field bg-background-alt border border-border px-4 py-3 text-sm font-semibold text-foreground',
+  'placeholder:text-foreground-faint',
   'outline-none transition-all',
-  'focus:border-emerald-400 focus:ring-2 focus:ring-emerald-100',
+  'focus:border-forest-600 focus:ring-2 focus:ring-forest-500/20',
 );
 
 export function StepPhoneVerify({ onDone }: Props) {
@@ -31,7 +32,7 @@ export function StepPhoneVerify({ onDone }: Props) {
     if (!normalizedPhone) return;
 
     if (!E164.test(normalizedPhone)) {
-      setError('Numéro invalide. Utilisez le format international, par ex. +221774606330');
+      setError('Numéro invalide. Utilisez le format international, ex. +221774606330');
       return;
     }
 
@@ -104,28 +105,33 @@ export function StepPhoneVerify({ onDone }: Props) {
   if (!sent) {
     return (
       <div className="space-y-4">
-        <div className="space-y-1.5">
-          <label className="text-xs font-bold text-neutral-600">Numéro de téléphone</label>
+        <div>
+          <label className="eyebrow block mb-1.5">Numéro de téléphone portable</label>
           <input
             value={phone}
             onChange={(e) => setPhone(e.target.value)}
-            placeholder="+221 77 000 00 00"
+            placeholder="+221 77 123 45 67"
             className={inputCls}
           />
         </div>
 
         {error && (
-          <p className="text-[11px] font-medium text-rose-500 bg-rose-50 border border-rose-100 rounded-lg px-3 py-2">
+          <p className="text-[11px] font-semibold text-error-600 bg-error-50 border border-error-500/30 rounded-inner px-3 py-2">
             {error}
           </p>
         )}
 
         <button
+          type="button"
           onClick={sendOtp}
           disabled={loading || !phone.trim()}
-          className="w-full bg-emerald-600 hover:bg-emerald-700 disabled:opacity-50 text-white text-sm font-bold rounded-xl py-3 transition-colors"
+          className="btn-action w-full text-xs justify-center cursor-pointer disabled:opacity-50"
         >
-          {loading ? 'Envoi…' : 'Recevoir le code SMS'}
+          {loading ? (
+            <><Loader2 className="w-4 h-4 animate-spin" /> Envoi en cours…</>
+          ) : (
+            'Recevoir le code SMS'
+          )}
         </button>
       </div>
     );
@@ -134,48 +140,54 @@ export function StepPhoneVerify({ onDone }: Props) {
   return (
     <div className="space-y-4">
       {/* Info numéro */}
-      <div className="flex items-center gap-2 bg-neutral-50 border border-border rounded-xl px-4 py-3">
-        <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 shrink-0" />
-        <p className="text-sm text-neutral-500">
-          Code envoyé au <span className="font-bold text-neutral-900">{phone}</span>
+      <div className="flex items-center gap-2.5 bg-background-alt border border-border rounded-inner px-4 py-3">
+        <div className="w-2 h-2 rounded-full bg-forest-600 shrink-0 animate-pulse" />
+        <p className="text-xs font-semibold text-foreground-muted">
+          Code SMS envoyé au <span className="font-bold text-foreground">{phone}</span>
         </p>
       </div>
 
-      <div className="space-y-1.5">
-        <label className="text-xs font-bold text-neutral-600">Code de vérification</label>
+      <div>
+        <label className="eyebrow block mb-1.5">Code de vérification à 6 chiffres</label>
         <input
           value={code}
           onChange={(e) => setCode(e.target.value.replace(/\D/g, ''))}
-          placeholder="_ _ _ _ _ _"
+          placeholder="──────"
           maxLength={6}
           inputMode="numeric"
           className={cn(
             inputCls,
-            'text-center text-2xl font-black tracking-[0.5em] py-4',
+            'text-center text-2xl font-display font-bold tracking-[0.4em] py-3',
           )}
         />
       </div>
 
       {error && (
-        <p className="text-[11px] font-medium text-rose-500 bg-rose-50 border border-rose-100 rounded-lg px-3 py-2">
+        <p className="text-[11px] font-semibold text-error-600 bg-error-50 border border-error-500/30 rounded-inner px-3 py-2">
           {error}
         </p>
       )}
 
-        <button
-          onClick={verifyOtp}
+      <button
+        type="button"
+        onClick={verifyOtp}
         disabled={loading || code.length < 6}
-          className="w-full bg-emerald-600 hover:bg-emerald-700 disabled:opacity-50 text-white text-sm font-bold rounded-xl py-3 transition-colors"
-        >
-        {loading ? 'Vérification…' : 'Confirmer le code'}
+        className="btn-action w-full text-xs justify-center cursor-pointer disabled:opacity-50"
+      >
+        {loading ? (
+          <><Loader2 className="w-4 h-4 animate-spin" /> Vérification…</>
+        ) : (
+          'Confirmer le code SMS'
+        )}
       </button>
 
-      <div className="flex justify-center">
+      <div className="flex justify-center pt-1">
         <button
+          type="button"
           onClick={() => { setSent(false); setCode(''); setError(''); }}
-          className="text-xs font-medium text-neutral-400 hover:text-emerald-600 transition-colors"
+          className="text-xs font-semibold text-foreground-muted hover:text-forest-600 transition-colors cursor-pointer"
         >
-          Renvoyer le code
+          Renvoyer le code SMS
         </button>
       </div>
     </div>
