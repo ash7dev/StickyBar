@@ -17,7 +17,7 @@ export function WalletSnapshot({ available, pending, processing }: Props) {
   const availPct = total > 0 ? Math.round((available / total) * 100) : 100;
 
   return (
-    <div className="bg-gradient-to-b from-forest-950 via-[#072A20] to-forest-950 text-white rounded-card p-6 border border-forest-800/90 shadow-xl relative overflow-hidden flex flex-col h-full min-h-[380px]">
+    <div className="klef-rise bg-gradient-to-b from-forest-950 via-[#072A20] to-forest-950 text-white rounded-card p-6 border border-forest-800/90 shadow-lg relative overflow-hidden flex flex-col h-full min-h-[380px]">
 
       {/* Halos lumineux de fond */}
       <div className="pointer-events-none absolute -top-20 -right-20 w-56 h-56 rounded-full bg-lime-400/10 blur-3xl" />
@@ -28,7 +28,7 @@ export function WalletSnapshot({ available, pending, processing }: Props) {
         {/* Header */}
         <div className="flex items-center justify-between mb-6 pb-3 border-b border-forest-800/80">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-inner bg-forest-900 border border-lime-400/20 text-lime-400 flex items-center justify-center shrink-0 shadow-2xs">
+            <div className="w-10 h-10 rounded-inner bg-forest-900 border border-lime-400/20 text-lime-400 flex items-center justify-center shrink-0">
               <Wallet className="w-5 h-5 text-lime-400" />
             </div>
             <div>

@@ -50,7 +50,7 @@ function BookingRow({ booking }: { booking: Booking }) {
   return (
     <Link href={`/dashboard/reservations/${booking.id}`} className="block active:scale-[0.985] transition-transform">
       {/* Mobile card */}
-      <div className="lg:hidden rounded-inner border border-border/80 bg-background-card p-3 shadow-2xs space-y-2">
+      <div className="lg:hidden rounded-inner border border-border/80 bg-background-card p-3 shadow-sm space-y-2">
         <div className="flex gap-3">
           <div className="relative w-[64px] h-[64px] rounded-inner overflow-hidden bg-background-alt shrink-0 border border-border/60">
             {booking.logement.photos?.[0]?.url ? (
@@ -178,12 +178,12 @@ export function RecentBookings({ bookings }: Props) {
   const sortedKeys = ORDER.filter(s => grouped[s]?.length > 0);
 
   return (
-    <div className="bg-background-card rounded-card border border-border/80 p-5 lg:p-6 flex flex-col justify-between shadow-2xs hover:border-forest-600/30 hover:shadow-md transition-all h-full min-h-[380px]">
+    <div className="klef-rise bg-background-card rounded-card border border-border/80 p-5 lg:p-6 flex flex-col justify-between shadow-sm hover:border-forest-600/30 hover:shadow-md transition-[box-shadow,border-color] duration-200 h-full min-h-[380px]">
 
       {/* Header */}
       <div className="flex items-center justify-between gap-2 flex-wrap sm:flex-nowrap mb-4 pb-3 border-b border-border/60">
         <div className="flex items-center gap-3 min-w-0">
-          <div className="w-9 h-9 lg:w-10 lg:h-10 rounded-inner bg-forest-950 text-lime-400 border border-lime-400/20 flex items-center justify-center shrink-0 shadow-2xs">
+          <div className="w-9 h-9 lg:w-10 lg:h-10 rounded-inner bg-forest-950 text-lime-400 border border-lime-400/20 flex items-center justify-center shrink-0">
             <Bookmark className="w-4 h-4 text-lime-400" />
           </div>
           <div className="min-w-0">

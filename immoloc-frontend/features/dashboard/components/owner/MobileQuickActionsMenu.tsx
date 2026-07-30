@@ -79,12 +79,12 @@ export function MobileQuickActionsMenu() {
           <Link
             key={action.id}
             href={action.href}
-            className="group flex items-center justify-between rounded-card bg-background-card border border-border/80 p-3.5 sm:p-4 shadow-2xs hover:border-forest-600/30 hover:shadow-xs transition-all active:scale-[0.99] cursor-pointer"
+            className="group flex items-center justify-between rounded-card bg-background-card border border-border/80 p-3.5 sm:p-4 shadow-sm hover:border-forest-600/30 hover:shadow-md transition-[box-shadow,border-color] duration-200 active:scale-[0.99] cursor-pointer"
           >
             <div className="flex items-center gap-3.5 min-w-0">
               <div
                 className={cn(
-                  'w-10 h-10 rounded-full flex items-center justify-center shrink-0 transition-transform duration-200 group-hover:scale-105 shadow-2xs',
+                  'w-10 h-10 rounded-full flex items-center justify-center shrink-0 transition-transform duration-200 group-hover:scale-105',
                   action.isPrimary
                     ? 'bg-lime-400 text-forest-950 font-black'
                     : 'bg-forest-950 text-lime-400 border border-forest-800'

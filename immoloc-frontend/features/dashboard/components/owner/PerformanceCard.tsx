@@ -52,12 +52,12 @@ export function PerformanceCard({ bookings, conversionRate, activeListings }: Pr
   const monthCapitalized = currentMonth.charAt(0).toUpperCase() + currentMonth.slice(1);
 
   return (
-    <div className="bg-background-card rounded-card border border-border/80 p-5 lg:p-6 flex flex-col justify-between shadow-2xs hover:border-forest-600/30 hover:shadow-md transition-all min-h-[380px] space-y-4">
+    <div className="klef-rise bg-background-card rounded-card border border-border/80 p-5 lg:p-6 flex flex-col justify-between shadow-sm hover:border-forest-600/30 hover:shadow-md transition-[box-shadow,border-color] duration-200 min-h-[380px] space-y-4">
 
       {/* Header */}
       <div className="flex items-center justify-between gap-2 flex-wrap sm:flex-nowrap pb-3 border-b border-border/60">
         <div className="flex items-center gap-3 min-w-0">
-          <div className="w-9 h-9 lg:w-10 lg:h-10 rounded-inner bg-forest-950 text-lime-400 border border-lime-400/20 flex items-center justify-center shrink-0 shadow-2xs">
+          <div className="w-9 h-9 lg:w-10 lg:h-10 rounded-inner bg-forest-950 text-lime-400 border border-lime-400/20 flex items-center justify-center shrink-0">
             <Trophy className="w-4 h-4 text-lime-400" />
           </div>
           <div className="min-w-0">
@@ -134,7 +134,7 @@ export function PerformanceCard({ bookings, conversionRate, activeListings }: Pr
       <div className="pt-3 border-t border-border/60">
         <Link
           href="/dashboard/annonces"
-          className="w-full inline-flex items-center justify-center gap-2 py-2.5 rounded-pill bg-background-alt hover:bg-background-card text-forest-950 font-extrabold text-xs transition-all border border-border/80 shadow-2xs"
+          className="w-full inline-flex items-center justify-center gap-2 py-2.5 rounded-pill bg-background-alt hover:bg-background-card text-forest-950 font-semibold text-xs transition-[background-color,border-color] duration-150 border border-border/80"
         >
           <span>Voir le détail des annonces</span>
           <ArrowRight className="w-3.5 h-3.5 text-forest-950" />

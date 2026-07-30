@@ -1,8 +1,8 @@
 'use client';
 
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import Link from 'next/link';
-import { usePathname } from 'next/navigation';
+import { usePathname, useRouter } from 'next/navigation';
 import {
   Bell, Plus, LogOut, ChevronDown, Settings, ArrowLeftRight, Menu, Search
 } from 'lucide-react';
@@ -29,6 +29,7 @@ interface DesktopHeaderProps {
 
 export function DesktopHeader({ onMenuToggle }: DesktopHeaderProps) {
   const pathname = usePathname();
+  const router = useRouter();
   const clearSession = useRoleStore((s) => s.clearSession);
   const { switchRole, isSwitching } = useSwitchRole();
   const { data: user } = useCurrentUser();
@@ -36,6 +37,8 @@ export function DesktopHeader({ onMenuToggle }: DesktopHeaderProps) {
   const dropdownRef = useRef<HTMLDivElement>(null);
   const [notifOpen, setNotifOpen] = useState(false);
   const notifRef = useRef<HTMLDivElement>(null);
+  const [searchValue, setSearchValue] = useState('');
+  const searchRef = useRef<HTMLInputElement>(null);
   const supabase = createClient();
 
   useEffect(() => {
@@ -50,6 +53,27 @@ export function DesktopHeader({ onMenuToggle }: DesktopHeaderProps) {
     document.addEventListener('mousedown', handleClickOutside);
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
+
+  // ⌘K / Ctrl+K → focus the search bar
+  const handleGlobalKeydown = useCallback((e: KeyboardEvent) => {
+    if ((e.metaKey || e.ctrlKey) && e.key === 'k') {
+      e.preventDefault();
+      searchRef.current?.focus();
+    }
+  }, []);
+
+  useEffect(() => {
+    document.addEventListener('keydown', handleGlobalKeydown);
+    return () => document.removeEventListener('keydown', handleGlobalKeydown);
+  }, [handleGlobalKeydown]);
+
+  function handleSearchSubmit(e: React.FormEvent) {
+    e.preventDefault();
+    const q = searchValue.trim();
+    if (!q) return;
+    router.push(`/dashboard/reservations?q=${encodeURIComponent(q)}`);
+    searchRef.current?.blur();
+  }
 
   async function handleLogout() {
     setDropdownOpen(false);
@@ -67,7 +91,7 @@ export function DesktopHeader({ onMenuToggle }: DesktopHeaderProps) {
   const greeting = prenom ? `Bonjour, ${fullName}` : title;
 
   return (
-    <header className="sticky top-0 z-40 bg-background-card/95 backdrop-blur-md border-b border-border/80 text-forest-950 shadow-2xs">
+    <header className="sticky top-0 z-40 bg-background-card/95 backdrop-blur-md border-b border-border/80 text-forest-950 shadow-sm">
       <div className="px-5 sm:px-8 py-4.5">
         <div className="flex items-center justify-between gap-4">
 
@@ -91,17 +115,20 @@ export function DesktopHeader({ onMenuToggle }: DesktopHeaderProps) {
 
           {/* Centre : Barre de Recherche Rapide (Desktop) */}
           <div className="hidden md:flex items-center flex-1 max-w-sm mx-6">
-            <div className="relative w-full">
+            <form onSubmit={handleSearchSubmit} className="relative w-full">
               <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-foreground-muted" />
               <input
-                type="text"
+                ref={searchRef}
+                type="search"
+                value={searchValue}
+                onChange={(e) => setSearchValue(e.target.value)}
                 placeholder="Rechercher une réservation, un bien..."
-                className="w-full h-10 pl-10 pr-9 bg-background-alt border border-border/80 rounded-pill text-xs font-semibold text-forest-950 placeholder:text-foreground-faint focus:outline-none focus:border-forest-600/50 transition-all shadow-2xs"
+                className="w-full h-10 pl-10 pr-9 bg-background-alt border border-border/80 rounded-pill text-xs font-semibold text-forest-950 placeholder:text-foreground-faint focus:outline-none focus:border-forest-600/50 transition-all"
               />
-              <kbd className="absolute right-3 top-1/2 -translate-y-1/2 px-1.5 py-0.5 rounded bg-background-card border border-border/80 text-[9px] font-extrabold text-foreground-muted">
+              <kbd className="absolute right-3 top-1/2 -translate-y-1/2 px-1.5 py-0.5 rounded bg-background-card border border-border/80 text-[9px] font-extrabold text-foreground-muted pointer-events-none">
                 ⌘K
               </kbd>
-            </div>
+            </form>
           </div>
 
           {/* Droite : Notifications + Créer annonce + Avatar Dropdown */}
@@ -111,7 +138,7 @@ export function DesktopHeader({ onMenuToggle }: DesktopHeaderProps) {
             <div ref={notifRef} className="relative">
               <button
                 onClick={() => setNotifOpen((v) => !v)}
-                className="relative flex items-center justify-center w-10 h-10 rounded-inner bg-background-alt border border-border/80 hover:bg-background-card text-forest-950 transition-all shadow-2xs"
+                className="relative flex items-center justify-center w-10 h-10 rounded-inner bg-background-alt border border-border/80 hover:bg-background-card text-forest-950 transition-all"
               >
                 <Bell className="h-4.5 w-4.5 text-forest-950" />
                 <span className="absolute top-2 right-2 w-2 h-2 rounded-full bg-lime-500 animate-pulse" />
@@ -127,7 +154,7 @@ export function DesktopHeader({ onMenuToggle }: DesktopHeaderProps) {
                   </div>
 
                   <div className="p-6 text-center space-y-2">
-                    <div className="w-10 h-10 rounded-inner bg-forest-950 text-lime-400 border border-lime-400/20 flex items-center justify-center mx-auto shadow-2xs">
+                    <div className="w-10 h-10 rounded-inner bg-forest-950 text-lime-400 border border-lime-400/20 flex items-center justify-center mx-auto">
                       <Bell className="h-5 w-5 text-lime-400" />
                     </div>
                     <p className="font-display text-sm font-bold text-forest-950">Aucune notification non lue</p>
@@ -151,9 +178,9 @@ export function DesktopHeader({ onMenuToggle }: DesktopHeaderProps) {
             <div ref={dropdownRef} className="relative">
               <button
                 onClick={() => setDropdownOpen((v) => !v)}
-                className="flex items-center h-10 gap-2.5 pl-1.5 pr-3 rounded-pill bg-background-alt hover:bg-background-card border border-border/80 transition-all shadow-2xs"
+                className="flex items-center h-10 gap-2.5 pl-1.5 pr-3 rounded-pill bg-background-alt hover:bg-background-card border border-border/80 transition-all"
               >
-                <div className="w-7.5 h-7.5 rounded-inner bg-forest-950 text-lime-400 border border-lime-400/20 flex items-center justify-center font-display font-extrabold text-xs shadow-2xs">
+                <div className="w-7 h-7 rounded-inner bg-forest-950 text-lime-400 border border-lime-400/20 flex items-center justify-center font-display font-semibold text-xs">
                   {initials}
                 </div>
                 <ChevronDown className={cn('h-3.5 w-3.5 text-foreground-muted transition-transform', dropdownOpen && 'rotate-180')} />

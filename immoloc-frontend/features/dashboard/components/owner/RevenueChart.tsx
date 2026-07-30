@@ -102,11 +102,11 @@ export function RevenueChart({ revenue, totalBookings }: Props) {
   const currentMonth = new Date().toLocaleDateString('fr-FR', { month: 'long' });
 
   return (
-    <div className="bg-background-card rounded-card border border-border/80 p-6 flex flex-col justify-between shadow-2xs hover:border-forest-600/30 hover:shadow-md transition-all h-full min-h-[380px]">
+    <div className="klef-rise bg-background-card rounded-card border border-border/80 p-6 flex flex-col justify-between shadow-sm hover:border-forest-600/30 hover:shadow-md transition-[box-shadow,border-color] duration-200 h-full min-h-[380px]">
       <div>
         <div className="flex items-center justify-between mb-6 pb-3 border-b border-border/60">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-inner bg-forest-950 text-lime-400 border border-lime-400/20 flex items-center justify-center shrink-0 shadow-2xs">
+            <div className="w-10 h-10 rounded-inner bg-forest-950 text-lime-400 border border-lime-400/20 flex items-center justify-center shrink-0">
               <Activity className="w-5 h-5 text-lime-400" />
             </div>
             <div>

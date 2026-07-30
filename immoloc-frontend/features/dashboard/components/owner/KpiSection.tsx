@@ -60,6 +60,7 @@ interface KpiCardProps {
   sparkData: number[];
   hero?: boolean;
   accentHex?: string;
+  riseDelay?: string;
 }
 
 function KpiCard({
@@ -72,16 +73,18 @@ function KpiCard({
   sparkData,
   hero = false,
   accentHex = '#D3F26E',
+  riseDelay = '0ms',
 }: KpiCardProps) {
   return (
     <div
       className={`
-        relative overflow-hidden rounded-card p-3.5 sm:p-5 transition-all duration-300 min-h-[120px] sm:min-h-[145px] flex flex-col justify-between
+        klef-rise relative overflow-hidden rounded-card p-3.5 sm:p-5 transition-[box-shadow,border-color,transform] duration-200 ease-[cubic-bezier(0.22,1,0.36,1)] min-h-[120px] sm:min-h-[145px] flex flex-col justify-between
         ${hero
-          ? 'bg-gradient-to-b from-forest-950 via-[#072A20] to-forest-950 text-white border border-forest-800/90 shadow-xl'
-          : 'bg-background-card border border-border/80 shadow-2xs hover:border-forest-600/30 hover:shadow-md hover:-translate-y-0.5'
+          ? 'bg-gradient-to-b from-forest-950 via-[#072A20] to-forest-950 text-white border border-forest-800/90 shadow-lg'
+          : 'bg-background-card border border-border shadow-sm hover:border-forest-600/30 hover:shadow-md hover:-translate-y-0.5 motion-reduce:transform-none'
         }
       `}
+      style={{ '--rise-delay': riseDelay } as React.CSSProperties}
     >
       {/* Halos de fond */}
       {hero ? (
@@ -93,16 +96,16 @@ function KpiCard({
       {/* Top Row: Icon + Label */}
       <div className="relative z-10 flex items-center gap-3 mb-3">
         <div
-          className={`w-9 h-9 rounded-inner flex items-center justify-center shrink-0 shadow-2xs
+          className={`w-9 h-9 rounded-inner flex items-center justify-center shrink-0
             ${hero
-              ? 'bg-forest-900 border border-lime-400/20 text-lime-400'
-              : 'bg-forest-950 text-lime-400 border border-lime-400/20'
+              ? 'bg-forest-900 border border-lime-400/20'
+              : 'bg-forest-950 border border-lime-400/20'
             }
           `}
         >
-          <Icon className="w-4.5 h-4.5 text-lime-400" />
+          <Icon className="w-4 h-4 text-lime-400" />
         </div>
-        <p className={`text-[10px] font-extrabold uppercase tracking-wider leading-tight ${hero ? 'text-forest-200' : 'text-foreground-muted'}`}>
+        <p className={`text-[0.6875rem] font-semibold uppercase tracking-[0.12em] leading-tight ${hero ? 'text-forest-200' : 'text-foreground-faint'}`}>
           {label}
         </p>
       </div>
@@ -111,17 +114,17 @@ function KpiCard({
       <div className="relative z-10 flex items-end justify-between gap-3">
         <div className="flex-1 min-w-0">
           <div className="flex items-baseline gap-1.5 mb-1">
-            <span className={`font-display text-2xl sm:text-3xl font-extrabold tracking-tight leading-none ${hero ? 'text-white' : 'text-forest-950'}`}>
+            <span className={`font-display text-2xl sm:text-3xl font-bold tracking-tight leading-none ${hero ? 'text-white' : 'text-forest-950'}`}>
               {value}
             </span>
             {sub && (
-              <span className={`text-[10px] font-extrabold uppercase ${hero ? 'text-lime-300' : 'text-foreground-muted'}`}>
+              <span className={`text-[10px] font-semibold uppercase ${hero ? 'text-lime-300' : 'text-foreground-muted'}`}>
                 {sub}
               </span>
             )}
           </div>
 
-          <div className={`flex items-center gap-1 text-[10px] font-bold ${
+          <div className={`flex items-center gap-1 text-[10px] font-semibold ${
             hero
               ? 'text-lime-300'
               : trend === 'up'

@@ -1,6 +1,7 @@
 'use client';
 
 import { useCallback, useEffect, useId, useRef, useState } from 'react';
+import { createPortal } from 'react-dom';
 import { Check, ChevronDown } from 'lucide-react';
 import { cn } from '@/lib/utils/cn';
 
@@ -39,6 +40,8 @@ export function SelectField({
     const [open, setOpen] = useState(false);
     const [activeIndex, setActiveIndex] = useState(-1);
     const [dropUp, setDropUp] = useState(placement === 'top');
+    const [dropdownPos, setDropdownPos] = useState<{ top: number; left: number; width: number } | null>(null);
+    const [mounted, setMounted] = useState(false);
 
     const rootRef = useRef<HTMLDivElement>(null);
     const btnRef = useRef<HTMLButtonElement>(null);
@@ -53,6 +56,11 @@ export function SelectField({
 
     const selectedIndex = options.indexOf(value);
 
+    // Montage côté client pour éviter hydration mismatch avec portal
+    useEffect(() => {
+        setMounted(true);
+    }, []);
+
     /* Bascule automatique : si la place manque en dessous, on ouvre vers le
        haut. L'ancienne version imposait `placement` en dur par appel. */
     const measure = useCallback(() => {
@@ -61,7 +69,14 @@ export function SelectField({
         if (!rect) return;
         const below = window.innerHeight - rect.bottom;
         setDropUp(below < 260 && rect.top > below);
-    }, [placement]);
+
+        // Calcule la position pour le portal
+        setDropdownPos({
+            top: dropUp ? rect.top - 8 : rect.bottom + 8,
+            left: rect.left,
+            width: rect.width,
+        });
+    }, [placement, dropUp]);
 
     const openList = useCallback(() => {
         if (disabled) return;
@@ -92,6 +107,18 @@ export function SelectField({
         document.addEventListener('mousedown', onDown);
         return () => document.removeEventListener('mousedown', onDown);
     }, [open]);
+
+    // Recalcule la position lors du scroll/redimensionnement
+    useEffect(() => {
+        if (!open) return;
+        const updatePos = () => measure();
+        window.addEventListener('scroll', updatePos, true);
+        window.addEventListener('resize', updatePos);
+        return () => {
+            window.removeEventListener('scroll', updatePos, true);
+            window.removeEventListener('resize', updatePos);
+        };
+    }, [open, measure]);
 
     // Maintient l'option active visible uniquement lors de la navigation au clavier
     useEffect(() => {
@@ -147,8 +174,48 @@ export function SelectField({
         }
     }
 
+    const dropdownContent = open && mounted && dropdownPos && (
+        <ul
+            ref={listRef}
+            id={listId}
+            role="listbox"
+            aria-labelledby={labelId}
+            className={cn(
+                'fixed z-[9999] max-h-72 overflow-y-auto overscroll-contain touch-pan-y rounded-card border border-border/80 bg-background-card py-1.5 shadow-2xl transition-all duration-150 animate-in fade-in zoom-in-95',
+            )}
+            style={{
+                top: dropUp ? undefined : dropdownPos.top,
+                bottom: dropUp ? `calc(100vh - ${dropdownPos.top}px)` : undefined,
+                left: dropdownPos.left,
+                width: dropdownPos.width,
+            }}
+        >
+            {options.map((opt, i) => {
+                const isSelected = opt === value;
+                return (
+                    <li
+                        key={opt}
+                        id={optId(i)}
+                        role="option"
+                        aria-selected={isSelected}
+                        onClick={() => commit(i)}
+                        className={cn(
+                            'flex cursor-pointer items-center justify-between gap-3 px-4 py-3 text-sm transition-colors',
+                            isSelected
+                                ? 'bg-forest-950 text-lime-400 font-extrabold shadow-2xs'
+                                : 'text-foreground hover:bg-forest-900/10 hover:text-forest-950 font-medium',
+                        )}
+                    >
+                        <span className="truncate">{opt}</span>
+                        {isSelected && <Check className="h-4 w-4 shrink-0 text-lime-400 stroke-[3px]" aria-hidden="true" />}
+                    </li>
+                );
+            })}
+        </ul>
+    );
+
     return (
-        <div ref={rootRef} className={cn("relative transition-all", open && "z-50")}>
+        <div ref={rootRef} className="relative">
             <span id={labelId} className="mb-2 block text-sm font-medium text-foreground">
                 {label}
                 {required && <span className="ml-1 text-error-600" aria-hidden="true">*</span>}
@@ -184,41 +251,8 @@ export function SelectField({
                 />
             </button>
 
-            {/* Rendu conditionnel avec défilement 100% fluide */}
-            {open && (
-                <ul
-                    ref={listRef}
-                    id={listId}
-                    role="listbox"
-                    aria-labelledby={labelId}
-                    className={cn(
-                        'absolute inset-x-0 z-50 max-h-72 overflow-y-auto overscroll-contain touch-pan-y rounded-card border border-border/80 bg-background-card py-1.5 shadow-2xl transition-all duration-150 animate-in fade-in zoom-in-95',
-                        dropUp ? 'bottom-full mb-2' : 'top-full mt-2',
-                    )}
-                >
-                    {options.map((opt, i) => {
-                        const isSelected = opt === value;
-                        return (
-                            <li
-                                key={opt}
-                                id={optId(i)}
-                                role="option"
-                                aria-selected={isSelected}
-                                onClick={() => commit(i)}
-                                className={cn(
-                                    'flex cursor-pointer items-center justify-between gap-3 px-4 py-3 text-sm transition-colors',
-                                    isSelected
-                                        ? 'bg-forest-950 text-lime-400 font-extrabold shadow-2xs'
-                                        : 'text-foreground hover:bg-forest-900/10 hover:text-forest-950 font-medium',
-                                )}
-                            >
-                                <span className="truncate">{opt}</span>
-                                {isSelected && <Check className="h-4 w-4 shrink-0 text-lime-400 stroke-[3px]" aria-hidden="true" />}
-                            </li>
-                        );
-                    })}
-                </ul>
-            )}
+            {/* Rendu via portal pour éviter overflow-hidden du parent */}
+            {mounted && createPortal(dropdownContent, document.body)}
 
             {error && (
                 <p id={errorId} role="alert" className="mt-1.5 text-xs text-error-600">

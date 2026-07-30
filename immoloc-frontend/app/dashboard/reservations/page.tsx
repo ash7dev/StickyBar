@@ -1,8 +1,9 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect, useCallback, Suspense } from 'react';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { LayoutGrid, List, Search, AlertCircle, CalendarCheck } from 'lucide-react';
+import { LayoutGrid, List, Search, AlertCircle, X } from 'lucide-react';
 import { nestFetch } from '@/lib/nestjs/api-client';
 import { NEST_API } from '@/lib/nestjs/endpoints';
 import type { Reservation } from '@/features/reservations/components/reservation-card';
@@ -10,6 +11,7 @@ import { OwnerReservationCard } from '@/features/reservations/components/owner/O
 import { OwnerReservationSkeleton } from '@/features/reservations/components/owner/OwnerReservationSkeleton';
 import { OwnerReservationsEmptyState } from '@/features/reservations/components/owner/OwnerReservationsEmptyState';
 import { cn } from '@/lib/utils/cn';
+import DashboardLoading from '../loading';
 
 /* ─── Status Filter Tabs Config ─────────────────────────────────────────────── */
 
@@ -22,11 +24,33 @@ const STATUS_TABS = [
   { id: 'CANCELLED',  label: 'Annulées'   },
 ];
 
-export default function ReservationsPage() {
+function ReservationsContent() {
+  const router = useRouter();
+  const searchParams = useSearchParams();
   const qc = useQueryClient();
   const [activeTab, setActiveTab] = useState<string>('ALL');
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('list');
-  const [searchQuery, setSearchQuery] = useState('');
+  // Initialise depuis le param URL ?q= (venant du header search ou d'un lien direct)
+  const [searchQuery, setSearchQuery] = useState(() => searchParams.get('q') ?? '');
+
+  // Synchronise la valeur de recherche dans l'URL (replace = pas de pollution de l'historique)
+  const syncUrl = useCallback((value: string) => {
+    const params = new URLSearchParams(searchParams.toString());
+    if (value.trim()) {
+      params.set('q', value.trim());
+    } else {
+      params.delete('q');
+    }
+    router.replace(`/dashboard/reservations?${params.toString()}`, { scroll: false });
+  }, [router, searchParams]);
+
+  // Si l'URL change (ex: navigation depuis le header), on re-synchronise
+  useEffect(() => {
+    const urlQ = searchParams.get('q') ?? '';
+    if (urlQ !== searchQuery) setSearchQuery(urlQ);
+    // On veut seulement réagir au changement de l'URL param, pas à searchQuery
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [searchParams]);
 
   // Fetch reservations for the logged-in owner
   const { data: allReservations = [], isLoading, error } = useQuery<Reservation[]>({
@@ -87,12 +111,26 @@ export default function ReservationsPage() {
         <div className="relative flex-1 min-w-0">
           <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-foreground-muted" />
           <input
-            type="text"
+            type="search"
             value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
+            onChange={(e) => {
+              const v = e.target.value;
+              setSearchQuery(v);
+              syncUrl(v);
+            }}
             placeholder="Rechercher par logement ou locataire..."
-            className="w-full pl-10 pr-4 py-2 rounded-pill bg-background-alt border border-border/80 text-xs font-semibold text-forest-950 placeholder:text-foreground-muted outline-none focus:ring-2 focus:ring-ring transition-all"
+            className="w-full pl-10 pr-10 py-2 rounded-pill bg-background-alt border border-border/80 text-xs font-semibold text-forest-950 placeholder:text-foreground-muted outline-none focus:ring-2 focus:ring-ring transition-all"
           />
+          {searchQuery && (
+            <button
+              type="button"
+              onClick={() => { setSearchQuery(''); syncUrl(''); }}
+              className="absolute right-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-foreground-muted hover:text-forest-950 transition-colors"
+              aria-label="Effacer la recherche"
+            >
+              <X className="w-4 h-4" />
+            </button>
+          )}
         </div>
 
         {/* Mode d'affichage Toggle (Par défaut : Liste Horizontale) */}
@@ -205,5 +243,14 @@ export default function ReservationsPage() {
       )}
 
     </div>
+  );
+}
+
+// useSearchParams() doit être dans un composant envelopé par <Suspense>
+export default function ReservationsPage() {
+  return (
+    <Suspense fallback={<DashboardLoading />}>
+      <ReservationsContent />
+    </Suspense>
   );
 }

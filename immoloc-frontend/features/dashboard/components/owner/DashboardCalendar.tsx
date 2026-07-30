@@ -50,11 +50,11 @@ export function DashboardCalendar({ checkins, checkouts }: Props) {
   const totalOccupied = checkinDates.size + checkoutDates.size;
 
   return (
-    <div className="bg-background-card rounded-card p-5 lg:p-6 border border-border/80 shadow-2xs hover:border-forest-600/30 hover:shadow-md transition-all space-y-4">
+    <div className="klef-rise bg-background-card rounded-card p-5 lg:p-6 border border-border/80 shadow-sm hover:border-forest-600/30 hover:shadow-md transition-[box-shadow,border-color] duration-200 space-y-4">
       {/* Header */}
       <div className="flex items-center justify-between pb-3 border-b border-border/60">
         <div className="flex items-center gap-3">
-          <div className="w-9 h-9 rounded-inner bg-forest-950 text-lime-400 border border-lime-400/20 flex items-center justify-center shrink-0 shadow-2xs">
+          <div className="w-9 h-9 rounded-inner bg-forest-950 text-lime-400 border border-lime-400/20 flex items-center justify-center shrink-0">
             <CalendarDays className="w-4 h-4 text-lime-400" />
           </div>
           <div>

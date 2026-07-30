@@ -21,7 +21,7 @@ export function HostWelcomeBanner({
   const fmt = (n: number) => new Intl.NumberFormat('fr-FR').format(n);
 
   return (
-    <div className="bg-gradient-to-r from-forest-950 via-[#072A20] to-forest-950 text-white rounded-card p-6 border border-forest-800/90 shadow-xl relative overflow-hidden flex flex-col md:flex-row items-start md:items-center justify-between gap-6">
+    <div className="klef-rise bg-gradient-to-r from-forest-950 via-[#072A20] to-forest-950 text-white rounded-card p-6 border border-forest-800/90 shadow-lg relative overflow-hidden flex flex-col md:flex-row items-start md:items-center justify-between gap-6">
 
       {/* Halos d'ambiance */}
       <div className="pointer-events-none absolute -top-24 -right-24 w-64 h-64 rounded-full bg-lime-400/10 blur-3xl" />

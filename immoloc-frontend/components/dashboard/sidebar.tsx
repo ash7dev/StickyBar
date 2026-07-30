@@ -109,7 +109,7 @@ export function DashboardSidebar({ isOpen, onClose }: SidebarProps) {
           'transition-transform duration-300 ease-in-out',
           isOpen ? 'translate-x-0' : '-translate-x-full',
           'lg:relative lg:translate-x-0 lg:inset-auto lg:z-auto',
-          'bg-background-card border-r border-border/80 shadow-2xs',
+          'bg-background-card border-r border-border/80 shadow-lg',
         )}
       >
         {/* Header avec Logo */}
@@ -133,7 +133,7 @@ export function DashboardSidebar({ isOpen, onClose }: SidebarProps) {
 
           {/* User Profile Card */}
           <div className="bg-background-alt border border-border/80 rounded-inner p-3.5 flex items-center gap-3">
-            <div className="w-10 h-10 rounded-inner bg-forest-950 border border-lime-400/20 text-lime-400 font-display font-extrabold text-sm flex items-center justify-center shrink-0 shadow-2xs">
+            <div className="w-10 h-10 rounded-inner bg-forest-950 border border-lime-400/20 text-lime-400 font-display font-semibold text-sm flex items-center justify-center shrink-0">
               {userInitials}
             </div>
             <div className="flex-1 min-w-0">

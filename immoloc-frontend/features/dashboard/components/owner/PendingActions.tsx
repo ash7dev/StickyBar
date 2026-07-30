@@ -24,13 +24,13 @@ export function PendingActions({ confirmations, disputes, recentBookings = [] }:
   const hasUrgent = urgent > 0;
 
   return (
-    <div className="bg-background-card rounded-card p-4 sm:p-5 lg:p-6 border border-border/80 h-full min-h-[280px] sm:min-h-[380px] flex flex-col shadow-2xs hover:border-forest-600/30 hover:shadow-md transition-all">
+    <div className="klef-rise bg-background-card rounded-card p-4 sm:p-5 lg:p-6 border border-border/80 h-full min-h-[280px] sm:min-h-[380px] flex flex-col shadow-sm hover:border-forest-600/30 hover:shadow-md transition-[box-shadow,border-color] duration-200">
 
       {/* Header */}
       <div className="flex items-center justify-between gap-2 flex-wrap sm:flex-nowrap pb-3 mb-3 border-b border-border/60">
         <div className="flex items-center gap-2.5 sm:gap-3 min-w-0">
           <div className="relative shrink-0">
-            <div className={`w-9 h-9 sm:w-10 sm:h-10 rounded-inner flex items-center justify-center border shadow-2xs
+            <div className={`w-9 h-9 sm:w-10 sm:h-10 rounded-inner flex items-center justify-center border
               ${hasUrgent
                 ? 'bg-error-50 border-error-200 text-error-600'
                 : 'bg-forest-950 border-lime-400/20 text-lime-400'}`}>
