@@ -20,16 +20,27 @@ export function ResultsHeader({ total, filters }: ResultsHeaderProps) {
     <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-6">
       {/* Compte de résultats */}
       <div>
-        {count > 0 && (
-          <h1 className="text-lg sm:text-xl font-semibold text-forest-900">
-            {count.toLocaleString('fr-FR')} {count > 1 ? 'logements disponibles' : 'logement disponible'}
-            {filters.ville && (
-              <span className="text-foreground-muted font-normal ml-1">
-                à {filters.ville}
-              </span>
-            )}
-          </h1>
-        )}
+        <h1 className="text-lg sm:text-xl font-semibold text-forest-900">
+          {count > 0 ? (
+            <>
+              {count.toLocaleString('fr-FR')} {count > 1 ? 'logements disponibles' : 'logement disponible'}
+              {filters.ville && (
+                <span className="text-foreground-muted font-normal ml-1">
+                  à {filters.ville}
+                </span>
+              )}
+            </>
+          ) : (
+            <>
+              0 logement disponible
+              {filters.ville && (
+                <span className="text-foreground-muted font-normal ml-1">
+                  à {filters.ville}
+                </span>
+              )}
+            </>
+          )}
+        </h1>
       </div>
 
       {/* Tri - Visible uniquement si résultats */}

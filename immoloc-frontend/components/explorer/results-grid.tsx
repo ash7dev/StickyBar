@@ -3,7 +3,7 @@
 import { useState } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
-import { ChevronLeft, ChevronRight, Heart, ImageOff, MapPin, ShieldCheck, Star, Users } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Heart, ImageOff, MapPin, RotateCcw, SearchX, ShieldCheck, Star, Users } from 'lucide-react';
 import type { Listing } from '@/lib/nestjs/types';
 import { cn } from '@/lib/utils/cn';
 
@@ -17,7 +17,9 @@ interface ResultsGridProps {
 }
 
 export function ResultsGrid({ listings, nights }: ResultsGridProps) {
-  if (!listings?.length) return null;
+  if (!listings?.length) {
+    return <EmptyState />;
+  }
 
   return (
     <ul className="flex flex-col gap-4">
@@ -27,6 +29,54 @@ export function ResultsGrid({ listings, nights }: ResultsGridProps) {
         </li>
       ))}
     </ul>
+  );
+}
+
+function EmptyState() {
+  return (
+    <div className="flex flex-col items-center justify-center rounded-card border border-border bg-background-card p-8 sm:p-12 text-center shadow-xs">
+      <div className="mb-4 grid h-14 w-14 place-items-center rounded-pill bg-forest-50 text-forest-700 border border-forest-100">
+        <SearchX className="h-7 w-7 text-forest-600" aria-hidden="true" />
+      </div>
+
+      <h3 className="font-display text-lg sm:text-xl font-semibold text-forest-900">
+        Aucun logement ne correspond à vos critères
+      </h3>
+
+      <p className="mt-2 max-w-md text-sm leading-relaxed text-foreground-muted">
+        Essayez d’élargir vos filtres, d’ajuster le budget ou de découvrir les offres dans une autre ville au Sénégal.
+      </p>
+
+      {/* Actions */}
+      <div className="mt-6 flex flex-wrap items-center justify-center gap-3">
+        <Link
+          href="/explorer"
+          className="inline-flex items-center gap-2 rounded-pill bg-forest-950 px-5 py-2.5 text-sm font-semibold text-white transition-all hover:bg-forest-900 active:scale-95 shadow-sm"
+        >
+          <RotateCcw className="h-4 w-4 text-lime-400" aria-hidden="true" />
+          Réinitialiser tous les filtres
+        </Link>
+      </div>
+
+      {/* Villes populaires suggérées */}
+      <div className="mt-8 border-t border-border pt-6 w-full max-w-md">
+        <p className="text-[0.6875rem] font-semibold uppercase tracking-wider text-foreground-faint mb-3">
+          Villes populaires à explorer
+        </p>
+        <div className="flex flex-wrap justify-center gap-2">
+          {['Dakar', 'Saly', 'Ngor', 'Somone', 'Saint-Louis'].map((v) => (
+            <Link
+              key={v}
+              href={`/explorer?ville=${encodeURIComponent(v)}`}
+              className="inline-flex items-center gap-1.5 rounded-pill border border-border bg-background-alt px-3 py-1.5 text-xs font-medium text-forest-900 hover:border-forest-400 hover:bg-forest-50 transition-colors"
+            >
+              <MapPin className="h-3 w-3 text-forest-600" aria-hidden="true" />
+              {v}
+            </Link>
+          ))}
+        </div>
+      </div>
+    </div>
   );
 }
 
