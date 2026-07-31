@@ -207,7 +207,19 @@ export function ListingWizard({ editMode = false }: ListingWizardProps) {
       reset();
       router.push(editMode ? `/dashboard/annonces/${listingId}` : '/dashboard/annonces?submitted=1');
     } catch (err) {
-      setApiError(err instanceof Error ? err.message : 'Une erreur est survenue');
+      const rawMsg = err instanceof Error ? err.message : 'Une erreur est survenue';
+      if (
+        rawMsg === 'Load failed' ||
+        rawMsg.includes('Failed to fetch') ||
+        rawMsg.includes('NetworkError') ||
+        rawMsg.includes('Network request failed')
+      ) {
+        setApiError(
+          'Connexion au serveur impossible (serveur backend indisponible ou en réveil). Veuillez ré-essayer dans quelques secondes.',
+        );
+      } else {
+        setApiError(rawMsg);
+      }
     } finally {
       setIsSubmitting(false);
     }
@@ -274,11 +286,23 @@ export function ListingWizard({ editMode = false }: ListingWizardProps) {
 
         {/* Erreur API */}
         {apiError && (
-          <div className="mb-6 sm:mb-8 p-3.5 sm:p-4 bg-error-50 border border-error-500/30 rounded-inner flex items-center gap-3">
-            <div className="w-8 h-8 sm:w-9 sm:h-9 rounded-full bg-error-500/10 flex items-center justify-center shrink-0">
-              <AlertTriangle className="w-4 h-4 sm:w-5 sm:h-5 text-error-600" />
+          <div className="mb-6 sm:mb-8 p-3.5 sm:p-4 bg-error-50 border border-error-500/30 rounded-inner flex items-center justify-between gap-3">
+            <div className="flex items-center gap-3 min-w-0">
+              <div className="w-8 h-8 sm:w-9 sm:h-9 rounded-full bg-error-500/10 flex items-center justify-center shrink-0">
+                <AlertTriangle className="w-4 h-4 sm:w-5 sm:h-5 text-error-600" />
+              </div>
+              <p className="text-xs text-error-600 font-semibold leading-normal">{apiError}</p>
             </div>
-            <p className="text-xs text-error-600 font-semibold">{apiError}</p>
+            {isConfirmation && (
+              <button
+                type="button"
+                onClick={handleFinalSubmit}
+                disabled={isSubmitting}
+                className="btn-ghost text-xs px-3 py-1.5 rounded-pill text-error-700 hover:bg-error-100 shrink-0 font-bold border-error-300"
+              >
+                Réessayer
+              </button>
+            )}
           </div>
         )}
 
