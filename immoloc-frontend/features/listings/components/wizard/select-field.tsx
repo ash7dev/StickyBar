@@ -98,14 +98,23 @@ export function SelectField({
         closeList();
     }, [options, onChange, closeList]);
 
-    // Clic exterieur
+    // Clic exterieur (prend en compte le portal)
     useEffect(() => {
         if (!open) return;
-        const onDown = (e: MouseEvent) => {
-            if (!rootRef.current?.contains(e.target as Node)) setOpen(false);
+        const onDown = (e: MouseEvent | TouchEvent) => {
+            const target = e.target as Node;
+            const isInsideRoot = rootRef.current?.contains(target);
+            const isInsideList = listRef.current?.contains(target);
+            if (!isInsideRoot && !isInsideList) {
+                setOpen(false);
+            }
         };
         document.addEventListener('mousedown', onDown);
-        return () => document.removeEventListener('mousedown', onDown);
+        document.addEventListener('touchstart', onDown);
+        return () => {
+            document.removeEventListener('mousedown', onDown);
+            document.removeEventListener('touchstart', onDown);
+        };
     }, [open]);
 
     // Recalcule la position lors du scroll/redimensionnement
@@ -198,6 +207,9 @@ export function SelectField({
                         id={optId(i)}
                         role="option"
                         aria-selected={isSelected}
+                        onMouseDown={(e) => {
+                            e.preventDefault();
+                        }}
                         onClick={() => commit(i)}
                         className={cn(
                             'flex cursor-pointer items-center justify-between gap-3 px-4 py-3 text-sm transition-colors',
