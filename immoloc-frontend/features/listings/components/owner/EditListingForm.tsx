@@ -846,7 +846,7 @@ export function EditListingForm({ listing }: { listing: ListingDetail }) {
             Retour
           </Link>
           <div className="flex items-center gap-2">
-            <Link href={`/logements/${listing.slug ?? listing.id}`} target="_blank" rel="noopener noreferrer"
+            <Link href={`/logements/${(listing as any).slug ?? listing.id}`} target="_blank" rel="noopener noreferrer"
               className="inline-flex items-center gap-2 rounded-pill border border-white/15 px-4 py-2 text-sm font-medium text-neutral-50 transition-colors hover:bg-white/10">
               <Eye className="h-4 w-4" aria-hidden="true" />
               Aperçu

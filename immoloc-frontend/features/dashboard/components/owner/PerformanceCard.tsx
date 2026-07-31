@@ -21,6 +21,7 @@ interface Props {
   bookings?: Booking[] | null;
   /** Nombre d'annonces publiées. Servait à rien dans la version précédente. */
   activeListings: number;
+  conversionRate?: number;
   isLoading?: boolean;
   limit?: number;
 }
