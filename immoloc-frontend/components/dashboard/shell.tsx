@@ -137,6 +137,8 @@ export function DashboardShell({ children }: { children: React.ReactNode }) {
   // La structure du shell etait ecrite deux fois, a l'identique, pour la
   // branche chargement et la branche prete. Toute modification de mise en
   // page devait etre faite aux deux endroits.
+  const isDashboardHome = pathname === '/dashboard';
+
   return (
     <div className="flex h-dvh overflow-hidden bg-background">
       <a
@@ -156,7 +158,7 @@ export function DashboardShell({ children }: { children: React.ReactNode }) {
           <DashboardHeader onMenuToggle={ready ? () => setSidebarOpen((v) => !v) : () => { }} />
         )}
 
-        <main id="contenu" className={cn('flex-1 overflow-y-auto', CONTENT_PAD_BOTTOM)}>
+        <main id="contenu" className={cn('flex-1 overflow-y-auto', CONTENT_PAD_BOTTOM, !isDashboardHome && 'pt-[env(safe-area-inset-top,0px)] sm:pt-0')}>
           <div className="mx-auto max-w-[1440px] px-4 py-6 sm:px-6">
             {ready ? children : <DashboardLoading />}
           </div>

@@ -82,7 +82,7 @@ export function MobileHeader({ onMenuToggle }: MobileHeaderProps = {}) {
     'transition-colors duration-150 hover:bg-neutral-100 text-left';
 
   return (
-    <header className="rounded-b-card border-b border-white/10 bg-[radial-gradient(80%_60%_at_50%_0%,#0F503D_0%,rgba(15,80,61,0)_70%),linear-gradient(180deg,#072A20_0%,#041912_100%)] p-4 text-white sm:p-5">
+    <header className="rounded-b-card border-b border-white/10 bg-[radial-gradient(80%_60%_at_50%_0%,#0F503D_0%,rgba(15,80,61,0)_70%),linear-gradient(180deg,#072A20_0%,#041912_100%)] px-4 pb-4 pt-[calc(env(safe-area-inset-top,0px)+1rem)] text-white sm:p-5">
 
       {/* -- Barre supérieure ------------------------------------------- */}
       <div className="flex items-center justify-between gap-3">
