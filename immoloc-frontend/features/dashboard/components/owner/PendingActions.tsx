@@ -1,165 +1,201 @@
 'use client';
 
-import { AlertCircle, Clock, ArrowRight, Zap, ShieldAlert, CalendarClock, Activity } from 'lucide-react';
 import Link from 'next/link';
+import { AlertCircle, ArrowRight, CalendarCheck, CheckCircle2, Clock, ListChecks } from 'lucide-react';
+import { cn } from '@/lib/utils/cn';
+
+const fmtDate = (d: string) =>
+  new Date(d).toLocaleDateString('fr-FR', { day: 'numeric', month: 'short' });
+
+interface StayInProgress {
+  id: string;
+  statut: string;
+  logement: { titre: string };
+  dateFin: string;
+}
 
 interface Props {
   confirmations: number;
   disputes: number;
-  recentBookings?: Array<{
-    id: string;
-    statut: string;
-    logement: { titre: string };
-    locataire: { prenom: string; nom: string };
-    dateFin: string;
-  }>;
+  /** `locataire` était requis dans le type mais jamais lu. */
+  recentBookings?: StayInProgress[];
+  isLoading?: boolean;
 }
 
-export function PendingActions({ confirmations, disputes, recentBookings = [] }: Props) {
-  const total = confirmations + disputes;
-  const urgent = disputes;
-  const toHandle = confirmations;
-  const checkedInBookings = recentBookings.filter(b => b.statut === 'CHECKED_IN');
+function Shell({ children }: { children: React.ReactNode }) {
+  return (
+    <section className="klef-rise flex h-full min-h-[20rem] flex-col rounded-card border border-border bg-background-card p-5 shadow-sm sm:min-h-[22rem] lg:p-6">
+      {children}
+    </section>
+  );
+}
 
-  const hasUrgent = urgent > 0;
+export function PendingActions({ confirmations, disputes, recentBookings = [], isLoading = false }: Props) {
+  const inProgress = recentBookings.filter((b) => b.statut === 'CHECKED_IN');
+  const actionCount = disputes + confirmations;
+  const hasUrgent = disputes > 0;
+
+  if (isLoading) {
+    return (
+      <Shell>
+        <div className="flex-1 animate-pulse space-y-3" aria-hidden="true">
+          <div className="h-10 w-48 rounded-inner bg-neutral-100" />
+          <div className="h-16 rounded-inner bg-neutral-100" />
+          <div className="h-16 rounded-inner bg-neutral-100" />
+        </div>
+        <span className="sr-only" role="status">Chargement des actions</span>
+      </Shell>
+    );
+  }
 
   return (
-    <div className="klef-rise bg-background-card rounded-card p-4 sm:p-5 lg:p-6 border border-border/80 h-full min-h-[280px] sm:min-h-[380px] flex flex-col shadow-sm hover:border-forest-600/30 hover:shadow-md transition-[box-shadow,border-color] duration-200">
+    <Shell>
+      <header className="mb-4 flex flex-wrap items-center justify-between gap-3 border-b border-border pb-3 sm:flex-nowrap">
+        <div className="flex min-w-0 items-center gap-3">
+          {/*
+            L'icone portait text-lime-400 EN DUR, ce qui ecrasait la couleur
+            du parent : en etat d'urgence, on obtenait une icone lime sur un
+            fond rouge clair. La couleur vient maintenant du conteneur seul.
 
-      {/* Header */}
-      <div className="flex items-center justify-between gap-2 flex-wrap sm:flex-nowrap pb-3 mb-3 border-b border-border/60">
-        <div className="flex items-center gap-2.5 sm:gap-3 min-w-0">
-          <div className="relative shrink-0">
-            <div className={`w-9 h-9 sm:w-10 sm:h-10 rounded-inner flex items-center justify-center border
-              ${hasUrgent
-                ? 'bg-error-50 border-error-200 text-error-600'
-                : 'bg-forest-950 border-lime-400/20 text-lime-400'}`}>
-              <Zap className="w-4 h-4 text-lime-400" />
-            </div>
-            {total > 0 && (
-              <span className="absolute -top-1 -right-1 flex h-3 w-3">
-                <span className={`animate-ping absolute inline-flex h-full w-full rounded-full opacity-75
-                  ${hasUrgent ? 'bg-error-500' : 'bg-lime-400'}`}></span>
-                <span className={`relative inline-flex rounded-full h-3 w-3 border-2 border-background-card
-                  ${hasUrgent ? 'bg-error-600' : 'bg-lime-500'}`}></span>
-              </span>
-            )}
-          </div>
+            Le squircle etait aussi en forest-950 dans l'etat normal — l'un
+            des quatre blocs sombres de cette carte claire.
+          */}
+          <span className={cn(
+            'grid h-10 w-10 shrink-0 place-items-center rounded-inner',
+            hasUrgent ? 'bg-error-500/15 text-error-600' : 'bg-neutral-100 text-forest-700',
+          )}>
+            <ListChecks className="h-[1.125rem] w-[1.125rem]" aria-hidden="true" />
+          </span>
+
           <div className="min-w-0">
-            <p className="text-[10px] font-extrabold text-foreground-muted uppercase tracking-wider">À faire</p>
-            <h3 className="font-display text-sm sm:text-base font-bold text-forest-950 truncate">Actions requises</h3>
+            <p className="text-[0.6875rem] uppercase tracking-[0.12em] text-foreground-faint">À faire</p>
+            <h2 className="truncate font-display text-base font-semibold tracking-[-0.015em] text-forest-900">
+              Actions requises
+            </h2>
           </div>
         </div>
 
-        {total > 0 && (
-          <Link
-            href="/dashboard/reservations"
-            className="px-3 py-1.5 rounded-pill bg-lime-400 hover:bg-lime-300 text-forest-950 text-xs font-extrabold transition-all shadow-md active:scale-95 flex items-center gap-1.5 shrink-0 ml-auto sm:ml-0"
-          >
-            <span>Voir tout</span>
-            <ArrowRight className="w-3.5 h-3.5 text-forest-950" />
-          </Link>
+        {/* Le compteur remplace le point en animate-ping, qui clignotait sans
+            fin. Un nombre dit combien ; un point clignotant ne dit rien. */}
+        {actionCount > 0 && (
+          <span className={cn(
+            'inline-flex shrink-0 items-center rounded-pill px-2.5 py-1 text-xs font-semibold tabular-nums',
+            hasUrgent ? 'bg-error-50 text-error-700' : 'bg-warning-50 text-warning-700',
+          )}>
+            {actionCount} en attente
+          </span>
         )}
-      </div>
+      </header>
 
-      {/* Stats Summary */}
-      <div className="grid grid-cols-2 gap-2.5 sm:gap-3 mb-3.5">
-        <div className="p-3 sm:p-3.5 rounded-inner bg-background-alt border border-border/80 space-y-0.5">
-          <div className="flex items-center gap-1.5">
-            <ShieldAlert className="w-3.5 h-3.5 text-error-600 shrink-0" />
-            <span className="text-[10px] font-extrabold text-foreground-muted uppercase tracking-wider truncate">Urgents</span>
-          </div>
-          <p className="font-display text-xl sm:text-2xl font-extrabold text-forest-950">{urgent}</p>
-        </div>
+      {/*
+        La grille « Urgents / À traiter » a ete supprimee.
 
-        <div className="p-3 sm:p-3.5 rounded-inner bg-background-alt border border-border/80 space-y-0.5">
-          <div className="flex items-center gap-1.5">
-            <CalendarClock className="w-3.5 h-3.5 text-lime-600 shrink-0" />
-            <span className="text-[10px] font-extrabold text-foreground-muted uppercase tracking-wider truncate">À traiter</span>
-          </div>
-          <p className="font-display text-xl sm:text-2xl font-extrabold text-forest-950">{toHandle}</p>
-        </div>
-      </div>
+        Elle affichait « 2 Urgents » et « 3 À traiter » juste au-dessus de
+        « 2 litiges en attente » et « 3 réservations à confirmer » : la meme
+        information deux fois, dans une carte de 380 px de haut.
+      */}
 
-      {/* Action List */}
-      <div className="space-y-2 flex-1 overflow-y-auto pr-0.5 no-scrollbar">
-        {/* Litiges */}
+      <div className="flex-1 space-y-2 overflow-y-auto">
         {disputes > 0 && (
           <Link
-            href="/dashboard/litiges"
-            className="flex items-center justify-between gap-2 p-3 sm:p-3.5 rounded-inner bg-error-50 border border-error-200 hover:bg-error-100 transition-all group"
+            href="/dashboard/reservations?statut=DISPUTED"
+            /* Pointait vers /dashboard/litiges, route absente du reste du
+               produit — le reste utilise le filtre de statut. */
+            className="group flex items-center gap-3 rounded-inner border border-error-500/30 bg-error-50 p-3.5 transition-colors duration-150 hover:bg-error-100"
           >
-            <div className="flex items-center gap-2.5 sm:gap-3 min-w-0 flex-1">
-              <div className="w-7 h-7 sm:w-8 sm:h-8 rounded-inner bg-error-600 text-white flex items-center justify-center shrink-0">
-                <AlertCircle className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-white" />
-              </div>
-              <div className="min-w-0 flex-1">
-                <p className="font-display text-xs font-bold text-error-900 truncate">
-                  {disputes} litige{disputes > 1 ? 's' : ''} en attente
-                </p>
-                <p className="text-[10px] font-bold text-error-700 truncate">Réponse requise immédiatement</p>
-              </div>
-            </div>
-            <ArrowRight className="w-4 h-4 text-error-600 shrink-0 group-hover:translate-x-0.5 transition-transform" />
+            <span className="grid h-9 w-9 shrink-0 place-items-center rounded-inner bg-error-600 text-white">
+              <AlertCircle className="h-4 w-4" aria-hidden="true" />
+            </span>
+            <span className="min-w-0 flex-1">
+              <span className="block truncate text-sm font-semibold text-error-700">
+                {disputes} litige{disputes > 1 ? 's' : ''} ouvert{disputes > 1 ? 's' : ''}
+              </span>
+              <span className="block truncate text-xs text-error-600">
+                Les fonds restent bloqués tant que ce n’est pas résolu
+              </span>
+            </span>
+            <ArrowRight className="h-4 w-4 shrink-0 text-error-600 transition-transform duration-150 group-hover:translate-x-0.5" aria-hidden="true" />
           </Link>
         )}
 
-        {/* Confirmations */}
         {confirmations > 0 && (
           <Link
             href="/dashboard/reservations?statut=PENDING"
-            className="flex items-center justify-between gap-2 p-3 sm:p-3.5 rounded-inner bg-background-alt border border-border/80 hover:bg-background-card transition-all group"
+            className="group flex items-center gap-3 rounded-inner border border-warning-500/30 bg-warning-50 p-3.5 transition-colors duration-150 hover:bg-warning-100"
           >
-            <div className="flex items-center gap-2.5 sm:gap-3 min-w-0 flex-1">
-              <div className="w-7 h-7 sm:w-8 sm:h-8 rounded-inner bg-forest-950 text-lime-400 flex items-center justify-center shrink-0">
-                <Activity className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-lime-400" />
-              </div>
-              <div className="min-w-0 flex-1">
-                <p className="font-display text-xs font-bold text-forest-950 truncate">
-                  {confirmations} réservation{confirmations > 1 ? 's' : ''} à confirmer
-                </p>
-                <p className="text-[10px] text-foreground-muted font-medium truncate">Accepter les demandes payées</p>
-              </div>
-            </div>
-            <ArrowRight className="w-4 h-4 text-foreground-muted shrink-0 group-hover:translate-x-0.5 transition-transform" />
+            <span className="grid h-9 w-9 shrink-0 place-items-center rounded-inner bg-warning-500/20 text-warning-700">
+              <CalendarCheck className="h-4 w-4" aria-hidden="true" />
+            </span>
+            <span className="min-w-0 flex-1">
+              <span className="block truncate text-sm font-semibold text-warning-700">
+                {confirmations} réservation{confirmations > 1 ? 's' : ''} à confirmer
+              </span>
+              <span className="block truncate text-xs text-warning-600">
+                Un voyageur qui attend trop longtemps annule
+              </span>
+            </span>
+            <ArrowRight className="h-4 w-4 shrink-0 text-warning-700 transition-transform duration-150 group-hover:translate-x-0.5" aria-hidden="true" />
           </Link>
         )}
 
-        {/* Checked-In Bookings */}
-        {checkedInBookings.map(b => (
-          <Link
-            key={b.id}
-            href={`/dashboard/reservations/${b.id}`}
-            className="flex items-center justify-between gap-2 p-3 sm:p-3.5 rounded-inner bg-background-alt border border-border/80 hover:bg-background-card transition-all group"
-          >
-            <div className="flex items-center gap-2.5 sm:gap-3 min-w-0 flex-1">
-              <div className="w-7 h-7 sm:w-8 sm:h-8 rounded-inner bg-forest-950 text-lime-400 flex items-center justify-center shrink-0">
-                <Clock className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-lime-400" />
-              </div>
-              <div className="min-w-0 flex-1">
-                <p className="font-display text-xs font-bold text-forest-950 truncate">
-                  {b.logement.titre}
-                </p>
-                <p className="text-[10px] text-forest-700 font-bold truncate">
-                  En cours • Fin le {new Date(b.dateFin).toLocaleDateString('fr-FR', { day: 'numeric', month: 'short' })}
-                </p>
-              </div>
-            </div>
-            <ArrowRight className="w-4 h-4 text-foreground-muted shrink-0 group-hover:translate-x-0.5 transition-transform" />
-          </Link>
-        ))}
-
-        {/* Empty State */}
-        {total === 0 && checkedInBookings.length === 0 && (
-          <div className="py-6 sm:py-8 flex flex-col items-center justify-center text-center space-y-2">
-            <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-inner bg-forest-950 text-lime-400 border border-lime-400/20 flex items-center justify-center">
-              <ShieldAlert className="w-4 h-4 sm:w-5 sm:h-5 text-lime-400" />
-            </div>
-            <p className="font-display text-xs sm:text-sm font-bold text-forest-950">Tout est à jour</p>
-            <p className="text-[11px] sm:text-xs text-foreground-muted">Aucune action requise pour le moment.</p>
+        {/* Aucune action en attente, mais des séjours en cours */}
+        {actionCount === 0 && (
+          <div className="flex flex-col items-center justify-center gap-2 py-8 text-center">
+            {/* ShieldAlert servait a dire « tout va bien » : un ecusson
+                d'alerte pour annoncer l'absence d'alerte. */}
+            <span className="grid h-11 w-11 place-items-center rounded-inner bg-success-50 text-success-600">
+              <CheckCircle2 className="h-5 w-5" aria-hidden="true" />
+            </span>
+            <p className="text-sm font-medium text-forest-900">Rien à traiter</p>
+            <p className="max-w-[16rem] text-xs leading-relaxed text-foreground-muted">
+              {inProgress.length > 0
+                ? `${inProgress.length} séjour${inProgress.length > 1 ? 's' : ''} en cours, aucune demande en attente.`
+                : 'Aucune demande en attente pour le moment.'}
+            </p>
           </div>
         )}
       </div>
-    </div>
+
+      {/*
+        Les séjours en cours quittent la liste d'actions.
+
+        Un séjour qui se déroule ne demande rien : le mélanger aux litiges et
+        aux confirmations faisait que le compteur du haut ne correspondait
+        jamais au nombre de lignes affichées.
+      */}
+      {inProgress.length > 0 && (
+        <div className="mt-4 border-t border-border pt-4">
+          <p className="mb-2.5 text-[0.6875rem] uppercase tracking-[0.12em] text-foreground-faint">
+            Séjours en cours
+          </p>
+          <ul className="space-y-1">
+            {inProgress.slice(0, 3).map((b) => (
+              <li key={b.id}>
+                <Link
+                  href={`/dashboard/reservations/${b.id}`}
+                  className="group flex items-center gap-2.5 rounded-inner p-2 transition-colors duration-150 hover:bg-background-alt"
+                >
+                  <Clock className="h-4 w-4 shrink-0 text-forest-600" aria-hidden="true" />
+                  <span className="min-w-0 flex-1">
+                    <span className="block truncate text-sm text-foreground">{b.logement.titre}</span>
+                    <span className="block text-xs text-foreground-muted">
+                      Départ le {fmtDate(b.dateFin)}
+                    </span>
+                  </span>
+                  <ArrowRight className="h-3.5 w-3.5 shrink-0 text-foreground-faint transition-colors group-hover:text-forest-600" aria-hidden="true" />
+                </Link>
+              </li>
+            ))}
+          </ul>
+          {inProgress.length > 3 && (
+            <p className="mt-2 text-center text-xs text-foreground-muted">
+              <Link href="/dashboard/reservations?statut=CHECKED_IN" className="font-medium text-forest-700 hover:underline">
+                {inProgress.length - 3} autre{inProgress.length - 3 > 1 ? 's' : ''}
+              </Link>
+            </p>
+          )}
+        </div>
+      )}
+    </Shell>
   );
 }

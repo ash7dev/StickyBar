@@ -2,12 +2,11 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import {
-  LayoutDashboard, Building2, CalendarDays,
-  Wallet, Settings, X, ArrowLeftRight, LogOut
+  ArrowLeftRight, Building2, CalendarDays, LayoutDashboard,
+  LogOut, Settings, Wallet, X,
 } from 'lucide-react';
-import { BRAND } from '@/lib/config';
 import { cn } from '@/lib/utils/cn';
 import { useSwitchRole } from '@/features/auth/hooks/use-switch-role';
 import { useAuth } from '@/features/auth/hooks/use-auth';
@@ -22,7 +21,7 @@ type NavItem = {
 };
 
 const MAIN_NAV: NavItem[] = [
-  { href: '/dashboard', label: "Vue d'ensemble", icon: LayoutDashboard, exact: true },
+  { href: '/dashboard', label: 'Vue d’ensemble', icon: LayoutDashboard, exact: true },
   { href: '/dashboard/annonces', label: 'Mes annonces', icon: Building2 },
   { href: '/dashboard/reservations', label: 'Réservations', icon: CalendarDays },
   { href: '/dashboard/wallet', label: 'Wallet', icon: Wallet },
@@ -45,18 +44,33 @@ function NavLink({ item, onClose }: { item: NavItem; onClose: () => void }) {
     <Link
       href={item.href}
       onClick={onClose}
+      // aria-current manquait : l'etat actif n'etait signale que par la
+      // couleur, donc invisible pour un lecteur d'ecran.
+      aria-current={active ? 'page' : undefined}
       className={cn(
-        'flex items-center gap-3 px-4 py-3 rounded-inner text-xs transition-all duration-200 group relative',
+        'group relative flex items-center gap-3 rounded-inner px-4 py-3 text-sm transition-colors duration-150',
         active
-          ? 'bg-lime-400 text-forest-950 font-extrabold shadow-sm border border-lime-500/20'
-          : 'text-foreground-muted hover:bg-background-alt hover:text-forest-950 font-semibold',
+          /* L'etat actif etait un aplat bg-lime-400 plein. Comme un element
+             est toujours actif, la barre laterale affichait en permanence un
+             gros bloc lime, en plus du badge « Hote » et du bouton de
+             bascule, tous deux en forest-950 a texte lime.
+             lime-100 est la meme teinte que la pastille active de la navbar
+             publique : l'etat actif se lit pareil partout. */
+          ? 'bg-lime-100 font-semibold text-forest-800'
+          : 'text-foreground-muted hover:bg-background-alt hover:text-forest-800',
       )}
     >
-      <item.icon className={cn('h-4 w-4 shrink-0 transition-all duration-200', active ? 'text-forest-950' : 'text-foreground-muted group-hover:text-forest-950')} />
+      {/* Repere lateral : second signal, en plus de la couleur. */}
+      <span
+        aria-hidden="true"
+        className={cn(
+          'absolute left-0 top-1/2 h-5 w-1 -translate-y-1/2 rounded-r-pill transition-colors duration-150',
+          active ? 'bg-lime-500' : 'bg-transparent',
+        )}
+      />
+      <item.icon className="h-[1.125rem] w-[1.125rem] shrink-0" aria-hidden="true" />
       <span className="truncate">{item.label}</span>
-      {active && (
-        <div className="w-1.5 h-1.5 rounded-full bg-forest-950 ml-auto shrink-0 animate-pulse" />
-      )}
+      {/* Le point actif clignotait en animate-pulse, en permanence. */}
     </Link>
   );
 }
@@ -65,119 +79,182 @@ export function DashboardSidebar({ isOpen, onClose }: SidebarProps) {
   const { switchRole, isSwitching } = useSwitchRole();
   const { logout } = useAuth();
   const [isLoggingOut, setIsLoggingOut] = useState(false);
-  const onboardingDraft = useRoleStore((state) => state.onboardingDraft);
+  const [switchError, setSwitchError] = useState(false);
+  const onboardingDraft = useRoleStore((s) => s.onboardingDraft);
+  const { data: user, isLoading } = useCurrentUser();
 
-  const { data: user } = useCurrentUser();
+  const panelRef = useRef<HTMLElement>(null);
+  const closeRef = useRef<HTMLButtonElement>(null);
+  const restore = useRef<HTMLElement | null>(null);
 
-  const userInitials = user?.prenom && user?.nom
-    ? `${user.prenom[0]}${user.nom[0]}`.toUpperCase()
-    : (onboardingDraft?.prenom?.[0]?.toUpperCase() || 'KL');
+  /*
+    Tiroir mobile : ni Echap, ni piege de focus, ni verrou de defilement.
+    Ouvert, la tabulation continuait derriere le panneau et la page defilait
+    sous le doigt.
+  */
+  useEffect(() => {
+    if (!isOpen) return;
+    if (window.matchMedia('(min-width: 1024px)').matches) return;
 
-  const userName = user?.prenom && user?.nom
-    ? `${user.prenom} ${user.nom}`
-    : (onboardingDraft?.prenom && onboardingDraft?.nom
-      ? `${onboardingDraft.prenom} ${onboardingDraft.nom}`
-      : BRAND.name);
+    restore.current = document.activeElement as HTMLElement;
+    closeRef.current?.focus();
+    const prevOverflow = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
 
-  const handleLogout = async () => {
-    setIsLoggingOut(true);
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') { onClose(); return; }
+      if (e.key !== 'Tab') return;
+      const nodes = panelRef.current?.querySelectorAll<HTMLElement>(
+        'a[href], button:not([disabled]), [tabindex]:not([tabindex="-1"])',
+      );
+      if (!nodes?.length) return;
+      const first = nodes[0], last = nodes[nodes.length - 1];
+      if (e.shiftKey && document.activeElement === first) { e.preventDefault(); last.focus(); }
+      else if (!e.shiftKey && document.activeElement === last) { e.preventDefault(); first.focus(); }
+    };
+
+    document.addEventListener('keydown', onKey);
+    return () => {
+      document.removeEventListener('keydown', onKey);
+      document.body.style.overflow = prevOverflow;
+      restore.current?.focus();
+    };
+  }, [isOpen, onClose]);
+
+  /* Le repli du nom etait BRAND.name : un utilisateur dont le profil n'avait
+     pas encore charge voyait « Klef » comme son propre nom, avec « KL » en
+     initiales. */
+  const prenom = user?.prenom ?? onboardingDraft?.prenom ?? '';
+  const nom = user?.nom ?? onboardingDraft?.nom ?? '';
+  const userName = [prenom, nom].filter(Boolean).join(' ');
+  const initials = ((prenom[0] ?? '') + (nom[0] ?? '')).toUpperCase() || '—';
+
+  async function handleSwitch() {
+    setSwitchError(false);
     try {
-      await logout();
-    } finally {
-      setIsLoggingOut(false);
+      // switchRole n'etait ni attendu ni gere : en cas d'echec, onClose()
+      // avait deja ferme le panneau et rien ne se passait.
+      await switchRole('LOCATAIRE');
       onClose();
-    }
-  };
+    } catch { setSwitchError(true); }
+  }
+
+  async function handleLogout() {
+    setIsLoggingOut(true);
+    try { await logout(); }
+    finally { setIsLoggingOut(false); onClose(); }
+  }
 
   return (
     <>
-      {/* Backdrop mobile */}
       <div
-        aria-hidden
+        aria-hidden="true"
         onClick={onClose}
         className={cn(
-          'fixed inset-0 z-40 bg-overlay backdrop-blur-xs transition-opacity duration-300 lg:hidden',
-          isOpen ? 'opacity-100 pointer-events-auto' : 'opacity-0 pointer-events-none',
+          // bg-overlay suppose que --overlay soit expose en utilitaire de
+          // couleur dans @theme. Valeur explicite pour eviter la surprise.
+          'fixed inset-0 z-40 bg-[rgba(4,25,18,0.55)] backdrop-blur-sm transition-opacity duration-200 lg:hidden',
+          isOpen ? 'opacity-100' : 'pointer-events-none opacity-0',
         )}
       />
 
-      {/* Panneau sidebar Mode Light Premium */}
       <aside
+        ref={panelRef}
+        aria-label="Navigation du tableau de bord"
         className={cn(
-          'w-64 flex flex-col shrink-0',
-          'fixed inset-y-0 left-0 z-50',
-          'transition-transform duration-300 ease-in-out',
+          'fixed inset-y-0 left-0 z-50 flex w-64 shrink-0 flex-col',
+          'border-r border-border bg-background-card shadow-lg',
+          'transition-transform duration-200 ease-[cubic-bezier(0.22,1,0.36,1)]',
           isOpen ? 'translate-x-0' : '-translate-x-full',
-          'lg:relative lg:translate-x-0 lg:inset-auto lg:z-auto',
-          'bg-background-card border-r border-border/80 shadow-lg',
+          'lg:relative lg:inset-auto lg:z-auto lg:translate-x-0 lg:shadow-none',
         )}
       >
-        {/* Header avec Logo */}
-        <div className="p-5 border-b border-border/60 space-y-4 shrink-0">
-          <div className="flex items-center justify-between">
-            <Link href="/" className="flex items-baseline gap-0.5">
-              <span className="font-display text-2xl font-extrabold text-forest-950 tracking-tight">klef</span>
-              <span className="font-display text-2xl font-extrabold text-lime-600">.</span>
+        <div className="shrink-0 space-y-4 border-b border-border p-5">
+          {/*
+            Le conteneur en justify-between avait TROIS enfants : logo, badge
+            « Hote » et bouton de fermeture en lg:hidden. Sur desktop le
+            bouton disparait, donc deux elements aux extremites ; sur mobile,
+            les trois s'ecartent et le badge flotte au milieu.
+            Badge et bouton sont maintenant groupes.
+          */}
+          <div className="flex items-center justify-between gap-2">
+            <Link href="/" className="flex items-baseline">
+              <span className="font-display text-2xl font-semibold tracking-tight text-forest-800">klef</span>
+              <span className="font-display text-2xl font-semibold text-lime-600" aria-hidden="true">.</span>
             </Link>
-            <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-pill bg-forest-950 text-lime-400 text-[9px] font-extrabold uppercase tracking-widest border border-lime-400/20">
-              Hôte
-            </span>
-            <button
-              onClick={onClose}
-              aria-label="Fermer le menu"
-              className="lg:hidden p-1.5 rounded-inner text-foreground-muted hover:bg-background-alt transition-colors"
-            >
-              <X className="h-4 w-4" />
-            </button>
+
+            <div className="flex items-center gap-2">
+              <span className="rounded-pill bg-neutral-100 px-2.5 py-1 text-[0.6875rem] font-semibold uppercase tracking-[0.1em] text-forest-700">
+                Hôte
+              </span>
+              <button
+                ref={closeRef}
+                type="button"
+                onClick={onClose}
+                aria-label="Fermer le menu"
+                className="grid h-9 w-9 place-items-center rounded-pill text-foreground-muted transition-colors hover:bg-background-alt lg:hidden"
+              >
+                <X className="h-4 w-4" aria-hidden="true" />
+              </button>
+            </div>
           </div>
 
-          {/* User Profile Card */}
-          <div className="bg-background-alt border border-border/80 rounded-inner p-3.5 flex items-center gap-3">
-            <div className="w-10 h-10 rounded-inner bg-forest-950 border border-lime-400/20 text-lime-400 font-display font-semibold text-sm flex items-center justify-center shrink-0">
-              {userInitials}
-            </div>
-            <div className="flex-1 min-w-0">
-              <p className="font-display text-xs font-extrabold text-forest-950 truncate">{userName}</p>
-              <p className="text-[10px] text-foreground-muted font-bold truncate mt-0.5">Espace Propriétaire</p>
-            </div>
+          <div className="flex items-center gap-3 rounded-inner bg-background-alt p-3.5">
+            {isLoading ? (
+              <>
+                <div className="h-10 w-10 shrink-0 animate-pulse rounded-inner bg-neutral-200" aria-hidden="true" />
+                <div className="h-4 flex-1 animate-pulse rounded bg-neutral-200" aria-hidden="true" />
+              </>
+            ) : (
+              <>
+                {/* Le carre etait en forest-950 a initiales lime. */}
+                <span className="grid h-10 w-10 shrink-0 place-items-center rounded-inner bg-forest-100 text-sm font-semibold text-forest-700">
+                  {initials}
+                </span>
+                <div className="min-w-0 flex-1">
+                  <p className="truncate text-sm font-semibold text-forest-900">
+                    {userName || 'Votre compte'}
+                  </p>
+                  <p className="mt-0.5 truncate text-xs text-foreground-muted">Espace propriétaire</p>
+                </div>
+              </>
+            )}
           </div>
         </div>
 
-        {/* Navigation principale */}
-        <nav className="flex-1 p-3 space-y-1.5 overflow-y-auto">
-          {MAIN_NAV.map((item) => (
-            <NavLink key={item.href} item={item} onClose={onClose} />
-          ))}
-
-          <div className="my-3 border-t border-border/60" />
-
-          {BOTTOM_NAV.map((item) => (
-            <NavLink key={item.href} item={item} onClose={onClose} />
-          ))}
+        <nav className="flex-1 space-y-1 overflow-y-auto p-3">
+          {MAIN_NAV.map((item) => <NavLink key={item.href} item={item} onClose={onClose} />)}
+          <div className="my-3 border-t border-border" />
+          {BOTTOM_NAV.map((item) => <NavLink key={item.href} item={item} onClose={onClose} />)}
         </nav>
 
-        {/* Actions du bas */}
-        <div className="p-3 border-t border-border/60 space-y-2 shrink-0">
-          {/* Switch Role */}
+        <div className="shrink-0 space-y-2 border-t border-border p-3">
+          {switchError && (
+            <p role="alert" className="rounded-inner bg-error-50 px-3 py-2 text-xs text-error-700">
+              Basculement impossible. Réessayez.
+            </p>
+          )}
+
+          {/* Le bouton de bascule etait l'element le plus lourd de la barre :
+              forest-950, texte lime, ombre portee. Or changer de mode est une
+              action occasionnelle — elle ne doit pas dominer la navigation. */}
           <button
-            onClick={() => {
-              switchRole('LOCATAIRE');
-              onClose();
-            }}
+            type="button"
+            onClick={handleSwitch}
             disabled={isSwitching}
-            className="w-full inline-flex items-center justify-center gap-2 py-3 rounded-pill bg-forest-950 hover:bg-forest-900 text-lime-400 font-extrabold text-xs shadow-md transition-all active:scale-95 disabled:opacity-50 border border-lime-400/20"
+            className="inline-flex w-full items-center justify-center gap-2 rounded-pill border border-border py-2.5 text-sm font-semibold text-forest-800 transition-colors duration-150 hover:bg-background-alt disabled:opacity-50"
           >
-            <ArrowLeftRight className="h-4 w-4 text-lime-400 shrink-0" />
-            <span className="truncate">Passer en Mode Locataire</span>
+            <ArrowLeftRight className="h-4 w-4 shrink-0" aria-hidden="true" />
+            <span className="truncate">{isSwitching ? 'Basculement…' : 'Mode locataire'}</span>
           </button>
 
-          {/* Logout */}
           <button
+            type="button"
             onClick={handleLogout}
             disabled={isLoggingOut}
-            className="w-full inline-flex items-center justify-center gap-2 py-2 rounded-pill bg-error-50 hover:bg-error-100 border border-error-200 text-xs font-extrabold text-error-700 transition-all active:scale-95 disabled:opacity-50"
+            className="inline-flex w-full items-center justify-center gap-2 rounded-pill py-2.5 text-sm font-medium text-error-600 transition-colors duration-150 hover:bg-error-50 disabled:opacity-50"
           >
-            <LogOut className="h-4 w-4 text-error-600 shrink-0" />
+            <LogOut className="h-4 w-4 shrink-0" aria-hidden="true" />
             <span className="truncate">{isLoggingOut ? 'Déconnexion…' : 'Se déconnecter'}</span>
           </button>
         </div>

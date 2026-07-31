@@ -1,145 +1,213 @@
 'use client';
 
-import { Trophy, BarChart2, ArrowRight, Star, TrendingUp } from 'lucide-react';
 import Link from 'next/link';
 import { useEffect, useState } from 'react';
+import { ArrowRight, Trophy } from 'lucide-react';
+import { cn } from '@/lib/utils/cn';
+import { netHost } from '@/lib/dashboard/owner-tokens';
+
+const nf = new Intl.NumberFormat('fr-FR', { maximumFractionDigits: 0 });
 
 interface Booking {
   totalLocataire: number;
   statut: string;
-  logement: { titre: string; ville?: string };
+  /* Le regroupement se faisait sur le TITRE : deux annonces homonymes —
+     « Studio Ngor », « Villa Saly » — fusionnaient en une seule ligne.
+     L'identifiant est utilisé quand il est disponible. */
+  logement: { id?: string; titre: string; ville?: string };
 }
 
 interface Props {
-  bookings: Booking[];
-  conversionRate: number;
+  bookings?: Booking[] | null;
+  /** Nombre d'annonces publiées. Servait à rien dans la version précédente. */
   activeListings: number;
+  isLoading?: boolean;
+  limit?: number;
 }
 
-interface LogementStat {
-  titre: string;
-  revenue: number;
-  nbLocations: number;
+/* DISPUTED comptait dans le chiffre d'affaires alors que les fonds sont
+   gelés et peuvent être remboursés. */
+const COUNTED = new Set(['COMPLETED', 'CHECKED_IN', 'CONFIRMED', 'PAID']);
+
+interface Stat { key: string; titre: string; ville?: string; revenue: number; nights: number }
+
+function Shell({ children }: { children: React.ReactNode }) {
+  return (
+    <section className="klef-rise flex h-full min-h-[22rem] flex-col rounded-card border border-border bg-background-card p-5 shadow-sm lg:p-6">
+      {children}
+    </section>
+  );
 }
 
-export function PerformanceCard({ bookings, conversionRate, activeListings }: Props) {
-  const [mounted, setMounted] = useState(false);
+export function PerformanceCard({ bookings, activeListings, isLoading = false, limit = 3 }: Props) {
+  const [shown, setShown] = useState(false);
   useEffect(() => {
-    const t = setTimeout(() => setMounted(true), 200);
+    if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) { setShown(true); return; }
+    const t = setTimeout(() => setShown(true), 120);
     return () => clearTimeout(t);
   }, []);
 
-  const fmt = (n: number) => new Intl.NumberFormat('fr-FR').format(Math.round(n));
-
-  const EXCLUDED = new Set(['CANCELLED', 'PENDING', 'EXPIRED']);
-
-  const map: Record<string, LogementStat> = {};
-  for (const b of bookings) {
-    if (EXCLUDED.has(b.statut)) continue;
-    const key = b.logement.titre;
-    if (!map[key]) map[key] = { titre: b.logement.titre, revenue: 0, nbLocations: 0 };
-    map[key].revenue += Number(b.totalLocataire ?? 0);
-    map[key].nbLocations += 1;
+  if (isLoading) {
+    return (
+      <Shell>
+        <div className="flex-1 animate-pulse space-y-3" aria-hidden="true">
+          <div className="h-10 w-48 rounded-inner bg-neutral-100" />
+          {[0, 1, 2].map((i) => <div key={i} className="h-16 rounded-inner bg-neutral-100" />)}
+        </div>
+        <span className="sr-only" role="status">Chargement du classement</span>
+      </Shell>
+    );
   }
 
-  const ranked = Object.values(map)
-    .sort((a, b) => b.revenue - a.revenue)
-    .slice(0, 3);
+  const list = bookings ?? [];
+  const map = new Map<string, Stat>();
 
-  const maxRevenue = ranked[0]?.revenue ?? 1;
+  for (const b of list) {
+    if (!COUNTED.has(b.statut)) continue;
+    const key = b.logement.id ?? b.logement.titre;
+    const cur = map.get(key) ?? { key, titre: b.logement.titre, ville: b.logement.ville, revenue: 0, nights: 0 };
+    cur.revenue += netHost(Number(b.totalLocataire) || 0);
+    cur.nights += 1;
+    map.set(key, cur);
+  }
 
-  const currentMonth = new Date().toLocaleDateString('fr-FR', { month: 'long', year: 'numeric' });
-  const monthCapitalized = currentMonth.charAt(0).toUpperCase() + currentMonth.slice(1);
+  const ranked = [...map.values()].sort((a, b) => b.revenue - a.revenue);
+  const top = ranked.slice(0, limit);
+  const max = top[0]?.revenue ?? 0;
+
+  /* Métrique honnête, calculée à partir des données présentes, et qui utilise
+     enfin activeListings : combien d'annonces ont réellement rapporté. */
+  const earning = ranked.length;
+  const coverage = activeListings > 0 ? Math.round((earning / activeListings) * 100) : null;
 
   return (
-    <div className="klef-rise bg-background-card rounded-card border border-border/80 p-5 lg:p-6 flex flex-col justify-between shadow-sm hover:border-forest-600/30 hover:shadow-md transition-[box-shadow,border-color] duration-200 min-h-[380px] space-y-4">
-
-      {/* Header */}
-      <div className="flex items-center justify-between gap-2 flex-wrap sm:flex-nowrap pb-3 border-b border-border/60">
-        <div className="flex items-center gap-3 min-w-0">
-          <div className="w-9 h-9 lg:w-10 lg:h-10 rounded-inner bg-forest-950 text-lime-400 border border-lime-400/20 flex items-center justify-center shrink-0">
-            <Trophy className="w-4 h-4 text-lime-400" />
-          </div>
+    <Shell>
+      <header className="mb-4 flex flex-wrap items-center justify-between gap-3 border-b border-border pb-3 sm:flex-nowrap">
+        <div className="flex min-w-0 items-center gap-3">
+          {/* Le squircle était en forest-950 à icône lime, ici et dans l'état
+              vide : deux blocs sombres sur une carte claire. */}
+          <span className="grid h-10 w-10 shrink-0 place-items-center rounded-inner bg-neutral-100 text-forest-700">
+            <Trophy className="h-[1.125rem] w-[1.125rem]" aria-hidden="true" />
+          </span>
           <div className="min-w-0">
-            <p className="text-[10px] font-extrabold text-foreground-muted uppercase tracking-wider">Performance</p>
-            <h3 className="font-display text-sm sm:text-base font-bold text-forest-950 truncate">Classement {monthCapitalized}</h3>
+            <p className="text-[0.6875rem] uppercase tracking-[0.12em] text-foreground-faint">Performance</p>
+            {/* « Classement {mois} » alors que le calcul portait sur toutes
+                les réservations transmises, sans filtre de date. */}
+            <h2 className="truncate font-display text-base font-semibold tracking-[-0.015em] text-forest-900">
+              Vos biens les plus rentables
+            </h2>
           </div>
         </div>
-        <div className="inline-flex items-center gap-1.5 px-2.5 sm:px-3 py-1 rounded-pill bg-forest-50 border border-forest-100 text-forest-800 text-[11px] sm:text-xs font-extrabold shrink-0">
-          <TrendingUp className="w-3.5 h-3.5 text-forest-600" />
-          <span>{conversionRate}% actifs</span>
-        </div>
-      </div>
 
-      {/* Ranked List */}
-      <div className="flex-1 space-y-3">
-        {ranked.length === 0 ? (
-          <div className="py-10 flex flex-col items-center justify-center text-center space-y-2">
-            <div className="w-10 h-10 rounded-inner bg-forest-950 text-lime-400 border border-lime-400/20 flex items-center justify-center">
-              <Star className="w-5 h-5 text-lime-400" />
-            </div>
-            <p className="font-display text-sm font-bold text-forest-950">Aucune donnée classée</p>
-            <p className="text-xs text-foreground-muted">Les réservations activées apparaîtront ici.</p>
+        {coverage !== null && earning > 0 && (
+          <span className="inline-flex shrink-0 items-center rounded-pill bg-neutral-100 px-2.5 py-1 text-xs text-foreground-muted">
+            <span className="font-semibold tabular-nums text-forest-900">{earning}</span>
+            <span className="mx-1">/</span>
+            <span className="tabular-nums">{activeListings}</span>
+            <span className="ml-1.5">ont rapporté</span>
+          </span>
+        )}
+      </header>
+
+      <div className="flex-1">
+        {top.length === 0 ? (
+          <div className="flex h-full flex-col items-center justify-center gap-2.5 py-8 text-center">
+            <span className="grid h-11 w-11 place-items-center rounded-inner bg-neutral-100 text-foreground-muted">
+              <Trophy className="h-5 w-5" aria-hidden="true" />
+            </span>
+            <p className="text-sm font-medium text-forest-900">
+              {activeListings === 0 ? 'Aucune annonce publiée' : 'Aucun revenu encore'}
+            </p>
+            <p className="max-w-[18rem] text-xs leading-relaxed text-foreground-muted">
+              {activeListings === 0
+                ? 'Publiez un bien pour commencer à recevoir des réservations.'
+                : 'Le classement apparaîtra dès votre première réservation confirmée.'}
+            </p>
+            <Link
+              href={activeListings === 0 ? '/dashboard/annonces/nouvelle' : '/ressources'}
+              className="mt-2 inline-flex items-center gap-1.5 rounded-pill border border-border px-4 py-2 text-xs font-semibold text-forest-800 transition-colors duration-150 hover:bg-neutral-100"
+            >
+              {activeListings === 0 ? 'Publier un bien' : 'Conseils pour mieux louer'}
+              <ArrowRight className="h-3.5 w-3.5" aria-hidden="true" />
+            </Link>
           </div>
         ) : (
-          <div className="space-y-2.5">
-            {ranked.map((item, i) => {
-              const rank = i + 1;
-              const barPct = maxRevenue > 0 ? Math.round((item.revenue / maxRevenue) * 100) : 0;
-              const isFirst = rank === 1;
+          <ol className="space-y-2.5">
+            {top.map((item, i) => {
+              const first = i === 0;
+              const pct = max > 0 ? Math.round((item.revenue / max) * 100) : 0;
 
               return (
-                <div
-                  key={item.titre}
-                  className={`p-3.5 rounded-inner border transition-all ${
-                    isFirst
-                      ? 'bg-forest-950 text-white border-forest-800 shadow-md'
-                      : 'bg-background-alt border-border/80 text-forest-950'
-                  }`}
+                <li
+                  key={item.key}
+                  className={cn(
+                    'rounded-inner border p-3.5',
+                    // Le premier était en bg-forest-950 plein : un bloc noir
+                    // dans une carte claire, pour une ligne de classement.
+                    // La teinte lime suffit à distinguer la tête.
+                    first ? 'border-lime-400/40 bg-lime-50' : 'border-border bg-background-alt',
+                  )}
                 >
-                  <div className="flex items-center justify-between gap-3 mb-2">
-                    <div className="flex items-center gap-2.5 min-w-0">
-                      <span className={`w-6 h-6 rounded-pill flex items-center justify-center font-display font-extrabold text-xs shrink-0 ${
-                        isFirst ? 'bg-lime-400 text-forest-950' : 'bg-background-card border border-border text-forest-950'
-                      }`}>
-                        {rank}
+                  <div className="mb-2 flex items-center justify-between gap-3">
+                    <span className="flex min-w-0 items-center gap-2.5">
+                      <span className={cn(
+                        'grid h-6 w-6 shrink-0 place-items-center rounded-pill font-mono text-xs tabular-nums',
+                        first ? 'bg-lime-400 text-forest-800' : 'bg-background-card text-foreground-muted',
+                      )}>
+                        {i + 1}
                       </span>
-                      <p className={`font-display text-xs font-bold truncate ${isFirst ? 'text-white' : 'text-forest-950'}`}>
-                        {item.titre}
-                      </p>
-                    </div>
+                      <span className="min-w-0">
+                        <span className="block truncate text-sm font-semibold text-forest-900">{item.titre}</span>
+                        {item.ville && (
+                          <span className="block truncate text-xs text-foreground-muted">{item.ville}</span>
+                        )}
+                      </span>
+                    </span>
 
-                    <div className="text-right shrink-0">
-                      <span className={`font-display text-xs font-extrabold ${isFirst ? 'text-lime-400' : 'text-forest-950'}`}>
-                        {fmt(item.revenue)} FCFA
+                    <span className="shrink-0 text-right">
+                      <span className="block text-sm font-semibold tabular-nums text-forest-900">
+                        {nf.format(item.revenue)}
                       </span>
-                    </div>
+                      {/* nbLocations était calculé puis jamais affiché : le
+                          nombre de séjours explique le chiffre d'affaires. */}
+                      <span className="block text-[0.6875rem] text-foreground-muted tabular-nums">
+                        {item.nights} séjour{item.nights > 1 ? 's' : ''}
+                      </span>
+                    </span>
                   </div>
 
-                  {/* Progress Bar */}
-                  <div className="h-1.5 rounded-pill bg-border/40 overflow-hidden">
+                  <div className="h-1.5 overflow-hidden rounded-pill bg-neutral-200">
                     <div
-                      className={`h-full rounded-pill transition-all duration-1000 ${isFirst ? 'bg-lime-400' : 'bg-forest-700'}`}
-                      style={{ width: mounted ? `${Math.max(barPct, 4)}%` : '0%' }}
+                      className={cn('h-full rounded-pill', first ? 'bg-lime-500' : 'bg-forest-500')}
+                      style={{
+                        width: shown ? `${Math.max(pct, 4)}%` : '0%',
+                        // transition-all duration-1000 animait tout, sur une
+                        // durée absente de l'échelle du système.
+                        transition: 'width 320ms cubic-bezier(0.22,1,0.36,1)',
+                      }}
                     />
                   </div>
-                </div>
+                </li>
               );
             })}
-          </div>
+          </ol>
         )}
       </div>
 
-      {/* Footer Link */}
-      <div className="pt-3 border-t border-border/60">
+      <div className="mt-4 border-t border-border pt-4">
+        {ranked.length > limit && (
+          <p className="mb-2 text-center text-xs text-foreground-muted">
+            {ranked.length - limit} autre{ranked.length - limit > 1 ? 's' : ''} bien{ranked.length - limit > 1 ? 's' : ''} avec des revenus
+          </p>
+        )}
         <Link
           href="/dashboard/annonces"
-          className="w-full inline-flex items-center justify-center gap-2 py-2.5 rounded-pill bg-background-alt hover:bg-background-card text-forest-950 font-semibold text-xs transition-[background-color,border-color] duration-150 border border-border/80"
+          className="inline-flex w-full items-center justify-center gap-2 rounded-pill border border-border py-2.5 text-sm font-semibold text-forest-800 transition-colors duration-150 hover:bg-neutral-100"
         >
-          <span>Voir le détail des annonces</span>
-          <ArrowRight className="w-3.5 h-3.5 text-forest-950" />
+          Voir toutes mes annonces
+          <ArrowRight className="h-3.5 w-3.5" aria-hidden="true" />
         </Link>
       </div>
-    </div>
+    </Shell>
   );
 }

@@ -1,9 +1,14 @@
 'use client';
 
-import { MapPin, Calendar, ArrowRight, ChevronDown, ChevronRight, Bookmark } from 'lucide-react';
 import Image from 'next/image';
 import Link from 'next/link';
-import { useState } from 'react';
+import { ArrowRight, Calendar, ChevronRight, ImageOff, Inbox } from 'lucide-react';
+import { cn } from '@/lib/utils/cn';
+import { netHost, STATUT_CFG_LIGHT } from '@/lib/dashboard/owner-tokens';
+
+const nf = new Intl.NumberFormat('fr-FR', { maximumFractionDigits: 0 });
+const fmtDate = (d: string) =>
+  new Date(d).toLocaleDateString('fr-FR', { day: 'numeric', month: 'short' });
 
 interface Booking {
   id: string;
@@ -12,213 +17,202 @@ interface Booking {
   nbNuits?: number;
   totalLocataire: number;
   statut: string;
-  locataire: { prenom: string; nom: string; avatarUrl: string | null };
-  logement: { titre: string; ville: string; photos: any[] };
+  locataire: { prenom?: string | null; nom?: string | null; avatarUrl?: string | null };
+  // photos: any[] etait typé any.
+  logement: { titre: string; ville: string; photos?: { url: string }[] };
 }
 
 interface Props {
-  bookings: Booking[];
+  bookings?: Booking[] | null;
+  isLoading?: boolean;
+  /** Nombre de lignes affichées dans ce résumé. */
+  limit?: number;
 }
 
-const STATUT_CONFIG: Record<string, { label: string; theme: 'neutral' | 'forest' | 'success' | 'warning' | 'error' }> = {
-  COMPLETED:  { label: 'Terminée',   theme: 'neutral' },
-  CHECKED_IN: { label: 'En cours',   theme: 'success' },
-  CONFIRMED:  { label: 'Confirmée',  theme: 'forest' },
-  PENDING:    { label: 'En attente', theme: 'warning' },
-  CANCELLED:  { label: 'Annulée',    theme: 'error' },
-  DISPUTED:   { label: 'Litige',     theme: 'error' },
-  PAID:       { label: 'Payée',      theme: 'success' },
+/* Priorité d'affichage. Les statuts absents de cette table restent visibles,
+   relégués en fin de liste — l'ancien ORDER servait de filtre, donc PAID,
+   qui n'y figurait pas, disparaissait purement et simplement. */
+const PRIORITY: Record<string, number> = {
+  DISPUTED: 0, PENDING: 1, CHECKED_IN: 2, CONFIRMED: 3, PAID: 4, COMPLETED: 5, CANCELLED: 6,
 };
 
-const THEMES = {
-  neutral: { bg: 'bg-background-alt', text: 'text-foreground-muted', dot: 'bg-foreground-faint', border: 'border-border/80' },
-  forest:  { bg: 'bg-forest-50',       text: 'text-forest-800',       dot: 'bg-forest-600',       border: 'border-forest-100' },
-  success: { bg: 'bg-forest-50',       text: 'text-forest-800',       dot: 'bg-lime-500',         border: 'border-forest-100' },
-  warning: { bg: 'bg-warning-50',      text: 'text-warning-800',      dot: 'bg-warning-500',      border: 'border-warning-200' },
-  error:   { bg: 'bg-error-50',        text: 'text-error-800',        dot: 'bg-error-500',        border: 'border-error-200' },
-};
+function Row({ booking }: { booking: Booking }) {
+  const cfg = STATUT_CFG_LIGHT[booking.statut] ?? { label: booking.statut, cls: 'bg-neutral-100 text-foreground-muted', dot: 'bg-neutral-400' };
+  const photo = booking.logement.photos?.[0]?.url;
 
-const ORDER = ['CHECKED_IN', 'CONFIRMED', 'PENDING', 'COMPLETED', 'CANCELLED', 'DISPUTED'];
-
-function BookingRow({ booking }: { booking: Booking }) {
-  const fmt     = (n: number) => new Intl.NumberFormat('fr-FR').format(n);
-  const fmtDate = (d: string) => new Date(d).toLocaleDateString('fr-FR', { day: 'numeric', month: 'short' });
-  const cfg     = STATUT_CONFIG[booking.statut] ?? { label: booking.statut, theme: 'neutral' };
-  const theme   = THEMES[cfg.theme as keyof typeof THEMES];
-  const initials = `${booking.locataire.prenom.charAt(0)}${booking.locataire.nom.charAt(0)}`.toUpperCase();
+  // .charAt(0) sur un nom absent levait une TypeError et cassait le rendu.
+  const prenom = booking.locataire.prenom?.trim() || '';
+  const nom = booking.locataire.nom?.trim() || '';
+  const who = [prenom, nom ? `${nom[0]}.` : ''].filter(Boolean).join(' ') || 'Voyageur';
 
   return (
-    <Link href={`/dashboard/reservations/${booking.id}`} className="block active:scale-[0.985] transition-transform">
-      {/* Mobile card */}
-      <div className="lg:hidden rounded-inner border border-border/80 bg-background-card p-3 shadow-sm space-y-2">
-        <div className="flex gap-3">
-          <div className="relative w-[64px] h-[64px] rounded-inner overflow-hidden bg-background-alt shrink-0 border border-border/60">
-            {booking.logement.photos?.[0]?.url ? (
-              <Image src={booking.logement.photos[0].url} alt={booking.logement.titre} fill className="object-cover" sizes="64px" />
-            ) : (
-              <div className="w-full h-full flex items-center justify-center">
-                <MapPin className="w-4 h-4 text-foreground-faint" />
-              </div>
-            )}
-          </div>
-
-          <div className="flex-1 min-w-0 py-0.5">
-            <div className="flex items-start justify-between gap-2 mb-1">
-              <p className="font-display text-xs font-bold text-forest-950 leading-tight truncate">
-                {booking.logement.titre}
-              </p>
-              <span className={`shrink-0 inline-flex items-center gap-1 px-2 py-0.5 rounded-pill text-[9px] font-extrabold uppercase tracking-wider border ${theme.bg} ${theme.text} ${theme.border}`}>
-                <span className={`w-1 h-1 rounded-full ${theme.dot}`} />
-                {cfg.label}
-              </span>
-            </div>
-
-            <p className="text-[11px] font-bold text-foreground-muted truncate">
-              {booking.locataire.prenom} {booking.locataire.nom.charAt(0)}.
-            </p>
-
-            <p className="text-[10px] text-foreground-faint font-medium">
-              {fmtDate(booking.dateDebut)} — {fmtDate(booking.dateFin)}
-            </p>
-          </div>
-        </div>
-
-        <div className="flex items-center justify-between pt-2 border-t border-border/60">
-          <span className="font-display text-xs font-extrabold text-forest-950">
-            {fmt(booking.totalLocataire)} <span className="text-[9px] font-extrabold text-foreground-muted">FCFA</span>
-          </span>
-          <span className="text-xs font-extrabold text-lime-600 flex items-center gap-1">
-            Détails <ChevronRight className="w-3.5 h-3.5" />
-          </span>
-        </div>
-      </div>
-
-      {/* Desktop row */}
-      <div className="hidden lg:flex items-center gap-4 p-3 group rounded-inner hover:bg-background-alt border border-transparent hover:border-border/80 transition-all">
-        <div className="relative w-12 h-12 rounded-inner overflow-hidden bg-background-alt shrink-0 border border-border/60">
-          {booking.logement.photos?.[0]?.url ? (
-            <Image src={booking.logement.photos[0].url} alt={booking.logement.titre} fill className="object-cover" sizes="48px" />
+    <li>
+      <Link
+        href={`/dashboard/reservations/${booking.id}`}
+        /* Le composant rendait DEUX balisages complets, mobile et desktop, en
+           lg:hidden et hidden lg:flex. Les deux etaient montes : deux <Image>
+           par reservation, avec des `sizes` differents donc potentiellement
+           deux telechargements. Un seul balisage, responsive. */
+        className="group flex items-center gap-3 rounded-inner border border-transparent p-2.5 transition-colors duration-150 hover:border-border hover:bg-background-alt"
+      >
+        <span className="relative h-12 w-12 shrink-0 overflow-hidden rounded-inner bg-neutral-100 sm:h-14 sm:w-14">
+          {photo ? (
+            <Image src={photo} alt="" fill sizes="56px" className="object-cover" />
           ) : (
-            <div className="w-full h-full flex items-center justify-center">
-              <MapPin className="w-4 h-4 text-foreground-faint" />
-            </div>
+            <span className="grid h-full place-items-center text-neutral-300">
+              <ImageOff className="h-4 w-4" aria-hidden="true" />
+            </span>
           )}
-        </div>
+        </span>
 
-        <div className="flex-1 min-w-0">
-          <p className="font-display text-xs font-bold text-forest-950 truncate mb-0.5">{booking.logement.titre}</p>
-          <div className="flex items-center gap-2">
-            <span className="text-[10px] font-bold text-forest-950 bg-background-alt px-2 py-0.5 rounded-pill border border-border/60">
-              {booking.locataire.prenom} {booking.locataire.nom.charAt(0)}.
+        <span className="min-w-0 flex-1">
+          <span className="flex items-start justify-between gap-2">
+            <span className="truncate font-display text-sm font-semibold leading-snug text-forest-900">
+              {booking.logement.titre}
             </span>
-            <span className="text-[10px] font-medium text-foreground-muted flex items-center gap-1">
-              <Calendar className="w-3 h-3 text-foreground-faint" />
-              {fmtDate(booking.dateDebut)} — {fmtDate(booking.dateFin)}
-            </span>
-          </div>
-        </div>
-
-        <div className="text-right shrink-0">
-          <p className="font-display text-xs font-extrabold text-forest-950">{fmt(booking.totalLocataire)} <span className="text-[9px] text-foreground-muted font-bold">FCFA</span></p>
-          <div className="flex items-center justify-end gap-1.5 mt-1">
-            <span className={`px-2 py-0.5 rounded-pill text-[9px] font-extrabold uppercase tracking-wider border ${theme.bg} ${theme.text} ${theme.border}`}>
+            <span className={cn(
+              'inline-flex shrink-0 items-center gap-1.5 rounded-pill px-2 py-0.5 text-[0.6875rem] font-semibold',
+              cfg.cls,
+            )}>
+              <span className={cn('h-1.5 w-1.5 rounded-pill', cfg.dot)} />
               {cfg.label}
             </span>
-          </div>
-        </div>
+          </span>
 
-        <div className="w-7 h-7 rounded-inner bg-background-alt flex items-center justify-center border border-border/60 group-hover:bg-forest-950 group-hover:text-lime-400 transition-colors shrink-0 ml-1">
-          <ChevronRight className="w-3.5 h-3.5 text-foreground-muted group-hover:text-lime-400 transition-colors" />
-        </div>
-      </div>
-    </Link>
+          <span className="mt-1 flex flex-wrap items-center gap-x-3 gap-y-0.5 text-xs text-foreground-muted">
+            <span className="truncate">{who}</span>
+            <span className="flex items-center gap-1">
+              <Calendar className="h-3.5 w-3.5 shrink-0 text-foreground-faint" aria-hidden="true" />
+              {fmtDate(booking.dateDebut)} – {fmtDate(booking.dateFin)}
+            </span>
+          </span>
+        </span>
+
+        <span className="shrink-0 text-right">
+          {/*
+            L'original affichait totalLocataire : le montant paye par le
+            VOYAGEUR, sur le tableau de bord de l'hote. Ailleurs dans le
+            produit, la meme reservation affiche le net hote. Deux chiffres
+            differents pour la meme ligne selon l'ecran.
+          */}
+          <span className="block text-sm font-semibold tabular-nums text-forest-900">
+            {nf.format(netHost(booking.totalLocataire))}
+          </span>
+          <span className="block text-[0.6875rem] text-foreground-faint">FCFA net</span>
+        </span>
+
+        <ChevronRight
+          className="hidden h-4 w-4 shrink-0 text-foreground-faint transition-colors group-hover:text-forest-600 sm:block"
+          aria-hidden="true"
+        />
+      </Link>
+    </li>
   );
 }
 
-function StatusGroup({ statut, bookings }: { statut: string; bookings: Booking[] }) {
-  const [open, setOpen] = useState(true);
-  const cfg   = STATUT_CONFIG[statut] ?? { label: statut, theme: 'neutral' };
-  const theme = THEMES[cfg.theme as keyof typeof THEMES];
-
+function Shell({ children }: { children: React.ReactNode }) {
   return (
-    <div className="mb-2">
-      <button
-        onClick={() => setOpen(v => !v)}
-        className="w-full flex items-center gap-3 py-2 group outline-none"
-      >
-        <div className={`flex items-center gap-2 px-3 py-0.5 rounded-pill border ${theme.bg} ${theme.text} ${theme.border} transition-colors`}>
-          <div className={`w-1.5 h-1.5 rounded-full ${theme.dot}`} />
-          <span className="text-[9px] font-extrabold uppercase tracking-wider">{cfg.label}</span>
-          <span className="text-[9px] font-extrabold opacity-60 ml-0.5">{bookings.length}</span>
-        </div>
-        <div className="flex-1 h-px bg-border/60" />
-        <div className="w-5 h-5 rounded-inner bg-background-alt flex items-center justify-center border border-border/60">
-          <ChevronDown className={`w-3 h-3 text-foreground-muted transition-transform duration-300 ${open ? '' : '-rotate-90'}`} />
-        </div>
-      </button>
-
-      <div className={`grid transition-all duration-300 ease-in-out ${open ? 'grid-rows-[1fr] opacity-100' : 'grid-rows-[0fr] opacity-0'}`}>
-        <div className="overflow-hidden">
-          <div className="space-y-2 lg:space-y-1 pt-1">
-            {bookings.map(b => <BookingRow key={b.id} booking={b} />)}
-          </div>
-        </div>
-      </div>
-    </div>
-  );
-}
-
-export function RecentBookings({ bookings }: Props) {
-  const grouped: Record<string, Booking[]> = {};
-  for (const b of bookings) {
-    if (!grouped[b.statut]) grouped[b.statut] = [];
-    grouped[b.statut].push(b);
-  }
-
-  const sortedKeys = ORDER.filter(s => grouped[s]?.length > 0);
-
-  return (
-    <div className="klef-rise bg-background-card rounded-card border border-border/80 p-5 lg:p-6 flex flex-col justify-between shadow-sm hover:border-forest-600/30 hover:shadow-md transition-[box-shadow,border-color] duration-200 h-full min-h-[380px]">
-
-      {/* Header */}
-      <div className="flex items-center justify-between gap-2 flex-wrap sm:flex-nowrap mb-4 pb-3 border-b border-border/60">
-        <div className="flex items-center gap-3 min-w-0">
-          <div className="w-9 h-9 lg:w-10 lg:h-10 rounded-inner bg-forest-950 text-lime-400 border border-lime-400/20 flex items-center justify-center shrink-0">
-            <Bookmark className="w-4 h-4 text-lime-400" />
-          </div>
+    <section className="klef-rise flex h-full min-h-[22rem] flex-col rounded-card border border-border bg-background-card p-5 shadow-sm lg:p-6">
+      <header className="mb-4 flex flex-wrap items-center justify-between gap-3 border-b border-border pb-3 sm:flex-nowrap">
+        <div className="flex min-w-0 items-center gap-3">
+          {/* Le squircle etait en forest-950 a icone lime, en en-tete ET dans
+              l'etat vide : deux blocs sombres sur une carte claire. */}
+          <span className="grid h-10 w-10 shrink-0 place-items-center rounded-inner bg-neutral-100 text-forest-700">
+            <Inbox className="h-[1.125rem] w-[1.125rem]" aria-hidden="true" />
+          </span>
           <div className="min-w-0">
-            <p className="text-[10px] font-extrabold text-foreground-muted uppercase tracking-wider">Activité</p>
-            <h3 className="font-display text-sm sm:text-base font-bold text-forest-950 truncate">Réservations récentes</h3>
+            <p className="text-[0.6875rem] uppercase tracking-[0.12em] text-foreground-faint">Activité</p>
+            <h2 className="truncate font-display text-base font-semibold tracking-[-0.015em] text-forest-900">
+              Réservations récentes
+            </h2>
           </div>
         </div>
 
+        {/* Ce bouton etait en lime plein, alors que « voir l'historique » est
+            une navigation secondaire. Le lime revient au CTA de la page. */}
         <Link
           href="/dashboard/reservations"
-          className="px-3.5 py-1.5 rounded-pill bg-lime-400 hover:bg-lime-300 text-forest-950 text-xs font-extrabold transition-all shadow-md active:scale-95 flex items-center gap-1.5 shrink-0"
+          className="inline-flex shrink-0 items-center gap-1.5 rounded-pill border border-border px-3.5 py-2 text-xs font-semibold text-forest-800 transition-colors duration-150 hover:bg-neutral-100"
         >
-          <span>Historique</span>
-          <ArrowRight className="w-3.5 h-3.5 text-forest-950" />
+          Tout voir
+          <ArrowRight className="h-3.5 w-3.5" aria-hidden="true" />
         </Link>
-      </div>
+      </header>
+      {children}
+    </section>
+  );
+}
 
-      {/* Content */}
-      <div className="flex-1">
-        {bookings.length === 0 ? (
-          <div className="h-full min-h-[200px] flex flex-col items-center justify-center text-center space-y-2">
-            <div className="w-10 h-10 rounded-inner bg-forest-950 text-lime-400 border border-lime-400/20 flex items-center justify-center">
-              <Calendar className="w-5 h-5 text-lime-400" />
-            </div>
-            <p className="font-display text-sm font-bold text-forest-950">Aucune réservation récente</p>
-            <p className="text-xs text-foreground-muted">Vos dernières réservations apparaîtront ici.</p>
-          </div>
-        ) : (
-          <div className="space-y-1">
-            {sortedKeys.map(statut => (
-              <StatusGroup key={statut} statut={statut} bookings={grouped[statut]} />
-            ))}
-          </div>
-        )}
-      </div>
-    </div>
+export function RecentBookings({ bookings, isLoading = false, limit = 5 }: Props) {
+  if (isLoading) {
+    return (
+      <Shell>
+        <div className="flex-1 animate-pulse space-y-2" aria-hidden="true">
+          {[0, 1, 2, 3].map((i) => <div key={i} className="h-16 rounded-inner bg-neutral-100" />)}
+        </div>
+        <span className="sr-only" role="status">Chargement des réservations</span>
+      </Shell>
+    );
+  }
+
+  // bookings.forEach plantait si la prop etait undefined au premier rendu.
+  const list = bookings ?? [];
+
+  /*
+    Liste plate, triee par urgence puis par date.
+
+    L'original groupait par statut dans des accordeons repliables. Sur une
+    carte de tableau de bord qui affiche cinq lignes, ca ajoute un niveau de
+    hierarchie et un clic pour une information de survol. Et les liens des
+    groupes replies restaient dans le DOM, donc atteignables au clavier alors
+    qu'ils etaient invisibles.
+  */
+  const sorted = [...list].sort((a, b) => {
+    const pa = PRIORITY[a.statut] ?? 99;
+    const pb = PRIORITY[b.statut] ?? 99;
+    if (pa !== pb) return pa - pb;
+    return new Date(b.dateDebut).getTime() - new Date(a.dateDebut).getTime();
+  });
+
+  const shown = sorted.slice(0, limit);
+  const rest = sorted.length - shown.length;
+
+  if (shown.length === 0) {
+    return (
+      <Shell>
+        <div className="flex flex-1 flex-col items-center justify-center gap-2.5 text-center">
+          <span className="grid h-11 w-11 place-items-center rounded-inner bg-neutral-100 text-foreground-muted">
+            <Calendar className="h-5 w-5" aria-hidden="true" />
+          </span>
+          <p className="text-sm font-medium text-forest-900">Aucune réservation</p>
+          <p className="max-w-[18rem] text-xs leading-relaxed text-foreground-muted">
+            Les demandes de vos voyageurs apparaîtront ici dès la première.
+          </p>
+          <Link
+            href="/dashboard/annonces"
+            className="mt-2 inline-flex items-center gap-1.5 rounded-pill border border-border px-4 py-2 text-xs font-semibold text-forest-800 transition-colors duration-150 hover:bg-neutral-100"
+          >
+            Améliorer mes annonces
+            <ArrowRight className="h-3.5 w-3.5" aria-hidden="true" />
+          </Link>
+        </div>
+      </Shell>
+    );
+  }
+
+  return (
+    <Shell>
+      <ul className="flex-1 space-y-1">
+        {shown.map((b) => <Row key={b.id} booking={b} />)}
+      </ul>
+
+      {rest > 0 && (
+        <p className="mt-3 border-t border-border pt-3 text-center text-xs text-foreground-muted">
+          <Link href="/dashboard/reservations" className="font-medium text-forest-700 hover:underline">
+            {rest} autre{rest > 1 ? 's' : ''} réservation{rest > 1 ? 's' : ''}
+          </Link>
+        </p>
+      )}
+    </Shell>
   );
 }

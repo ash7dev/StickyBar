@@ -256,7 +256,7 @@ export function HeroSection({ listings = [] }: Props) {
             </div>
           </div>
 
-          {/* -- Colonne visuelle, desktop ------------------------------- */}
+          {/* -- Colonne visuelle,desktop ------------------------------- */}
           <div className="relative hidden h-[30rem] lg:block">
             {featured[1] && (
               <ListingCard

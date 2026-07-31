@@ -1,161 +1,268 @@
 'use client';
 
-import { TrendingUp, Activity } from 'lucide-react';
-import { useEffect, useState } from 'react';
+import Link from 'next/link';
+import { useEffect, useMemo, useRef, useState } from 'react';
+import { Activity, ArrowRight, Info, TrendingDown, TrendingUp } from 'lucide-react';
+import { cn } from '@/lib/utils/cn';
+import type { MonthlyPoint } from '@/lib/dashboard/owner-tokens';
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   Ce composant ne fabrique plus ses donnees.
+
+   L'original generait douze points a partir du revenu courant :
+
+     const pattern = [0.2, 0.45, 0.3, 0.6, 0.4, 0.8, 0.5, 0.9, 0.7, 1, .85, .95];
+     pattern.map(r => Math.round(total * r))
+
+   Consequences : la courbe avait la meme forme pour tous les hotes, montait
+   toujours, culminait toujours au dixieme point. Le « +12,4 % » etait ecrit
+   en dur, l'axe allait de janvier a decembre quelle que soit la periode, et
+   « En direct » etait une chaine statique.
+
+   Alimente le desormais avec buildMonthlyRevenue() de owner-tokens :
+
+     const points = buildMonthlyRevenue(reservations, 6);
+     <RevenueChart points={points} />
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+const nf = new Intl.NumberFormat('fr-FR', { maximumFractionDigits: 0 });
 
 interface Props {
-  revenue: number;
-  totalBookings: number;
+  points?: MonthlyPoint[];
+  isLoading?: boolean;
 }
 
-function generatePeakyData(total: number): number[] {
-  if (total === 0) return Array(12).fill(0);
-  const pattern = [0.2, 0.45, 0.3, 0.6, 0.4, 0.8, 0.5, 0.9, 0.7, 1.0, 0.85, 0.95];
-  return pattern.map(r => Math.round(total * r));
+/** Variation entre le premier mois non nul et le dernier. */
+function trendOf(points: MonthlyPoint[]) {
+  const first = points.find((p) => p.value > 0);
+  const last = points[points.length - 1];
+  if (!first || first === last || first.value === 0) return null;
+  const pct = Math.round(((last.value - first.value) / first.value) * 100);
+  return { pct, dir: pct > 2 ? 'up' : pct < -2 ? 'down' : 'flat' } as const;
 }
 
-function PeakyChart({ data }: { data: number[] }) {
-  const [visible, setVisible] = useState(false);
+function Chart({ points }: { points: MonthlyPoint[] }) {
+  const [drawn, setDrawn] = useState(false);
+  const reduce = useRef(false);
+
   useEffect(() => {
-    const t = setTimeout(() => setVisible(true), 300);
+    reduce.current = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    if (reduce.current) { setDrawn(true); return; }
+    const t = setTimeout(() => setDrawn(true), 120);
     return () => clearTimeout(t);
   }, []);
 
-  const W = 500;
-  const H = 180;
-  const max = Math.max(...data, 1);
-  const paddingY = 12;
+  const W = 500, H = 170, PAD = 14;
+  const max = Math.max(...points.map((p) => p.value), 1);
 
-  const points = data.map((v, i) => ({
-    x: (i / (data.length - 1)) * W,
-    y: paddingY + (1 - v / max) * (H - paddingY * 2),
+  const coords = points.map((p, i) => ({
+    ...p,
+    x: points.length === 1 ? W / 2 : (i / (points.length - 1)) * W,
+    y: PAD + (1 - p.value / max) * (H - PAD * 2),
   }));
 
-  const linePath = points.reduce((acc, p, i) =>
-    i === 0 ? `M ${p.x},${p.y}` : `${acc} L ${p.x},${p.y}`, '');
-
-  const areaPath = `${linePath} L ${W},${H} L 0,${H} Z`;
+  const line = coords.reduce((acc, p, i) => (i === 0 ? `M ${p.x},${p.y}` : `${acc} L ${p.x},${p.y}`), '');
+  const area = `${line} L ${W},${H} L 0,${H} Z`;
+  const last = coords[coords.length - 1];
 
   return (
-    <svg viewBox={`0 0 ${W} ${H}`} className="w-full h-44" preserveAspectRatio="none">
-      <defs>
-        <linearGradient id="peakyGrad" x1="0" y1="0" x2="0" y2="1">
-          <stop offset="0%" stopColor="#14654C" stopOpacity="0.25" />
-          <stop offset="100%" stopColor="#14654C" stopOpacity="0" />
-        </linearGradient>
-      </defs>
+    <div>
+      <svg
+        viewBox={`0 0 ${W} ${H}`}
+        className="h-40 w-full"
+        // preserveAspectRatio="none" ecrasait le trace : l'epaisseur du trait
+        // et les points devenaient ovales sur les ecrans larges.
+        preserveAspectRatio="xMidYMid meet"
+        role="img"
+        aria-label={`Revenus sur ${points.length} mois, de ${nf.format(points[0].value)} à ${nf.format(last.value)} FCFA`}
+      >
+        <defs>
+          {/* Les couleurs etaient en hexadecimal brut : #14654C, #D3F26E,
+              #041912. Les variables CSS suivent le theme. */}
+          <linearGradient id="rev-area" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%" stopColor="var(--forest-600)" stopOpacity="0.22" />
+            <stop offset="100%" stopColor="var(--forest-600)" stopOpacity="0" />
+          </linearGradient>
+        </defs>
 
-      {[0, 0.5, 1].map((r) => (
-        <line 
-          key={r} x1="0" x2={W} y1={r * H} y2={r * H} 
-          stroke="var(--border)" strokeWidth="1" 
-          strokeDasharray="4 4"
+        {[0, 0.5, 1].map((r) => (
+          <line key={r} x1="0" x2={W} y1={PAD + r * (H - PAD * 2)} y2={PAD + r * (H - PAD * 2)}
+            stroke="var(--border)" strokeWidth="1" strokeDasharray="4 4" />
+        ))}
+
+        <path d={area} fill="url(#rev-area)"
+          style={{ opacity: drawn ? 1 : 0, transition: 'opacity 320ms ease-out 160ms' }} />
+
+        <path
+          d={line}
+          fill="none"
+          stroke="var(--forest-600)"
+          strokeWidth="2.5"
+          strokeLinejoin="round"
+          strokeLinecap="round"
+          // pathLength="1" normalise la longueur : le strokeDasharray de 1000
+          // code en dur ne correspondait a aucune courbe reelle, donc le
+          // trace apparaissait d'un coup au lieu de se dessiner.
+          pathLength={1}
+          strokeDasharray={1}
+          strokeDashoffset={drawn ? 0 : 1}
+          style={{ transition: 'stroke-dashoffset 640ms cubic-bezier(0.22,1,0.36,1)' }}
         />
-      ))}
 
-      <path
-        d={areaPath}
-        fill="url(#peakyGrad)"
-        className="transition-opacity duration-1000"
-        style={{ opacity: visible ? 1 : 0 }}
-      />
+        {coords.map((p, i) => {
+          const isLast = i === coords.length - 1;
+          return (
+            <circle
+              key={p.label + i}
+              cx={p.x} cy={p.y} r={isLast ? 4.5 : 3}
+              fill={isLast ? 'var(--lime-400)' : 'var(--forest-600)'}
+              stroke="var(--background-card)" strokeWidth="2"
+              style={{
+                opacity: drawn ? 1 : 0,
+                transition: `opacity 200ms ease-out ${320 + i * 50}ms`,
+              }}
+            />
+          );
+        })}
+      </svg>
 
-      <path
-        d={linePath}
-        fill="none"
-        stroke="#14654C"
-        strokeWidth="3"
-        strokeLinejoin="round"
-        strokeLinecap="round"
-        className="transition-all duration-1000 ease-out"
-        style={{
-          strokeDasharray: 1000,
-          strokeDashoffset: visible ? 0 : 1000,
-        }}
-      />
+      {/* L'axe affichait J F M A M J J A S O N D en dur — douze mois fixes
+          quelle que soit la periode reellement couverte. */}
+      <div className="mt-3 flex justify-between border-t border-border pt-3">
+        {coords.map((p, i) => (
+          <span
+            key={p.label + i}
+            className={cn(
+              'text-[0.6875rem] capitalize',
+              i === coords.length - 1 ? 'font-semibold text-forest-900' : 'text-foreground-faint',
+            )}
+          >
+            {p.label}
+          </span>
+        ))}
+      </div>
 
-      {points.map((p, i) => (
-        <circle
-          key={i}
-          cx={p.x}
-          cy={p.y}
-          r={i === points.length - 1 ? 5 : 3}
-          fill={i === points.length - 1 ? '#D3F26E' : '#14654C'}
-          stroke="#041912"
-          strokeWidth="2"
-          className="transition-all duration-500"
-          style={{ 
-            opacity: visible ? 1 : 0,
-            transform: visible ? 'scale(1)' : 'scale(0)',
-            transformOrigin: `${p.x}px ${p.y}px`,
-            transitionDelay: `${500 + i * 50}ms`
-          }}
-        />
-      ))}
-    </svg>
+      {/* Alternative textuelle : un trace SVG seul n'est pas restituable. */}
+      <table className="sr-only">
+        <caption>Revenus mensuels</caption>
+        <thead><tr><th scope="col">Mois</th><th scope="col">Revenus (FCFA)</th></tr></thead>
+        <tbody>
+          {coords.map((p, i) => (
+            <tr key={p.label + i}><th scope="row">{p.label}</th><td>{nf.format(p.value)}</td></tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
   );
 }
 
-export function RevenueChart({ revenue, totalBookings }: Props) {
-  const fmt = (n: number) => new Intl.NumberFormat('fr-FR').format(n);
-  const data = generatePeakyData(revenue);
-  const currentMonth = new Date().toLocaleDateString('fr-FR', { month: 'long' });
+function Shell({ children }: { children: React.ReactNode }) {
+  return (
+    <section className="klef-rise flex h-full min-h-[22rem] flex-col rounded-card border border-border bg-background-card p-6 shadow-sm">
+      <header className="mb-5 flex items-center gap-3 border-b border-border pb-3">
+        {/* Le squircle etait en forest-950 a icone lime : le bloc le plus
+            sombre d'une carte claire, pour un en-tete. */}
+        <span className="grid h-10 w-10 shrink-0 place-items-center rounded-inner bg-neutral-100 text-forest-700">
+          <Activity className="h-[1.125rem] w-[1.125rem]" aria-hidden="true" />
+        </span>
+        <div>
+          <p className="text-[0.6875rem] uppercase tracking-[0.12em] text-foreground-faint">Performance</p>
+          <h2 className="font-display text-base font-semibold tracking-[-0.015em] text-forest-900">
+            Revenus mensuels
+          </h2>
+        </div>
+      </header>
+      {children}
+    </section>
+  );
+}
+
+export function RevenueChart({ points, isLoading = false }: Props) {
+  /* ── Chargement ──────────────────────────────────────────────────────── */
+  if (isLoading) {
+    return (
+      <Shell>
+        <div className="flex-1 animate-pulse space-y-4" aria-hidden="true">
+          <div className="h-10 w-40 rounded-inner bg-neutral-100" />
+          <div className="h-40 rounded-inner bg-neutral-100" />
+        </div>
+        <span className="sr-only" role="status">Chargement des revenus</span>
+      </Shell>
+    );
+  }
+
+  const data = points ?? [];
+  const total = data.reduce((s, p) => s + p.value, 0);
+  const trend = useMemo(() => (data.length >= 2 ? trendOf(data) : null), [data]);
+
+  /* ── Aucune donnée, ou aucun revenu ──────────────────────────────────── */
+  if (data.length === 0 || total === 0) {
+    return (
+      <Shell>
+        <div className="flex flex-1 flex-col items-center justify-center gap-2.5 text-center">
+          <span className="grid h-11 w-11 place-items-center rounded-inner bg-neutral-100 text-foreground-muted">
+            <TrendingUp className="h-5 w-5" aria-hidden="true" />
+          </span>
+          <p className="text-sm font-medium text-forest-900">Aucun revenu enregistré</p>
+          <p className="max-w-[18rem] text-xs leading-relaxed text-foreground-muted">
+            Vos versements apparaîtront ici dès qu’un séjour aura été confirmé
+            par un voyageur.
+          </p>
+          <Link
+            href="/dashboard/annonces"
+            className="mt-2 inline-flex items-center gap-1.5 rounded-pill border border-border px-4 py-2 text-xs font-semibold text-forest-800 transition-colors duration-150 hover:bg-neutral-100"
+          >
+            Améliorer mes annonces
+            <ArrowRight className="h-3.5 w-3.5" aria-hidden="true" />
+          </Link>
+        </div>
+      </Shell>
+    );
+  }
+
+  const lastValue = data[data.length - 1].value;
 
   return (
-    <div className="klef-rise bg-background-card rounded-card border border-border/80 p-6 flex flex-col justify-between shadow-sm hover:border-forest-600/30 hover:shadow-md transition-[box-shadow,border-color] duration-200 h-full min-h-[380px]">
+    <Shell>
       <div>
-        <div className="flex items-center justify-between mb-6 pb-3 border-b border-border/60">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-inner bg-forest-950 text-lime-400 border border-lime-400/20 flex items-center justify-center shrink-0">
-              <Activity className="w-5 h-5 text-lime-400" />
-            </div>
-            <div>
-              <p className="text-[10px] font-extrabold text-foreground-muted uppercase tracking-wider">Performance</p>
-              <h3 className="font-display text-base font-bold text-forest-950">Revenus mensuels</h3>
-            </div>
-          </div>
-          <div className="px-3 py-1 rounded-pill bg-background-alt border border-border/80 text-[10px] font-extrabold text-foreground-muted uppercase tracking-wider">
-            En direct • {currentMonth}
-          </div>
-        </div>
-
-        <div className="flex items-baseline gap-2 mb-1">
-          <span className="font-display text-3xl sm:text-4xl font-extrabold text-forest-950 tracking-tight">
-            {fmt(revenue)}
+        <p className="flex items-baseline gap-2">
+          <span className="font-display text-3xl font-semibold tabular-nums tracking-[-0.025em] text-forest-900 sm:text-4xl">
+            {nf.format(lastValue)}
           </span>
-          <span className="text-xs font-extrabold text-foreground-muted uppercase">FCFA</span>
-        </div>
-        
-        <div className="flex items-center gap-2 mb-6">
-          <div className="flex items-center gap-1 text-forest-800 font-extrabold text-xs bg-forest-50 border border-forest-100 px-2.5 py-0.5 rounded-pill">
-            <TrendingUp className="w-3.5 h-3.5 text-forest-600" />
-            <span>+12.4%</span>
-          </div>
-          <span className="text-[10px] font-extrabold text-foreground-muted uppercase tracking-wider">vs mois dernier</span>
-        </div>
-      </div>
+          <span className="text-sm text-foreground-muted">FCFA</span>
+        </p>
 
-      <div className="flex-1 px-1 relative my-2">
-        <PeakyChart data={data} />
-      </div>
-
-      {/* Libellés Axe-X */}
-      <div className="pt-3 border-t border-border/60">
-        <div className="flex justify-between">
-          {['J', 'F', 'M', 'A', 'M', 'J', 'J', 'A', 'S', 'O', 'N', 'D'].map((m, i, arr) => (
-            <span
-              key={`${m}-${i}`}
-              className={`text-[10px] font-extrabold ${
-                i === arr.length - 1
-                  ? 'text-forest-950 font-bold'
-                  : 'text-foreground-faint'
-              }`}
-            >
-              {m}
+        <div className="mt-2 flex flex-wrap items-center gap-2">
+          {/* « +12,4 % vs mois dernier » etait ecrit en dur. La variation est
+              calculee, et masquee quand elle ne l'est pas. */}
+          {trend ? (
+            <>
+              <span className={cn(
+                'inline-flex items-center gap-1 rounded-pill px-2.5 py-0.5 text-xs font-semibold',
+                trend.dir === 'up' ? 'bg-success-50 text-success-700'
+                  : trend.dir === 'down' ? 'bg-error-50 text-error-700'
+                    : 'bg-neutral-100 text-foreground-muted',
+              )}>
+                {trend.dir === 'up' && <TrendingUp className="h-3.5 w-3.5" aria-hidden="true" />}
+                {trend.dir === 'down' && <TrendingDown className="h-3.5 w-3.5" aria-hidden="true" />}
+                <span className="tabular-nums">{trend.pct > 0 ? '+' : ''}{trend.pct}%</span>
+              </span>
+              <span className="text-xs text-foreground-muted">
+                sur {data.length} mois
+              </span>
+            </>
+          ) : (
+            <span className="inline-flex items-center gap-1.5 text-xs text-foreground-muted">
+              <Info className="h-3.5 w-3.5 shrink-0 text-foreground-faint" aria-hidden="true" />
+              Pas encore assez d’historique pour une tendance
             </span>
-          ))}
+          )}
         </div>
       </div>
-    </div>
+
+      <div className="mt-6 flex-1">
+        <Chart points={data} />
+      </div>
+    </Shell>
   );
 }

@@ -1,44 +1,51 @@
 'use client';
 
-import {
-  TrendingUp,
-  CalendarCheck,
-  AlertTriangle,
-  Building2,
-  ArrowUpRight,
-  ArrowDownRight,
-  Minus,
-} from 'lucide-react';
+import Link from 'next/link';
 import { useEffect, useState } from 'react';
+import {
+  AlertTriangle, ArrowDownRight, ArrowUpRight, Building2,
+  CalendarCheck, Minus, TrendingUp,
+} from 'lucide-react';
+import { cn } from '@/lib/utils/cn';
 
 /* ═══════════════════════════════════════════════════════════════════════════
-   Animated Spark Bars
+   Les micro-graphiques etaient FABRIQUES.
+
+     const base = [30, 48, 38, 72, 52, 88, 96];
+     base.map((v, i) => v + ((seed * (i + 1) * 17) % 35) - 17)
+
+   La courbe etait derivee de la valeur affichee par une formule, sur les
+   quatre cartes. Et la base se terminant a 96, chaque tendance montait,
+   toujours — y compris celle des litiges.
+
+   Ici la courbe n'apparait QUE si un historique reel est fourni, et la
+   tendance est calculee a partir de lui. Sans historique, la carte affiche
+   son chiffre sans decor : c'est plus honnete et plus lisible.
    ═══════════════════════════════════════════════════════════════════════════ */
 
-interface SparkBarsProps {
-  data: number[];
-  color: string;
-}
+const compact = new Intl.NumberFormat('fr-FR', { notation: 'compact', maximumFractionDigits: 1 });
+const plain = new Intl.NumberFormat('fr-FR', { maximumFractionDigits: 0 });
 
-function SparkBars({ data, color }: SparkBarsProps) {
-  const [mounted, setMounted] = useState(false);
+function Spark({ data, tone }: { data: number[]; tone: string }) {
+  const [shown, setShown] = useState(false);
   useEffect(() => {
-    const t = setTimeout(() => setMounted(true), 200);
+    if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) { setShown(true); return; }
+    const t = setTimeout(() => setShown(true), 120);
     return () => clearTimeout(t);
   }, []);
 
+  const max = Math.max(...data, 1);
+
   return (
-    <div className="flex items-end gap-[4px] h-12">
+    <div className="flex h-10 items-end gap-[3px]" aria-hidden="true">
       {data.map((v, i) => (
-        <div
+        <span
           key={i}
-          className="rounded-full transition-all duration-700 ease-out"
+          className={cn('w-[5px] rounded-pill', tone)}
           style={{
-            width: 5,
-            height: mounted ? `${Math.max(v, 14)}%` : '6%',
-            background: color,
-            opacity: mounted ? 0.35 + (v / 100) * 0.65 : 0.2,
-            transitionDelay: `${i * 70}ms`,
+            height: shown ? `${Math.max((v / max) * 100, 8)}%` : '8%',
+            // transition-all animait tout ; seule la hauteur change.
+            transition: `height 320ms cubic-bezier(0.22,1,0.36,1) ${i * 45}ms`,
           }}
         />
       ))}
@@ -46,111 +53,126 @@ function SparkBars({ data, color }: SparkBarsProps) {
   );
 }
 
-/* ═══════════════════════════════════════════════════════════════════════════
-   KPI Card — Premium Klef v2
-   ═══════════════════════════════════════════════════════════════════════════ */
-
-interface KpiCardProps {
-  label: string;
-  value: string;
-  sub: string;
-  trend?: 'up' | 'down' | 'neutral';
-  trendLabel: string;
-  icon: React.ElementType;
-  sparkData: number[];
-  hero?: boolean;
-  accentHex?: string;
-  riseDelay?: string;
+/** Variation entre la première et la dernière valeur non nulle. */
+function trendOf(history?: number[]) {
+  if (!history || history.length < 2) return null;
+  const first = history.find((v) => v > 0);
+  const last = history[history.length - 1];
+  if (first === undefined || first === 0) return null;
+  const pct = Math.round(((last - first) / first) * 100);
+  return { pct, dir: pct > 2 ? 'up' : pct < -2 ? 'down' : 'flat' } as const;
 }
 
-function KpiCard({
-  label,
-  value,
-  sub,
-  trend,
-  trendLabel,
-  icon: Icon,
-  sparkData,
-  hero = false,
-  accentHex = '#D3F26E',
-  riseDelay = '0ms',
-}: KpiCardProps) {
-  return (
-    <div
-      className={`
-        klef-rise relative overflow-hidden rounded-card p-3.5 sm:p-5 transition-[box-shadow,border-color,transform] duration-200 ease-[cubic-bezier(0.22,1,0.36,1)] min-h-[120px] sm:min-h-[145px] flex flex-col justify-between
-        ${hero
-          ? 'bg-gradient-to-b from-forest-950 via-[#072A20] to-forest-950 text-white border border-forest-800/90 shadow-lg'
-          : 'bg-background-card border border-border shadow-sm hover:border-forest-600/30 hover:shadow-md hover:-translate-y-0.5 motion-reduce:transform-none'
-        }
-      `}
-      style={{ '--rise-delay': riseDelay } as React.CSSProperties}
-    >
-      {/* Halos de fond */}
-      {hero ? (
-        <div className="pointer-events-none absolute -top-16 -right-16 w-40 h-40 rounded-full bg-lime-400/10 blur-2xl" />
-      ) : (
-        <div className="pointer-events-none absolute -top-12 -right-12 w-32 h-32 rounded-full bg-forest-950/5 blur-2xl" />
-      )}
+interface Kpi {
+  key: string;
+  label: string;
+  value: string;
+  unit?: string;
+  icon: React.ElementType;
+  history?: number[];
+  /** Phrase de contexte, affichée quand aucune tendance n'est calculable. */
+  note?: string;
+  href?: string;
+  variant?: 'hero' | 'alert' | 'default';
+}
 
-      {/* Top Row: Icon + Label */}
-      <div className="relative z-10 flex items-center gap-3 mb-3">
-        <div
-          className={`w-9 h-9 rounded-inner flex items-center justify-center shrink-0
-            ${hero
-              ? 'bg-forest-900 border border-lime-400/20'
-              : 'bg-forest-950 border border-lime-400/20'
-            }
-          `}
-        >
-          <Icon className="w-4 h-4 text-lime-400" />
-        </div>
-        <p className={`text-[0.6875rem] font-semibold uppercase tracking-[0.12em] leading-tight ${hero ? 'text-forest-200' : 'text-foreground-faint'}`}>
+function KpiCard({ kpi, delay }: { kpi: Kpi; delay: string }) {
+  const { label, value, unit, icon: Icon, history, note, href, variant = 'default' } = kpi;
+  const trend = trendOf(history);
+  const hero = variant === 'hero';
+  const alert = variant === 'alert';
+
+  const body = (
+    <>
+      <div className="mb-3 flex items-center gap-3">
+        {/* Le squircle etait en forest-950 a icone lime sur des cartes
+            CLAIRES : trois blocs sombres dans une rangee de quatre. */}
+        <span className={cn(
+          'grid h-9 w-9 shrink-0 place-items-center rounded-inner',
+          hero ? 'bg-lime-400/15 text-lime-400'
+            : alert ? 'bg-error-500/15 text-error-600'
+              : 'bg-neutral-100 text-forest-700',
+        )}>
+          <Icon className="h-4 w-4" aria-hidden="true" />
+        </span>
+        <p className={cn(
+          'text-[0.6875rem] font-semibold uppercase leading-tight tracking-[0.12em]',
+          hero ? 'text-forest-200' : 'text-foreground-faint',
+        )}>
           {label}
         </p>
       </div>
 
-      {/* Bottom Row: Value + Spark */}
-      <div className="relative z-10 flex items-end justify-between gap-3">
-        <div className="flex-1 min-w-0">
-          <div className="flex items-baseline gap-1.5 mb-1">
-            <span className={`font-display text-2xl sm:text-3xl font-bold tracking-tight leading-none ${hero ? 'text-white' : 'text-forest-950'}`}>
+      <div className="flex items-end justify-between gap-3">
+        <div className="min-w-0 flex-1">
+          <p className="flex items-baseline gap-1.5">
+            <span className={cn(
+              'font-display text-2xl font-semibold leading-none tabular-nums tracking-[-0.02em] sm:text-3xl',
+              hero ? 'text-neutral-50' : alert ? 'text-error-700' : 'text-forest-900',
+            )}>
               {value}
             </span>
-            {sub && (
-              <span className={`text-[10px] font-semibold uppercase ${hero ? 'text-lime-300' : 'text-foreground-muted'}`}>
-                {sub}
+            {unit && (
+              <span className={cn('text-xs', hero ? 'text-forest-200' : 'text-foreground-muted')}>
+                {unit}
               </span>
             )}
-          </div>
+          </p>
 
-          <div className={`flex items-center gap-1 text-[10px] font-semibold ${
-            hero
-              ? 'text-lime-300'
-              : trend === 'up'
-                ? 'text-forest-700'
-                : trend === 'down'
-                  ? 'text-error-600'
-                  : 'text-foreground-muted'
-          }`}>
-            {trend === 'up' && <ArrowUpRight className="w-3 h-3 text-lime-600" />}
-            {trend === 'down' && <ArrowDownRight className="w-3 h-3 text-error-600" />}
-            {trend === 'neutral' && <Minus className="w-3 h-3" />}
-            <span className="truncate">{trendLabel}</span>
-          </div>
+          {/* La tendance n'apparait que si elle est calculable. Avant, une
+              fleche montante etait codee en dur sur les revenus. */}
+          {trend ? (
+            <p className={cn(
+              'mt-1.5 flex items-center gap-1 text-xs',
+              trend.dir === 'up' ? (hero ? 'text-lime-400' : 'text-success-700')
+                : trend.dir === 'down' ? 'text-error-600'
+                  : hero ? 'text-forest-200' : 'text-foreground-muted',
+            )}>
+              {trend.dir === 'up' && <ArrowUpRight className="h-3.5 w-3.5" aria-hidden="true" />}
+              {trend.dir === 'down' && <ArrowDownRight className="h-3.5 w-3.5" aria-hidden="true" />}
+              {trend.dir === 'flat' && <Minus className="h-3.5 w-3.5" aria-hidden="true" />}
+              <span className="tabular-nums">{trend.pct > 0 ? '+' : ''}{trend.pct}%</span>
+              <span className="truncate">sur la période</span>
+            </p>
+          ) : note ? (
+            <p className={cn('mt-1.5 truncate text-xs', hero ? 'text-forest-200' : 'text-foreground-muted')}>
+              {note}
+            </p>
+          ) : null}
         </div>
 
-        <div className="hidden sm:flex shrink-0">
-          <SparkBars data={sparkData} color={hero ? '#D3F26E' : accentHex} />
-        </div>
+        {history && history.length >= 2 && (
+          <div className="hidden shrink-0 sm:flex">
+            <Spark
+              data={history}
+              tone={hero ? 'bg-lime-400/70' : alert ? 'bg-error-500/60' : 'bg-forest-400/60'}
+            />
+          </div>
+        )}
       </div>
-    </div>
+    </>
   );
+
+  const shell = cn(
+    'klef-rise relative flex min-h-[7.5rem] flex-col justify-between rounded-card p-4 sm:min-h-[9rem] sm:p-5',
+    'transition-[box-shadow,transform] duration-200 ease-[cubic-bezier(0.22,1,0.36,1)] motion-reduce:transform-none',
+    hero
+      // Le degrade partait de forest-950 pour y revenir via #072A20, soit
+      // forest-900 en hexadecimal brut. Halo radial du systeme a la place.
+      ? 'bg-[radial-gradient(80%_60%_at_50%_0%,#0F503D_0%,rgba(15,80,61,0)_70%),linear-gradient(180deg,#072A20_0%,#041912_100%)] text-white'
+      : alert
+        ? 'border border-error-500/30 bg-error-50'
+        : 'border border-border bg-background-card shadow-sm hover:-translate-y-0.5 hover:shadow-md',
+  );
+
+  const style = { '--rise-delay': delay } as React.CSSProperties;
+
+  return href
+    ? <Link href={href} className={shell} style={style}>{body}</Link>
+    : <div className={shell} style={style}>{body}</div>;
 }
 
-/* ═══════════════════════════════════════════════════════════════════════════
-   KPI Section
-   ═══════════════════════════════════════════════════════════════════════════ */
+/* ─── Section ─────────────────────────────────────────────────────────────── */
 
 interface Props {
   stats: {
@@ -160,109 +182,85 @@ interface Props {
     activeListings: number;
   };
   pendingConfirmations: number;
-}
-
-function generateSpark(seed: number): number[] {
-  const base = [30, 48, 38, 72, 52, 88, 96];
-  return base.map((v, i) =>
-    Math.min(100, Math.max(12, v + ((seed * (i + 1) * 17) % 35) - 17)),
-  );
-}
-
-export function KpiSection({ stats, pendingConfirmations }: Props) {
-  const fmt = (n: number) => {
-    if (n >= 1_000_000) return (n / 1_000_000).toFixed(1).replace('.0', '') + 'M';
-    if (n >= 1_000) return (n / 1_000).toFixed(0) + 'k';
-    return n.toString();
+  /** Historiques réels, si disponibles. Sans eux, aucune courbe n'est rendue. */
+  history?: {
+    revenue?: number[];
+    bookings?: number[];
   };
+  isLoading?: boolean;
+}
+
+export function KpiSection({ stats, pendingConfirmations, history, isLoading = false }: Props) {
+  if (isLoading) {
+    return (
+      <div className="grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-4" aria-hidden="true">
+        {[0, 1, 2, 3].map((i) => (
+          <div key={i} className="h-[7.5rem] animate-pulse rounded-card bg-neutral-100 sm:h-[9rem]" />
+        ))}
+      </div>
+    );
+  }
+
+  const disputes = stats.activeDisputes;
+
+  const kpis: Kpi[] = [
+    {
+      key: 'revenue',
+      label: 'Revenus',
+      value: compact.format(stats.revenue),
+      unit: 'FCFA',
+      icon: TrendingUp,
+      history: history?.revenue,
+      note: stats.revenue === 0 ? 'Aucun versement pour l’instant' : undefined,
+      href: '/dashboard/wallet',
+      variant: 'hero',
+    },
+    {
+      key: 'pending',
+      // « Réservations actives » affichait pendingConfirmations : en attente
+      // de VOTRE réponse n'est pas « en cours ».
+      label: 'À confirmer',
+      value: plain.format(pendingConfirmations),
+      icon: CalendarCheck,
+      note: `${plain.format(stats.totalBookings)} réservation${stats.totalBookings > 1 ? 's' : ''} au total`,
+      href: pendingConfirmations > 0 ? '/dashboard/reservations?statut=PENDING' : '/dashboard/reservations',
+      variant: pendingConfirmations > 0 ? 'alert' : 'default',
+    },
+    {
+      key: 'listings',
+      label: 'Annonces en ligne',
+      value: plain.format(stats.activeListings),
+      icon: Building2,
+      note: stats.activeListings === 0 ? 'Publiez votre premier bien' : undefined,
+      href: '/dashboard/annonces',
+    },
+    {
+      key: 'disputes',
+      label: 'Litiges',
+      value: plain.format(disputes),
+      icon: AlertTriangle,
+      // sub={disputes === 0 ? 'LITIGES' : 'LITIGE'} : le pluriel etait
+      // inverse. 0 donnait « LITIGES », 2 donnait « LITIGE ».
+      note: disputes === 0 ? 'Aucun litige en cours' : 'Réponse attendue',
+      href: '/dashboard/reservations?statut=DISPUTED',
+      variant: disputes > 0 ? 'alert' : 'default',
+    },
+  ];
 
   return (
-    <div className="space-y-4">
-      {/* Desktop Grid */}
-      <div className="hidden sm:grid sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        <KpiCard
-          label="Revenus du mois"
-          value={fmt(stats.revenue)}
-          sub="FCFA"
-          trend="up"
-          trendLabel="Ce mois-ci"
-          icon={TrendingUp}
-          sparkData={generateSpark(stats.revenue || 7)}
-          hero
-        />
-        <KpiCard
-          label="Réservations actives"
-          value={pendingConfirmations.toString()}
-          sub="EN COURS"
-          trend={pendingConfirmations > 0 ? 'up' : 'neutral'}
-          trendLabel={`${stats.totalBookings} au total`}
-          icon={CalendarCheck}
-          sparkData={generateSpark(stats.totalBookings || 3)}
-          accentHex="#041912"
-        />
-        <KpiCard
-          label="Annonces actives"
-          value={stats.activeListings.toString()}
-          sub={stats.activeListings === 1 ? 'BIEN' : 'BIENS'}
-          trend="neutral"
-          trendLabel="Publiées"
-          icon={Building2}
-          sparkData={generateSpark(stats.activeListings || 5)}
-          accentHex="#D3F26E"
-        />
-        <KpiCard
-          label="Litiges ouverts"
-          value={stats.activeDisputes.toString()}
-          sub={stats.activeDisputes === 0 ? 'LITIGES' : 'LITIGE'}
-          trend={stats.activeDisputes === 0 ? 'neutral' : 'down'}
-          trendLabel={stats.activeDisputes === 0 ? 'Sain et sécurisé' : 'Action requise'}
-          icon={AlertTriangle}
-          sparkData={generateSpark(stats.activeDisputes || 2)}
-          accentHex={stats.activeDisputes > 0 ? '#D64B3C' : '#14654C'}
-        />
-      </div>
+    /*
+      Une seule grille.
 
-      {/* Mobile grid (Grille 2x2 avec 4 KPIs) */}
-      <div className="grid grid-cols-2 gap-3 sm:hidden">
-        <KpiCard
-          label="Revenus du mois"
-          value={fmt(stats.revenue)}
-          sub="FCFA"
-          trend="up"
-          trendLabel="Ce mois-ci"
-          icon={TrendingUp}
-          sparkData={generateSpark(stats.revenue || 7)}
-          hero
-        />
-        <KpiCard
-          label="Réservations"
-          value={pendingConfirmations.toString()}
-          sub="EN COURS"
-          trend={pendingConfirmations > 0 ? 'up' : 'neutral'}
-          trendLabel={`${stats.totalBookings} total`}
-          icon={CalendarCheck}
-          sparkData={generateSpark(stats.totalBookings || 3)}
-        />
-        <KpiCard
-          label="Annonces"
-          value={stats.activeListings.toString()}
-          sub="BIENS"
-          trend="neutral"
-          trendLabel="Publiées"
-          icon={Building2}
-          sparkData={generateSpark(stats.activeListings || 5)}
-        />
-        <KpiCard
-          label="Litiges"
-          value={stats.activeDisputes.toString()}
-          sub={stats.activeDisputes === 0 ? 'LITIGES' : 'LITIGE'}
-          trend={stats.activeDisputes === 0 ? 'neutral' : 'down'}
-          trendLabel={stats.activeDisputes === 0 ? 'Sain' : 'Action requise'}
-          icon={AlertTriangle}
-          sparkData={generateSpark(stats.activeDisputes || 2)}
-          accentHex={stats.activeDisputes > 0 ? '#D64B3C' : '#14654C'}
-        />
-      </div>
+      Les quatre cartes etaient ecrites DEUX fois — une version desktop en
+      `hidden sm:grid` et une version mobile en `sm:hidden`, avec des libelles
+      legerement differents. Les deux etaient montees simultanement : huit
+      cartes, huit minuteurs, cinquante-six barres animees dont la moitie
+      invisible. Et toute correction devait etre faite en double.
+    */
+    <div className="grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-4">
+      {kpis.map((kpi, i) => (
+        <KpiCard key={kpi.key} kpi={kpi} delay={`${i * 60}ms`} />
+      ))}
     </div>
   );
 }
