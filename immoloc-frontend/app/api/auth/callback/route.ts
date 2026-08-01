@@ -48,9 +48,11 @@ export async function GET(request: Request) {
           }
         } else {
           console.error('[Auth Callback] Failed to fetch user role:', res.status);
+          return NextResponse.redirect(`${origin}/login?error=backend_error_${res.status}`);
         }
       } catch (error) {
         console.error('[Auth Callback] Error fetching user role:', error);
+        return NextResponse.redirect(`${origin}/login?error=backend_unavailable`);
       }
 
       // LOCATAIRE ou rôle inconnu → accueil

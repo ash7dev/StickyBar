@@ -841,7 +841,7 @@ export class AuthService {
               data: {
                 userId: user.id,
                 email,
-                telephone: phone || '',
+                telephone: phone || `google_${user.id}`,
                 prenom: prenom || 'Utilisateur',
                 nom: nom || 'Google',
                 dateNaissance: null,
