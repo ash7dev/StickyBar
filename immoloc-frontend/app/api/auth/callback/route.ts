@@ -16,47 +16,50 @@ export async function GET(request: Request) {
   const next = safeNextUrl(searchParams.get('next'));
 
   if (code) {
-    const supabase = await createClient();
-    const { data, error } = await supabase.auth.exchangeCodeForSession(code);
+    try {
+      const supabase = await createClient();
+      const { data, error } = await supabase.auth.exchangeCodeForSession(code);
 
-    if (!error && data.session) {
-      // Si `next` est fourni et sûr, on y va directement
-      if (next) return NextResponse.redirect(`${origin}${next}`);
+      if (!error && data?.session) {
+        let redirectPath = next || '/';
 
-      // Sinon on demande le rôle à NestJS pour rediriger correctement
-      try {
-        const res = await fetch(buildApiUrl('/auth/me/supabase'), {
-          headers: { Authorization: `Bearer ${data.session.access_token}` },
-          cache: 'no-store',
-        });
-        if (res.ok) {
-          const payload = await res.json() as {
-            onboardingRequired?: boolean;
-            user?: { activeRole?: string; hasAnnonce?: boolean };
-          };
+        try {
+          const res = await fetch(buildApiUrl('/auth/me/supabase'), {
+            headers: { Authorization: `Bearer ${data.session.access_token}` },
+            cache: 'no-store',
+          });
 
-          // Si onboarding requis → compléter le profil
-          if (payload.onboardingRequired) {
-            const nextParam = next ? `?next=${encodeURIComponent(next)}` : '';
-            return NextResponse.redirect(`${origin}/complete-profile${nextParam}`);
+          if (res.ok) {
+            const payload = await res.json() as {
+              onboardingRequired?: boolean;
+              user?: { activeRole?: string; hasAnnonce?: boolean };
+            };
+
+            if (payload.onboardingRequired) {
+              const nextParam = next ? `?next=${encodeURIComponent(next)}` : '';
+              return NextResponse.redirect(`${origin}/complete-profile${nextParam}`);
+            }
+
+            if (!next) {
+              const role = payload.user?.activeRole;
+              const hasAnnonce = payload.user?.hasAnnonce;
+              if (role === 'PROPRIETAIRE') {
+                redirectPath = hasAnnonce ? '/dashboard' : '/become-host';
+              }
+            }
+          } else {
+            console.error('[Auth Callback] Failed to fetch user role:', res.status);
+            return NextResponse.redirect(`${origin}/login?error=backend_error_${res.status}`);
           }
-
-          const role = payload.user?.activeRole;
-          const hasAnnonce = payload.user?.hasAnnonce;
-          if (role === 'PROPRIETAIRE') {
-            return NextResponse.redirect(`${origin}${hasAnnonce ? '/dashboard' : '/become-host'}`);
-          }
-        } else {
-          console.error('[Auth Callback] Failed to fetch user role:', res.status);
-          return NextResponse.redirect(`${origin}/login?error=backend_error_${res.status}`);
+        } catch (error) {
+          console.error('[Auth Callback] Error fetching user role:', error);
+          return NextResponse.redirect(`${origin}/login?error=backend_unavailable`);
         }
-      } catch (error) {
-        console.error('[Auth Callback] Error fetching user role:', error);
-        return NextResponse.redirect(`${origin}/login?error=backend_unavailable`);
-      }
 
-      // LOCATAIRE ou rôle inconnu → accueil
-      return NextResponse.redirect(`${origin}/`);
+        return NextResponse.redirect(`${origin}${redirectPath}`);
+      }
+    } catch (err) {
+      console.error('[Auth Callback] Error handling callback:', err);
     }
   }
 
