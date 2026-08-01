@@ -759,34 +759,23 @@ export class AuthService {
           this.logger.warn(`Conflit d'UID détecté pour l'email ${email}. Migration de l'ancien UID [${oldUserId}] vers le nouvel UID Supabase [${newUserId}].`);
           
           await this.prisma.$transaction(async (tx) => {
-            const oldProfile = await tx.profile.findUnique({ where: { userId: oldUserId } });
-            if (oldProfile) {
-              await tx.profile.create({
-                data: {
-                  userId: newUserId,
-                  email: oldProfile.email,
-                  phone: oldProfile.phone,
-                  typeHote: oldProfile.typeHote,
-                  ninea: oldProfile.ninea,
-                  creeLe: oldProfile.creeLe,
-                },
+            const oldUser = await tx.utilisateur.findUnique({ where: { userId: oldUserId } });
+            if (oldUser) {
+              await tx.utilisateur.update({
+                where: { userId: oldUserId },
+                data: { userId: newUserId },
               });
-
-              const oldUser = await tx.utilisateur.findUnique({ where: { userId: oldUserId } });
-              if (oldUser) {
-                await tx.utilisateur.update({
-                  where: { userId: oldUserId },
-                  data: { userId: newUserId },
-                });
-                
-                await tx.pushSubscription.updateMany({
-                  where: { userId: oldUserId },
-                  data: { userId: newUserId },
-                });
-              }
-
-              await tx.profile.delete({ where: { userId: oldUserId } });
+              
+              await tx.pushSubscription.updateMany({
+                where: { userId: oldUserId },
+                data: { userId: newUserId },
+              });
             }
+
+            await tx.profile.update({
+              where: { id: conflictingProfile.id },
+              data: { userId: newUserId },
+            });
           });
 
           utilisateur = await this.prisma.utilisateur.findUnique({
