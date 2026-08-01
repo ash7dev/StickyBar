@@ -737,9 +737,15 @@ export class AuthService {
         const email = user.email?.trim() || '';
         const phone = user.phone?.trim() || null;
 
-        const [existingProfileByEmail, existingProfileByPhone] = await Promise.all([
+        const [existingProfileByEmail, existingUserByEmail, existingProfileByPhone, existingUserByPhone] = await Promise.all([
           email
             ? this.prisma.profile.findUnique({
+                where: { email },
+                select: { id: true, userId: true },
+              })
+            : null,
+          email
+            ? this.prisma.utilisateur.findUnique({
                 where: { email },
                 select: { id: true, userId: true },
               })
@@ -750,11 +756,22 @@ export class AuthService {
                 select: { id: true, userId: true },
               })
             : null,
+          phone
+            ? this.prisma.utilisateur.findUnique({
+                where: { telephone: phone },
+                select: { id: true, userId: true },
+              })
+            : null,
         ]);
 
-        const conflictingProfile = existingProfileByEmail || existingProfileByPhone;
-        if (conflictingProfile && conflictingProfile.userId !== user.id) {
-          const oldUserId = conflictingProfile.userId;
+        const conflictingUserId =
+          existingProfileByEmail?.userId ||
+          existingUserByEmail?.userId ||
+          existingProfileByPhone?.userId ||
+          existingUserByPhone?.userId;
+
+        if (conflictingUserId && conflictingUserId !== user.id) {
+          const oldUserId = conflictingUserId;
           const newUserId = user.id;
           this.logger.warn(`Conflit d'UID détecté pour l'email ${email}. Migration de l'ancien UID [${oldUserId}] vers le nouvel UID Supabase [${newUserId}].`);
           
@@ -772,10 +789,13 @@ export class AuthService {
               });
             }
 
-            await tx.profile.update({
-              where: { id: conflictingProfile.id },
-              data: { userId: newUserId },
-            });
+            const oldProf = await tx.profile.findUnique({ where: { userId: oldUserId } });
+            if (oldProf) {
+              await tx.profile.update({
+                where: { id: oldProf.id },
+                data: { userId: newUserId },
+              });
+            }
           });
 
           utilisateur = await this.prisma.utilisateur.findUnique({
