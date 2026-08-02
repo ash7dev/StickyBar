@@ -628,7 +628,7 @@ export default function ReservationDetailPage({ params }: { params: Promise<{ id
 
       {/* ══ BARRE STICKY MOBILE ══ */}
       {showStickyBar && (
-        <div className="lg:hidden fixed bottom-[76px] left-0 right-0 z-30 px-3">
+        <div className="lg:hidden fixed bottom-[calc(0.75rem+env(safe-area-inset-bottom,0px))] left-0 right-0 z-30 px-3">
           <button
             onClick={() => setPanelOpen(true)}
             className="w-full rounded-card border border-forest-800/90 bg-forest-950/95 backdrop-blur-xl shadow-2xl overflow-hidden active:scale-[0.985] transition-transform"

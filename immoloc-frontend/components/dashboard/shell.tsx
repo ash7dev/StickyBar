@@ -114,15 +114,13 @@ export function DashboardShell({ children }: { children: React.ReactNode }) {
   const router = useRouter();
   const { activeRole, nestToken, hasHydrated } = useRoleStore();
 
-  const hideHeader = DETAIL_PAGE_RE.test(pathname);
+  const isDetailPage = DETAIL_PAGE_RE.test(pathname);
+  const hideHeader = isDetailPage;
   const isAuthorized = Boolean(nestToken) && activeRole === 'PROPRIETAIRE';
 
   useEffect(() => {
     if (!hasHydrated) return;
 
-    // Bug corrige : la condition exigeait `nestToken`, donc un visiteur
-    // deconnecte ne declenchait aucune redirection et restait bloque sur le
-    // squelette de chargement indefiniment.
     if (!nestToken) {
       router.replace(`/login?next=${encodeURIComponent(pathname)}`);
       return;
@@ -133,11 +131,11 @@ export function DashboardShell({ children }: { children: React.ReactNode }) {
   }, [activeRole, nestToken, hasHydrated, pathname, router]);
 
   const ready = hasHydrated && isAuthorized;
-
-  // La structure du shell etait ecrite deux fois, a l'identique, pour la
-  // branche chargement et la branche prete. Toute modification de mise en
-  // page devait etre faite aux deux endroits.
   const isDashboardHome = pathname === '/dashboard';
+
+  const contentPadBottom = isDetailPage
+    ? 'pb-6 lg:pb-8'
+    : 'pb-[calc(6rem+env(safe-area-inset-bottom,0px))] lg:pb-8';
 
   return (
     <div className="flex h-dvh overflow-hidden bg-background">
@@ -158,14 +156,14 @@ export function DashboardShell({ children }: { children: React.ReactNode }) {
           <DashboardHeader onMenuToggle={ready ? () => setSidebarOpen((v) => !v) : () => { }} />
         )}
 
-        <main id="contenu" className={cn('flex-1 overflow-y-auto', CONTENT_PAD_BOTTOM, !isDashboardHome && 'pt-[env(safe-area-inset-top,0px)] sm:pt-0')}>
+        <main id="contenu" className={cn('flex-1 overflow-y-auto', contentPadBottom, !isDashboardHome && 'pt-[env(safe-area-inset-top,0px)] sm:pt-0')}>
           <div className="mx-auto max-w-[1440px] px-4 py-6 sm:px-6">
             {ready ? children : <DashboardLoading />}
           </div>
         </main>
       </div>
 
-      {ready && <BottomNav />}
+      {ready && !isDetailPage && <BottomNav />}
     </div>
   );
 }
