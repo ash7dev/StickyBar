@@ -9,12 +9,6 @@ async function bootstrap() {
   const app = await NestFactory.create(AppModule);
   const config = app.get(ConfigService);
 
-  // Augmenter la taille maximale des en-têtes HTTP pour éviter les erreurs HTTP 431
-  const server = app.getHttpServer();
-  if (server) {
-    server.maxHeaderSize = 65536;
-  }
-
   // Sécurité
   app.use(helmet());
 
@@ -62,8 +56,8 @@ async function bootstrap() {
   app.enableShutdownHooks();
 
   const port = config.get<number>('PORT', 4000);
-  await app.listen(port);
-  console.log(`ImmoLoc API démarrée sur http://localhost:${port}/api/v1`);
+  await app.listen(port, '0.0.0.0');
+  console.log(`ImmoLoc API démarrée sur http://localhost:${port}/api/v1 (0.0.0.0)`);
 }
 
 bootstrap();

@@ -43,12 +43,19 @@ export function NestSessionSync() {
       // ── Cas 1 : Utilisateur connecté ─────────────────────────────────────
       if (session) {
         // Skip si la session NestJS est déjà valide et non expirée en cache
+        // MAIS seulement pour TOKEN_REFRESHED, pas pour INITIAL_SESSION
+        // (car INITIAL_SESSION peut venir d'un nouveau callback OAuth)
         const storeState = useRoleStore.getState();
         const hasValidToken = storeState.nestToken && !isTokenExpired(storeState.tokenExpiresAt);
 
-        if (hasValidToken && (event === 'INITIAL_SESSION' || event === 'TOKEN_REFRESHED')) {
-          console.log('[NestSessionSync] ⚡ Session déjà synchronisée et valide en cache');
+        if (hasValidToken && event === 'TOKEN_REFRESHED') {
+          console.log('[NestSessionSync] ⚡ Token refreshed but session already valid in cache');
           return;
+        }
+
+        // Pour INITIAL_SESSION, toujours synchroniser pour s'assurer qu'on a la bonne session
+        if (event === 'INITIAL_SESSION') {
+          console.log('[NestSessionSync] INITIAL_SESSION detected, synchronizing with backend');
         }
 
         // Skip si le token Supabase est expiré ou sur le point de l'être

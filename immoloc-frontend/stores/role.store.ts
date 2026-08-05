@@ -208,12 +208,15 @@ export const useRoleStore = create<RoleState>()(
         state?.setHasHydrated(true);
         // Sauvegarder le rôle persisté AVANT un éventuel clearSession
         const persistedRole = getPersistedActiveRole();
-        // Nettoyer les tokens expirés au rechargement
+
+        // NE PAS clear la session immédiatement lors de la réhydratation
+        // Laisser NestSessionSync vérifier la session Supabase et synchroniser
+        // Si la session Supabase est invalide, NestSessionSync va clear
         if (state && isTokenFullyExpired(state.tokenExpiresAt)) {
-          console.warn('[Role Store] Token expired on rehydration, clearing session');
-          state.clearSession();
+          console.log('[Role Store] Token expired on rehydration, waiting for NestSessionSync to verify Supabase session');
         }
-        // Réappliquer le rôle persisté (même après clearSession)
+
+        // Réappliquer le rôle persisté
         // pour que NestSessionSync re-synchronise avec le bon rôle
         if (persistedRole && state) {
           state.setRole(persistedRole);

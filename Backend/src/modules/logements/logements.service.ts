@@ -324,7 +324,7 @@ export class LogementsService {
       { id: 'zone-somone',       where: { ...base, ville: { contains: 'Somone',      mode: 'insensitive' } },                           orderBy: { note: 'desc' } },
     ];
 
-    const BATCH_SIZE = 4;
+    const BATCH_SIZE = 2;
     const results = [];
 
     for (let i = 0; i < sections.length; i += BATCH_SIZE) {

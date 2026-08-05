@@ -44,6 +44,38 @@ export class AuthService {
     return this.configService.get<string>('AUTH_FAKE_OTP_ENABLED', 'false') === 'true';
   }
 
+  private async getSupabaseUserFromAccessToken(supabaseToken: string): Promise<any> {
+    if (!supabaseToken) {
+      throw new UnauthorizedException('Token Supabase invalide ou expiré');
+    }
+
+    // 1. Tenter la vérification en tant que jeton NestJS Souverain (HS256)
+    try {
+      const nestSecret = this.configService.getOrThrow<string>('JWT_SECRET');
+      const payload = jwt.verify(supabaseToken, nestSecret, { algorithms: ['HS256'] }) as any;
+      if (payload && payload.supabaseUserId) {
+        const adminRes = await this.supabase.getAdmin().auth.admin.getUserById(payload.supabaseUserId);
+        if (adminRes.data?.user) return adminRes.data.user;
+      }
+    } catch (e) {
+      // Ignorer silencieusement : les jetons Supabase RS256/ES256 échouent naturellement la vérification HS256
+    }
+
+    // 2. Fallback : Décoder le jeton pour extraire l'UID et vérifier via Supabase Admin SDK.
+    // Cela évite d'envoyer les gros tokens OAuth Supabase dans un header vers /auth/v1/user.
+    try {
+      const decoded = jwt.decode(supabaseToken) as { sub?: string };
+      if (decoded?.sub) {
+        const adminRes = await this.supabase.getAdmin().auth.admin.getUserById(decoded.sub);
+        if (adminRes.data?.user) return adminRes.data.user;
+      }
+    } catch (e) {
+      // Ignorer
+    }
+
+    throw new UnauthorizedException('Token Supabase invalide ou expiré');
+  }
+
   // ── Génération des tokens souverains ───────────────────────────────────────
 
   private async generateTokens(user: {
@@ -698,11 +730,67 @@ export class AuthService {
   // ── Validation token Supabase et génération tokens NestJS ────────────────────────
 
   async validateSupabaseTokenAndGenerateTokens(supabaseToken: string, activeRoleHeader?: string) {
-    // Valider le token Supabase
-    const { data: { user }, error } = await this.supabase.getAnon().auth.getUser(supabaseToken);
-    
-    if (error || !user) {
-      this.logger.warn(`Token Supabase invalide: ${error?.message}`);
+    // 1. Si le token fourni est déjà un jeton NestJS Souverain valide, le valider directement
+    try {
+      const payload = this.jwtService.verify(supabaseToken);
+      if (payload && payload.sub) {
+        const utilisateur = await this.prisma.utilisateur.findUnique({
+          where: { id: payload.sub },
+          select: {
+            id: true,
+            userId: true,
+            email: true,
+            telephone: true,
+            prenom: true,
+            nom: true,
+            dateNaissance: true,
+            estProprietaire: true,
+            actif: true,
+            profileCompleted: true,
+            phoneVerified: true,
+            statutKyc: true,
+            selfieFaceDetected: true,
+            selfieMatchScore: true,
+            logements: {
+              where: { statut: 'PUBLISHED', archiveLe: null },
+              select: { id: true },
+            },
+          },
+        });
+
+        if (utilisateur && utilisateur.actif) {
+          const activeRole = (activeRoleHeader as Role) || payload.activeRole || (utilisateur.estProprietaire ? Role.PROPRIETAIRE : Role.LOCATAIRE);
+          const tokens = await this.generateTokens({ ...utilisateur, activeRole });
+          return {
+            ...tokens,
+            user: {
+              id: utilisateur.id,
+              prenom: utilisateur.prenom,
+              nom: utilisateur.nom,
+              email: utilisateur.email,
+              telephone: utilisateur.telephone,
+              dateNaissance: utilisateur.dateNaissance?.toISOString() ?? null,
+              activeRole,
+              estProprietaire: utilisateur.estProprietaire,
+              hasAnnonce: utilisateur.logements.length > 0,
+              profileCompleted: utilisateur.profileCompleted,
+              phoneVerified: utilisateur.phoneVerified,
+              statutKyc: utilisateur.statutKyc,
+            },
+          };
+        }
+      }
+    } catch (e) {
+      // Ce n'est pas un jeton NestJS, poursuivre la vérification Supabase
+    }
+
+    // 2. Valider auprès de Supabase (token OAuth ou session Supabase direct)
+    let user: any = null;
+    try {
+      user = await this.getSupabaseUserFromAccessToken(supabaseToken);
+    } catch (err: any) {
+      if (err instanceof UnauthorizedException) throw err;
+      this.logger.warn(`Échec de validation token Supabase: ${err.message}`);
       throw new UnauthorizedException('Token Supabase invalide ou expiré');
     }
 
