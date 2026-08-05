@@ -2,7 +2,7 @@
 import {
   MapPin, ShieldCheck, BedDouble, Bath, Home,
   Maximize2, Users, Star, BookOpen, ScrollText,
-  Moon, Banknote, ChevronRight, Info,
+  Moon, Banknote, ChevronRight, Info, Zap,
   CalendarDays, Navigation, Armchair, ChefHat, Wifi, Shield, Trees, Accessibility,
 } from 'lucide-react';
 import type { Listing, TarifNuit, TarifPersonne } from '@/lib/nestjs';
@@ -62,7 +62,7 @@ function fmt(n: number | string) {
 }
 
 /* ── Palier de nuits (progress bar) ───────────────────────────────────── */
-function NightTierBar({ tier, isBase, maxPrix }: { tier: TarifNuit; isBase?: boolean; maxPrix: number }) {
+function NightTierBar({ tier, isBase, maxPrix, derniereMinuteActive = false }: { tier: TarifNuit; isBase?: boolean; maxPrix: number; derniereMinuteActive?: boolean }) {
   const label =
     tier.nuitsMax === null
       ? `${tier.nuitsMin}+ nuits`
@@ -103,10 +103,24 @@ function NightTierBar({ tier, isBase, maxPrix }: { tier: TarifNuit; isBase?: boo
         </div>
         <div className="text-right">
           <div>
-            <span className={`text-base md:text-lg font-black tabular-nums ${priceColorClass}`}>
-              {fmt(tier.prix)}
-            </span>
-            <span className="text-xs md:text-sm font-bold text-foreground-muted ml-1"> FCFA</span>
+            {derniereMinuteActive ? (
+              <div className="flex flex-col items-end">
+                <span className="text-xs font-semibold text-foreground-muted line-through tabular-nums">
+                  {fmt(tier.prix)} FCFA
+                </span>
+                <span className="text-base md:text-lg font-black tabular-nums text-forest-950">
+                  {Math.round(Number(tier.prix) * 1.07 * 0.85).toLocaleString('fr-FR')}
+                  <span className="text-xs md:text-sm font-bold text-foreground-muted ml-1"> FCFA</span>
+                </span>
+              </div>
+            ) : (
+              <>
+                <span className={`text-base md:text-lg font-black tabular-nums ${priceColorClass}`}>
+                  {fmt(tier.prix)}
+                </span>
+                <span className="text-xs md:text-sm font-bold text-foreground-muted ml-1"> FCFA</span>
+              </>
+            )}
           </div>
           <span className="text-[10px] md:text-xs font-medium text-foreground-muted">/ nuit</span>
           {saving > 0 && (
@@ -445,6 +459,7 @@ export function ListingInfo({ listing }: Props) {
                     tier={tier}
                     isBase={i === 0}
                     maxPrix={maxPrix}
+                    derniereMinuteActive={Boolean((listing as { derniereMinuteActive?: boolean }).derniereMinuteActive)}
                   />
                 ))}
               </div>

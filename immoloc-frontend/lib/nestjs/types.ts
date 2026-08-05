@@ -460,6 +460,9 @@ export interface ReservationDetail {
   montantCommission: number;
   totalLocataire: number;
   netProprietaire: number;
+  typePaiement?: 'DEPOSIT' | 'FULL' | string | null;
+  montantAcompte?: number | null;
+  montantSoldeRestant?: number | null;
 
   // Statut & workflow
   statut: StatutReservation;

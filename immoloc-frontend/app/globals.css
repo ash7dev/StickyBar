@@ -1,20 +1,28 @@
 @import "tailwindcss";
 
 /* ═══════════════════════════════════════════════════════════════════════════
-   Klef — Design System v2
+   Klef — Design System v2.1
    ───────────────────────────────────────────────────────────────────────────
+   SOURCE DE VÉRITÉ. `colors.ts` est un miroir de ce fichier, jamais l'inverse.
+   Dans le DOM : toujours var(--token). colors.ts ne sert que là où le CSS
+   n'existe pas (canvas, theme-color, images OG, Flutter, e-mails).
+
    Trois voix, jamais plus :
      · forest  #14654C → #041912  Structure, texte, surfaces sombres
-     · lime    #D3F26E            ACTION — un seul CTA lime par écran
+     · lime    #D3F26E            ACTION — un seul CTA plein par écran
      · gold    #C9A24B            STATUT — badge Vérifié, étoiles. Jamais cliquable.
 
    Règles non négociables :
-     1. Texte sur lime = --on-lime (#0B3D2E). Jamais blanc (ratio 1.6:1).
-     2. Deux rayons seulement : pill (interactif) / card (conteneur).
-     3. Glass uniquement au-dessus de photos ou de la carte. Jamais sur aplat.
-     4. Le "noir" est vert (#041912). Pas de noir pur dans le système.
+     1. Texte sur lime = --on-action (#0B3D2E, 9.70:1). Jamais blanc (1.26:1).
+     2. L'accent ne porte jamais de phrase. Il marque : icône, point, bordure,
+        remplissage de bouton. Un titre entier en lime aplatit la hiérarchie.
+     3. Deux rayons de premier plan : pill (interactif) / card (conteneur).
+        inner et field sont subordonnés — uniquement À L'INTÉRIEUR d'une carte.
+     4. Glass uniquement au-dessus d'une photo, de la carte Mapbox ou du
+        dégradé du hero. Sur un aplat il ne produit rien et coûte du GPU.
+     5. Le "noir" est vert (#041912). Pas de noir pur dans le système.
 
-   Typo : Fraunces (display) + Inter (interface)
+   Typo : Fraunces (display) + Inter (interface) — graisse plafonnée à 600.
    ═══════════════════════════════════════════════════════════════════════════ */
 
 /* ═══ MODE CLAIR ═══════════════════════════════════════════════════════════ */
@@ -29,34 +37,42 @@
   --forest-50: #ECF6F1;
   --forest-100: #D2EADF;
   --forest-200: #A8D5C1;
+  /* texte secondaire sur fond sombre — 9.52:1 */
   --forest-300: #77BB9E;
   --forest-400: #479C79;
   --forest-500: #22805D;
   --forest-600: #14654C;
-  /* ★ Marque */
+  /* ★ Marque — blanc dessus : 7.01:1 */
   --forest-700: #0F503D;
   --forest-800: #0B3D2E;
+  /* ★ Texte sur lime — 9.70:1 */
   --forest-900: #072A20;
+  /* ★ Surface sombre */
   --forest-950: #041912;
   /* ★ Le "noir" du système */
 
   /* ── Lime — l'action ─────────────────────────────────────────────────────
-     400 = CTA. 300 = titres sur fond sombre (plus doux, plus premium).
-     700+ existent uniquement pour écrire du texte lime lisible sur clair.   */
+     400 = CTA. 300 = marqueur sur fond sombre.
+     ⚠ Stops texte : 700 ne passe AA qu'en TEXTE LARGE (3.35:1 sur clair).
+       Pour du texte courant en lime sur fond clair, utiliser 800 (5.61:1).   */
 
   --lime-50: #F7FCE9;
   --lime-100: #EEF9CE;
   --lime-200: #E4F7B8;
   --lime-300: #DFF5A4;
-  /* ★ Titres sur fond sombre */
+  /* ★ Marqueur sur fond sombre — 13.03:1 */
   --lime-400: #D3F26E;
   /* ★ CTA principal */
   --lime-500: #BCE04A;
+  /* hover */
   --lime-600: #9BC22C;
+  /* active + teinte de l'ombre portée */
   --lime-700: #74941C;
-  /* Texte lime sur fond clair — AA */
+  /* texte LARGE uniquement — 3.35:1, échoue AA courant */
   --lime-800: #556D15;
+  /* ★ Texte lime courant sur clair — 5.61:1 */
   --lime-900: #3A4A0E;
+  /* 9.28:1 */
 
   /* ── Gold — le statut ────────────────────────────────────────────────────
      Usage rare et strict : badge Vérifié, étoiles de notation.
@@ -66,28 +82,36 @@
   --gold-100: #F4E9CB;
   --gold-200: #E9D398;
   --gold-300: #DABB68;
+  /* badge en mode sombre — 8.29:1 sur forest-900 */
   --gold-400: #C9A24B;
-  /* ★ Badge Vérifié */
+  /* ★ Badge Vérifié — blanc dessus : 2.40:1, interdit */
   --gold-500: #A88336;
   --gold-600: #856527;
   --gold-700: #63491B;
+  /* ★ Texte sur gold-50 — 7.79:1 */
   --gold-800: #423110;
+  /* Texte sur gold-100 — 10.35:1 */
 
   /* ── Neutres — blanc vert froid ──────────────────────────────────────────
-     Désaturés davantage que Shoply : le lime doit rester rare sur Klef,
-     donc le fond ne doit pas déjà crier vert. Teinte constante ~95°.        */
+     Teinte ~86–100°, désaturés davantage que Shoply : le lime doit rester
+     rare sur Klef, donc le fond ne doit pas déjà crier vert.                */
 
   --neutral-0: #FFFFFF;
   --neutral-50: #F8FBF4;
+  /* ★ Fond de page */
   --neutral-100: #F1F6EA;
   --neutral-200: #E4EBDB;
+  /* bordures */
   --neutral-300: #CDD6C3;
   --neutral-400: #A3AE99;
+  /* ⚠ 2.22:1 — décoratif, jamais du texte */
   --neutral-500: #7D8975;
   --neutral-600: #5F6B59;
+  /* ★ Texte secondaire — 5.38:1 */
   --neutral-700: #475041;
   --neutral-800: #333A2F;
   --neutral-900: #22271F;
+  /* ★ Texte principal — 14.58:1 */
   --neutral-950: #141812;
 
   /* ── Sémantiques — réchauffées vers la famille ───────────────────────────
@@ -121,25 +145,57 @@
   --foreground: var(--neutral-900);
   --foreground-muted: var(--neutral-600);
   --foreground-faint: var(--neutral-400);
+  /* décoratif — pas du texte */
   --border: var(--neutral-200);
   --border-hover: var(--neutral-300);
   --ring: var(--forest-500);
   --overlay: rgba(4, 25, 18, 0.55);
+  --overlay-light: rgba(20, 101, 76, 0.12);
 
-  /* Action — le seul token à utiliser pour un CTA primaire */
+  /* Action de conversion — le seul token pour un CTA primaire.
+     --action-edge compense le faible contraste du lime sur fond clair
+     (1.20:1) : le bouton se détache par son contour, pas par sa couleur.   */
   --action: var(--lime-400);
   --action-hover: var(--lime-500);
+  --action-active: var(--lime-600);
+  --action-edge: rgba(122, 158, 26, 0.30);
   --on-action: var(--forest-800);
-  /* 9.2:1 — JAMAIS de blanc ici */
+  /* 9.70:1 — JAMAIS de blanc ici */
 
-  /* Surfaces inversées — sections et cartes sombres */
+  /* Actions structurantes (confirmer, naviguer) — vert, pas lime.
+     Un formulaire a plusieurs boutons ; un seul peut être lime.            */
+  --button-primary: var(--forest-600);
+  --button-primary-hover: var(--forest-700);
+  --button-primary-active: var(--forest-800);
+  --on-button-primary: var(--neutral-0);
+  /* 7.01:1 */
+  --button-secondary: var(--forest-50);
+  --button-secondary-hover: var(--forest-100);
+
+  /* Marqueur — le squircle d'icône qui identifie sans écrire */
+  --marker-bg: rgba(211, 242, 110, 0.30);
+  --marker-icon: var(--forest-800);
+
+  /* Statut */
+  --rating-star: var(--gold-400);
+  --link: var(--forest-600);
+  /* 6.71:1 */
+  --link-hover: var(--forest-700);
+
+  /* Surfaces inversées — sections et cartes sombres.
+     ⚠ Le titre est NEUTRE, jamais lime. Institutionnaliser l'accent comme
+     couleur de titre le vide de son sens d'action (règle 2).               */
   --surface-inverse: var(--forest-900);
   --surface-inverse-alt: var(--forest-950);
   --on-inverse: var(--neutral-50);
+  --on-inverse-display: var(--neutral-50);
+  /* ★ titres — 14.77:1 */
   --on-inverse-muted: var(--forest-200);
-  --on-inverse-display: var(--lime-300);
-  /* titres, pas lime-400 */
-  --border-inverse: rgba(255, 255, 255, 0.10);
+  /* corps — 9.52:1 */
+  --on-inverse-marker: var(--lime-300);
+  /* icône, point, UN mot — pas la phrase */
+  --border-inverse: rgba(255, 255, 255, 0.09);
+  --border-inverse-strong: rgba(255, 255, 255, 0.22);
 
   /* ── Fond dégradé — la signature visuelle ────────────────────────────────
      Radial ancré en haut-gauche qui s'éteint vers le blanc. Fixe sur toute
@@ -150,11 +206,13 @@
     radial-gradient(90% 70% at 100% 0%, #EDF7E4 0%, rgba(237, 247, 228, 0) 50%),
     linear-gradient(165deg, #F4FAEA 0%, #FAFCF6 60%, #FFFFFF 100%);
 
+  /* Halo de la section sombre — il fait le raccord de luminosité avec le
+     canvas clair et évite l'arête franche.                                 */
   --bg-gradient-inverse:
-    radial-gradient(80% 60% at 50% 0%, #0F503D 0%, rgba(15, 80, 61, 0) 65%),
+    radial-gradient(72% 58% at 50% 0%, #0F503D 0%, rgba(15, 80, 61, 0) 68%),
     linear-gradient(180deg, var(--forest-900) 0%, var(--forest-950) 100%);
 
-  /* ── Ombres — froides, très diffuses, pas de glow ──────────────────────── */
+  /* ── Ombres — froides, très diffuses, pas de glow (sauf sur l'action) ─── */
 
   --shadow-xs: 0 1px 2px rgba(20, 24, 18, 0.04);
   --shadow-sm: 0 1px 3px rgba(20, 24, 18, 0.05), 0 1px 2px rgba(20, 24, 18, 0.03);
@@ -162,10 +220,10 @@
   --shadow-lg: 0 12px 32px rgba(20, 24, 18, 0.08), 0 4px 8px rgba(20, 24, 18, 0.04);
   --shadow-xl: 0 24px 56px rgba(20, 24, 18, 0.10), 0 8px 16px rgba(20, 24, 18, 0.05);
 
-  /* Ombre teintée pour les surfaces flottantes en glass */
   --shadow-float: 0 8px 32px rgba(11, 61, 46, 0.07);
-  /* Halo du CTA — subtil, c'est ce qui fait le premium chez Shoply */
-  --shadow-action: 0 6px 20px rgba(155, 194, 44, 0.28);
+  /* surfaces en glass */
+  --shadow-action: 0 6px 20px rgba(155, 194, 44, 0.30);
+  --shadow-action-hover: 0 8px 26px rgba(155, 194, 44, 0.38);
 }
 
 /* ═══ MODE SOMBRE ══════════════════════════════════════════════════════════ */
@@ -175,23 +233,51 @@
   --background-alt: #0A2018;
   --background-card: var(--forest-900);
   --foreground: var(--neutral-100);
+  /* 16.58:1 sur forest-950 */
   --foreground-muted: var(--forest-200);
+  /* 11.23:1 */
   --foreground-faint: #6B8579;
   --border: rgba(255, 255, 255, 0.09);
   --border-hover: rgba(255, 255, 255, 0.16);
   --ring: var(--lime-400);
   --overlay: rgba(0, 0, 0, 0.65);
+  --overlay-light: rgba(211, 242, 110, 0.10);
 
   --action: var(--lime-400);
   --action-hover: var(--lime-300);
+  --action-active: var(--lime-500);
+  --action-edge: rgba(211, 242, 110, 0.22);
   --on-action: var(--forest-800);
 
+  /* En sombre, les boutons structurants doivent remonter en luminosité,
+     sinon forest-600 se fond dans forest-900.                              */
+  --button-primary: var(--forest-500);
+  --button-primary-hover: var(--forest-400);
+  --button-primary-active: var(--forest-600);
+  --on-button-primary: var(--neutral-0);
+  --button-secondary: rgba(255, 255, 255, 0.06);
+  --button-secondary-hover: rgba(255, 255, 255, 0.11);
+
+  --marker-bg: rgba(211, 242, 110, 0.13);
+  --marker-icon: var(--lime-300);
+
+  --rating-star: var(--gold-300);
+  --link: var(--forest-200);
+  --link-hover: var(--lime-300);
+
+  /* La surface inversée se retourne : en mode sombre, "inverse" = clair.
+     Le titre reste neutre par rapport à sa surface (forest-700 sur blanc). */
   --surface-inverse: var(--neutral-0);
   --surface-inverse-alt: var(--neutral-50);
   --on-inverse: var(--forest-900);
+  /* 15.43:1 */
+  --on-inverse-display: var(--forest-900);
   --on-inverse-muted: var(--neutral-600);
-  --on-inverse-display: var(--forest-700);
+  /* 5.62:1 */
+  --on-inverse-marker: var(--lime-800);
+  /* 5.86:1 — lime-400 illisible sur blanc */
   --border-inverse: rgba(4, 25, 18, 0.10);
+  --border-inverse-strong: rgba(4, 25, 18, 0.22);
 
   --bg-gradient:
     radial-gradient(115% 85% at 0% 0%, #0D3B2C 0%, rgba(13, 59, 44, 0) 58%),
@@ -207,39 +293,41 @@
   --shadow-xl: 0 24px 56px rgba(0, 0, 0, 0.60);
   --shadow-float: 0 8px 32px rgba(0, 0, 0, 0.45);
   --shadow-action: 0 6px 20px rgba(155, 194, 44, 0.22);
+  --shadow-action-hover: 0 8px 26px rgba(155, 194, 44, 0.30);
 }
 
 /* ═══ RAYONS · GLASS · MOTION ══════════════════════════════════════════════ */
 
 :root {
 
-  /* ── Rayons — deux valeurs, pas dix ─────────────────────────────────────
-     C'est la contrainte qui tient tout le système visuel.                  */
+  /* ── Rayons ──────────────────────────────────────────────────────────────
+     Deux de premier plan : pill et card. C'est la contrainte qui tient le
+     système visuel. inner et field sont subordonnés : ils n'apparaissent
+     qu'à l'intérieur d'une carte, jamais au premier niveau d'une page.     */
 
   --radius-pill: 9999px;
-  /* boutons, badges, inputs, chips */
+  /* boutons, badges, inputs, chips — tout l'interactif */
   --radius-card: 20px;
   /* cartes, modales, sections encastrées */
   --radius-inner: 12px;
-  /* conteneurs d'icônes, images dans une carte */
+  /* squircles d'icônes, images dans une carte */
   --radius-field: 14px;
-  /* champs de formulaire non-pill */
+  /* champs de formulaire non-pill (textarea, select) */
 
   /* ── Glass ───────────────────────────────────────────────────────────────
      À n'utiliser QUE si quelque chose de non-uniforme est derrière :
-     photo de bien, carte Mapbox, dégradé du hero. Sur un aplat il ne
-     produit rien de visible et coûte du GPU pour rien.                     */
+     photo de bien, carte Mapbox, dégradé du hero.                          */
 
   --glass-blur: blur(16px) saturate(155%);
   --glass-blur-strong: blur(24px) saturate(165%);
 
-  --glass-light-bg: rgba(255, 255, 255, 0.55);
-  --glass-light-bg-solid: rgba(255, 255, 255, 0.86);
+  --glass-light-bg: rgba(255, 255, 255, 0.56);
+  --glass-light-bg-solid: rgba(255, 255, 255, 0.88);
   /* fallback opaque */
-  --glass-light-border: rgba(255, 255, 255, 0.60);
+  --glass-light-border: rgba(255, 255, 255, 0.64);
 
   --glass-dark-bg: rgba(7, 42, 32, 0.44);
-  --glass-dark-bg-solid: rgba(7, 42, 32, 0.82);
+  --glass-dark-bg-solid: rgba(7, 42, 32, 0.84);
   /* fallback opaque */
   --glass-dark-border: rgba(255, 255, 255, 0.14);
 
@@ -327,17 +415,36 @@
   --color-border: var(--border);
   --color-border-hover: var(--border-hover);
   --color-ring: var(--ring);
+  --color-overlay: var(--overlay);
+  --color-overlay-light: var(--overlay-light);
 
   --color-action: var(--action);
   --color-action-hover: var(--action-hover);
+  --color-action-active: var(--action-active);
+  --color-action-edge: var(--action-edge);
   --color-on-action: var(--on-action);
+
+  --color-button-primary: var(--button-primary);
+  --color-button-primary-hover: var(--button-primary-hover);
+  --color-button-primary-active: var(--button-primary-active);
+  --color-on-button-primary: var(--on-button-primary);
+  --color-button-secondary: var(--button-secondary);
+  --color-button-secondary-hover: var(--button-secondary-hover);
+
+  --color-marker-bg: var(--marker-bg);
+  --color-marker-icon: var(--marker-icon);
+  --color-rating-star: var(--rating-star);
+  --color-link: var(--link);
+  --color-link-hover: var(--link-hover);
 
   --color-surface-inverse: var(--surface-inverse);
   --color-surface-inverse-alt: var(--surface-inverse-alt);
   --color-on-inverse: var(--on-inverse);
-  --color-on-inverse-muted: var(--on-inverse-muted);
   --color-on-inverse-display: var(--on-inverse-display);
+  --color-on-inverse-muted: var(--on-inverse-muted);
+  --color-on-inverse-marker: var(--on-inverse-marker);
   --color-border-inverse: var(--border-inverse);
+  --color-border-inverse-strong: var(--border-inverse-strong);
 
   --radius-pill: var(--radius-pill);
   --radius-card: var(--radius-card);
@@ -355,6 +462,9 @@
   --shadow-xl: var(--shadow-xl);
   --shadow-float: var(--shadow-float);
   --shadow-action: var(--shadow-action);
+  --shadow-action-hover: var(--shadow-action-hover);
+
+  --ease-out: var(--ease-out);
 }
 
 /* ═══ BASE ═════════════════════════════════════════════════════════════════ */
@@ -378,6 +488,9 @@
   /* Le fond dégradé n'est PAS sur body : il est appliqué via .bg-canvas sur
      les pages qui le veulent (hero, landing). Les pages de listing dense
      restent sur l'aplat — sinon le dégradé fatigue au scroll.              */
+
+  /* Graisse plafonnée à 600 dans tout le système. Fraunces au-delà de 600
+     devient une autre police ; Inter au-delà devient bruyant.              */
 
   h1,
   h2,
@@ -439,13 +552,45 @@
     border-radius: 4px;
   }
 
-  /* iOS : 16px minimum sinon Safari zoome au focus.
-     Corrigé : on ne réduit plus sous 16px au-delà de 640px — le zoom iOS
-     s'applique aussi sur iPad. On garde 16px partout, c'est plus lisible.  */
+  /* iOS : 16px minimum sinon Safari zoome au focus. On garde 16px partout,
+     y compris sur iPad. ⚠ Une utilitaire text-sm sur un input écrasera
+     cette règle (la couche utilities passe après base) — ne pas le faire.  */
   input,
   textarea,
   select {
     font-size: 16px;
+  }
+
+  /* Calendrier natif : sans z-index/position, le popup passe sous les
+     surfaces en glass et les headers sticky.                              */
+  input[type="date"] {
+    position: relative;
+    z-index: 1;
+  }
+
+  input[type="date"]::-webkit-calendar-picker-indicator {
+    position: relative;
+    z-index: 2;
+    cursor: pointer;
+  }
+
+  input[type="date"]::-webkit-datetime-edit {
+    position: relative;
+    z-index: 1;
+  }
+
+  /* Prix : type="number" capte la molette et modifie la valeur au scroll.
+     Les inputs de prix doivent être type="text" + inputMode="numeric".
+     Cette règle neutralise au moins les flèches si un number subsiste.     */
+  input[type="number"]::-webkit-outer-spin-button,
+  input[type="number"]::-webkit-inner-spin-button {
+    -webkit-appearance: none;
+    margin: 0;
+  }
+
+  input[type="number"] {
+    -moz-appearance: textfield;
+    appearance: textfield;
   }
 
   img,
@@ -470,16 +615,6 @@
 
   .dark ::-webkit-scrollbar-thumb {
     background: rgba(255, 255, 255, 0.14);
-  }
-
-  /* Masquer complètement la scrollbar */
-  .scrollbar-hide {
-    -ms-overflow-style: none;
-    scrollbar-width: none;
-  }
-
-  .scrollbar-hide::-webkit-scrollbar {
-    display: none;
   }
 
   ::selection {
@@ -531,7 +666,9 @@
   }
 
   /* ── Section sombre encastrée ────────────────────────────────────────────
-     Carte, pas full-bleed. Halo radial vers le haut, comme le CTA Shoply.  */
+     Carte, pas full-bleed. Halo radial vers le haut.
+     Les titres restent NEUTRES. Pour accentuer, envelopper UN mot dans
+     <em class="marker"> — l'accent marque, il n'écrit pas la phrase.       */
 
   .section-inverse {
     background: var(--bg-gradient-inverse);
@@ -547,6 +684,12 @@
 
   .section-inverse p {
     color: var(--on-inverse-muted);
+  }
+
+  .section-inverse .marker,
+  .section-inverse em.marker {
+    color: var(--on-inverse-marker);
+    font-style: normal;
   }
 
   /* ── Glass ───────────────────────────────────────────────────────────────
@@ -582,9 +725,9 @@
   }
 
   /* Android d'entrée de gamme : le blur fait chuter le framerate au scroll.
-     On le coupe si l'appareil signale peu de mémoire ou une préférence
-     de réduction de transparence.                                          */
+     On le coupe si l'utilisateur demande moins de transparence.            */
   @media (prefers-reduced-transparency: reduce) {
+
     .glass {
       background: var(--glass-light-bg-solid);
       backdrop-filter: none;
@@ -599,8 +742,8 @@
   }
 
   /* ── Navbar flottante ────────────────────────────────────────────────────
-     Détachée du bord haut, comme Shoply. Le glass n'a de sens que si elle
-     survole le hero dégradé ou une photo.                                  */
+     Détachée du bord haut. Le glass n'a de sens que si elle survole le hero
+     dégradé ou une photo.                                                  */
 
   .nav-float {
     position: sticky;
@@ -610,8 +753,9 @@
     border-radius: var(--radius-card);
   }
 
-  /* ── Bouton primaire ─────────────────────────────────────────────────────
-     UN SEUL par écran. Le halo lime est ce qui fait le premium.            */
+  /* ── Bouton primaire — conversion ────────────────────────────────────────
+     UN SEUL par écran. Le halo lime est ce qui fait le premium.
+     Le contour compense le faible contraste du lime sur fond clair.        */
 
   .btn-action {
     display: inline-flex;
@@ -622,6 +766,7 @@
     border-radius: var(--radius-pill);
     background: var(--action);
     color: var(--on-action);
+    border: 1px solid var(--action-edge);
     font-weight: 600;
     font-size: 1rem;
     line-height: 1;
@@ -633,11 +778,51 @@
 
   .btn-action:hover {
     background: var(--action-hover);
-    box-shadow: 0 8px 26px rgba(155, 194, 44, 0.36);
+    box-shadow: var(--shadow-action-hover);
   }
 
   .btn-action:active {
+    background: var(--action-active);
     transform: scale(0.98);
+  }
+
+  .btn-action:disabled {
+    opacity: 0.5;
+    box-shadow: none;
+    cursor: not-allowed;
+  }
+
+  /* ── Bouton structurant — confirmer, naviguer ────────────────────────────
+     Vert, pas lime. Autant qu'il en faut par écran.                        */
+
+  .btn-primary {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    padding: 0.875rem 1.75rem;
+    border-radius: var(--radius-pill);
+    background: var(--button-primary);
+    color: var(--on-button-primary);
+    font-weight: 600;
+    font-size: 1rem;
+    line-height: 1;
+    transition: background var(--dur-fast) var(--ease-out),
+      transform var(--dur-fast) var(--ease-out);
+  }
+
+  .btn-primary:hover {
+    background: var(--button-primary-hover);
+  }
+
+  .btn-primary:active {
+    background: var(--button-primary-active);
+    transform: scale(0.98);
+  }
+
+  .btn-primary:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
   }
 
   /* ── Bouton secondaire ─────────────────────────────────────────────────── */
@@ -664,6 +849,11 @@
     background: var(--background-alt);
   }
 
+  .btn-ghost:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
+
   /* ── Carte ─────────────────────────────────────────────────────────────── */
 
   .card {
@@ -678,6 +868,19 @@
   .card:hover {
     box-shadow: var(--shadow-md);
     border-color: var(--border-hover);
+  }
+
+  /* ── Marqueur — squircle d'icône, identifie sans écrire ────────────────── */
+
+  .marker-box {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 2.5rem;
+    height: 2.5rem;
+    border-radius: var(--radius-inner);
+    background: var(--marker-bg);
+    color: var(--marker-icon);
   }
 
   /* ── Badge Vérifié — statut, pas action ────────────────────────────────── */
@@ -702,8 +905,7 @@
   }
 
   /* ── Eyebrow ─────────────────────────────────────────────────────────────
-     Contraste corrigé : Shoply utilise un sage à 2.6:1, sous le seuil AA.
-     On descend à neutral-600 (5.1:1).                                      */
+     neutral-600 = 5.38:1. Le sage de Shoply (2.6:1) passait sous AA.       */
 
   .eyebrow {
     font-family: var(--font-sans);
@@ -718,59 +920,50 @@
     color: var(--on-inverse-muted);
   }
 
-  /* ── Utilitaire universel masquer barres de défilement ──────────────────── */
-  .no-scrollbar::-webkit-scrollbar {
-    display: none;
-  }
+  /* ── Masquer les barres de défilement (.no-scrollbar et .scrollbar-hide) ── */
 
-  .no-scrollbar {
+  .no-scrollbar,
+  .scrollbar-hide {
     -ms-overflow-style: none;
     scrollbar-width: none;
   }
 
-  /* ── Fix pour calendrier date picker natif ───────────────────────────────
-     Le calendrier natif du navigateur a besoin d'un z-index élevé et
-     d'une position relative pour s'afficher correctement.                   */
-  input[type="date"] {
-    position: relative;
-    z-index: 1;
-  }
-
-  input[type="date"]::-webkit-calendar-picker-indicator {
-    position: relative;
-    z-index: 2;
-    cursor: pointer;
-  }
-
-  /* Assurer que le calendrier popup a un z-index très élevé */
-  input[type="date"]::-webkit-datetime-edit {
-    position: relative;
-    z-index: 1;
+  .no-scrollbar::-webkit-scrollbar,
+  .scrollbar-hide::-webkit-scrollbar {
+    display: none;
   }
 
   /* ── Animation Klef Rise ──────────────────────────────────────────────────
-     Animation d'entrée optimisée pour les performances.
-     Uniquement transform et opacity : ces deux propriétés sont traitées par le
-     compositeur, sur un fil séparé, sans déclencher ni layout ni paint.
-     L'animation s'exécute UNE fois (forwards), jamais en boucle.             */
+     Uniquement transform et opacity : traitées par le compositeur, sur un
+     fil séparé, sans déclencher ni layout ni paint.
+     L'animation s'exécute UNE fois (forwards), jamais en boucle.           */
 
   @keyframes klef-rise {
-    from { opacity: 0; transform: translate3d(0, 12px, 0); }
-    to   { opacity: 1; transform: translate3d(0, 0, 0); }
+    from {
+      opacity: 0;
+      transform: translate3d(0, 12px, 0);
+    }
+
+    to {
+      opacity: 1;
+      transform: translate3d(0, 0, 0);
+    }
   }
 
   .klef-rise {
     opacity: 0;
-    animation: klef-rise 520ms cubic-bezier(0.22, 1, 0.36, 1) forwards;
+    animation: klef-rise 520ms var(--ease-out) forwards;
     animation-delay: var(--rise-delay, 0ms);
     /* will-change promeut l'élément sur sa propre couche avant l'animation.
-       À ne poser que sur des éléments réellement animés : abuser de cette
-       propriété crée autant de couches que d'éléments et sature la mémoire GPU. */
+       À ne poser que sur des éléments réellement animés : en abuser crée
+       autant de couches que d'éléments et sature la mémoire GPU.          */
     will-change: transform, opacity;
   }
 
   /* Retire la promotion une fois l'animation terminée. */
-  .klef-rise[data-done='true'] { will-change: auto; }
+  .klef-rise[data-done='true'] {
+    will-change: auto;
+  }
 
   @media (prefers-reduced-motion: reduce) {
     .klef-rise {

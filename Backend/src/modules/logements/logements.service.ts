@@ -115,6 +115,7 @@ export class LogementsService {
       capaciteMax: true,
       note: true,
       totalSejours: true,
+      derniereMinuteActive: true,
       photos: {
         where: { estPrincipale: true },
         select: { url: true, categorie: true },
@@ -267,6 +268,7 @@ export class LogementsService {
       totalSejours: true,
       creeLe:       true,
       isInstantBooking: true,
+      derniereMinuteActive: true,
       videoUrl:     true,
       photos: {
         where:  { estPrincipale: true },
@@ -353,6 +355,7 @@ export class LogementsService {
               totalSejours: l.totalSejours,
               createdAt:    l.creeLe.toISOString(),
               isInstantBooking: l.isInstantBooking,
+              derniereMinuteActive: l.derniereMinuteActive,
               videoUrl:     l.videoUrl ?? null,
               photos:       l.photos,
               equipements:  l.equipements

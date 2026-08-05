@@ -22,6 +22,7 @@ import { ActionGateModal } from '@/features/gate/components/ActionGateModal';
 import { AvailabilityCalendar } from '@/features/listings/components/web/AvailabilityCalendar';
 import type { DateRange } from 'react-day-picker';
 import { cn } from '@/lib/utils/cn';
+import { getPrixPublic } from '@/lib/pricing';
 
 type Fournisseur = 'WAVE' | 'ORANGE_MONEY';
 
@@ -135,14 +136,13 @@ export default function ReserverPage({ searchParams }: Props) {
 
   const estimatedTotal = pricePreview
     ? pricePreview.totalLocataire
-    : listing ? (listing.prixBase ?? 0) * Math.max(nights, 1) : 0;
+    : listing ? getPrixPublic(listing.prixBase) * Math.max(nights, 1) : 0;
 
   const basePrice = pricePreview?.prixBase
     ?? (pricePreview && pricePreview.totalLocataire && pricePreview.supplementPersonnes !== undefined
       ? pricePreview.totalLocataire - pricePreview.supplementPersonnes
       : undefined)
-    ?? listing?.prixBase
-    ?? 0;
+    ?? getPrixPublic(listing?.prixBase);
 
   const supplementAmount = pricePreview?.supplementPersonnes ?? 0;
 

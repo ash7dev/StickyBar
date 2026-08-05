@@ -7,6 +7,8 @@ import { Heart, ImageOff, ShieldCheck, Star, Video, Zap } from 'lucide-react';
 import type { Listing } from '@/lib/nestjs/types';
 import { VideoReelsModal } from '@/features/listings/components/web/VideoReelsModal';
 
+import { TenantPriceDisplay } from '@/components/ui/TenantPriceDisplay';
+
 const money = new Intl.NumberFormat('fr-FR', { maximumFractionDigits: 0 });
 const rating = new Intl.NumberFormat('fr-FR', {
   minimumFractionDigits: 1,
@@ -32,6 +34,7 @@ export interface ListingCardProps {
   priority?: boolean;
   variant?: 'standard' | 'premium';
   isInstantBooking?: boolean;
+  derniereMinuteActive?: boolean;
   videoUrl?: string | null;
 }
 
@@ -53,6 +56,7 @@ export function ListingCard({
   onToggleFavorite,
   priority = false,
   isInstantBooking = false,
+  derniereMinuteActive = false,
   videoUrl = null,
 }: ListingCardProps) {
   const [showVideoModal, setShowVideoModal] = useState(false);
@@ -170,19 +174,21 @@ export function ListingCard({
           </p>
 
           <div className="mt-auto flex items-end justify-between gap-3 pt-3">
-            <p className="flex items-baseline gap-1">
-              <span className="text-[1.125rem] font-semibold tabular-nums tracking-[-0.01em] text-foreground">
-                {money.format(prixBase)}
-              </span>
-              <span className="text-[0.8125rem] font-medium text-foreground-muted">FCFA</span>
-              <span className="text-[0.8125rem] text-foreground-faint">/ nuit</span>
-            </p>
+            <TenantPriceDisplay
+              prixBase={prixBase}
+              derniereMinuteActive={derniereMinuteActive}
+              size="md"
+            />
 
-            {sponsorise && (
+            {derniereMinuteActive ? (
+              <span className="shrink-0 rounded-pill bg-amber-400 text-slate-950 px-2 py-0.5 text-[0.6875rem] font-black uppercase tracking-wider shadow-xs">
+                ⚡ -15%
+              </span>
+            ) : sponsorise ? (
               <span className="shrink-0 rounded-pill bg-neutral-100 px-2 py-0.5 text-[0.6875rem] font-medium text-foreground-faint">
                 Mis en avant
               </span>
-            )}
+            ) : null}
           </div>
         </div>
       </article>

@@ -15,6 +15,7 @@ interface Listing {
   note: number | null;
   totalSejours: number;
   photos: { url: string }[];
+  derniereMinuteActive?: boolean;
 }
 
 interface ListingsSectionProps {

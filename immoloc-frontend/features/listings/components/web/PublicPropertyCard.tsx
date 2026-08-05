@@ -2,6 +2,7 @@ import Image from 'next/image';
 import Link from 'next/link';
 import { Star, MapPin, Users, ArrowRight, Images } from 'lucide-react';
 import type { Listing } from '@/lib/nestjs';
+import { TenantPriceDisplay } from '@/components/ui/TenantPriceDisplay';
 
 const TYPE_LABELS: Record<string, string> = {
   APPARTEMENT: 'Appartement',
@@ -20,7 +21,6 @@ interface Props {
 export function PublicPropertyCard({ listing }: Props) {
   const mainPhoto = listing.photos.find((p) => p.estPrincipale) ?? listing.photos[0];
   const location = [listing.quartier, listing.ville].filter(Boolean).join(', ');
-  const price = Math.round(Number(listing.prixBase) * 1.07).toLocaleString('fr-FR');
   const rating = listing.note && listing.note > 0 ? listing.note : null;
 
   return (
@@ -108,9 +108,13 @@ export function PublicPropertyCard({ listing }: Props) {
             className="flex items-center justify-between px-4 py-3.5 rounded-[1.4rem] shadow-sm group-hover:shadow-md transition-shadow"
             style={{ background: 'linear-gradient(135deg, var(--primary-600) 0%, var(--primary-500) 100%)' }}
           >
-            <div className="flex flex-col gap-1">
-              <span className="text-[22px] font-black text-white leading-none tracking-tight">{price}</span>
-              <span className="text-[10px] font-bold text-white/70 uppercase tracking-wide">FCFA/nuit</span>
+            <div className="flex flex-col">
+              <TenantPriceDisplay
+                prixBase={listing.prixBase}
+                derniereMinuteActive={listing.derniereMinuteActive}
+                size="md"
+                textColor="text-white"
+              />
             </div>
             <div className="w-8 h-8 rounded-full bg-white/25 flex items-center justify-center backdrop-blur-sm group-hover:bg-white/35 transition-colors">
               <ArrowRight className="w-4.5 h-4.5 text-white" strokeWidth={2.5} />

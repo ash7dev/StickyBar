@@ -553,7 +553,7 @@ export default function ReservationDetailPage({ params }: { params: Promise<{ id
         </DarkCard>
 
         {/* ══ PAIEMENT LOCATAIRE ══ */}
-        <ReservationPaymentCard paiement={res.paiement} />
+        <ReservationPaymentCard paiement={res.paiement} reservation={res} />
 
         {/* ══ PHOTOS ÉTAT DES LIEUX ══ */}
         <PhotosEtatLieuSection

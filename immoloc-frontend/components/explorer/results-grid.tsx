@@ -7,6 +7,9 @@ import { ChevronLeft, ChevronRight, Heart, ImageOff, MapPin, RotateCcw, SearchX,
 import type { Listing } from '@/lib/nestjs/types';
 import { cn } from '@/lib/utils/cn';
 
+import { getPrixPublic, getPrixDerniereMinute } from '@/lib/pricing';
+import { TenantPriceDisplay } from '@/components/ui/TenantPriceDisplay';
+
 const money = new Intl.NumberFormat('fr-FR', { maximumFractionDigits: 0 });
 const rating = new Intl.NumberFormat('fr-FR', { minimumFractionDigits: 1, maximumFractionDigits: 1 });
 
@@ -99,8 +102,10 @@ function ListingRow({
   const titre = listing.titre?.trim() || 'Logement sans titre';
   const lieu = [listing.quartier?.trim(), listing.ville?.trim()].filter(Boolean).join(', ') || 'Sénégal';
 
-  const prix = listing.prixBase ?? 0;
-  const total = nights ? prix * nights : null;
+  const derniereMinuteActive = Boolean((listing as { derniereMinuteActive?: boolean }).derniereMinuteActive);
+  const prix = getPrixPublic(listing.prixBase);
+  const prixFinal = derniereMinuteActive ? getPrixDerniereMinute(prix) : prix;
+  const total = nights ? prixFinal * nights : null;
   const hasNote = typeof listing.note === 'number' && listing.note > 0;
 
   /*
@@ -299,15 +304,13 @@ function ListingRow({
             </p>
           </div>
 
-          <p className="shrink-0 text-right">
-            <span className="text-xl font-semibold tabular-nums tracking-[-0.01em] text-foreground">
-              {money.format(total ?? prix)}
-            </span>
-            <span className="ml-1 text-[0.8125rem] font-medium text-foreground-muted">F</span>
-            <span className="block text-[0.75rem] text-foreground-faint">
-              {total ? `total · ${money.format(prix)} F / nuit` : '/ nuit'}
-            </span>
-          </p>
+          <div className="shrink-0 text-right">
+            <TenantPriceDisplay
+              prixBase={listing.prixBase}
+              derniereMinuteActive={derniereMinuteActive}
+              size="md"
+            />
+          </div>
         </div>
       </div>
     </article>

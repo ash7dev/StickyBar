@@ -214,6 +214,7 @@ export function NearbyListingsSection() {
                       note={item.note ?? null}
                       totalSejours={item.totalSejours || 0}
                       photos={item.photos || []}
+                      derniereMinuteActive={item.derniereMinuteActive}
                     />
                   </li>
                 ))}

@@ -118,7 +118,7 @@ function TenantReservationDetailContent({ id }: { id: string }) {
       />
 
       {/* Paiement */}
-      <ReservationPaymentCard paiement={res.paiement} />
+      <ReservationPaymentCard paiement={res.paiement} reservation={res} />
 
       {/* Photos état des lieux */}
       <ReservationPhotos photosEtatLieu={res.photosEtatLieu} />

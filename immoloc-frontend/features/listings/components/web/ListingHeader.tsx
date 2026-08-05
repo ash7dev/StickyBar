@@ -6,9 +6,10 @@ import Image from 'next/image';
 import useEmblaCarousel from 'embla-carousel-react';
 import {
   Check, ChevronLeft, ChevronRight, Copy, Facebook, Grid2x2,
-  ImageOff, MessageCircle, Share2, X, ZoomIn,
+  ImageOff, MessageCircle, Share2, X, Zap, ZoomIn,
 } from 'lucide-react';
 import type { Listing } from '@/lib/nestjs';
+import { TenantPriceDisplay } from '@/components/ui/TenantPriceDisplay';
 
 interface ListingHeaderProps {
   listing: Listing;
@@ -32,7 +33,9 @@ export function ListingHeader({ listing }: ListingHeaderProps) {
   const main = photos.find((p) => p.estPrincipale) ?? photos[0];
   const secondary = photos.filter((p) => p.id !== main?.id).slice(0, 4);
 
+  const derniereMinuteActive = Boolean((listing as { derniereMinuteActive?: boolean }).derniereMinuteActive);
   const prixAffiche = Math.round(Number(listing.prixBase || 0) * 1.07);
+  const prixDerniereMinute = Math.round(prixAffiche * 0.85);
 
   // ── L'index vient d'Embla, pas d'un compteur parallèle ──────────────────
   // L'ancienne version incrémentait un state à la main EN PLUS d'appeler
@@ -239,16 +242,11 @@ export function ListingHeader({ listing }: ListingHeaderProps) {
 
       {/* ── Prix et partage ──────────────────────────────────────────────── */}
       <div className="flex flex-col items-start justify-between gap-4 border-b border-border pb-6 sm:flex-row sm:items-center">
-        <p className="flex items-baseline gap-1.5">
-          {/* font-extrabold dépassait les 600 du système, et un chiffre en
-              serif sans tabular-nums danse à chaque changement de valeur. */}
-          <span className="text-3xl font-semibold tabular-nums tracking-[-0.02em] text-foreground sm:text-[2.25rem]">
-            {fmtMoney.format(prixAffiche)}
-          </span>
-          <span className="text-sm font-medium text-foreground-muted">FCFA</span>
-          {/* Le reste du produit dit « / nuit ». */}
-          <span className="text-sm text-foreground-faint">/ nuit</span>
-        </p>
+        <TenantPriceDisplay
+          prixBase={listing.prixBase}
+          derniereMinuteActive={derniereMinuteActive}
+          size="lg"
+        />
 
         <div className="flex items-center gap-2 self-end sm:self-auto">
           <span className="mr-1 flex items-center gap-1.5 text-xs font-semibold text-foreground-muted">

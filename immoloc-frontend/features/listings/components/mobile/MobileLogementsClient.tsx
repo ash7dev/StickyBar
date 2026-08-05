@@ -7,6 +7,8 @@ import { listingsApi } from '@/lib/nestjs/listings.api';
 import type { Listing, ListingType } from '@/lib/nestjs/types';
 import { ListingFiltersMobile } from '../web/ListingFilters';
 
+import { TenantPriceDisplay } from '@/components/ui/TenantPriceDisplay';
+
 const TYPE_CHIPS = [
   { value: '',            label: 'Tous',         Icon: LayoutGrid },
   { value: 'APPARTEMENT', label: 'Appartements', Icon: Building2  },
@@ -32,6 +34,8 @@ function SkeletonCard() {
 }
 
 function MobileListingGridCard({ listing }: { listing: Listing }) {
+  const derniereMinuteActive = Boolean((listing as { derniereMinuteActive?: boolean }).derniereMinuteActive);
+
   return (
     <div className="card overflow-hidden">
       <div className="aspect-[3/4] bg-neutral-200 relative">
@@ -46,9 +50,11 @@ function MobileListingGridCard({ listing }: { listing: Listing }) {
       <div className="p-3">
         <h4 className="font-semibold text-sm mb-1 line-clamp-1">{listing.titre}</h4>
         <p className="text-xs text-foreground-muted mb-2">{listing.ville}</p>
-        <p className="font-bold text-forest-600 text-sm">
-          {listing.prixBase?.toLocaleString()} FCFA<span className="text-xs font-normal">/nuit</span>
-        </p>
+        <TenantPriceDisplay
+          prixBase={listing.prixBase}
+          derniereMinuteActive={derniereMinuteActive}
+          size="sm"
+        />
       </div>
     </div>
   );

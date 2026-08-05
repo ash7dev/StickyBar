@@ -4,6 +4,8 @@ import { useEffect, useRef, useState } from 'react';
 import type { Listing } from '@/lib/nestjs/types';
 import { Search, RefreshCw } from 'lucide-react';
 
+import { formatPrixPublic } from '@/lib/pricing';
+
 interface ExplorerMapProps {
   listings: Listing[];
 }
@@ -100,7 +102,7 @@ export function ExplorerMap({ listings }: ExplorerMapProps) {
 
           bounds.push([finalLat, finalLng]);
 
-          const priceText = listing.prixBase ? `${listing.prixBase.toLocaleString('fr-FR')} F` : 'Prix n/d';
+          const priceText = listing.prixBase ? `${formatPrixPublic(listing.prixBase)} F` : 'Prix n/d';
 
           // Marqueur pastille de prix personnalisé (Style Gunôor)
           const priceIcon = L.divIcon({

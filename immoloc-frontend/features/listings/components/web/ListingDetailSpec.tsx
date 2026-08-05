@@ -9,6 +9,7 @@ import {
   UtensilsCrossed, Waves, Wifi, WashingMachine, Wind, Zap,
 } from 'lucide-react';
 import type { Listing } from '@/lib/nestjs';
+import { formatPrixPublic, getPrixPublic, getPrixDerniereMinute } from '@/lib/pricing';
 import { ListingVideoSection } from './ListingVideoSection';
 
 interface ListingDetailSpecProps {
@@ -219,15 +220,34 @@ export function ListingDetailSpec({ listing }: ListingDetailSpecProps) {
                 Tarifs dégressifs
               </p>
               <ul className="space-y-1">
-                {listing.tarifsNuits.map((t, i) => (
-                  <li key={i} className="text-xs text-success-700">
-                    Dès {t.nuitsMin} nuits&nbsp;:{' '}
-                    <strong className="font-semibold tabular-nums">
-                      {fmtMoney.format(t.prix)} FCFA
-                    </strong>{' '}
-                    / nuit
-                  </li>
-                ))}
+                {listing.tarifsNuits.map((t, i) => {
+                  const pxPublic = getPrixPublic(t.prix);
+                  const pxReduit = getPrixDerniereMinute(pxPublic);
+                  const derniereMinute = Boolean((listing as { derniereMinuteActive?: boolean }).derniereMinuteActive);
+                  return (
+                    <li key={i} className="text-xs text-success-700">
+                      Dès {t.nuitsMin} nuits&nbsp;:{' '}
+                      {derniereMinute ? (
+                        <>
+                          <span className="line-through text-foreground-muted mr-1.5 tabular-nums">
+                            {pxPublic.toLocaleString('fr-FR')} FCFA
+                          </span>
+                          <strong className="font-bold tabular-nums text-forest-950">
+                            {pxReduit.toLocaleString('fr-FR')} FCFA
+                          </strong>{' '}
+                          <span className="inline-flex items-center gap-0.5 rounded-pill bg-lime-400 text-forest-950 px-1.5 py-0.2 text-[9px] font-black uppercase">
+                            ⚡ -15%
+                          </span>
+                        </>
+                      ) : (
+                        <strong className="font-semibold tabular-nums">
+                          {pxPublic.toLocaleString('fr-FR')} FCFA
+                        </strong>
+                      )}{' '}
+                      / nuit
+                    </li>
+                  );
+                })}
               </ul>
             </div>
           ) : (
@@ -256,7 +276,7 @@ export function ListingDetailSpec({ listing }: ListingDetailSpecProps) {
                 >
                   <span>{t.personnesMin} à {t.personnesMax} pers.</span>
                   <span className="font-semibold tabular-nums">
-                    +{fmtMoney.format(t.supplement)} FCFA
+                    +{Number(t.supplement).toLocaleString('fr-FR')} FCFA
                   </span>
                 </li>
               ))}

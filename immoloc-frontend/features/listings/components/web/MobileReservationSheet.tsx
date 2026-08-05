@@ -19,6 +19,7 @@ import { ActionGateModal } from '@/features/gate/components/ActionGateModal';
 import { AvailabilityCalendar } from './AvailabilityCalendar';
 import { cn } from '@/lib/utils/cn';
 import { useToastError } from '@/lib/hooks/use-toast-error';
+import { TenantPriceDisplay } from '@/components/ui/TenantPriceDisplay';
 
 interface Props {
   listingId: string;
@@ -27,6 +28,7 @@ interface Props {
   capaciteMax: number;
   ageMin?: number | null;
   personnesBase?: number;
+  derniereMinuteActive?: boolean;
   tarifsPersonnes?: TarifPersonne[];
   tarifsNuits?: TarifNuit[];
   disabledDates?: Date[];
@@ -46,6 +48,7 @@ export function MobileReservationSheet({
   capaciteMax,
   ageMin,
   personnesBase,
+  derniereMinuteActive,
   tarifsPersonnes,
   tarifsNuits,
   disabledDates = [],
@@ -179,11 +182,12 @@ export function MobileReservationSheet({
         <div className="mx-3 mb-2 px-4 py-3 rounded-2xl bg-background-card border border-border shadow-[0_-4px_24px_rgba(0,0,0,0.08)] flex items-center justify-between gap-3">
           {/* Prix */}
           <div>
-            <p className="text-[10px] font-bold text-foreground-muted uppercase tracking-widest mb-0.5">DÈS</p>
-            <div className="flex items-baseline gap-1">
-              <span className="text-xl font-black text-foreground">{fmt(prixAffiche)}</span>
-              <span className="text-xs font-bold text-foreground-muted">FCFA<span className="text-foreground-muted"> /</span> nuit</span>
-            </div>
+            <TenantPriceDisplay
+              prixBase={prixBase}
+              derniereMinuteActive={derniereMinuteActive}
+              size="sm"
+              showBadge={false}
+            />
           </div>
 
           {/* CTA */}
