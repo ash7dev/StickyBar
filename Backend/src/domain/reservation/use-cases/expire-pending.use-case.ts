@@ -2,6 +2,7 @@ import { Injectable, Logger } from '@nestjs/common';
 import { StatutReservation, StatutPaiement } from '@prisma/client';
 import { PrismaService } from '../../../infrastructure/prisma/prisma.service';
 import { ReservationStateMachine } from '../reservation.state-machine';
+import { NotificationsService } from '../../../modules/notifications/notifications.service';
 
 @Injectable()
 export class ExpirePendingUseCase {
@@ -10,6 +11,7 @@ export class ExpirePendingUseCase {
   constructor(
     private readonly prisma: PrismaService,
     private readonly stateMachine: ReservationStateMachine,
+    private readonly notifications: NotificationsService,
   ) {}
 
   async execute(reservationId: string) {
@@ -27,7 +29,7 @@ export class ExpirePendingUseCase {
       return;
     }
 
-    return await this.prisma.$transaction(async (tx) => {
+    const updated = await this.prisma.$transaction(async (tx) => {
       // 1. Passage en EXPIRED
       const updated = await tx.reservation.update({
         where: { id: reservationId },
@@ -52,5 +54,15 @@ export class ExpirePendingUseCase {
 
       return updated;
     });
+
+    // Push au locataire
+    this.notifications.sendReservationPush(
+      updated.locataireId,
+      'Réservation expirée ⏳',
+      'Votre réservation a expiré car le paiement n\'a pas été reçu dans le délai imparti.',
+      '/explorer'
+    ).catch(() => {});
+
+    return updated;
   }
 }

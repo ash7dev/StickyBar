@@ -10,6 +10,8 @@ import { PrismaService } from '../../../infrastructure/prisma/prisma.service';
 import { QueueService } from '../../../infrastructure/queue/queue.service';
 import { ReservationStateMachine } from '../reservation.state-machine';
 
+import { NotificationsService } from '../../../modules/notifications/notifications.service';
+
 @Injectable()
 export class CheckInConfirmUseCase {
   private readonly logger = new Logger(CheckInConfirmUseCase.name);
@@ -18,6 +20,7 @@ export class CheckInConfirmUseCase {
     private readonly prisma: PrismaService,
     private readonly queue: QueueService,
     private readonly stateMachine: ReservationStateMachine,
+    private readonly notifications: NotificationsService,
   ) {}
 
   async execute(reservationId: string, userId: string) {
@@ -73,5 +76,13 @@ export class CheckInConfirmUseCase {
     await this.queue.scheduleAutoClose(reservationId, reservation.dateFin);
 
     this.logger.log(`Check-in validé [${reservationId}]. Fonds débloqués. Auto-clôture programmée.`);
+
+    // Push au propriétaire
+    this.notifications.sendReservationPush(
+      reservation.proprietaireId,
+      'Check-in validé ! 🔑',
+      'Le locataire a validé l\'état des lieux d\'entrée. Le séjour a commencé !',
+      '/reservations'
+    ).catch((err) => this.logger.error(`Erreur Push checkin: ${err.message}`));
   }
 }

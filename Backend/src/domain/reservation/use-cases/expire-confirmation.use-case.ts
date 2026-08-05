@@ -3,6 +3,7 @@ import { StatutReservation, StatutPaiement, ResultatAnnulation } from '@prisma/c
 import { PrismaService } from '../../../infrastructure/prisma/prisma.service';
 import { ReservationStateMachine } from '../reservation.state-machine';
 import { RefundPaymentUseCase } from '../../payment/use-cases/refund-payment.use-case';
+import { NotificationsService } from '../../../modules/notifications/notifications.service';
 
 @Injectable()
 export class ExpireConfirmationUseCase {
@@ -12,6 +13,7 @@ export class ExpireConfirmationUseCase {
     private readonly prisma: PrismaService,
     private readonly stateMachine: ReservationStateMachine,
     private readonly refundPayment: RefundPaymentUseCase,
+    private readonly notifications: NotificationsService,
   ) {}
 
   async execute(reservationId: string) {
@@ -72,5 +74,13 @@ export class ExpireConfirmationUseCase {
 
     await this.refundPayment.execute(reservationId);
     this.logger.log(`Réservation [${reservationId}] expirée : proprio n'a pas confirmé dans le délai imparti`);
+
+    // Push au locataire
+    this.notifications.sendReservationPush(
+      reservation.locataireId,
+      'Réservation expirée — Remboursement 100% 💰',
+      'Le propriétaire n\'a pas confirmé votre réservation à temps. Vous serez remboursé intégralement.',
+      '/reservations'
+    ).catch(() => {});
   }
 }

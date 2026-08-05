@@ -161,10 +161,22 @@ export async function subscribeToPushNotifications(userId?: string): Promise<{ s
  */
 export async function sendTestPushNotification(title?: string, message?: string, url?: string): Promise<{ success: boolean; sentCount?: number; message?: string }> {
   try {
-    const registration = await registerServiceWorker();
-    const sub = registration ? await registration.pushManager.getSubscription() : null;
+    console.log('[PWA] Sending test notification...');
 
-    const res = await fetch(NEST_API.PUSH_NOTIFICATIONS.TEST, {
+    const registration = await registerServiceWorker();
+    console.log('[PWA] Service Worker registration:', registration ? 'OK' : 'FAILED');
+
+    const sub = registration ? await registration.pushManager.getSubscription() : null;
+    console.log('[PWA] Push subscription:', sub ? 'EXISTS' : 'NOT FOUND');
+
+    if (sub) {
+      console.log('[PWA] Subscription endpoint:', sub.endpoint);
+    }
+
+    const apiUrl = NEST_API.PUSH_NOTIFICATIONS.TEST;
+    console.log('[PWA] Calling API:', apiUrl);
+
+    const res = await fetch(apiUrl, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
@@ -175,12 +187,17 @@ export async function sendTestPushNotification(title?: string, message?: string,
       }),
     });
 
+    console.log('[PWA] API response status:', res.status);
+
     if (!res.ok) {
       const err = await res.json().catch(() => ({}));
+      console.error('[PWA] API error response:', err);
       throw new Error(err.message || 'Erreur lors de l\'envoi du Push test.');
     }
 
-    return await res.json();
+    const result = await res.json();
+    console.log('[PWA] API success response:', result);
+    return result;
   } catch (err: any) {
     console.error('[PWA Test Error]', err);
     return { success: false, message: err.message };

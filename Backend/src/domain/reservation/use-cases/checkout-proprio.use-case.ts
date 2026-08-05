@@ -1,10 +1,14 @@
 import { Injectable, NotFoundException, ForbiddenException, ConflictException } from '@nestjs/common';
 import { StatutReservation } from '@prisma/client';
 import { PrismaService } from '../../../infrastructure/prisma/prisma.service';
+import { NotificationsService } from '../../../modules/notifications/notifications.service';
 
 @Injectable()
 export class CheckoutProprioUseCase {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly notifications: NotificationsService,
+  ) {}
 
   async execute(reservationId: string, userId: string) {
     const reservation = await this.prisma.reservation.findUnique({
@@ -27,5 +31,13 @@ export class CheckoutProprioUseCase {
       where: { id: reservationId },
       data: { checkoutProprioLe: new Date() },
     });
+
+    // Notification au locataire
+    this.notifications.sendReservationPush(
+      reservation.locataireId,
+      'État des lieux de sortie confirmé ✅',
+      'Le propriétaire a validé l\'état des lieux de sortie. Le séjour est maintenant terminé.',
+      `/reservations/${reservationId}`
+    ).catch(() => {});
   }
 }

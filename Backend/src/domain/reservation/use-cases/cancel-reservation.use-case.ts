@@ -19,6 +19,7 @@ import { PrismaService } from '../../../infrastructure/prisma/prisma.service';
 import { QueueService } from '../../../infrastructure/queue/queue.service';
 import { ReservationStateMachine } from '../reservation.state-machine';
 import { RefundPaymentUseCase } from '../../payment/use-cases/refund-payment.use-case';
+import { NotificationsService } from '../../../modules/notifications/notifications.service';
 
 @Injectable()
 export class CancelReservationUseCase {
@@ -29,6 +30,7 @@ export class CancelReservationUseCase {
     private readonly queue: QueueService,
     private readonly stateMachine: ReservationStateMachine,
     private readonly refundPayment: RefundPaymentUseCase,
+    private readonly notifications: NotificationsService,
   ) {}
 
   async execute(reservationId: string, userId: string, raison: string) {
@@ -194,6 +196,16 @@ export class CancelReservationUseCase {
       const percentage = (montantRembourse / Number(reservation.totalLocataire)) * 100;
       await this.refundPayment.execute(reservationId, percentage);
     }
+
+    // Notification Push à l'autre partie
+    const targetUserId = isLocataire ? reservation.proprietaireId : reservation.locataireId;
+    const title = isLocataire ? 'Réservation annulée ❌' : 'Réservation annulée par le propriétaire ⚠️';
+    const message = isLocataire
+      ? `Le locataire a annulé sa réservation (Motif : ${raison}).`
+      : `Le propriétaire a annulé votre réservation (Motif : ${raison}).`;
+
+    this.notifications.sendReservationPush(targetUserId, title, message, '/reservations')
+      .catch((err) => this.logger.error(`Erreur Push annulation: ${err.message}`));
 
     return result;
   }

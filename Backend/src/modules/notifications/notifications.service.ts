@@ -100,13 +100,34 @@ export class NotificationsService implements OnModuleInit {
     return { success: true };
   }
 
-  async sendNotificationToUser(userId: string, title: string, message: string, url: string = '/') {
+  async sendNotificationToUser(targetUserIdentifier: string, title: string, message: string, url: string = '/') {
+    // 1. Détermine le Supabase userId et l'UUID Prisma pour être sûr d'attraper l'abonnement
+    let targetUserId = targetUserIdentifier;
+    let targetPrismaId = targetUserIdentifier;
+
+    const user = await this.prisma.utilisateur.findFirst({
+      where: {
+        OR: [{ userId: targetUserIdentifier }, { id: targetUserIdentifier }],
+      },
+      select: { id: true, userId: true },
+    });
+
+    if (user) {
+      targetUserId = user.userId;
+      targetPrismaId = user.id;
+    }
+
     const subscriptions = await this.prisma.pushSubscription.findMany({
-      where: { userId },
+      where: {
+        OR: [
+          { userId: targetUserId },
+          { userId: targetPrismaId },
+        ],
+      },
     });
 
     if (subscriptions.length === 0) {
-      this.logger.warn(`Aucun appareil abonné au Push pour l'utilisateur ${userId}`);
+      this.logger.warn(`Aucun appareil abonné au Push pour l'utilisateur ${targetUserIdentifier}`);
       return { success: false, sentCount: 0 };
     }
 
@@ -214,5 +235,43 @@ export class NotificationsService implements OnModuleInit {
     }
 
     return { success: true, sentCount };
+  }
+
+  // ── Helpers de Push notifications Métier ───────────────────────────────────
+
+  /** Push pour le workflow Réservation & États des lieux */
+  async sendReservationPush(userId: string, title: string, body: string, url: string = '/reservations') {
+    return this.sendNotificationToUser(userId, title, body, url);
+  }
+
+  /** Push pour les mises à jour de dossier KYC */
+  async sendKycPush(userId: string, isVerified: boolean, reason?: string) {
+    const title = isVerified ? 'Identité vérifiée avec succès ! 🛡️' : 'Mise à jour dossier d\'identité KYC ⚠️';
+    const body = isVerified
+      ? 'Votre dossier KYC a été validé par l\'équipe Klef. Vous pouvez publier et réserver sans restriction !'
+      : `Votre dossier KYC requiert une attention : ${reason || 'Veuillez vérifier vos documents.'}`;
+    return this.sendNotificationToUser(userId, title, body, '/parametres');
+  }
+
+  /** Push pour les nouveaux avis reçus */
+  async sendReviewPush(userId: string, rating: number, logementTitle: string, url: string = '/logements') {
+    const stars = '⭐'.repeat(Math.round(rating));
+    const title = `Nouveau commentaire reçu ${stars}`;
+    const body = `Un voyageur a laissé une note de ${rating}/5 pour votre logement "${logementTitle}".`;
+    return this.sendNotificationToUser(userId, title, body, url);
+  }
+
+  /** Push pour les litiges & réclamations */
+  async sendDisputePush(userId: string, title: string, body: string, url: string = '/dashboard') {
+    return this.sendNotificationToUser(userId, title, body, url);
+  }
+
+  /** Push pour le portefeuille & virements */
+  async sendWalletPush(userId: string, amount: number, isProcessed: boolean, details?: string) {
+    const title = isProcessed ? 'Virement exécuté avec succès 💳' : 'Demande de retrait enregistrée ⏳';
+    const body = isProcessed
+      ? `Votre virement de ${amount.toLocaleString('fr-FR')} FCFA a été traité.`
+      : `Votre demande de retrait de ${amount.toLocaleString('fr-FR')} FCFA est en cours de traitement.`;
+    return this.sendNotificationToUser(userId, title, body, '/parametres');
   }
 }

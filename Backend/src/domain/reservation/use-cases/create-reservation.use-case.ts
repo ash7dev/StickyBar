@@ -14,6 +14,8 @@ import { QueueService } from '../../../infrastructure/queue/queue.service';
 import { AuthUser } from '../../../shared/types/jwt-payload.type';
 import { ContratService } from '../../../infrastructure/contrat/contrat.service';
 
+import { NotificationsService } from '../../../modules/notifications/notifications.service';
+
 export interface CreateReservationInput {
   logementId: string;
   dateDebut: Date;
@@ -32,6 +34,7 @@ export class CreateReservationUseCase {
     private readonly pricing: PricingService,
     private readonly queue: QueueService,
     private readonly contrat: ContratService,
+    private readonly notifications: NotificationsService,
   ) {}
 
   async execute(user: AuthUser, input: CreateReservationInput, idempotencyKey?: string) {
@@ -228,6 +231,15 @@ export class CreateReservationUseCase {
     });
 
     this.logger.log(`Réservation [${reservation.id}] créée — paiement simulé confirmé`);
+
+    // Notification Push asynchrone au propriétaire
+    this.notifications.sendReservationPush(
+      reservation.proprietaireId,
+      'Nouvelle demande de réservation 📅',
+      `Vous avez reçu une nouvelle réservation. Veuillez la confirmer sous 24h.`,
+      '/reservations'
+    ).catch((err) => this.logger.error(`Erreur Push reservation: ${err.message}`));
+
     return { reservationId: reservation.id, paymentUrl: null };
   }
 }

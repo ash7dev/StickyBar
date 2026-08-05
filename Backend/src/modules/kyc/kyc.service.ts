@@ -11,6 +11,8 @@ import { CloudinaryService } from '../../infrastructure/cloudinary/cloudinary.se
 import { StatutKyc } from '@prisma/client';
 import { SubmitKycDto, RejectKycDto, SubmitSelfieDto } from './dto/kyc.dto';
 
+import { NotificationsService } from '../notifications/notifications.service';
+
 @Injectable()
 export class KycService {
   private readonly logger = new Logger(KycService.name);
@@ -18,6 +20,7 @@ export class KycService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly cloudinary: CloudinaryService,
+    private readonly notifications: NotificationsService,
   ) {}
 
   /**
@@ -164,7 +167,10 @@ export class KycService {
 
     this.logger.log(`KYC VERIFIE pour l'utilisateur [${id}]`);
     
-    // TODO: Envoyer notification WhatsApp
+    // Notification Push à l'utilisateur
+    this.notifications.sendKycPush(user.userId, true)
+      .catch((err) => this.logger.error(`Erreur Push KYC verify: ${err.message}`));
+
     return { message: 'KYC validé avec succès' };
   }
 
@@ -185,7 +191,10 @@ export class KycService {
 
     this.logger.log(`KYC REJETE pour l'utilisateur [${id}]. Raison: ${dto.reason}`);
     
-    // TODO: Envoyer notification WhatsApp
+    // Notification Push à l'utilisateur
+    this.notifications.sendKycPush(user.userId, false, dto.reason)
+      .catch((err) => this.logger.error(`Erreur Push KYC reject: ${err.message}`));
+
     return { message: 'KYC rejeté avec succès' };
   }
 
@@ -203,7 +212,10 @@ export class KycService {
 
     this.logger.log(`KYC marqué A_RENOUVELER pour l'utilisateur [${id}]`);
     
-    // TODO: Envoyer notification WhatsApp
+    // Notification Push à l'utilisateur
+    this.notifications.sendKycPush(user.userId, false, 'Votre pièce d\'identité a expiré. Veuillez mettre à jour votre dossier.')
+      .catch((err) => this.logger.error(`Erreur Push KYC renewal: ${err.message}`));
+
     return { message: 'Utilisateur marqué pour renouvellement KYC' };
   }
 }

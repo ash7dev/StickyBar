@@ -16,6 +16,8 @@ import {
 } from '@prisma/client';
 import { RefundPaymentUseCase } from '../../domain/payment/use-cases/refund-payment.use-case';
 
+import { NotificationsService } from '../notifications/notifications.service';
+
 @Injectable()
 export class DisputesService {
   private readonly logger = new Logger(DisputesService.name);
@@ -23,6 +25,7 @@ export class DisputesService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly refundPayment: RefundPaymentUseCase,
+    private readonly notifications: NotificationsService,
   ) {}
 
   /**
@@ -90,6 +93,16 @@ export class DisputesService {
     });
 
     this.logger.log(`Litige ouvert [${result.id}] pour la réservation [${dto.reservationId}]`);
+
+    // Notification Push à l'autre partie
+    const autrePartieId = isLocataire ? reservation.proprietaireId : reservation.locataireId;
+    this.notifications.sendDisputePush(
+      autrePartieId,
+      'Nouveau litige déclaré 🚨',
+      'Un litige a été ouvert concernant votre réservation. L\'équipe Klef examine le dossier.',
+      '/dashboard'
+    ).catch((err) => this.logger.error(`Erreur Push litige create: ${err.message}`));
+
     return result;
   }
 
@@ -204,6 +217,21 @@ export class DisputesService {
         // Le remboursement pourra être retenté manuellement
       }
     }
+
+    // Notifications Push aux deux parties
+    this.notifications.sendDisputePush(
+      reservation.locataireId,
+      'Décision sur votre litige ⚖️',
+      `Le litige a été rendu ${dto.statut === StatutLitige.FONDE ? 'FONDE' : 'NON FONDE'}. Décision : ${dto.decisionAdmin}`,
+      '/reservations'
+    ).catch(() => {});
+
+    this.notifications.sendDisputePush(
+      reservation.proprietaireId,
+      'Décision sur le litige ⚖️',
+      `Le litige a été rendu ${dto.statut === StatutLitige.FONDE ? 'FONDE' : 'NON FONDE'}. Décision : ${dto.decisionAdmin}`,
+      '/reservations'
+    ).catch(() => {});
 
     return result.updatedLitige;
   }

@@ -8,6 +8,7 @@ import {
 import { StatutReservation } from '@prisma/client';
 import { PrismaService } from '../../../infrastructure/prisma/prisma.service';
 import { QueueService } from '../../../infrastructure/queue/queue.service';
+import { NotificationsService } from '../../../modules/notifications/notifications.service';
 
 @Injectable()
 export class ProprioAbsentUseCase {
@@ -16,6 +17,7 @@ export class ProprioAbsentUseCase {
   constructor(
     private readonly prisma: PrismaService,
     private readonly queue: QueueService,
+    private readonly notifications: NotificationsService,
   ) {}
 
   async execute(reservationId: string, userId: string) {
@@ -55,6 +57,14 @@ export class ProprioAbsentUseCase {
     // Scheduler le job d'absence après la TX
     await this.queue.scheduleAbsenceConfirmation(reservationId);
     this.logger.log(`Absence propriétaire signalée pour [${reservationId}]. Worker 2h activé.`);
+
+    // Notification au propriétaire (URGENTE ⚠️)
+    this.notifications.sendReservationPush(
+      updated.proprietaireId,
+      '⚠️ Locataire vous signale absent !',
+      'Le locataire signale que vous êtes injoignable pour le check-in. Vous avez 2h pour répondre, sinon la réservation sera annulée avec remboursement intégral.',
+      `/reservations/${reservationId}`
+    ).catch(() => {});
 
     return updated;
   }

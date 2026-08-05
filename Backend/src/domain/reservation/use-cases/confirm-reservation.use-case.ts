@@ -10,6 +10,8 @@ import { PrismaService } from '../../../infrastructure/prisma/prisma.service';
 import { QueueService } from '../../../infrastructure/queue/queue.service';
 import { ReservationStateMachine } from '../reservation.state-machine';
 
+import { NotificationsService } from '../../../modules/notifications/notifications.service';
+
 /** Applique une heure HH:mm sur une Date (sans muter l'original). */
 function applyTime(base: Date, hhmm: string): Date {
   const [h, m] = hhmm.split(':').map(Number);
@@ -26,6 +28,7 @@ export class ConfirmReservationUseCase {
     private readonly prisma: PrismaService,
     private readonly queue: QueueService,
     private readonly stateMachine: ReservationStateMachine,
+    private readonly notifications: NotificationsService,
   ) {}
 
   async execute(reservationId: string, userId: string, heureDebut?: string) {
@@ -118,6 +121,15 @@ export class ConfirmReservationUseCase {
     ]);
 
     this.logger.log(`Réservation [${reservationId}] confirmée par le propriétaire [${userId}]${heureDebut ? ` (check-in ${heureDebut})` : ''}`);
+
+    // Notification Push au locataire
+    this.notifications.sendReservationPush(
+      result.updated.locataireId,
+      'Réservation confirmée ! 🎉',
+      'Votre réservation a été validée par le propriétaire. Préparez votre séjour !',
+      '/reservations'
+    ).catch((err) => this.logger.error(`Erreur Push confirmation: ${err.message}`));
+
     return result.updated;
   }
 }

@@ -63,6 +63,8 @@ self.addEventListener('fetch', (event) => {
 
 // ── Notifications Push PWA ───────────────────────────────────────────────────
 self.addEventListener('push', (event) => {
+  console.log('[SW] Push event received!', event);
+
   let data = {
     title: 'Klef - Notification',
     body: 'Vous avez reçu une nouvelle mise à jour sur Klef.',
@@ -72,11 +74,17 @@ self.addEventListener('push', (event) => {
   };
 
   if (event.data) {
+    console.log('[SW] Push has data, parsing...');
     try {
-      data = event.data.json();
+      const parsed = event.data.json();
+      console.log('[SW] Parsed push data:', parsed);
+      data = parsed;
     } catch (e) {
+      console.log('[SW] Failed to parse JSON, using text:', e);
       data.body = event.data.text();
     }
+  } else {
+    console.log('[SW] No data in push event');
   }
 
   const options = {
@@ -88,11 +96,18 @@ self.addEventListener('push', (event) => {
     actions: [
       { action: 'open', title: 'Ouvrir' },
       { action: 'close', title: 'Fermer' }
-    ]
+    ],
+    requireInteraction: false,
+    tag: data.tag || `klef-${Date.now()}` // Tag unique pour chaque notification
   };
+
+  console.log('[SW] Showing notification with title:', data.title || 'Klef');
+  console.log('[SW] Notification options:', options);
 
   event.waitUntil(
     self.registration.showNotification(data.title || 'Klef', options)
+      .then(() => console.log('[SW] Notification shown successfully!'))
+      .catch(err => console.error('[SW] Error showing notification:', err))
   );
 });
 

@@ -7,6 +7,8 @@ import {
 import { StatutRetrait, SensTransaction, TypeTransactionWallet } from '@prisma/client';
 import { PrismaService } from '../../../infrastructure/prisma/prisma.service';
 
+import { NotificationsService } from '../../../modules/notifications/notifications.service';
+
 export type ProcessAction = 'validate' | 'reject';
 
 export interface ProcessWithdrawalInput {
@@ -19,13 +21,22 @@ export interface ProcessWithdrawalInput {
 export class ProcessWithdrawalUseCase {
   private readonly logger = new Logger(ProcessWithdrawalUseCase.name);
 
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly notifications: NotificationsService,
+  ) {}
 
   async execute(retraitId: string, adminId: string, input: ProcessWithdrawalInput) {
-    return this.prisma.$transaction(async (tx) => {
+    // Récupérer le retrait hors transaction pour le Push après
+    const retraitInfo = await this.prisma.retrait.findUnique({
+      where: { id: retraitId },
+      include: { wallet: { select: { utilisateurId: true } } },
+    });
+
+    const result = await this.prisma.$transaction(async (tx) => {
       const retrait = await tx.retrait.findUnique({
         where: { id: retraitId },
-        include: { wallet: { select: { id: true, soldeDisponible: true } } },
+        include: { wallet: { select: { id: true, utilisateurId: true, soldeDisponible: true } } },
       });
 
       if (!retrait) throw new NotFoundException('Retrait introuvable');
@@ -122,5 +133,19 @@ export class ProcessWithdrawalUseCase {
 
       return updated;
     }, { isolationLevel: 'Serializable' });
+
+    // Notification Push au propriétaire du wallet (après la TX)
+    if (result && retraitInfo) {
+      const isValide = input.action === 'validate';
+      const amount = Number(result.montant);
+      this.notifications.sendWalletPush(
+        retraitInfo.wallet.utilisateurId,
+        amount,
+        isValide,
+        isValide ? undefined : input.raisonRejet
+      ).catch((err) => this.logger.error(`Erreur Push retrait: ${err.message}`));
+    }
+
+    return result;
   }
 }

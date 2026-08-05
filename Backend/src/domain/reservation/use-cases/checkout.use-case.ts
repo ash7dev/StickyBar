@@ -9,6 +9,8 @@ import { StatutReservation } from '@prisma/client';
 import { PrismaService } from '../../../infrastructure/prisma/prisma.service';
 import { ReservationStateMachine } from '../reservation.state-machine';
 
+import { NotificationsService } from '../../../modules/notifications/notifications.service';
+
 @Injectable()
 export class CheckoutUseCase {
   private readonly logger = new Logger(CheckoutUseCase.name);
@@ -16,6 +18,7 @@ export class CheckoutUseCase {
   constructor(
     private readonly prisma: PrismaService,
     private readonly stateMachine: ReservationStateMachine,
+    private readonly notifications: NotificationsService,
   ) {}
 
   async execute(reservationId: string, userId: string) {
@@ -32,11 +35,11 @@ export class CheckoutUseCase {
     // Validation via State Machine
     this.stateMachine.transition(reservation.statut, StatutReservation.COMPLETED);
 
-    return await this.prisma.$transaction(async (tx) => {
+    const updated = await this.prisma.$transaction(async (tx) => {
       const now = new Date();
 
       // 1. Passage au statut COMPLETED
-      const updated = await tx.reservation.update({
+      const updatedRes = await tx.reservation.update({
         where: { id: reservationId },
         data: {
           statut: StatutReservation.COMPLETED,
@@ -58,9 +61,24 @@ export class CheckoutUseCase {
 
       this.logger.log(`Réservation [${reservationId}] clôturée manuellement par le propriétaire.`);
 
-      // TODO: Notification invitation avis aux deux parties
-      
-      return updated;
+      return updatedRes;
     });
+
+    // Envoi Push aux deux parties pour inviter à laisser un avis
+    this.notifications.sendReservationPush(
+      reservation.locataireId,
+      'Séjour terminé ! 🏁',
+      'Merci d\'avoir séjourné avec Klef ! Laissez un avis sur votre expérience.',
+      '/reservations'
+    ).catch((err) => this.logger.error(`Erreur Push checkout locataire: ${err.message}`));
+
+    this.notifications.sendReservationPush(
+      reservation.proprietaireId,
+      'Séjour clôturé ! 🏁',
+      'Le séjour à votre logement est maintenant clôturé.',
+      '/reservations'
+    ).catch((err) => this.logger.error(`Erreur Push checkout proprio: ${err.message}`));
+
+    return updated;
   }
 }

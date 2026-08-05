@@ -10,11 +10,16 @@ import { PrismaService } from '../../infrastructure/prisma/prisma.service';
 import { CreateReviewDto } from './dto/create-review.dto';
 import { StatutReservation, TypeAvis } from '@prisma/client';
 
+import { NotificationsService } from '../notifications/notifications.service';
+
 @Injectable()
 export class ReviewsService {
   private readonly logger = new Logger(ReviewsService.name);
 
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly notifications: NotificationsService,
+  ) {}
 
   /**
    * Créer un avis après un séjour
@@ -77,6 +82,15 @@ export class ReviewsService {
       await this.updateAverageRatings(cibleId, isLocataire ? reservation.logementId : null, typeAvis);
 
       this.logger.log(`Avis créé [${review.id}] par [${auteurId}] pour [${cibleId}]`);
+
+      // Notification Push à la personne évaluée
+      this.notifications.sendReviewPush(
+        cibleId,
+        dto.note,
+        reservation.logement.titre,
+        `/logements/${reservation.logementId}`
+      ).catch((err) => this.logger.error(`Erreur Push avis: ${err.message}`));
+
       return review;
     } catch (error: any) {
       if (error.code === 'P2002') {
