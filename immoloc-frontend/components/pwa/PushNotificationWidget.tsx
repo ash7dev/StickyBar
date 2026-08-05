@@ -55,30 +55,17 @@ export function PushNotificationWidget({ userId, variant = 'card' }: PushNotific
     setTestLoading(true);
     setFeedback(null);
 
-    let result = await sendTestPushNotification(
+    const result = await sendTestPushNotification(
       'Klef - Notification Test Instantanée 🚀',
       'Votre système de notifications Push Web PWA fonctionne parfaitement en temps réel !',
       '/explorer'
     );
-
-    // Si aucun appareil trouvé en base, on re-subscribe automatiquement puis on retente
-    if (!result.success && result.message?.includes('Aucun appareil')) {
-      const resubResult = await subscribeToPushNotifications(userId);
-      if (resubResult.success) {
-        result = await sendTestPushNotification(
-          'Klef - Notification Test Instantanée 🚀',
-          'Votre système de notifications Push Web PWA fonctionne parfaitement en temps réel !',
-          '/explorer'
-        );
-      }
-    }
-
     setTestLoading(false);
 
     if (result.success) {
       setFeedback({
         type: 'success',
-        message: 'Notification de test envoyée ! Regardez le haut de votre écran ou votre centre de notifications.',
+        message: `Notification envoyée ! Vérifiez votre centre de notifications.`,
       });
     } else {
       setFeedback({
