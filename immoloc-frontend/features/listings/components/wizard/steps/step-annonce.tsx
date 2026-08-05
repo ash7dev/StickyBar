@@ -3,7 +3,7 @@
 import { useId } from 'react';
 import { useForm, Controller } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { CircleDollarSign, Minus, Moon, Pen, Plus } from 'lucide-react';
+import { CircleDollarSign, Film, Minus, Moon, Pen, Plus, Video, Zap } from 'lucide-react';
 import { stepAnnonceSchema, type StepAnnonceInput } from '@/schemas/listing.schema';
 import { useListingFormStore } from '@/stores/listing-form.store';
 import { cn } from '@/lib/utils/cn';
@@ -246,6 +246,50 @@ export function StepAnnonce({ onNext, submitRef }: Props) {
             </div>
           );
         }} />
+      </SectionCard>
+
+      {/* -- Réservation Instantanée & Vidéo ---------------------------- */}
+      <SectionCard
+        icon={Zap}
+        title="Réservation Instantanée"
+        description="Recevez des réservations immédiates sans validation manuelle 24h"
+      >
+        <Controller
+          name="isInstantBooking"
+          control={control}
+          render={({ field }) => (
+            <div className="flex items-center justify-between rounded-inner border border-forest-500/20 bg-lime-400/[0.04] p-4">
+              <div className="space-y-1">
+                <div className="flex items-center gap-2">
+                  <span className="inline-flex items-center gap-1 rounded-pill bg-lime-400/20 px-2.5 py-0.5 text-[0.6875rem] font-bold text-forest-900">
+                    ⚡ Fast Booking
+                  </span>
+                  <p className="text-sm font-semibold text-forest-900">Activer la réservation instantanée</p>
+                </div>
+                <p className="text-xs text-foreground-muted">
+                  Les voyageurs ayant un profil vérifié pourront réserver directement. Vos réservations augmentent de +35%.
+                </p>
+              </div>
+              <button
+                type="button"
+                role="switch"
+                aria-checked={!!field.value}
+                onClick={() => field.onChange(!field.value)}
+                className={cn(
+                  'relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none',
+                  field.value ? 'bg-forest-800' : 'bg-neutral-300'
+                )}
+              >
+                <span
+                  className={cn(
+                    'pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out',
+                    field.value ? 'translate-x-5' : 'translate-x-0'
+                  )}
+                />
+              </button>
+            </div>
+          )}
+        />
       </SectionCard>
 
       <button type="submit" ref={submitRef} className="hidden" />

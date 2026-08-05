@@ -19,6 +19,7 @@ export interface CreateReservationInput {
   dateDebut: Date;
   dateFin: Date;
   nbPersonnes: number;
+  typePaiement?: string;
   fournisseur?: FournisseurPaiement;
 }
 
@@ -141,6 +142,13 @@ export class CreateReservationUseCase {
       }
       const delaiConfirmation = new Date(now.getTime() + delaiMs);
 
+      const acomptePct = logement.acomptePourcentage || 30;
+      const isDeposit = input.typePaiement === 'DEPOSIT' && acomptePct < 100;
+      const typePaiement = isDeposit ? 'DEPOSIT' : 'FULL';
+      const totalLocataireNum = Number(breakdown.totalLocataire);
+      const montantAcompte = isDeposit ? Math.round(totalLocataireNum * (acomptePct / 100)) : totalLocataireNum;
+      const montantSoldeRestant = isDeposit ? totalLocataireNum - montantAcompte : 0;
+
       const reservation = await tx.reservation.create({
         data: {
           logementId,
@@ -159,6 +167,9 @@ export class CreateReservationUseCase {
           montantCommission: breakdown.montantCommission,
           totalLocataire: breakdown.totalLocataire,
           netProprietaire: breakdown.netProprietaire,
+          typePaiement,
+          montantAcompte,
+          montantSoldeRestant,
           statut: StatutReservation.PAID,
           delaiConfirmation,
         },
@@ -198,7 +209,7 @@ export class CreateReservationUseCase {
       await tx.paiement.create({
         data: {
           reservationId: reservation.id,
-          montant: breakdown.totalLocataire,
+          montant: reservation.montantAcompte ?? breakdown.totalLocataire,
           fournisseur,
           statut: StatutPaiement.CONFIRME,
         },

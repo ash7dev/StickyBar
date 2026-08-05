@@ -5,7 +5,7 @@ import Image from 'next/image';
 import Link from 'next/link';
 import {
   Calendar, Edit3, ExternalLink, Eye, ImageOff, MapPin,
-  MoreVertical, PauseCircle, PlayCircle,
+  MoreVertical, PauseCircle, PlayCircle, Zap,
 } from 'lucide-react';
 import { cn } from '@/lib/utils/cn';
 
@@ -23,6 +23,7 @@ export interface OwnerListing {
   prixBase?: number | string;
   typeLogement?: string;
   capacity?: number;
+  derniereMinuteActive?: boolean;
   photos?: Array<{ url: string } | string>;
   createdAt?: string;
 }
@@ -31,6 +32,7 @@ interface Props {
   listing: OwnerListing;
   viewMode?: 'list' | 'grid';
   onToggleStatus?: (id: string, currentStatus: string) => void;
+  onToggleDerniereMinute?: (id: string, active: boolean) => void;
 }
 
 /* Statuts pensés pour un fond CLAIR : ces cartes vivent sur le canvas, pas
@@ -45,7 +47,7 @@ const STATUT_CONFIG: Record<string, { label: string; cls: string; dot: string }>
   REJECTED: { label: 'Rejetée', cls: 'bg-error-50 text-error-700', dot: 'bg-error-500' },
 };
 
-export function OwnerListingCard({ listing, viewMode = 'grid', onToggleStatus }: Props) {
+export function OwnerListingCard({ listing, viewMode = 'grid', onToggleStatus, onToggleDerniereMinute }: Props) {
   const [menuOpen, setMenuOpen] = useState(false);
   const rawPrice = listing.prixParNuit ?? listing.prixNuit ?? listing.prixBase ?? 0;
   const num = Number(rawPrice);
@@ -89,6 +91,12 @@ export function OwnerListingCard({ listing, viewMode = 'grid', onToggleStatus }:
           <div className="min-w-0 flex-1 space-y-1.5">
             <div className="flex flex-wrap items-center gap-2">
               {Status}
+              {listing.derniereMinuteActive && (
+                <span className="inline-flex items-center gap-1 rounded-pill bg-amber-400/20 border border-amber-500/30 px-2 py-0.5 text-[0.6875rem] font-bold text-amber-700">
+                  <Zap className="h-3 w-3 fill-amber-500 text-amber-500" />
+                  -15% Dernière Min.
+                </span>
+              )}
               {listing.typeLogement && (
                 <span className="text-xs font-semibold text-foreground-faint">{listing.typeLogement}</span>
               )}
@@ -120,7 +128,7 @@ export function OwnerListingCard({ listing, viewMode = 'grid', onToggleStatus }:
               <Edit3 className="h-3.5 w-3.5 text-forest-950 stroke-[2px]" aria-hidden="true" />
               Modifier
             </Link>
-            <ActionsMenu listing={listing} onToggleStatus={onToggleStatus} onOpenChange={setMenuOpen} />
+            <ActionsMenu listing={listing} onToggleStatus={onToggleStatus} onToggleDerniereMinute={onToggleDerniereMinute} onOpenChange={setMenuOpen} />
           </div>
         </div>
       </article>
@@ -148,15 +156,23 @@ export function OwnerListingCard({ listing, viewMode = 'grid', onToggleStatus }:
           </span>
         )}
 
-        <span className="glass absolute left-3 top-3 !rounded-pill !shadow-none">
-          <span className={cn('inline-flex items-center gap-1.5 rounded-pill px-2.5 py-1 text-[0.6875rem] font-semibold', cfg.cls)}>
-            <span className={cn('h-1.5 w-1.5 rounded-pill', cfg.dot)} />
-            {cfg.label}
+        <div className="absolute left-3 top-3 flex flex-col gap-1 z-20">
+          <span className="glass !rounded-pill !shadow-none">
+            <span className={cn('inline-flex items-center gap-1.5 rounded-pill px-2.5 py-1 text-[0.6875rem] font-semibold', cfg.cls)}>
+              <span className={cn('h-1.5 w-1.5 rounded-pill', cfg.dot)} />
+              {cfg.label}
+            </span>
           </span>
-        </span>
+          {listing.derniereMinuteActive && (
+            <span className="inline-flex items-center gap-1 rounded-pill bg-amber-500 text-slate-950 px-2.5 py-0.5 text-[0.65rem] font-black shadow-sm">
+              <Zap className="h-3 w-3 fill-slate-950" />
+              -15% Dernière Min.
+            </span>
+          )}
+        </div>
 
         <div className="absolute right-3 top-3 z-30">
-          <ActionsMenu listing={listing} onToggleStatus={onToggleStatus} onPhoto onOpenChange={setMenuOpen} />
+          <ActionsMenu listing={listing} onToggleStatus={onToggleStatus} onToggleDerniereMinute={onToggleDerniereMinute} onPhoto onOpenChange={setMenuOpen} />
         </div>
       </div>
 
@@ -210,10 +226,11 @@ function Thumb({ photo, className }: { photo?: string; className?: string }) {
 /* ── Menu d'actions ─────────────────────────────────────────────────────── */
 
 function ActionsMenu({
-  listing, onToggleStatus, onPhoto = false, onOpenChange,
+  listing, onToggleStatus, onToggleDerniereMinute, onPhoto = false, onOpenChange,
 }: {
   listing: OwnerListing;
   onToggleStatus?: (id: string, currentStatus: string) => void;
+  onToggleDerniereMinute?: (id: string, active: boolean) => void;
   onPhoto?: boolean;
   onOpenChange?: (open: boolean) => void;
 }) {
@@ -223,12 +240,12 @@ function ActionsMenu({
   const menuId = useId();
 
   const toggleOpen = (val?: boolean) => {
-    setOpen((prev) => {
-      const next = val ?? !prev;
-      onOpenChange?.(next);
-      return next;
-    });
+    setOpen((prev) => (val !== undefined ? val : !prev));
   };
+
+  useEffect(() => {
+    onOpenChange?.(open);
+  }, [open, onOpenChange]);
 
   useEffect(() => {
     if (!open) return;
@@ -246,7 +263,7 @@ function ActionsMenu({
     };
   }, [open]);
 
-  const item = 'flex w-full items-center gap-2.5 rounded-inner px-3 py-2.5 text-sm text-foreground transition-colors hover:bg-neutral-100';
+  const item = 'flex w-full items-center gap-2.5 rounded-inner px-3 py-2.5 text-sm text-foreground transition-colors hover:bg-neutral-100 cursor-pointer';
 
   return (
     <div ref={ref} className={cn("relative shrink-0", open ? "z-50" : "z-20")}>
@@ -259,9 +276,7 @@ function ActionsMenu({
         aria-haspopup="menu"
         aria-controls={open ? menuId : undefined}
         className={cn(
-          /* w-8.5 h-8.5 n'existe pas dans Tailwind : l'échelle n'a pas de 8.5,
-             donc le bouton n'avait aucune taille définie. */
-          'grid h-9 w-9 place-items-center rounded-pill border transition-colors duration-150',
+          'grid h-9 w-9 place-items-center rounded-pill border transition-colors duration-150 cursor-pointer',
           onPhoto
             ? 'border-white/60 bg-white/85 text-forest-800 backdrop-blur-md hover:bg-white'
             : 'border-border bg-background-card text-foreground-muted hover:bg-neutral-100 hover:text-forest-700',
@@ -271,13 +286,10 @@ function ActionsMenu({
       </button>
 
       {open && (
-        /* Le menu était en forest-950 sur des cartes blanches : un panneau
-           noir surgissant d'une interface claire. Il suit maintenant la
-           surface de la page. */
         <div
           id={menuId}
           role="menu"
-          className="absolute right-0 top-full z-50 mt-2 w-56 space-y-0.5 overflow-hidden rounded-card border border-border bg-background-card p-1.5 shadow-lg"
+          className="absolute right-0 top-full z-50 mt-2 w-60 space-y-0.5 overflow-hidden rounded-card border border-border bg-background-card p-1.5 shadow-lg"
         >
           <Link href={`/dashboard/annonces/${listing.id}/modifier`} role="menuitem" className={item}>
             <Edit3 className="h-4 w-4 text-forest-600" aria-hidden="true" />
@@ -300,6 +312,27 @@ function ActionsMenu({
             <Calendar className="h-4 w-4 text-forest-600" aria-hidden="true" />
             Réservations
           </Link>
+
+          {onToggleDerniereMinute && (
+            <>
+              <div className="my-1 h-px bg-border" />
+              <button
+                type="button"
+                role="menuitem"
+                onClick={(e) => {
+                  e.preventDefault(); e.stopPropagation();
+                  setOpen(false);
+                  onToggleDerniereMinute(listing.id, !listing.derniereMinuteActive);
+                }}
+                className={cn(item, 'text-left')}
+              >
+                <Zap className={cn('h-4 w-4 shrink-0', listing.derniereMinuteActive ? 'text-amber-500 fill-amber-400' : 'text-foreground-muted')} />
+                <span className="font-semibold text-xs">
+                  {listing.derniereMinuteActive ? '⚡ Desactiver -15% Dernière Min.' : '⚡ Activer -15% Dernière Min.'}
+                </span>
+              </button>
+            </>
+          )}
 
           {onToggleStatus && (
             <>

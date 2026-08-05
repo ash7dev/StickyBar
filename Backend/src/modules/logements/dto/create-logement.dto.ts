@@ -2,6 +2,7 @@ import {
   IsString,
   IsEnum,
   IsNumber,
+  IsBoolean,
   IsInt,
   IsOptional,
   IsArray,
@@ -61,6 +62,18 @@ export class CreateLogementDto {
   @IsInt()
   @Min(1)
   personnesBase!: number;
+
+  @ApiPropertyOptional({ minimum: 10, maximum: 100, default: 30, description: "Pourcentage d'acompte à la réservation" })
+  @IsOptional()
+  @IsInt()
+  @Min(10)
+  @Max(100)
+  acomptePourcentage?: number;
+
+  @ApiPropertyOptional({ description: "Activer les réductions Dernière Minute (-15% si réservation sous 48h)" })
+  @IsOptional()
+  @IsBoolean()
+  derniereMinuteActive?: boolean;
 
   @ApiPropertyOptional({ minimum: 1, description: 'Surface du logement' })
   @IsOptional()
@@ -129,6 +142,39 @@ export class CreateLogementDto {
   @IsString()
   @MaxLength(1000)
   instructionsAcces?: string;
+
+  @ApiPropertyOptional({ maxLength: 100, description: "Nom du réseau Wi-Fi" })
+  @IsOptional()
+  @IsString()
+  @MaxLength(100)
+  nomReseauWifi?: string;
+
+  @ApiPropertyOptional({ maxLength: 100, description: "Mot de passe Wi-Fi" })
+  @IsOptional()
+  @IsString()
+  @MaxLength(100)
+  codeWifi?: string;
+
+  @ApiPropertyOptional({ maxLength: 500, description: "Instructions Digicode ou accès clés" })
+  @IsOptional()
+  @IsString()
+  @MaxLength(500)
+  instructionsDigicode?: string;
+
+  @ApiPropertyOptional({ description: "Activer la réservation instantanée sans validation manuelle" })
+  @IsOptional()
+  @IsBoolean()
+  isInstantBooking?: boolean;
+
+  @ApiPropertyOptional({ description: "URL de la vidéo de présentation (Reels 30s)" })
+  @IsOptional()
+  @IsString()
+  videoUrl?: string;
+
+  @ApiPropertyOptional({ description: "Public ID Cloudinary de la vidéo de présentation" })
+  @IsOptional()
+  @IsString()
+  videoPublicId?: string;
 
   @ApiPropertyOptional({ type: [String] })
   @IsOptional()

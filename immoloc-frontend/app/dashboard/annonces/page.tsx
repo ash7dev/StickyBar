@@ -41,6 +41,18 @@ export default function AnnoncesPage() {
     },
   });
 
+  const toggleDerniereMinuteMutation = useMutation({
+    mutationFn: async ({ id, active }: { id: string; active: boolean }) => {
+      return nestFetch(NEST_API.LISTINGS.UPDATE(id), {
+        method: 'PATCH',
+        body: JSON.stringify({ derniereMinuteActive: active }),
+      });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['listings', 'mine'] });
+    },
+  });
+
   const filtered = listings?.filter((l) =>
     activeFilter === 'ALL' ? true : l.statut === activeFilter
   );
@@ -174,6 +186,7 @@ export default function AnnoncesPage() {
               listing={listing}
               viewMode={viewMode}
               onToggleStatus={(id, currentStatus) => toggleStatusMutation.mutate({ id, currentStatus })}
+              onToggleDerniereMinute={(id, active) => toggleDerniereMinuteMutation.mutate({ id, active })}
             />
           ))}
         </div>

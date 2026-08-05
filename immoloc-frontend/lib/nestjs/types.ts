@@ -179,6 +179,7 @@ export interface Listing {
   statut: ListingStatus;
   prixBase: number;
   nuitesMinimum: number;
+  acomptePourcentage?: number;
   ageMin: number | null;
   surface: number | null;
   nombreChambres: number | null;
@@ -189,6 +190,12 @@ export interface Listing {
   ville: string;
   quartier: string | null;
   adresse: string | null;
+  latitude?: number | null;
+  longitude?: number | null;
+  distanceKm?: number | null;
+  isInstantBooking?: boolean;
+  derniereMinuteActive?: boolean;
+  videoUrl?: string | null;
   reglesMaison: string | null;
   photos: ListingPhoto[];
   equipements: Equipement[];
@@ -225,6 +232,9 @@ export interface CardListing {
   note?:         number | null;
   totalSejours?: number | null;
   createdAt?:    string | null;
+  isInstantBooking?: boolean;
+  derniereMinuteActive?: boolean;
+  videoUrl?:     string | null;
   photos:        { url: string; estPrincipale?: boolean; categorie?: string }[];
 }
 
@@ -265,6 +275,9 @@ export interface SearchListingsParams {
   prixMin?: number;
   prixMax?: number;
   capaciteMin?: number;
+  lat?: number;
+  lng?: number;
+  radiusKm?: number;
   page?: number;
   limit?: number;
 }
@@ -369,17 +382,23 @@ export interface ListingDetail {
   ville: string;
   quartier: string | null;
   adresse: string;
+  latitude?: number | null;
+  longitude?: number | null;
 
   // Tarification
   prixBase: number;
   nuitesMinimum: number;
+  acomptePourcentage?: number;
   tarifsPersonnes: TarifPersonne[];
   tarifsNuits: TarifNuit[];
 
-  // Conditions
+  // Conditions & Livret d'accueil digital
   ageMin: number | null;
   reglesMaison: string | null;
   instructionsAcces: string | null;
+  nomReseauWifi?: string | null;
+  codeWifi?: string | null;
+  instructionsDigicode?: string | null;
 
   // Statut & modération
   rejectionReason: string | null;
@@ -391,6 +410,10 @@ export interface ListingDetail {
   totalSejours: number;
 
   // Médias & équipements
+  isInstantBooking?: boolean;
+  derniereMinuteActive?: boolean;
+  videoUrl?: string | null;
+  videoPublicId?: string | null;
   photos: ListingPhoto[];
   equipements: Equipement[];
 

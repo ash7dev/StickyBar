@@ -6,7 +6,7 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import {
   Users, Moon, ShieldCheck, Loader2, ChevronRight,
-  CalendarDays, Lock, Info, CheckCircle2, Minus, Plus, AlertCircle,
+  CalendarDays, Lock, Info, CheckCircle2, Minus, Plus, AlertCircle, Zap,
 } from 'lucide-react';
 import { listingsApi } from '@/lib/nestjs';
 import type { DateRange } from 'react-day-picker';
@@ -25,6 +25,8 @@ interface Props {
   capaciteMax: number;
   ageMin?: number | null;
   personnesBase?: number;
+  acomptePourcentage?: number;
+  derniereMinuteActive?: boolean;
   tarifsPersonnes?: TarifPersonne[];
   tarifsNuits?: TarifNuit[];
   disabledDates?: Date[];
@@ -37,6 +39,8 @@ export function PricePreviewWidget({
   capaciteMax,
   ageMin,
   personnesBase,
+  acomptePourcentage = 30,
+  derniereMinuteActive = false,
   tarifsPersonnes,
   tarifsNuits,
   disabledDates = [],
@@ -48,6 +52,7 @@ export function PricePreviewWidget({
 
   const [nbPersonnes, setNbPersonnes] = useState(1);
   const [range, setRange] = useState<DateRange | undefined>();
+  const [typePaiement, setTypePaiement] = useState<'DEPOSIT' | 'FULL'>('DEPOSIT');
   const [preview, setPreview] = useState<import('@/lib/nestjs').PricePreviewResponse | null>(null);
   const [isPending, startTransition] = useTransition();
   const [cguAccepted, setCguAccepted] = useState(false);
@@ -99,6 +104,7 @@ export function PricePreviewWidget({
       dateDebut: range.from.toISOString().split('T')[0],
       dateFin:   range.to.toISOString().split('T')[0],
       personnes: String(nbPersonnes),
+      typePaiement,
     });
     router.push(`/reserver?${params.toString()}`);
   }
@@ -186,6 +192,12 @@ export function PricePreviewWidget({
               {tarifsNuits && tarifsNuits.length > 1 && (
                 <span className="text-[9px] font-black text-success-700 bg-success-50 border border-success-500/30 px-2 py-0.5 rounded-md uppercase tracking-wide">
                   Tarif dégressif
+                </span>
+              )}
+              {derniereMinuteActive && (
+                <span className="text-[9px] font-black text-amber-800 bg-amber-100 border border-amber-400/40 px-2 py-0.5 rounded-md uppercase tracking-wide flex items-center gap-1">
+                  <Zap className="w-2.5 h-2.5 fill-amber-600 text-amber-600" />
+                  -15% Dernière Min. (sous 48h)
                 </span>
               )}
             </div>
@@ -305,7 +317,7 @@ export function PricePreviewWidget({
 
             {/* Total */}
             <div className="border-t border-forest-800 pt-3 flex items-center justify-between">
-              <span className="font-black text-white">Total estimé</span>
+              <span className="font-black text-white">Total du séjour</span>
               <div className="flex items-center gap-2">
                 {isPending && <Loader2 className="w-3.5 h-3.5 animate-spin text-lime-400" />}
                 <span className="font-black text-white text-xl tracking-tight">
@@ -314,7 +326,53 @@ export function PricePreviewWidget({
               </div>
             </div>
 
-            <p className="text-[10px] font-medium text-forest-200 text-right">Aucune surprise · Prix fixe garanti</p>
+            {/* Choix interactif Acompte vs Totalité */}
+            {acomptePourcentage < 100 && (
+              <div className="space-y-2 pt-1">
+                <span className="text-[10px] font-extrabold uppercase tracking-wider text-forest-200 block">
+                  Choisir votre mode de règlement
+                </span>
+                <div className="grid grid-cols-2 gap-2">
+                  <button
+                    type="button"
+                    onClick={() => setTypePaiement('DEPOSIT')}
+                    className={`p-2.5 rounded-xl border text-left transition-all cursor-pointer ${
+                      typePaiement === 'DEPOSIT'
+                        ? 'bg-lime-400 text-forest-950 border-lime-400 shadow-md font-bold'
+                        : 'bg-forest-900/60 text-forest-200 border-forest-800 hover:border-forest-700'
+                    }`}
+                  >
+                    <div className="text-[10px] uppercase font-black tracking-wider opacity-80">Acompte {acomptePourcentage}%</div>
+                    <div className="text-sm font-black leading-tight mt-0.5">
+                      {fmt(Math.round(estimatedTotal * (acomptePourcentage / 100)))} FCFA
+                    </div>
+                    <div className="text-[9px] opacity-90 mt-1 font-medium">Solde à l&apos;arrivée</div>
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => setTypePaiement('FULL')}
+                    className={`p-2.5 rounded-xl border text-left transition-all cursor-pointer ${
+                      typePaiement === 'FULL'
+                        ? 'bg-lime-400 text-forest-950 border-lime-400 shadow-md font-bold'
+                        : 'bg-forest-900/60 text-forest-200 border-forest-800 hover:border-forest-700'
+                    }`}
+                  >
+                    <div className="text-[10px] uppercase font-black tracking-wider opacity-80">Totalité 100%</div>
+                    <div className="text-sm font-black leading-tight mt-0.5">
+                      {fmt(estimatedTotal)} FCFA
+                    </div>
+                    <div className="text-[9px] opacity-90 mt-1 font-medium">Rien sur place</div>
+                  </button>
+                </div>
+              </div>
+            )}
+
+            <p className="text-[10px] font-medium text-forest-200 text-right">
+              {typePaiement === 'DEPOSIT' && acomptePourcentage < 100
+                ? `Montant à débiter : ${fmt(Math.round(estimatedTotal * (acomptePourcentage / 100)))} FCFA`
+                : `Montant à débiter : ${fmt(estimatedTotal)} FCFA`}
+            </p>
           </div>
         )}
 

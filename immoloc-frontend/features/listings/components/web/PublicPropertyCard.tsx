@@ -45,11 +45,21 @@ export function PublicPropertyCard({ listing }: Props) {
         {/* Overlay gradient pour meilleure lisibilité des badges */}
         <div className="absolute inset-0 bg-gradient-to-t from-overlay-light via-transparent to-overlay-light/30" />
 
-        {/* Type badge */}
-        <div className="absolute top-4 left-4 z-10">
+        {/* Type & Instant & Last Minute badges */}
+        <div className="absolute top-4 left-4 z-10 flex flex-col gap-1.5 items-start">
           <span className="px-3.5 py-1.5 bg-background-card/95 backdrop-blur-sm rounded-full text-[11px] font-black text-foreground uppercase tracking-wider shadow-lg">
             {TYPE_LABELS[listing.type] ?? listing.type}
           </span>
+          {listing.derniereMinuteActive && (
+            <span className="px-3 py-1 bg-amber-400 text-slate-950 rounded-full text-[10px] font-black uppercase tracking-wider shadow-lg flex items-center gap-1">
+              ⚡ -15% Dernière Min.
+            </span>
+          )}
+          {listing.isInstantBooking && (
+            <span className="px-3 py-1 bg-lime-400 text-forest-950 backdrop-blur-sm rounded-full text-[10px] font-black uppercase tracking-wider shadow-lg flex items-center gap-1">
+              ⚡ Instantané
+            </span>
+          )}
         </div>
 
         {/* Rating */}

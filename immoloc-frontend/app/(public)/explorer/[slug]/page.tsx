@@ -175,6 +175,8 @@ async function ListingDetailPage({ slug }: { slug: string }) {
                   capaciteMax={listing.capaciteMax}
                   ageMin={listing.ageMin}
                   personnesBase={listing.personnesBase}
+                  acomptePourcentage={listing.acomptePourcentage}
+                  derniereMinuteActive={listing.derniereMinuteActive}
                   tarifsPersonnes={listing.tarifsPersonnes}
                   tarifsNuits={listing.tarifsNuits}
                   disabledDates={disabledDates}

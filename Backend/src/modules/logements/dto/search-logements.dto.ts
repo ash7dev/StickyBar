@@ -1,4 +1,4 @@
-import { IsDateString, IsEnum, IsInt, IsOptional, IsString, Max, Min } from 'class-validator';
+import { IsDateString, IsEnum, IsInt, IsNumber, IsOptional, IsString, Max, Min } from 'class-validator';
 import { Type } from 'class-transformer';
 import { ApiPropertyOptional } from '@nestjs/swagger';
 import { TypeLogement } from '@prisma/client';
@@ -8,6 +8,26 @@ export class SearchLogementsDto {
   @IsOptional()
   @IsString()
   ville?: string;
+
+  @ApiPropertyOptional({ example: 14.7167, description: 'Latitude GPS pour recherche à proximité' })
+  @IsOptional()
+  @Type(() => Number)
+  @IsNumber()
+  lat?: number;
+
+  @ApiPropertyOptional({ example: -17.4677, description: 'Longitude GPS pour recherche à proximité' })
+  @IsOptional()
+  @Type(() => Number)
+  @IsNumber()
+  lng?: number;
+
+  @ApiPropertyOptional({ minimum: 1, maximum: 100, default: 10, description: 'Rayon de recherche en km' })
+  @IsOptional()
+  @Type(() => Number)
+  @IsNumber()
+  @Min(1)
+  @Max(100)
+  radiusKm?: number;
 
   @ApiPropertyOptional({ example: '2026-08-01' })
   @IsOptional()
@@ -54,3 +74,4 @@ export class SearchLogementsDto {
   @Max(50)
   limit?: number;
 }
+

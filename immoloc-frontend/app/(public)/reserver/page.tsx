@@ -31,6 +31,7 @@ interface Props {
     dateDebut?: string;
     dateFin?: string;
     personnes?: string;
+    typePaiement?: string;
   }>;
 }
 
@@ -44,6 +45,7 @@ export default function ReserverPage({ searchParams }: Props) {
   const initialDateDebut = sp.dateDebut ?? '';
   const initialDateFin = sp.dateFin ?? '';
   const initialNbPersonnes = parseInt(sp.personnes ?? '1', 10);
+  const initialTypePaiement = (sp.typePaiement as 'DEPOSIT' | 'FULL') || 'DEPOSIT';
 
   // Sur mobile : Étape 1/2 ou 2/2. Sur Desktop : passage direct à la finalisation (Step 2)
   const [step, setStep] = useState<1 | 2>(1);
@@ -53,6 +55,7 @@ export default function ReserverPage({ searchParams }: Props) {
   const [nbPersonnes, setNbPersonnes] = useState(isNaN(initialNbPersonnes) ? 1 : initialNbPersonnes);
   const [showCalendarModal, setShowCalendarModal] = useState(false);
 
+  const [typePaiement, setTypePaiement] = useState<'DEPOSIT' | 'FULL'>(initialTypePaiement);
   const [fournisseur, setFournisseur] = useState<Fournisseur>('WAVE');
   const [telephone, setTelephone] = useState('');
   const [cguAccepted, setCguAccepted] = useState(true); // Pré-coché depuis desktop si déjà validé dans PricePreviewWidget
@@ -516,17 +519,22 @@ export default function ReserverPage({ searchParams }: Props) {
             {/* Total Montant */}
             <div className="bg-forest-900 text-white rounded-card p-6 shadow-md space-y-3">
               <div className="flex items-center justify-between text-xs text-forest-200">
-                <span>Montant Total à régler</span>
+                <span>{typePaiement === 'DEPOSIT' && (listing?.acomptePourcentage ?? 30) < 100 ? `Acompte à débiter aujourd'hui (${listing?.acomptePourcentage ?? 30}%)` : 'Montant Total à débiter'}</span>
                 <span className="px-2.5 py-0.5 rounded-pill bg-forest-800 text-lime-300 font-semibold">
                   {nights} nuit{nights > 1 ? 's' : ''} · {nbPersonnes} pers.
                 </span>
               </div>
               <div className="font-display text-3xl font-extrabold text-lime-400">
-                {fmt(estimatedTotal)} FCFA
+                {fmt(typePaiement === 'DEPOSIT' && (listing?.acomptePourcentage ?? 30) < 100 ? Math.round(estimatedTotal * ((listing?.acomptePourcentage ?? 30) / 100)) : estimatedTotal)} FCFA
               </div>
-              <p className="text-xs text-forest-200 flex items-center gap-1.5 pt-1">
+              {typePaiement === 'DEPOSIT' && (listing?.acomptePourcentage ?? 30) < 100 && (
+                <p className="text-xs font-semibold text-lime-300">
+                  + Solde de {fmt(Math.round(estimatedTotal * ((100 - (listing?.acomptePourcentage ?? 30)) / 100)))} FCFA à régler à l&apos;arrivée (Total : {fmt(estimatedTotal)} FCFA)
+                </p>
+              )}
+              <p className="text-xs text-forest-200 flex items-center gap-1.5 pt-1 border-t border-forest-800">
                 <ShieldCheck className="w-4 h-4 text-lime-400 shrink-0" />
-                <span>Bloqué par séquestre Klef jusqu'à la remise des clés</span>
+                <span>Bloqué par séquestre Klef jusqu&apos;à la remise des clés</span>
               </p>
             </div>
           </div>
@@ -535,6 +543,63 @@ export default function ReserverPage({ searchParams }: Props) {
           <div className="lg:col-span-7 space-y-6">
             <div className="bg-background-card rounded-card border border-border p-6 shadow-sm space-y-5">
               <h3 className="font-display text-lg font-bold text-forest-900 border-b border-border pb-3">
+                Option de Paiement
+              </h3>
+
+              {/* Sélection Acompte vs Totalité */}
+              {((listing?.acomptePourcentage ?? 30) < 100) && (
+                <div className="grid gap-3 sm:grid-cols-2">
+                  <button
+                    type="button"
+                    onClick={() => setTypePaiement('DEPOSIT')}
+                    className={cn(
+                      'flex flex-col justify-between p-4 rounded-inner border-2 transition-all text-left cursor-pointer',
+                      typePaiement === 'DEPOSIT'
+                        ? 'border-forest-600 bg-forest-950 text-white shadow-sm'
+                        : 'border-border bg-background-alt text-foreground hover:border-neutral-300'
+                    )}
+                  >
+                    <div>
+                      <span className="text-[10px] font-extrabold uppercase tracking-wider text-lime-400 block mb-1">
+                        RECOMMANDÉ
+                      </span>
+                      <p className="text-sm font-bold">Payer {listing?.acomptePourcentage ?? 30}% d&apos;acompte</p>
+                      <p className={cn('text-xs mt-0.5', typePaiement === 'DEPOSIT' ? 'text-forest-200' : 'text-foreground-muted')}>
+                        {fmt(Math.round(estimatedTotal * ((listing?.acomptePourcentage ?? 30) / 100)))} FCFA maintenant
+                      </p>
+                    </div>
+                    <p className={cn('text-[11px] mt-3 font-semibold', typePaiement === 'DEPOSIT' ? 'text-lime-300' : 'text-forest-700')}>
+                      Solde de {fmt(Math.round(estimatedTotal * ((100 - (listing?.acomptePourcentage ?? 30)) / 100)))} FCFA à l&apos;arrivée
+                    </p>
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => setTypePaiement('FULL')}
+                    className={cn(
+                      'flex flex-col justify-between p-4 rounded-inner border-2 transition-all text-left cursor-pointer',
+                      typePaiement === 'FULL'
+                        ? 'border-forest-600 bg-forest-950 text-white shadow-sm'
+                        : 'border-border bg-background-alt text-foreground hover:border-neutral-300'
+                    )}
+                  >
+                    <div>
+                      <span className="text-[10px] font-extrabold uppercase tracking-wider text-forest-200 block mb-1">
+                        TOTALITÉ
+                      </span>
+                      <p className="text-sm font-bold">Payer 100% de la totalité</p>
+                      <p className={cn('text-xs mt-0.5', typePaiement === 'FULL' ? 'text-forest-200' : 'text-foreground-muted')}>
+                        {fmt(estimatedTotal)} FCFA maintenant
+                      </p>
+                    </div>
+                    <p className={cn('text-[11px] mt-3 font-semibold', typePaiement === 'FULL' ? 'text-lime-300' : 'text-foreground-muted')}>
+                      Rien à régler sur place
+                    </p>
+                  </button>
+                </div>
+              )}
+
+              <h3 className="font-display text-sm font-bold text-forest-900 pt-2 border-t border-border">
                 Moyen de paiement mobile
               </h3>
 
@@ -664,7 +729,9 @@ export default function ReserverPage({ searchParams }: Props) {
                 {loading ? (
                   <><Loader2 className="w-5 h-5 animate-spin" /> Traitement en cours…</>
                 ) : (
-                  <>Payer {fmt(estimatedTotal)} FCFA avec {fournisseur === 'WAVE' ? 'Wave' : 'Orange Money'}</>
+                  <>
+                    Payer {fmt(typePaiement === 'DEPOSIT' && (listing?.acomptePourcentage ?? 30) < 100 ? Math.round(estimatedTotal * ((listing?.acomptePourcentage ?? 30) / 100)) : estimatedTotal)} FCFA avec {fournisseur === 'WAVE' ? 'Wave' : 'Orange Money'}
+                  </>
                 )}
               </button>
             </div>

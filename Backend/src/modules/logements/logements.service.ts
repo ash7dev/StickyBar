@@ -40,10 +40,26 @@ export class LogementsService {
 
   // ── Recherche publique avec cache Redis ────────────────────────────────────
 
+  private calculateHaversineDistanceKm(lat1: number, lon1: number, lat2: number, lon2: number): number {
+    const R = 6371; // Rayon de la Terre en km
+    const dLat = ((lat2 - lat1) * Math.PI) / 180;
+    const dLon = ((lon2 - lon1) * Math.PI) / 180;
+    const a =
+      Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+      Math.cos((lat1 * Math.PI) / 180) *
+        Math.cos((lat2 * Math.PI) / 180) *
+        Math.sin(dLon / 2) *
+        Math.sin(dLon / 2);
+    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+    return Math.round(R * c * 10) / 10;
+  }
+
   async search(dto: SearchLogementsDto) {
     const page = dto.page ?? 1;
     const limit = dto.limit ?? 12;
     const nbPersonnes = dto.nbPersonnes ?? 1;
+    const hasGeo = dto.lat !== undefined && dto.lng !== undefined;
+    const radiusKm = dto.radiusKm ?? 10;
 
     const version = await this.redis.get('listings:search:version') ?? '0';
     const cacheKey = this.buildSearchCacheKey({ ...dto, nbPersonnes, page, _v: version });
@@ -92,6 +108,8 @@ export class LogementsService {
       type: true,
       ville: true,
       quartier: true,
+      latitude: true,
+      longitude: true,
       prixBase: true,
       personnesBase: true,
       capaciteMax: true,
@@ -116,20 +134,49 @@ export class LogementsService {
       },
     } satisfies Prisma.LogementSelect;
 
-    const total = await this.prisma.logement.count({ where });
-    const logements = await this.prisma.logement.findMany({
-      where,
-      select,
-      orderBy: { note: 'desc' },
-      skip: (page - 1) * limit,
-      take: limit,
-    });
+    let total: number;
+    let paginatedLogements: any[];
 
-    const results = logements.map((l) => {
+    if (hasGeo && dto.lat !== undefined && dto.lng !== undefined) {
+      const allLogements = await this.prisma.logement.findMany({
+        where,
+        select,
+      });
+
+      const withDistance = allLogements
+        .map((l) => {
+          let distanceKm: number | null = null;
+          if (l.latitude !== null && l.longitude !== null) {
+            distanceKm = this.calculateHaversineDistanceKm(
+              dto.lat!,
+              dto.lng!,
+              Number(l.latitude),
+              Number(l.longitude),
+            );
+          }
+          return { ...l, distanceKm };
+        })
+        .filter((l) => l.distanceKm !== null && l.distanceKm <= radiusKm)
+        .sort((a, b) => (a.distanceKm as number) - (b.distanceKm as number));
+
+      total = withDistance.length;
+      paginatedLogements = withDistance.slice((page - 1) * limit, page * limit);
+    } else {
+      total = await this.prisma.logement.count({ where });
+      paginatedLogements = await this.prisma.logement.findMany({
+        where,
+        select,
+        orderBy: { note: 'desc' },
+        skip: (page - 1) * limit,
+        take: limit,
+      });
+    }
+
+    const results = paginatedLogements.map((l) => {
       let supplementPersonnes = 0;
       if (nbPersonnes > l.personnesBase) {
         const tarif = l.tarifsPersonnes.find(
-          (t) => nbPersonnes >= t.personnesMin && nbPersonnes <= t.personnesMax,
+          (t: any) => nbPersonnes >= t.personnesMin && nbPersonnes <= t.personnesMax,
         );
         supplementPersonnes = tarif ? Number(tarif.supplement) : 0;
       }
@@ -140,6 +187,9 @@ export class LogementsService {
         type: l.type,
         ville: l.ville,
         quartier: l.quartier,
+        latitude: l.latitude ? Number(l.latitude) : null,
+        longitude: l.longitude ? Number(l.longitude) : null,
+        distanceKm: l.distanceKm ?? null,
         prixBase: Number(l.prixBase),
         personnesBase: l.personnesBase,
         capaciteMax: l.capaciteMax,
@@ -149,8 +199,8 @@ export class LogementsService {
         prixNuitEffectif,
         proprietaire: l.proprietaire,
         equipements: l.equipements
-          .map((e) => e.equipement)
-          .filter((e): e is NonNullable<typeof e> => e != null),
+          .map((e: any) => e.equipement)
+          .filter((e: any): e is NonNullable<typeof e> => e != null),
       };
     });
 
@@ -177,13 +227,20 @@ export class LogementsService {
   }
 
   private buildSearchCacheKey(params: Record<string, unknown>): string {
+    const geoNormalized = { ...params };
+    if (typeof geoNormalized.lat === 'number') {
+      geoNormalized.lat = Math.round(geoNormalized.lat * 100) / 100;
+    }
+    if (typeof geoNormalized.lng === 'number') {
+      geoNormalized.lng = Math.round(geoNormalized.lng * 100) / 100;
+    }
     const stable = Object.fromEntries(
-      Object.entries(params)
+      Object.entries(geoNormalized)
         .filter(([, v]) => v !== undefined && v !== null)
         .sort(([a], [b]) => a.localeCompare(b)),
     );
     const hash = createHash('md5').update(JSON.stringify(stable)).digest('hex').slice(0, 16);
-    return `listings:search:v4:${hash}`;
+    return `listings:search:v5:${hash}`;
   }
 
   // ── Feed public — toutes les sections en un seul appel ─────────────────────
@@ -209,6 +266,8 @@ export class LogementsService {
       note:         true,
       totalSejours: true,
       creeLe:       true,
+      isInstantBooking: true,
+      videoUrl:     true,
       photos: {
         where:  { estPrincipale: true },
         select: { url: true, estPrincipale: true },
@@ -293,6 +352,8 @@ export class LogementsService {
               note:         l.note ? Number(l.note) : null,
               totalSejours: l.totalSejours,
               createdAt:    l.creeLe.toISOString(),
+              isInstantBooking: l.isInstantBooking,
+              videoUrl:     l.videoUrl ?? null,
               photos:       l.photos,
               equipements:  l.equipements
                 .map((e) => e.equipement)
@@ -307,8 +368,66 @@ export class LogementsService {
     return { sections: results };
   }
 
+  private async geocodeAddress(adresse: string, ville: string, quartier?: string): Promise<{ lat: number; lng: number } | null> {
+    try {
+      const query = [adresse, quartier, ville, 'Sénégal'].filter(Boolean).join(', ');
+      const url = `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(query)}&limit=1`;
+      
+      const response = await fetch(url, {
+        headers: {
+          'User-Agent': 'ImmoLoc-Backend/1.0 (contact@immoloc.sn)',
+        },
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        if (Array.isArray(data) && data.length > 0) {
+          const lat = parseFloat(data[0].lat);
+          const lng = parseFloat(data[0].lon);
+          if (!isNaN(lat) && !isNaN(lng)) {
+            return { lat, lng };
+          }
+        }
+      }
+
+      if (quartier || ville) {
+        const fallbackQuery = [quartier, ville, 'Sénégal'].filter(Boolean).join(', ');
+        const fallbackUrl = `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(fallbackQuery)}&limit=1`;
+        const fallbackResponse = await fetch(fallbackUrl, {
+          headers: {
+            'User-Agent': 'ImmoLoc-Backend/1.0 (contact@immoloc.sn)',
+          },
+        });
+        if (fallbackResponse.ok) {
+          const fallbackData = await fallbackResponse.json();
+          if (Array.isArray(fallbackData) && fallbackData.length > 0) {
+            const lat = parseFloat(fallbackData[0].lat);
+            const lng = parseFloat(fallbackData[0].lon);
+            if (!isNaN(lat) && !isNaN(lng)) {
+              return { lat, lng };
+            }
+          }
+        }
+      }
+    } catch (err) {
+      this.logger.warn(`Échec géocodage Nominatim : ${(err as Error).message}`);
+    }
+    return null;
+  }
+
   async create(userId: string, dto: CreateLogementDto): Promise<Logement> {
     const { equipementIds, ...fields } = dto;
+
+    let latitude = fields.latitude;
+    let longitude = fields.longitude;
+
+    if (latitude === undefined || longitude === undefined) {
+      const geo = await this.geocodeAddress(fields.adresse, fields.ville, fields.quartier);
+      if (geo) {
+        latitude = geo.lat;
+        longitude = geo.lng;
+      }
+    }
 
     const logement = await this.prisma.logement.create({
       data: {
@@ -327,12 +446,14 @@ export class LogementsService {
         ...(fields.nombreSallesBain !== undefined && { nombreSallesBain: fields.nombreSallesBain }),
         ...(fields.nombrePieces !== undefined && { nombrePieces: fields.nombrePieces }),
         ...(fields.quartier !== undefined && { quartier: fields.quartier }),
-        ...(fields.latitude !== undefined && { latitude: fields.latitude }),
-        ...(fields.longitude !== undefined && { longitude: fields.longitude }),
+        ...(latitude !== undefined && { latitude }),
+        ...(longitude !== undefined && { longitude }),
         ...(fields.nuitesMinimum !== undefined && { nuitesMinimum: fields.nuitesMinimum }),
         ...(fields.ageMin !== undefined && { ageMin: fields.ageMin }),
         ...(fields.reglesMaison !== undefined && { reglesMaison: fields.reglesMaison }),
         ...(fields.instructionsAcces !== undefined && { instructionsAcces: fields.instructionsAcces }),
+        ...(fields.isInstantBooking !== undefined && { isInstantBooking: fields.isInstantBooking }),
+        ...(fields.videoUrl !== undefined && { videoUrl: fields.videoUrl }),
         statut: StatutLogement.DRAFT,
         ...(equipementIds?.length && {
           equipements: {
@@ -342,7 +463,7 @@ export class LogementsService {
       },
     });
 
-    this.logger.log(`Logement créé [${logement.id}] par utilisateur [${userId}]`);
+    this.logger.log(`Logement créé [${logement.id}] par utilisateur [${userId}] (GPS: ${latitude ?? 'NULL'}, ${longitude ?? 'NULL'})`);
     return logement;
   }
 
@@ -693,6 +814,37 @@ export class LogementsService {
   ): Promise<ReturnType<CloudinaryService['generateUploadSignature']>> {
     await this.assertOwner(id, userId);
     return this.cloudinaryService.generateUploadSignature(`immoloc/listings/${id}`);
+  }
+
+  async getVideoUploadParams(
+    id: string,
+    userId: string,
+  ): Promise<ReturnType<CloudinaryService['generateVideoUploadSignature']>> {
+    await this.assertOwner(id, userId);
+    return this.cloudinaryService.generateVideoUploadSignature(`immoloc/listings/${id}/videos`);
+  }
+
+  async deleteVideo(id: string, userId: string): Promise<{ message: string }> {
+    const logement = await this.assertOwner(id, userId);
+    if (logement.videoPublicId) {
+      try {
+        await this.cloudinaryService.deleteFile(logement.videoPublicId);
+      } catch (err) {
+        this.logger.warn(`Erreur suppression vidéo Cloudinary ${logement.videoPublicId}:`, err);
+      }
+    }
+
+    await this.prisma.logement.update({
+      where: { id },
+      data: { videoUrl: null, videoPublicId: null },
+    });
+
+    if (logement.statut === StatutLogement.PUBLISHED) {
+      await this.invalidateSearchCache();
+    }
+
+    this.logger.log(`Vidéo du logement [${id}] supprimée par utilisateur [${userId}]`);
+    return { message: 'Vidéo supprimée avec succès' };
   }
 
   async addPhoto(id: string, userId: string, dto: AddPhotoDto): Promise<PhotoLogement> {

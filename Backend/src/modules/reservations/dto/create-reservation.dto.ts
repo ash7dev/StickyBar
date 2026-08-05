@@ -1,6 +1,6 @@
 import { ApiProperty } from '@nestjs/swagger';
 import { Type } from 'class-transformer';
-import { IsDate, IsInt, IsNotEmpty, IsUUID, Min } from 'class-validator';
+import { IsDate, IsInt, IsNotEmpty, IsOptional, IsString, IsUUID, Min } from 'class-validator';
 
 export class CreateReservationDto {
   @ApiProperty({ example: 'uuid-du-logement' })
@@ -24,4 +24,9 @@ export class CreateReservationDto {
   @IsInt()
   @Min(1)
   nbPersonnes!: number;
+
+  @ApiProperty({ example: 'DEPOSIT', required: false })
+  @IsOptional()
+  @IsString()
+  typePaiement?: string;
 }

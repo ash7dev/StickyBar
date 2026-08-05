@@ -183,6 +183,23 @@ export class LogementsController {
     return this.logements.getPhotoUploadParams(id, user.id);
   }
 
+  @Get(':id/video/upload-params')
+  @Roles(Role.PROPRIETAIRE)
+  @ApiOperation({ summary: 'Obtenir les paramètres signés pour upload vidéo 60s direct vers Cloudinary' })
+  @ApiParam({ name: 'id', description: 'UUID du logement' })
+  getVideoUploadParams(@Param('id') id: string, @CurrentUser() user: AuthUser) {
+    return this.logements.getVideoUploadParams(id, user.id);
+  }
+
+  @Delete(':id/video')
+  @Roles(Role.PROPRIETAIRE)
+  @HttpCode(200)
+  @ApiOperation({ summary: 'Supprimer la vidéo de présentation d\'un logement' })
+  @ApiParam({ name: 'id', description: 'UUID du logement' })
+  deleteVideo(@Param('id') id: string, @CurrentUser() user: AuthUser) {
+    return this.logements.deleteVideo(id, user.id);
+  }
+
   @Post(':id/photos')
   @Roles(Role.PROPRIETAIRE)
   @HttpCode(201)

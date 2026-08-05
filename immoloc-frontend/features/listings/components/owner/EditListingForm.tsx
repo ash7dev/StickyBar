@@ -8,8 +8,8 @@ import Image from 'next/image';
 import Link from 'next/link';
 import {
   AlertCircle, ArrowLeft, Armchair, Bath, BedDouble, BedSingle, Building2,
-  Camera, Check, ChevronDown, DoorOpen, Eye, Home, ImageOff, Loader2, Minus,
-  Pen, Plus, Shield, Star, Trash2, TreePine, TrendingUp, Upload, Users, X,
+  Camera, Check, ChevronDown, DoorOpen, Eye, Home, ImageOff, Key, Loader2, MapPin, Minus,
+  Pen, Plus, Shield, Smartphone, Star, Trash2, TreePine, TrendingUp, Upload, Users, Wifi, X, Zap,
 } from 'lucide-react';
 import {
   stepBienSchema, type StepBienInput,
@@ -147,6 +147,7 @@ function SectionBien({ listing, report }: { listing: ListingDetail; report: (id:
         nombreChambres: listing.nombreChambres, nombreSallesBain: listing.nombreSallesBain,
         nombrePieces: listing.nombrePieces, capaciteMax: listing.capaciteMax,
         ville: listing.ville, adresse: listing.adresse,
+        latitude: listing.latitude ?? undefined, longitude: listing.longitude ?? undefined,
       },
     });
 
@@ -255,7 +256,7 @@ function SectionBien({ listing, report }: { listing: ListingDetail; report: (id:
       )}
 
       <div>
-        <FieldLabel htmlFor={adresseId} required>Adresse précise</FieldLabel>
+        <FieldLabel htmlFor={adresseId} required>Adresse précise & Position GPS</FieldLabel>
         <input
           {...register('adresse')} id={adresseId} autoComplete="street-address"
           placeholder="Rue, résidence ou point de repère"
@@ -263,6 +264,33 @@ function SectionBien({ listing, report }: { listing: ListingDetail; report: (id:
           className={errors.adresse ? INPUT_ERR : INPUT_CLS}
         />
         <FieldError>{errors.adresse?.message}</FieldError>
+
+        {/* Bouton de Capture GPS */}
+        <div className="mt-3 flex flex-col gap-2.5 sm:flex-row sm:items-center">
+          <button
+            type="button"
+            onClick={() => {
+              if ('geolocation' in navigator) {
+                navigator.geolocation.getCurrentPosition(
+                  (pos) => {
+                    setValue('latitude', pos.coords.latitude, { shouldDirty: true });
+                    setValue('longitude', pos.coords.longitude, { shouldDirty: true });
+                  },
+                  (err) => alert('Impossible d\'obtenir la géolocalisation: ' + err.message)
+                );
+              }
+            }}
+            className="inline-flex items-center gap-2 rounded-pill border border-border bg-background-card px-4 py-2 text-xs font-semibold text-forest-800 transition-colors hover:bg-neutral-100 cursor-pointer"
+          >
+            <MapPin className="h-4 w-4 text-forest-600" aria-hidden="true" />
+            <span>Capturer ma position GPS</span>
+          </button>
+          {watch('latitude') != null && watch('longitude') != null && !isNaN(Number(watch('latitude'))) && (
+            <span className="text-xs font-medium text-forest-800">
+              Coordonnées : {Number(watch('latitude')).toFixed(5)}, {Number(watch('longitude')).toFixed(5)}
+            </span>
+          )}
+        </div>
       </div>
 
       <SaveBar state={state} error={apiError} dirty={isDirty} onSave={handleSubmit(onSave)} />
@@ -284,6 +312,7 @@ function SectionPresentation({ listing, report }: { listing: ListingDetail; repo
       defaultValues: {
         titre: listing.titre, description: listing.description,
         prixBase: listing.prixBase, nuitesMinimum: listing.nuitesMinimum,
+        isInstantBooking: listing.isInstantBooking ?? false,
       },
     });
 
@@ -384,6 +413,47 @@ function SectionPresentation({ listing, report }: { listing: ListingDetail; repo
           </div>
         );
       }} />
+
+      {/* Switch Fast Booking / Réservation Instantanée */}
+      <Controller
+        name="isInstantBooking"
+        control={control}
+        render={({ field }) => (
+          <div className="flex items-center justify-between rounded-inner border border-border bg-background-alt p-4">
+            <div className="flex items-center gap-3">
+              <span className="grid h-9 w-9 shrink-0 place-items-center rounded-inner bg-forest-100 text-forest-700">
+                <Zap className="h-4 w-4" aria-hidden="true" />
+              </span>
+              <div>
+                <p className="text-sm font-medium text-foreground">
+                  Réservation Instantanée
+                </p>
+                <p className="text-xs text-foreground-muted">
+                  Les voyageurs vérifiés réservent immédiatement sans attente de validation.
+                </p>
+              </div>
+            </div>
+
+            <button
+              type="button"
+              role="switch"
+              aria-checked={!!field.value}
+              onClick={() => field.onChange(!field.value)}
+              className={cn(
+                'relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none ml-4',
+                field.value ? 'bg-forest-600' : 'bg-neutral-300'
+              )}
+            >
+              <span
+                className={cn(
+                  'pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out',
+                  field.value ? 'translate-x-5' : 'translate-x-0'
+                )}
+              />
+            </button>
+          </div>
+        )}
+      />
 
       <SaveBar state={state} error={apiError} dirty={isDirty} onSave={handleSubmit(onSave)} />
     </SectionCard>
@@ -493,17 +563,17 @@ function SectionTarification({ listing, report }: { listing: ListingDetail; repo
   const [apiError, setApiError] = useState<string | null>(null);
   const [nuits, setNuits] = useState<TarifNuit[]>(listing.tarifsNuits);
   const [personnes, setPersonnes] = useState<TarifPersonne[]>(listing.tarifsPersonnes);
+  const [acomptePct, setAcomptePct] = useState<number>(listing.acomptePourcentage ?? 30);
+  const [derniereMinActive, setDerniereMinActive] = useState<boolean>(listing.derniereMinuteActive ?? false);
 
   const isDirty =
     JSON.stringify(nuits) !== JSON.stringify(listing.tarifsNuits) ||
-    JSON.stringify(personnes) !== JSON.stringify(listing.tarifsPersonnes);
+    JSON.stringify(personnes) !== JSON.stringify(listing.tarifsPersonnes) ||
+    acomptePct !== (listing.acomptePourcentage ?? 30) ||
+    derniereMinActive !== (listing.derniereMinuteActive ?? false);
+
   useEffect(() => { report('tarification', isDirty); }, [isDirty, report]);
 
-  /*
-    Validation absente de l'original : rien n'empechait un tarif « reduit »
-    superieur au prix de base, un maximum inferieur au minimum, ni deux
-    paliers qui se chevauchent. Le serveur recevait des donnees incoherentes.
-  */
   const errNuits = useMemo(() => nuits.map((t, i) => {
     if (t.nuitsMin < listing.nuitesMinimum + 1) return `Doit démarrer à ${listing.nuitesMinimum + 1} nuits minimum.`;
     if (t.nuitsMax != null && t.nuitsMax < t.nuitsMin) return 'Le maximum est inférieur au minimum.';
@@ -529,6 +599,7 @@ function SectionTarification({ listing, report }: { listing: ListingDetail; repo
       await Promise.all([
         nestFetch(NEST_API.LISTINGS.SET_TARIFS_NUITS(listing.id), { method: 'POST', body: JSON.stringify({ tarifs: nuits }) }),
         nestFetch(NEST_API.LISTINGS.SET_TARIFS_PERSONNES(listing.id), { method: 'POST', body: JSON.stringify({ tarifs: personnes }) }),
+        nestFetch(NEST_API.LISTINGS.UPDATE(listing.id), { method: 'PATCH', body: JSON.stringify({ acomptePourcentage: acomptePct, derniereMinuteActive: derniereMinActive }) }),
       ]);
       await qc.invalidateQueries({ queryKey: ['listing-owner', listing.id] });
       setState('saved'); setTimeout(() => setState('idle'), 2500);
@@ -540,13 +611,72 @@ function SectionTarification({ listing, report }: { listing: ListingDetail; repo
   const numCls = 'w-full rounded-field border border-border bg-background-card px-3 py-2.5 text-sm tabular-nums outline-none focus:border-forest-500 focus:ring-2 focus:ring-forest-500/25';
 
   return (
-    <SectionCard title="Tarification et paliers" icon={TrendingUp}>
-      <div className="rounded-inner bg-background-alt p-5">
-        <p className="text-[0.6875rem] uppercase tracking-[0.12em] text-foreground-faint">Prix de base</p>
-        <p className="mt-1 flex items-baseline gap-2">
-          <span className="text-2xl font-semibold tabular-nums text-forest-900">{nf.format(listing.prixBase)}</span>
-          <span className="text-sm text-foreground-muted">FCFA / nuit · {listing.personnesBase} pers. incluses</span>
-        </p>
+    <SectionCard title="Tarification & Option d'Acompte" icon={TrendingUp}>
+      <div className="grid gap-4 sm:grid-cols-2">
+        <div className="rounded-inner bg-background-alt p-5">
+          <p className="text-[0.6875rem] uppercase tracking-[0.12em] text-foreground-faint">Prix de base</p>
+          <p className="mt-1 flex items-baseline gap-2">
+            <span className="text-2xl font-semibold tabular-nums text-forest-900">{nf.format(listing.prixBase)}</span>
+            <span className="text-sm text-foreground-muted">FCFA / nuit · {listing.personnesBase} pers.</span>
+          </p>
+        </div>
+
+        <div className="rounded-inner border border-border bg-background-alt p-5 space-y-2">
+          <label className="text-xs font-bold text-foreground block">
+            Pourcentage d&apos;Acompte Requis (%)
+          </label>
+          <div className="flex items-center gap-2">
+            {[30, 50, 100].map((pct) => (
+              <button
+                key={pct}
+                type="button"
+                onClick={() => setAcomptePct(pct)}
+                className={cn(
+                  'flex-1 py-2 px-3 rounded-pill text-xs font-bold transition-all border cursor-pointer',
+                  acomptePct === pct
+                    ? 'border-forest-600 bg-forest-950 text-lime-300 shadow-xs'
+                    : 'border-border bg-background-card text-foreground-muted hover:border-neutral-300'
+                )}
+              >
+                {pct === 100 ? '100% (Total)' : `${pct}% Acompte`}
+              </button>
+            ))}
+          </div>
+          <p className="text-[11px] text-foreground-muted">
+            {acomptePct < 100
+              ? `Le voyageur paie ${acomptePct}% à la réservation et le solde (${100 - acomptePct}%) à son arrivée.`
+              : `Le voyageur paie 100% de la totalité au moment de la réservation.`}
+          </p>
+        </div>
+      </div>
+
+      {/* Offre ⚡ -15% Dernière Minute */}
+      <div className="rounded-inner border border-amber-500/30 bg-amber-500/5 p-4 flex items-center justify-between gap-4">
+        <div className="space-y-0.5">
+          <div className="flex items-center gap-1.5 font-bold text-sm text-foreground">
+            <Zap className="w-4 h-4 text-amber-500 fill-amber-400" />
+            <span>Offre &quot;Dernière Minute&quot; (-15%)</span>
+          </div>
+          <p className="text-xs text-foreground-muted">
+            Applique automatiquement une réduction de 15% pour toute réservation effectuée moins de 48 heures avant l&apos;arrivée.
+          </p>
+        </div>
+
+        <button
+          type="button"
+          onClick={() => setDerniereMinActive((v) => !v)}
+          className={cn(
+            'relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none',
+            derniereMinActive ? 'bg-amber-500' : 'bg-neutral-300'
+          )}
+        >
+          <span
+            className={cn(
+              'pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out',
+              derniereMinActive ? 'translate-x-5' : 'translate-x-0'
+            )}
+          />
+        </button>
       </div>
 
       {/* Suppléments voyageurs */}
@@ -690,7 +820,7 @@ function SectionPhotos({ listing }: { listing: ListingDetail }) {
               'group relative aspect-[4/3] overflow-hidden rounded-inner border-2 bg-neutral-100',
               photo.estPrincipale ? 'border-gold-400' : photo.uploadError ? 'border-error-500' : 'border-border',
             )}>
-              <Image src={photo.url} alt="" fill sizes="(max-width:640px) 50vw, 25vw"
+              <Image src={photo.url} alt="" fill sizes="(max-width:640px) 50vw, 25vw" unoptimized
                 className={cn('object-cover', photo.uploading && 'opacity-40')} />
 
               {photo.estPrincipale && (
@@ -770,6 +900,9 @@ function SectionPhotos({ listing }: { listing: ListingDetail }) {
             onChange={(e) => { upload(e.target.files, categorie); e.target.value = ''; }} />
         </div>
       )}
+
+      {/* ── Sub-section Vidéo de présentation 60s ── */}
+      <EditVideoSection listing={listing} />
     </SectionCard>
   );
 }
@@ -781,17 +914,31 @@ function SectionConditions({ listing, report }: { listing: ListingDetail; report
   const [state, setState] = useState<SaveState>('idle');
   const [apiError, setApiError] = useState<string | null>(null);
   const [regles, setRegles] = useState(listing.reglesMaison ?? '');
+  const [nomWifi, setNomWifi] = useState(listing.nomReseauWifi ?? '');
+  const [codeWifi, setCodeWifi] = useState(listing.codeWifi ?? '');
+  const [digicode, setDigicode] = useState(listing.instructionsDigicode ?? '');
   const id = useId();
   const MAX = 1000;
 
-  const isDirty = regles !== (listing.reglesMaison ?? '');
+  const isDirty =
+    regles !== (listing.reglesMaison ?? '') ||
+    nomWifi !== (listing.nomReseauWifi ?? '') ||
+    codeWifi !== (listing.codeWifi ?? '') ||
+    digicode !== (listing.instructionsDigicode ?? '');
+
   useEffect(() => { report('conditions', isDirty); }, [isDirty, report]);
 
   async function onSave() {
     setState('saving'); setApiError(null);
     try {
       await nestFetch(NEST_API.LISTINGS.UPDATE(listing.id), {
-        method: 'PATCH', body: JSON.stringify({ reglesMaison: regles || null }),
+        method: 'PATCH',
+        body: JSON.stringify({
+          reglesMaison: regles || null,
+          nomReseauWifi: nomWifi || null,
+          codeWifi: codeWifi || null,
+          instructionsDigicode: digicode || null,
+        }),
       });
       await qc.invalidateQueries({ queryKey: ['listing-owner', listing.id] });
       setState('saved'); setTimeout(() => setState('idle'), 2500);
@@ -801,11 +948,11 @@ function SectionConditions({ listing, report }: { listing: ListingDetail; report
   }
 
   return (
-    <SectionCard title="Règles de la maison" icon={Shield}>
+    <SectionCard title="Règles & Livret d'Accueil Digital" icon={Shield}>
       <div>
         <FieldLabel htmlFor={id} optional>Règles intérieures</FieldLabel>
         <textarea
-          id={id} value={regles} rows={5} maxLength={MAX}
+          id={id} value={regles} rows={4} maxLength={MAX}
           onChange={(e) => setRegles(e.target.value)}
           placeholder={"Ex :\n• Pas de fêtes bruyantes\n• Animaux non admis\n• Interdiction de fumer à l'intérieur"}
           className={cn(INPUT_CLS, 'resize-none leading-relaxed')}
@@ -815,6 +962,63 @@ function SectionConditions({ listing, report }: { listing: ListingDetail; report
           <span className={cn('tabular-nums', regles.length > 900 && 'text-warning-600')}>{regles.length} / {MAX}</span>
         </div>
       </div>
+
+      {/* Livret d'Accueil Digital */}
+      <div className="mt-6 border-t border-border pt-6 space-y-4">
+        <div className="flex items-center gap-2 text-forest-900 font-bold text-sm">
+          <Smartphone className="h-4 w-4 text-forest-700" aria-hidden="true" />
+          <span>📱 Livret d&apos;Accueil Digital (Accès Voyageur Confirmé)</span>
+        </div>
+        <p className="text-xs text-foreground-muted">
+          Ces informations sécurisées sont visibles uniquement par les locataires ayant une réservation confirmée.
+        </p>
+
+        <div className="grid gap-4 sm:grid-cols-2">
+          <div>
+            <FieldLabel optional>
+              <span className="flex items-center gap-1.5">
+                <Wifi className="h-3.5 w-3.5 text-forest-600" />
+                Nom du réseau Wi-Fi
+              </span>
+            </FieldLabel>
+            <input
+              type="text"
+              value={nomWifi}
+              onChange={(e) => setNomWifi(e.target.value)}
+              placeholder="Ex : ImmoLoc_FreeBox_5G"
+              className={INPUT_CLS}
+            />
+          </div>
+
+          <div>
+            <FieldLabel optional>
+              <span className="flex items-center gap-1.5">
+                <Key className="h-3.5 w-3.5 text-forest-600" />
+                Mot de passe Wi-Fi
+              </span>
+            </FieldLabel>
+            <input
+              type="text"
+              value={codeWifi}
+              onChange={(e) => setCodeWifi(e.target.value)}
+              placeholder="Ex : wifi-pass-2026"
+              className={INPUT_CLS}
+            />
+          </div>
+        </div>
+
+        <div>
+          <FieldLabel optional>Instructions Digicode & Accès Clés</FieldLabel>
+          <textarea
+            value={digicode}
+            rows={3}
+            onChange={(e) => setDigicode(e.target.value)}
+            placeholder="Ex : Code portail 4582A. Boîte à clés sous les escaliers à droite, code 1234."
+            className={cn(INPUT_CLS, 'resize-none leading-relaxed')}
+          />
+        </div>
+      </div>
+
       <SaveBar state={state} error={apiError} dirty={isDirty} onSave={onSave} />
     </SectionCard>
   );
@@ -898,6 +1102,218 @@ export function EditListingForm({ listing }: { listing: ListingDetail }) {
           <div id="section-conditions" className="scroll-mt-24"><SectionConditions listing={listing} report={report} /></div>
         </div>
       </div>
+    </div>
+  );
+}
+
+function EditVideoSection({ listing }: { listing: ListingDetail }) {
+  const qc = useQueryClient();
+  const [videoUrl, setVideoUrl] = useState<string | null>(listing.videoUrl ?? null);
+  const [isUploading, setIsUploading] = useState(false);
+  const [uploadPercent, setUploadPercent] = useState(0);
+  const [uploadDetails, setUploadDetails] = useState('');
+  const [isDeleting, setIsDeleting] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  const handleVideoSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    setError(null);
+    const objectUrl = URL.createObjectURL(file);
+    const tempVideo = document.createElement('video');
+    tempVideo.preload = 'metadata';
+    tempVideo.src = objectUrl;
+
+    tempVideo.onloadedmetadata = async () => {
+      const duration = tempVideo.duration;
+
+      if (!isNaN(duration) && isFinite(duration) && duration > 90) {
+        setError(`La vidéo choisie fait ${Math.round(duration)}s. La durée maximale autorisée est de 1m30 (90 secondes).`);
+        URL.revokeObjectURL(objectUrl);
+        e.target.value = '';
+        return;
+      }
+
+      // Prévisualisation immédiate pour réactivité maximale
+      setVideoUrl(objectUrl);
+      setIsUploading(true);
+      setUploadPercent(0);
+      setUploadDetails('Préparation de l\'envoi…');
+
+      try {
+        const uploadParams = await nestFetch<{
+          uploadUrl: string;
+          signature: string;
+          timestamp: number;
+          apiKey: string;
+          folder: string;
+        }>(NEST_API.LISTINGS.VIDEO_UPLOAD_PARAMS(listing.id), { method: 'GET' });
+
+        const formData = new FormData();
+        formData.append('file', file);
+        formData.append('api_key', uploadParams.apiKey);
+        formData.append('timestamp', uploadParams.timestamp.toString());
+        formData.append('signature', uploadParams.signature);
+        formData.append('folder', uploadParams.folder);
+
+        // Upload avec XMLHttpRequest pour suivi de progression en temps réel
+        const cloudinaryRes = await new Promise<{ secure_url: string; public_id: string }>((resolve, reject) => {
+          const xhr = new XMLHttpRequest();
+          xhr.open('POST', uploadParams.uploadUrl);
+
+          xhr.upload.onprogress = (evt) => {
+            if (evt.lengthComputable) {
+              const pct = Math.round((evt.loaded / evt.total) * 100);
+              const loadedMb = (evt.loaded / (1024 * 1024)).toFixed(1);
+              const totalMb = (evt.total / (1024 * 1024)).toFixed(1);
+              setUploadPercent(pct);
+              setUploadDetails(`${pct}% · ${loadedMb} Mo / ${totalMb} Mo`);
+            }
+          };
+
+          xhr.onload = () => {
+            if (xhr.status >= 200 && xhr.status < 300) {
+              try {
+                resolve(JSON.parse(xhr.responseText));
+              } catch {
+                reject(new Error('Erreur de lecture de la réponse vidéo.'));
+              }
+            } else {
+              reject(new Error('Échec du téléversement vidéo.'));
+            }
+          };
+
+          xhr.onerror = () => reject(new Error('Erreur réseau lors de l\'envoi de la vidéo.'));
+          xhr.send(formData);
+        });
+
+        // Enregistrement final sur le Backend NestJS
+        await nestFetch(NEST_API.LISTINGS.UPDATE(listing.id), {
+          method: 'PATCH',
+          body: JSON.stringify({ videoUrl: cloudinaryRes.secure_url, videoPublicId: cloudinaryRes.public_id }),
+        });
+
+        setVideoUrl(cloudinaryRes.secure_url);
+        await qc.invalidateQueries({ queryKey: ['listing-owner', listing.id] });
+      } catch (err) {
+        setError(err instanceof Error ? err.message : 'Erreur lors du téléversement.');
+        setVideoUrl(listing.videoUrl ?? null);
+      } finally {
+        setIsUploading(false);
+        setUploadPercent(0);
+        setUploadDetails('');
+        e.target.value = '';
+      }
+    };
+
+    tempVideo.onerror = () => {
+      setError('Impossible de lire la durée du fichier vidéo sélectionné.');
+    };
+  };
+
+  const handleDeleteVideo = async () => {
+    setIsDeleting(true);
+    setError(null);
+    try {
+      await nestFetch(NEST_API.LISTINGS.DELETE_VIDEO(listing.id), { method: 'DELETE' });
+      setVideoUrl(null);
+      await qc.invalidateQueries({ queryKey: ['listing-owner', listing.id] });
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Erreur lors de la suppression.');
+    } finally {
+      setIsDeleting(false);
+    }
+  };
+
+  return (
+    <div className="mt-8 border-t border-border pt-6 space-y-4">
+      <div className="flex items-center justify-between">
+        <h3 className="text-sm font-medium text-foreground">Vidéo de présentation (1m30 MAX)</h3>
+        {videoUrl && !isUploading && (
+          <span className="rounded-pill bg-forest-100 px-2.5 py-1 text-xs font-semibold text-forest-800">
+            Vidéo configurée
+          </span>
+        )}
+      </div>
+
+      {error && (
+        <div role="alert" className="flex items-center gap-2 rounded-inner bg-error-50 px-3.5 py-2.5 text-xs text-error-700">
+          <AlertCircle className="h-4 w-4 shrink-0" aria-hidden="true" />
+          <span>{error}</span>
+        </div>
+      )}
+
+      {/* Barre de progression en temps réel */}
+      {isUploading && (
+        <div className="space-y-2 rounded-inner border border-forest-600/30 bg-forest-950/5 p-4">
+          <div className="flex items-center justify-between text-xs font-semibold text-forest-900">
+            <span className="flex items-center gap-2">
+              <Loader2 className="h-4 w-4 animate-spin text-forest-700" />
+              Téléversement de la vidéo en cours…
+            </span>
+            <span className="tabular-nums font-bold text-forest-800">{uploadDetails}</span>
+          </div>
+          <div className="h-2 w-full overflow-hidden rounded-full bg-neutral-200">
+            <div
+              className="h-full bg-forest-600 transition-all duration-300 ease-out"
+              style={{ width: `${uploadPercent}%` }}
+            />
+          </div>
+        </div>
+      )}
+
+      {videoUrl ? (
+        <div className="space-y-3">
+          <div className="relative aspect-video w-full max-w-md overflow-hidden rounded-inner border border-border bg-neutral-100 shadow-xs">
+            <video src={videoUrl} controls className="h-full w-full object-contain" />
+          </div>
+
+          <div className="flex flex-wrap items-center gap-3">
+            <label className="inline-flex cursor-pointer items-center gap-2 rounded-pill border border-border bg-background-card px-4 py-2 text-xs font-semibold text-forest-800 transition-colors hover:bg-neutral-100">
+              {isUploading ? <Loader2 className="h-3.5 w-3.5 animate-spin" aria-hidden="true" /> : <Upload className="h-3.5 w-3.5 text-forest-700" aria-hidden="true" />}
+              <span>{isUploading ? 'Envoi en cours…' : 'Remplacer la vidéo'}</span>
+              <input
+                type="file"
+                accept="video/mp4,video/quicktime,video/webm"
+                className="hidden"
+                disabled={isUploading || isDeleting}
+                onChange={handleVideoSelect}
+              />
+            </label>
+
+            <button
+              type="button"
+              onClick={handleDeleteVideo}
+              disabled={isUploading || isDeleting}
+              className="inline-flex items-center gap-2 rounded-pill border border-error-500/30 bg-error-50 px-4 py-2 text-xs font-semibold text-error-700 transition-colors hover:bg-error-100"
+            >
+              {isDeleting ? <Loader2 className="h-3.5 w-3.5 animate-spin" aria-hidden="true" /> : <Trash2 className="h-3.5 w-3.5" aria-hidden="true" />}
+              <span>{isDeleting ? 'Suppression…' : 'Supprimer la vidéo'}</span>
+            </button>
+          </div>
+        </div>
+      ) : (
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-center justify-between rounded-inner border border-border bg-background-alt p-4">
+          <div>
+            <p className="text-xs font-medium text-foreground">Ajouter une vidéo de présentation (1m30 MAX)</p>
+            <p className="text-xs text-foreground-muted mt-0.5">
+              Format MP4 / MOV vertical (9:16) · Maximum 1 min 30 s (90s)
+            </p>
+          </div>
+          <label className="inline-flex shrink-0 cursor-pointer items-center gap-2 rounded-pill border border-border bg-background-card px-4 py-2 text-xs font-semibold text-forest-800 transition-colors hover:bg-neutral-100">
+            {isUploading ? <Loader2 className="h-3.5 w-3.5 animate-spin" aria-hidden="true" /> : <Upload className="h-3.5 w-3.5 text-forest-700" aria-hidden="true" />}
+            <span>{isUploading ? 'Envoi en cours…' : 'Choisir une vidéo'}</span>
+            <input
+              type="file"
+              accept="video/mp4,video/quicktime,video/webm"
+              className="hidden"
+              disabled={isUploading}
+              onChange={handleVideoSelect}
+            />
+          </label>
+        </div>
+      )}
     </div>
   );
 }

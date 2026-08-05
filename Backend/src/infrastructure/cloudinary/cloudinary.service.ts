@@ -103,6 +103,29 @@ export class CloudinaryService {
     };
   }
 
+  generateVideoUploadSignature(folder: string): {
+    timestamp: number;
+    signature: string;
+    apiKey: string;
+    cloudName: string;
+    folder: string;
+    uploadUrl: string;
+  } {
+    const timestamp = Math.round(Date.now() / 1000);
+    const signature = cloudinary.utils.api_sign_request(
+      { timestamp, folder },
+      this.config.getOrThrow('CLOUDINARY_API_SECRET'),
+    );
+    return {
+      timestamp,
+      signature,
+      apiKey: this.config.getOrThrow('CLOUDINARY_API_KEY'),
+      cloudName: this.config.getOrThrow('CLOUDINARY_CLOUD_NAME'),
+      folder,
+      uploadUrl: `https://api.cloudinary.com/v1_1/${this.config.getOrThrow('CLOUDINARY_CLOUD_NAME')}/video/upload`,
+    };
+  }
+
   async deleteFile(publicId: string): Promise<void> {
     await cloudinary.uploader.destroy(publicId, { type: 'authenticated' });
   }

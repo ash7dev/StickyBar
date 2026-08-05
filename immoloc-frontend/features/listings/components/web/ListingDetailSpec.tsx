@@ -9,6 +9,7 @@ import {
   UtensilsCrossed, Waves, Wifi, WashingMachine, Wind, Zap,
 } from 'lucide-react';
 import type { Listing } from '@/lib/nestjs';
+import { ListingVideoSection } from './ListingVideoSection';
 
 interface ListingDetailSpecProps {
   listing: Listing;
@@ -177,6 +178,11 @@ export function ListingDetailSpec({ listing }: ListingDetailSpecProps) {
           ))}
         </ul>
       </section>
+
+      {/* -- Visite Vidéo du Logement (60s) -------------------------------- */}
+      {listing.videoUrl && (
+        <ListingVideoSection videoUrl={listing.videoUrl} titre={listing.titre} />
+      )}
 
       {/* -- Tarification ------------------------------------------------ */}
       <section className="space-y-4 rounded-card border border-border bg-background-card p-6 shadow-sm">

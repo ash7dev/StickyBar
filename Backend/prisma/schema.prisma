@@ -12,8 +12,9 @@ generator client {
 }
 
 datasource db {
-  provider = "postgresql"
-  url      = env("DATABASE_URL")
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
 }
 
 // =============================================================================
@@ -155,14 +156,19 @@ model Logement {
   longitude Decimal? @db.Decimal(10, 7)
 
   // Tarification de base
-  prixBase      Decimal @db.Decimal(10, 2)
-  personnesBase Int     @default(1)
+  prixBase           Decimal @db.Decimal(10, 2)
+  personnesBase      Int     @default(1)
+  acomptePourcentage Int     @default(30)
+  derniereMinuteActive Boolean @default(false)
 
-  // Conditions
-  nuitesMinimum     Int     @default(1)
-  ageMin            Int     @default(18)
-  reglesMaison      String?
-  instructionsAcces String?
+  // Conditions et livret d'accueil digital
+  nuitesMinimum        Int     @default(1)
+  ageMin               Int     @default(18)
+  reglesMaison         String?
+  instructionsAcces    String?
+  nomReseauWifi        String?
+  codeWifi             String?
+  instructionsDigicode String?
 
   // Statut et moderation
   statut           StatutLogement @default(DRAFT)
@@ -174,8 +180,11 @@ model Logement {
   nbNonConformitesAnnonce Int @default(0)
 
   // Mise en avant
-  isFeatured    Boolean   @default(false)
-  featuredUntil DateTime?
+  isFeatured       Boolean   @default(false)
+  featuredUntil    DateTime?
+  isInstantBooking Boolean   @default(false)
+  videoUrl         String?
+  videoPublicId    String?
 
   // Stats
   note         Decimal @default(0) @db.Decimal(3, 2)
@@ -317,6 +326,11 @@ model Reservation {
   montantCommission   Decimal @db.Decimal(10, 2)
   totalLocataire      Decimal @db.Decimal(10, 2)
   netProprietaire     Decimal @db.Decimal(10, 2)
+
+  // Option d'acompte / paiement partiel
+  typePaiement        String   @default("FULL") // "FULL" ou "DEPOSIT"
+  montantAcompte      Decimal? @db.Decimal(10, 2)
+  montantSoldeRestant Decimal? @db.Decimal(10, 2)
 
   // Dette penalite (si wallet proprio insuffisant lors d'une penalite)
   dettePenalite Decimal @default(0) @db.Decimal(10, 2)

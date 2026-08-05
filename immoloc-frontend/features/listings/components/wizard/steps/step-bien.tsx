@@ -213,6 +213,44 @@ export function StepBien({ onNext, submitRef }: Props) {
           />
           <FieldError id={`${adresseId}-error`}>{errors.adresse?.message}</FieldError>
         </div>
+
+        {/* GPS Location Capture Option */}
+        <div className="rounded-inner border border-border bg-background-alt p-3.5">
+          <div className="flex flex-col gap-2.5 sm:flex-row sm:items-center sm:justify-between">
+            <div className="space-y-0.5">
+              <p className="text-xs font-semibold text-forest-900">
+                Coordonnées GPS (Optionnel)
+              </p>
+              <p className="text-[0.75rem] text-foreground-muted">
+                Si vous êtes sur place, capturez la position exacte de ce logement pour maximiser vos réservations.
+              </p>
+            </div>
+            <button
+              type="button"
+              onClick={() => {
+                if (!('geolocation' in navigator)) return;
+                setValue('latitude', undefined);
+                setValue('longitude', undefined);
+                navigator.geolocation.getCurrentPosition(
+                  (pos) => {
+                    setValue('latitude', pos.coords.latitude);
+                    setValue('longitude', pos.coords.longitude);
+                  },
+                  (err) => console.warn('Erreur GPS:', err.message),
+                  { enableHighAccuracy: true },
+                );
+              }}
+              className="inline-flex shrink-0 items-center justify-center gap-1.5 rounded-pill border border-border bg-white px-3.5 py-1.5 text-xs font-semibold text-forest-800 shadow-xs transition-colors hover:bg-neutral-50"
+            >
+              <MapPin className="h-3.5 w-3.5 text-forest-600" />
+              <span>
+                {watch('latitude') && watch('longitude')
+                  ? `📍 Capturé (${Number(watch('latitude')).toFixed(3)}, ${Number(watch('longitude')).toFixed(3)})`
+                  : '📍 Capturer ma position GPS'}
+              </span>
+            </button>
+          </div>
+        </div>
       </SectionCard>
 
       <button type="submit" ref={submitRef} className="hidden" />

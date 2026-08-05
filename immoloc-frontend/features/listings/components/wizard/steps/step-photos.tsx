@@ -2,7 +2,7 @@
 
 import { useRef, useCallback, useState } from 'react';
 import {
-  Camera, Upload, Trash2, Star, AlertCircle, CheckCircle2, ChevronDown,
+  Camera, Upload, Trash2, Star, AlertCircle, CheckCircle2, ChevronDown, Film,
 } from 'lucide-react';
 import { useListingFormStore } from '@/stores/listing-form.store';
 import { type PhotoItem } from '@/schemas/listing.schema';
@@ -202,6 +202,9 @@ export function StepPhotos({ onNext, submitRef }: Props) {
         )}
       </SectionCard>
 
+      {/* -- Section Vidéo de présentation (60s MAX) ---------------------- */}
+      <VideoUploaderSection />
+
       <button type="submit" ref={submitRef} className="sr-only" aria-hidden="true" />
     </form>
   );
@@ -286,5 +289,113 @@ function PhotoCard({
         </div>
       )}
     </div>
+  );
+}
+
+function VideoUploaderSection() {
+  const [video, setVideo] = useState<{ url: string; duration?: number; name?: string } | null>(null);
+  const [error, setError] = useState<string | null>(null);
+
+  const handleVideoSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    setError(null);
+    const objectUrl = URL.createObjectURL(file);
+    const tempVideo = document.createElement('video');
+    tempVideo.preload = 'metadata';
+    tempVideo.src = objectUrl;
+
+    const onMeta = () => {
+      const duration = tempVideo.duration;
+      if (!isNaN(duration) && isFinite(duration) && duration > 90) {
+        setError(`La vidéo sélectionnée fait ${Math.round(duration)}s. La durée maximale autorisée est de 1m30 (90 secondes).`);
+        URL.revokeObjectURL(objectUrl);
+        e.target.value = '';
+        return;
+      }
+
+      setVideo({
+        url: objectUrl,
+        name: file.name,
+        duration: !isNaN(duration) && isFinite(duration) ? Math.round(duration) : undefined,
+      });
+    };
+
+    tempVideo.onloadedmetadata = onMeta;
+    tempVideo.onerror = () => {
+      setVideo({ url: objectUrl, name: file.name });
+    };
+  };
+
+  const removeVideo = () => {
+    if (video?.url) URL.revokeObjectURL(video.url);
+    setVideo(null);
+    setError(null);
+  };
+
+  return (
+    <SectionCard
+      icon={Film}
+      title="Visite Vidéo du Logement (1m30 MAX)"
+      description="Optionnel — Une courte vidéo verticale augmente l'attractivité de votre annonce de +60%"
+    >
+      <div className="space-y-4">
+        {error && (
+          <div className="flex items-center gap-2.5 p-3.5 bg-error-50 border border-error-500/30 rounded-inner text-xs font-bold text-error-600">
+            <AlertCircle className="w-4 h-4 text-error-600 shrink-0" />
+            <span>{error}</span>
+          </div>
+        )}
+
+        {video ? (
+          <div className="space-y-3">
+            <div className="flex items-center justify-between p-3.5 rounded-inner bg-forest-950/5 border border-forest-600/30">
+              <div className="flex items-center gap-2.5">
+                <CheckCircle2 className="w-4 h-4 text-forest-600 shrink-0" />
+                <div>
+                  <p className="text-xs font-bold text-forest-900">
+                    Vidéo valide {video.duration ? `(${video.duration}s / 1m30 max)` : ''}
+                  </p>
+                  <p className="text-[11px] text-foreground-muted truncate max-w-[200px] sm:max-w-xs">
+                    {video.name}
+                  </p>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={removeVideo}
+                className="px-3 py-1.5 rounded-pill bg-error-50 text-error-600 text-xs font-bold hover:bg-error-100 transition-colors"
+              >
+                Supprimer
+              </button>
+            </div>
+
+            <div className="relative aspect-video w-full max-w-md overflow-hidden rounded-inner border border-border bg-black shadow-md">
+              <video src={video.url} controls className="h-full w-full object-contain" />
+            </div>
+          </div>
+        ) : (
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-center justify-between p-4 rounded-inner border border-border bg-background-alt">
+            <div>
+              <p className="text-xs font-bold text-foreground">Téléverser une vidéo (1m30 MAX)</p>
+              <p className="text-[11px] text-foreground-muted font-medium mt-0.5">
+                Formats acceptés : MP4, MOV, WebM · Maximum 1 min 30 s (90s)
+              </p>
+            </div>
+            <label className="inline-flex shrink-0 cursor-pointer items-center justify-center gap-2 rounded-pill border border-forest-600 bg-forest-950 px-4 py-2 text-xs font-bold text-lime-400 transition-transform active:scale-95 shadow-md">
+              <Upload className="h-3.5 w-3.5 text-lime-400" />
+              <span>Choisir un fichier (1m30)</span>
+              <input
+                type="file"
+                accept="video/mp4,video/quicktime,video/webm"
+                className="hidden"
+                onChange={handleVideoSelect}
+              />
+            </label>
+          </div>
+        )}
+      </div>
+    </SectionCard>
   );
 }

@@ -139,6 +139,7 @@ export class PricingService {
         nuitesMinimum: true,
         capaciteMax: true,
         personnesBase: true,
+        derniereMinuteActive: true,
         tarifsPersonnes: { orderBy: { position: 'asc' } },
         tarifsNuits: { orderBy: { position: 'asc' } },
       },
@@ -146,7 +147,6 @@ export class PricingService {
 
     if (!logement) throw new NotFoundException('Logement introuvable');
 
-    // La capacité réelle est le MAX entre capaciteMax et la plus haute borne des tarifs
     const maxTarifPers = logement.tarifsPersonnes.reduce((max, t) => Math.max(max, t.personnesMax), 0);
     const realCapaciteMax = Math.max(logement.capaciteMax, maxTarifPers);
 
@@ -162,7 +162,7 @@ export class PricingService {
       );
     }
 
-    return this.calculate({
+    const breakdown = this.calculate({
       prixBase: logement.prixBase,
       tarifsPersonnes: logement.tarifsPersonnes,
       tarifsNuits: logement.tarifsNuits,
@@ -171,6 +171,19 @@ export class PricingService {
       personnesBase: logement.personnesBase,
       nuitesMinimum: logement.nuitesMinimum,
     });
+
+    // Remise -15% Dernière Minute si activé et réservation sous 48h
+    const hoursUntilCheckin = (dateDebut.getTime() - Date.now()) / (1000 * 3600);
+    if (logement.derniereMinuteActive && hoursUntilCheckin <= 48) {
+      const discount = Math.round(breakdown.totalBase * 0.15);
+      breakdown.reductionNuits += discount;
+      breakdown.totalBase = Math.max(0, breakdown.totalBase - discount);
+      breakdown.montantCommission = Math.round(breakdown.totalBase * breakdown.tauxCommission);
+      breakdown.totalLocataire = breakdown.totalBase + breakdown.montantCommission;
+      breakdown.netProprietaire = breakdown.totalBase;
+    }
+
+    return breakdown;
   }
 
   // ── Utilitaire ────────────────────────────────────────────────────────────

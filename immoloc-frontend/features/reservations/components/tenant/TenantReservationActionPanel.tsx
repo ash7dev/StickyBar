@@ -5,10 +5,11 @@ import { useState } from 'react';
 import {
   Clock, CheckCircle2, AlertTriangle, ShieldAlert,
   Loader2, X, Check, LogIn, RefreshCw, ArrowRight, Images,
-  HelpCircle, Shield, Lock, Star, Home,
+  HelpCircle, Shield, Lock, Star, Home, Smartphone,
 } from 'lucide-react';
 import { CheckinGalleryModal } from './CheckinGalleryModal';
 import { RefuseCheckInModal } from './RefuseCheckInModal';
+import { DigitalWelcomeGuideModal } from './DigitalWelcomeGuideModal';
 import Image from 'next/image';
 import { cn } from '@/lib/utils/cn';
 import { nestFetch } from '@/lib/nestjs/api-client';
@@ -79,6 +80,9 @@ export function TenantReservationActionPanel({ id, res, onRefetch }: Props) {
 
   /* Modal galerie */
   const [showGallery, setShowGallery] = useState(false);
+
+  /* Modal Livret d'Accueil Digital */
+  const [showWelcomeGuide, setShowWelcomeGuide] = useState(false);
 
   /* Modal règles */
   const [showRulesModal, setShowRulesModal] = useState(false);
@@ -283,6 +287,33 @@ export function TenantReservationActionPanel({ id, res, onRefetch }: Props) {
         <div className="p-6 space-y-4">
 
           {errorMsg && <Feedback message={errorMsg} />}
+
+          {/* Bouton permanent Livret d'Accueil Digital pour réservations confirmées / en cours */}
+          {res.logement && (
+            <button
+              type="button"
+              onClick={() => setShowWelcomeGuide(true)}
+              className="w-full flex items-center justify-between p-4 rounded-inner border border-forest-600/30 bg-forest-950/5 hover:bg-forest-950/10 transition-all cursor-pointer text-left"
+            >
+              <div className="flex items-center gap-3">
+                <div className="grid h-10 w-10 shrink-0 place-items-center rounded-inner bg-forest-950 text-lime-400 border border-forest-800 shadow-xs">
+                  <Smartphone className="h-5 w-5 text-lime-400" />
+                </div>
+                <div>
+                  <p className="text-xs font-bold text-forest-900 flex items-center gap-2">
+                    Livret d&apos;Accueil Digital
+                    <span className="rounded-pill bg-lime-400/20 px-2 py-0.5 text-[0.6875rem] font-bold text-forest-800">
+                      Wi-Fi &amp; Clés
+                    </span>
+                  </p>
+                  <p className="text-[11px] text-foreground-muted font-medium mt-0.5">
+                    Accédez au mot de passe Wi-Fi, Digicode et itinéraire GPS.
+                  </p>
+                </div>
+              </div>
+              <ArrowRight className="h-4 w-4 text-forest-700 shrink-0 ml-2" />
+            </button>
+          )}
 
           {/* ══ SUBSTATES CHECK-IN (Tant que le locataire n'a pas encore validé le check-in) ══ */}
           {!hasTenantCheckin && subState === 'owner-ready' && (
@@ -710,6 +741,15 @@ export function TenantReservationActionPanel({ id, res, onRefetch }: Props) {
         <CheckinGalleryModal
           photos={checkinPhotos}
           onClose={() => setShowGallery(false)}
+        />
+      )}
+
+      {/* ══ MODAL : Livret d'Accueil Digital ══ */}
+      {res.logement && (
+        <DigitalWelcomeGuideModal
+          isOpen={showWelcomeGuide}
+          onClose={() => setShowWelcomeGuide(false)}
+          listing={res.logement as any}
         />
       )}
 

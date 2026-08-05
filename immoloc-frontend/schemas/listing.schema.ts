@@ -63,6 +63,8 @@ export const stepBienSchema = z.object({
   capaciteMax: z.coerce.number().min(1, 'Au moins 1 personne').max(50),
   ville: z.string().min(1, 'La ville est requise'),
   adresse: z.string().min(5, "L'adresse est requise"),
+  latitude: z.number().optional(),
+  longitude: z.number().optional(),
 });
 
 export type StepBienInput = z.infer<typeof stepBienSchema>;
@@ -83,6 +85,8 @@ export const stepAnnonceSchema = z.object({
     .min(5000, 'Prix minimum : 5 000 FCFA / nuit')
     .max(10_000_000, 'Prix maximum : 10 000 000 FCFA / nuit'),
   nuitesMinimum: z.coerce.number().min(1).default(1),
+  isInstantBooking: z.boolean().default(false),
+  videoUrl: z.string().optional(),
 });
 
 export type StepAnnonceInput = z.infer<typeof stepAnnonceSchema>;
