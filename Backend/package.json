@@ -11,8 +11,8 @@
   "scripts": {
     "build": "nest build",
     "format": "prettier --write \"src/**/*.ts\" \"test/**/*.ts\"",
-    "start": "NODE_OPTIONS='--max-http-header-size=262144' nest start",
-    "start:dev": "NODE_OPTIONS='--max-http-header-size=262144' nest start --watch",
+    "start": "NODE_OPTIONS='--max-http-header-size=1048576' nest start",
+    "start:dev": "NODE_OPTIONS='--max-http-header-size=1048576' nest start --watch",
     "start:debug": "nest start --debug --watch",
     "start:prod": "node dist/src/main.js",
     "lint": "eslint \"{src,apps,libs,test}/**/*.ts\" --fix",
