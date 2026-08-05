@@ -91,18 +91,27 @@ self.addEventListener('push', (event) => {
     body: data.body || 'Vous avez reçu une nouvelle mise à jour.',
     icon: data.icon || '/icon.svg',
     badge: data.badge || '/icon.svg',
-    vibrate: [100, 50, 100],
+    sound: data.sound || '/notification.mp3',
+    vibrate: data.vibrate !== undefined ? data.vibrate : [200, 100, 200, 100, 200, 100, 400],
+    silent: false, // SON TOUJOURS ACTIVÉ pour toutes les notifications
     data: data.data || { url: '/' },
     actions: [
       { action: 'open', title: 'Ouvrir' },
       { action: 'close', title: 'Fermer' }
     ],
-    requireInteraction: false,
+    requireInteraction: data.requireInteraction || false,
     tag: data.tag || `klef-${Date.now()}` // Tag unique pour chaque notification
   };
 
   console.log('[SW] Showing notification with title:', data.title || 'Klef');
   console.log('[SW] Notification options:', options);
+
+  // Envoyer un message aux fenêtres ouvertes pour déclencher le carillon sonore Web Audio API
+  self.clients.matchAll({ type: 'window', includeUncontrolled: true }).then((windowClients) => {
+    windowClients.forEach((client) => {
+      client.postMessage({ type: 'PLAY_NOTIFICATION_SOUND', data });
+    });
+  });
 
   event.waitUntil(
     self.registration.showNotification(data.title || 'Klef', options)

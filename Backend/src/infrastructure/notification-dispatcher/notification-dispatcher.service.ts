@@ -40,7 +40,14 @@ export class NotificationDispatcherService {
       user.phoneVerified && user.telephone
         ? this.sendWhatsApp(userId, user.telephone, type, text, reservationId)
         : Promise.resolve(),
-      this.sendPush(userId, type, { title, body: text }, reservationId),
+      this.sendPush(userId, type, {
+        title,
+        body: text,
+        icon: '/icon.svg',
+        badge: '/icon.svg',
+        silent: false,
+        vibrate: [200, 100, 200],
+      }, reservationId),
     ]);
   }
 

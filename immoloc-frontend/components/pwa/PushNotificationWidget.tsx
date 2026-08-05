@@ -10,6 +10,8 @@ import {
 } from '@/lib/pwa/push-manager';
 import { cn } from '@/lib/utils/cn';
 
+import { playNotificationChime } from '@/lib/pwa/sound-effects';
+
 interface PushNotificationWidgetProps {
   userId?: string;
   variant?: 'card' | 'compact';
@@ -28,6 +30,23 @@ export function PushNotificationWidget({ userId, variant = 'card' }: PushNotific
 
   useEffect(() => {
     refreshStatus();
+
+    // Écouter les messages du Service Worker pour jouer le son de notification
+    const handleServiceWorkerMessage = (event: MessageEvent) => {
+      if (event.data && event.data.type === 'PLAY_NOTIFICATION_SOUND') {
+        playNotificationChime();
+      }
+    };
+
+    if (typeof window !== 'undefined' && 'serviceWorker' in navigator) {
+      navigator.serviceWorker.addEventListener('message', handleServiceWorkerMessage);
+    }
+
+    return () => {
+      if (typeof window !== 'undefined' && 'serviceWorker' in navigator) {
+        navigator.serviceWorker.removeEventListener('message', handleServiceWorkerMessage);
+      }
+    };
   }, []);
 
   const handleEnablePush = async () => {
@@ -76,9 +95,10 @@ export function PushNotificationWidget({ userId, variant = 'card' }: PushNotific
     setTestLoading(false);
 
     if (result.success) {
+      playNotificationChime();
       setFeedback({
         type: 'success',
-        message: 'Notification de test envoyée ! Regardez le haut de votre écran ou votre centre de notifications.',
+        message: 'Notification de test envoyée ! Regardez le haut de votre écran et écoutez le son.',
       });
     } else {
       setFeedback({
