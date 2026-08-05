@@ -236,9 +236,14 @@ function ListingRow({
       <div className="flex min-w-0 flex-1 flex-col justify-between p-5">
         <div>
           <div className="flex items-start justify-between gap-3">
-            <p className="flex min-w-0 items-center gap-1.5 text-[0.8125rem] text-foreground-muted">
+            <p className="flex min-w-0 items-center gap-1.5 text-[0.8125rem] text-foreground-muted flex-wrap">
               <MapPin className="h-3.5 w-3.5 shrink-0 text-forest-600" aria-hidden="true" />
               <span className="truncate">{lieu}</span>
+              {listing.distanceKm !== undefined && listing.distanceKm !== null && (
+                <span className="inline-flex items-center gap-0.5 rounded-full bg-forest-50 px-2 py-0.5 text-[10px] font-extrabold text-forest-800 border border-forest-100/80 shrink-0">
+                  📍 À {(listing.distanceKm as number).toFixed(1)} km
+                </span>
+              )}
             </p>
 
             {hasNote && (

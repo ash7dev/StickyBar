@@ -1,9 +1,9 @@
 'use client';
 
 import { useEffect, useRef, useState } from 'react';
+import { useRouter, useSearchParams } from 'next/navigation';
 import type { Listing } from '@/lib/nestjs/types';
-import { Search, RefreshCw } from 'lucide-react';
-
+import { RefreshCw, Compass } from 'lucide-react';
 import { formatPrixPublic } from '@/lib/pricing';
 
 interface ExplorerMapProps {
@@ -26,23 +26,45 @@ const CITY_COORDINATES: Record<string, [number, number]> = {
   ziguinchor: [12.5833, -16.2719],
 };
 
-/**
- * Carte interactive Leaflet / OpenStreetMap pour l'explorateur (Style Gunôor)
- */
 export function ExplorerMap({ listings }: ExplorerMapProps) {
+  const router = useRouter();
+  const searchParams = useSearchParams();
+
   const mapRef = useRef<HTMLDivElement>(null);
   const leafletMapRef = useRef<any>(null);
   const [isLoaded, setIsLoaded] = useState(false);
+  const [showSearchHereButton, setShowSearchHereButton] = useState(false);
   const [isSearchingHere, setIsSearchingHere] = useState(false);
+
+  const latParam = searchParams.get('lat');
+  const lngParam = searchParams.get('lng');
+  const userLat = latParam ? parseFloat(latParam) : null;
+  const userLng = lngParam ? parseFloat(lngParam) : null;
+
+  const handleSearchCurrentArea = () => {
+    if (!leafletMapRef.current) return;
+    setIsSearchingHere(true);
+    const center = leafletMapRef.current.getCenter();
+    const params = new URLSearchParams(searchParams.toString());
+    params.set('lat', center.lat.toFixed(6));
+    params.set('lng', center.lng.toFixed(6));
+    params.set('rayon', '20');
+    params.delete('ville');
+    params.delete('quartier');
+    params.set('page', '1');
+    router.push(`/explorer?${params.toString()}`);
+    setTimeout(() => {
+      setIsSearchingHere(false);
+      setShowSearchHereButton(false);
+    }, 800);
+  };
 
   useEffect(() => {
     if (typeof window === 'undefined' || !mapRef.current) return;
 
     let isMounted = true;
 
-    // Charger dynamiquement Leaflet et ses CSS
     const loadLeaflet = async () => {
-      // Injecter CSS Leaflet si non présent
       if (!document.getElementById('leaflet-css')) {
         const link = document.createElement('link');
         link.id = 'leaflet-css';
@@ -55,21 +77,19 @@ export function ExplorerMap({ listings }: ExplorerMapProps) {
 
       if (!isMounted || !mapRef.current) return;
 
-      // Nettoyer si la carte existe déjà
       if (leafletMapRef.current) {
         leafletMapRef.current.remove();
       }
 
-      // Centre par défaut : Dakar (14.7167, -17.4677)
-      const defaultCenter: [number, number] = [14.7167, -17.4677];
+      const initialCenter: [number, number] =
+        userLat !== null && userLng !== null ? [userLat, userLng] : [14.7167, -17.4677];
+
       const map = L.map(mapRef.current, {
         zoomControl: false,
-      }).setView(defaultCenter, 12);
+      }).setView(initialCenter, userLat !== null ? 13 : 12);
 
-      // Ajouter le contrôle de zoom en bas à droite
       L.control.zoom({ position: 'bottomright' }).addTo(map);
 
-      // Fond de carte clair OpenStreetMap / CartoDB
       L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png', {
         attribution: '&copy; OpenStreetMap contributors &copy; CARTO',
         maxZoom: 19,
@@ -78,56 +98,85 @@ export function ExplorerMap({ listings }: ExplorerMapProps) {
       leafletMapRef.current = map;
       setIsLoaded(true);
 
-      // Placer les marqueurs de prix
+      // Écouter le mouvement de la carte pour afficher "Rechercher ici"
+      map.on('moveend', () => {
+        if (isMounted) {
+          setShowSearchHereButton(true);
+        }
+      });
+
+      // ── Marker Position GPS Utilisateur ("Vous êtes ici") ──
+      if (userLat !== null && userLng !== null) {
+        const userIcon = L.divIcon({
+          className: 'custom-user-gps-pin',
+          html: `<div style="position: relative; width: 26px; height: 26px;">
+                  <div style="position: absolute; inset: 0; border-radius: 9999px; background-color: #a3e635; opacity: 0.65; animation: pulse 2s infinite;"></div>
+                  <div style="position: absolute; inset: 3px; border-radius: 9999px; background-color: #0f2d22; border: 2.5px solid #ffffff; box-shadow: 0 4px 12px rgba(0,0,0,0.4); display: flex; align-items: center; justify-content: center;">
+                    <div style="width: 8px; height: 8px; border-radius: 9999px; background-color: #a3e635;"></div>
+                  </div>
+                </div>`,
+          iconSize: [26, 26],
+          iconAnchor: [13, 13],
+        });
+
+        const userMarker = L.marker([userLat, userLng], { icon: userIcon, zIndexOffset: 1000 }).addTo(map);
+        userMarker.bindPopup('<strong style="font-size: 12px; color: #0f2d22;">📍 Votre position GPS</strong>');
+      }
+
+      // ── Placer les marqueurs de prix des logements ──
       if (listings && listings.length > 0) {
         const bounds: [number, number][] = [];
+        if (userLat !== null && userLng !== null) {
+          bounds.push([userLat, userLng]);
+        }
 
         listings.forEach((listing, index) => {
           let lat = 14.7167;
           let lng = -17.4677;
 
-          // Récupérer les coordonnées par ville / quartier
-          const key = (listing.quartier || listing.ville || '').toLowerCase().trim();
-          const foundCity = Object.keys(CITY_COORDINATES).find((c) => key.includes(c));
+          if (listing.latitude && listing.longitude) {
+            lat = Number(listing.latitude);
+            lng = Number(listing.longitude);
+          } else {
+            const key = (listing.quartier || listing.ville || '').toLowerCase().trim();
+            const foundCity = Object.keys(CITY_COORDINATES).find((c) => key.includes(c));
 
-          if (foundCity) {
-            [lat, lng] = CITY_COORDINATES[foundCity];
+            if (foundCity) {
+              [lat, lng] = CITY_COORDINATES[foundCity];
+            }
+            const offsetLat = (Math.sin(index * 2.5) * 0.015) + (index * 0.003);
+            const offsetLng = (Math.cos(index * 2.5) * 0.015) - (index * 0.002);
+            lat += offsetLat;
+            lng += offsetLng;
           }
 
-          // Décalage pour disperser les logements dans la même ville
-          const offsetLat = (Math.sin(index * 2.5) * 0.015) + (index * 0.003);
-          const offsetLng = (Math.cos(index * 2.5) * 0.015) - (index * 0.002);
-          const finalLat = lat + offsetLat;
-          const finalLng = lng + offsetLng;
-
-          bounds.push([finalLat, finalLng]);
+          bounds.push([lat, lng]);
 
           const priceText = listing.prixBase ? `${formatPrixPublic(listing.prixBase)} F` : 'Prix n/d';
+          const isPromo = listing.derniereMinuteActive;
 
-          // Marqueur pastille de prix personnalisé (Style Gunôor)
           const priceIcon = L.divIcon({
             className: 'custom-price-pin',
-            html: `<div style="background-color: #0f2d22; color: #ffffff; font-weight: 700; font-size: 11px; padding: 5px 10px; border-radius: 9999px; border: 1.5px solid #ffffff; box-shadow: 0 4px 12px rgba(0,0,0,0.25); text-align: center; whitespace: nowrap; cursor: pointer;">${priceText}</div>`,
-            iconSize: [80, 28],
-            iconAnchor: [40, 14],
+            html: `<div style="background-color: ${isPromo ? '#a3e635' : '#0f2d22'}; color: ${isPromo ? '#0f2d22' : '#ffffff'}; font-weight: 800; font-size: 11px; padding: 5px 10px; border-radius: 9999px; border: 1.5px solid #ffffff; box-shadow: 0 4px 12px rgba(0,0,0,0.25); text-align: center; whitespace: nowrap; cursor: pointer;">${isPromo ? '⚡ ' : ''}${priceText}</div>`,
+            iconSize: [85, 28],
+            iconAnchor: [42, 14],
           });
 
-          const marker = L.marker([finalLat, finalLng], { icon: priceIcon }).addTo(map);
+          const marker = L.marker([lat, lng], { icon: priceIcon }).addTo(map);
 
-          // Popup d'information au clic
           const popupContent = `
-            <div style="font-family: system-ui, sans-serif; padding: 4px; max-width: 180px;">
+            <div style="font-family: system-ui, sans-serif; padding: 4px; max-width: 190px;">
               <strong style="font-size: 13px; color: #0f2d22; display: block; margin-bottom: 2px;">${listing.titre}</strong>
-              <span style="font-size: 11px; color: #666; display: block; margin-bottom: 4px;">${listing.ville}</span>
+              <span style="font-size: 11px; color: #666; display: block; margin-bottom: 4px;">${listing.ville}${listing.quartier ? ` · ${listing.quartier}` : ''}</span>
+              ${listing.distanceKm !== undefined && listing.distanceKm !== null ? `<span style="font-size: 10px; font-weight: 700; color: #15803d; display: block; margin-bottom: 4px;">📍 À ${(listing.distanceKm as number).toFixed(1)} km de vous</span>` : ''}
               <span style="font-size: 14px; font-weight: 800; color: #0f2d22;">${priceText}</span>
-              <a href="/explorer/${listing.id}" style="display: block; margin-top: 6px; text-align: center; background-color: #0f2d22; color: #c4f74d; padding: 4px 8px; border-radius: 8px; text-decoration: none; font-size: 11px; font-weight: 700;">Voir l'annonce</a>
+              <a href="/explorer/${listing.id}" style="display: block; margin-top: 6px; text-align: center; background-color: #0f2d22; color: #a3e635; padding: 5px 8px; border-radius: 8px; text-decoration: none; font-size: 11px; font-weight: 800;">Voir l'annonce</a>
             </div>
           `;
           marker.bindPopup(popupContent);
         });
 
-        // Ajuster la vue pour englober tous les logements
-        if (bounds.length > 0) {
+        if (bounds.length > 0 && userLat === null) {
           map.fitBounds(bounds, { padding: [50, 50], maxZoom: 14 });
         }
       }
@@ -142,23 +191,26 @@ export function ExplorerMap({ listings }: ExplorerMapProps) {
         leafletMapRef.current = null;
       }
     };
-  }, [listings]);
+  }, [listings, userLat, userLng]);
 
   return (
     <div className="relative w-full h-full min-h-[400px] overflow-hidden bg-neutral-100 rounded-[24px]">
       {/* Conteneur de la carte Leaflet */}
       <div ref={mapRef} className="w-full h-full z-0" />
 
-      {/* Bouton supérieur : Rechercher ici (Style Gunôor) */}
-      <div className="absolute top-4 left-1/2 -translate-x-1/2 z-10">
-        <button
-          onClick={() => setIsSearchingHere(true)}
-          className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-forest-950 text-white hover:bg-forest-900 font-bold text-xs shadow-lg backdrop-blur-md transition-all active:scale-95 border border-white/20"
-        >
-          <RefreshCw className={isSearchingHere ? 'w-3.5 h-3.5 animate-spin' : 'w-3.5 h-3.5'} />
-          <span>Rechercher ici</span>
-        </button>
-      </div>
+      {/* Bouton supérieur : Rechercher dans cette zone */}
+      {(showSearchHereButton || userLat !== null) && (
+        <div className="absolute top-4 left-1/2 -translate-x-1/2 z-10 animate-in fade-in zoom-in-95">
+          <button
+            onClick={handleSearchCurrentArea}
+            disabled={isSearchingHere}
+            className="inline-flex items-center gap-2 px-4 py-2.5 rounded-full bg-forest-950 text-lime-300 hover:bg-forest-900 font-extrabold text-xs shadow-xl backdrop-blur-md transition-all active:scale-95 border border-lime-400/30"
+          >
+            <RefreshCw className={isSearchingHere ? 'w-3.5 h-3.5 animate-spin text-lime-400' : 'w-3.5 h-3.5 text-lime-400'} />
+            <span>Rechercher dans cette zone</span>
+          </button>
+        </div>
+      )}
 
       {/* Fallback pendant le chargement */}
       {!isLoaded && (

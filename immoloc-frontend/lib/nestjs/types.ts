@@ -271,10 +271,12 @@ export type UpdateListingPayload = Partial<CreateListingPayload>;
 
 export interface SearchListingsParams {
   ville?: string;
+  quartier?: string;
   type?: ListingType;
   prixMin?: number;
   prixMax?: number;
   capaciteMin?: number;
+  derniereMinuteOnly?: boolean;
   lat?: number;
   lng?: number;
   radiusKm?: number;

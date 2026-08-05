@@ -32,6 +32,11 @@ export default async function ExplorerPage({ searchParams }: ExplorerPageProps) 
   // Fetch des résultats avec les filtres
   const results = await listingsApi.search({
     ...(filters.ville && { ville: filters.ville }),
+    ...(filters.quartier && { quartier: filters.quartier }),
+    ...(filters.derniereMinute && { derniereMinuteOnly: true }),
+    ...(filters.lat !== undefined && { lat: filters.lat }),
+    ...(filters.lng !== undefined && { lng: filters.lng }),
+    ...(filters.rayon !== undefined && { radiusKm: filters.rayon }),
     ...(filters.type && filters.type.length > 0 && {
       type: (filters.type[0].toUpperCase() === 'AUTRE' ? 'AUTRES' : filters.type[0].toUpperCase()) as any,
     }),

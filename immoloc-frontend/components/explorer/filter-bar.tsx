@@ -5,7 +5,8 @@ import { createPortal } from 'react-dom';
 import { useRouter, useSearchParams } from 'next/navigation';
 import {
   SlidersHorizontal, X, ChevronDown, MapPin, CalendarDays,
-  Users, Banknote, Check, RotateCcw, Building2, ShieldCheck, Plus, Minus
+  Users, Banknote, Check, RotateCcw, Building2, ShieldCheck, Plus, Minus,
+  Compass, Zap, Loader2
 } from 'lucide-react';
 import type { SearchFilters } from '@/lib/explorer/filters-schema';
 import { TYPE_LOGEMENT_VALUES } from '@/lib/explorer/filters-schema';
@@ -17,6 +18,10 @@ interface FilterBarProps {
 
 const VILLES = [
   'Dakar', 'Saly', 'Ngor', 'Almadies', 'Somone', 'Saint-Louis', 'Mbour', 'Thiès', 'Cap Skirring',
+];
+
+const QUARTIERS_POPULAIRES = [
+  'Almadies', 'Ngor', 'Mermoz', 'Virage', 'Plateau', 'Fann', 'Mamelles', 'Saly', 'Somone', 'Popenguine',
 ];
 
 const PRIX_PRESETS = [
@@ -40,7 +45,34 @@ export function FilterBar({ filters }: FilterBarProps) {
   const [activePopover, setActivePopover] = useState<string | null>(null);
   const [popoverPos, setPopoverPos] = useState<{ top: number; left: number } | null>(null);
   const [mounted, setMounted] = useState(false);
+  const [gpsLoading, setGpsLoading] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
+
+  const handleGpsLocation = () => {
+    if (typeof window === 'undefined' || !navigator.geolocation) {
+      alert("La géolocalisation n'est pas disponible sur votre appareil.");
+      return;
+    }
+
+    setGpsLoading(true);
+    navigator.geolocation.getCurrentPosition(
+      (pos) => {
+        setGpsLoading(false);
+        updateFilters({
+          lat: Number(pos.coords.latitude.toFixed(6)),
+          lng: Number(pos.coords.longitude.toFixed(6)),
+          rayon: 20,
+          ville: null,
+          quartier: null,
+        });
+      },
+      () => {
+        setGpsLoading(false);
+        alert("Impossible d'obtenir votre position GPS. Veuillez autoriser la géolocalisation dans votre navigateur.");
+      },
+      { enableHighAccuracy: true, timeout: 10000 }
+    );
+  };
 
   useEffect(() => {
     setMounted(true);
@@ -147,6 +179,51 @@ export function FilterBar({ filters }: FilterBarProps) {
           style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
         >
           
+          {/* 0. BOUTON GPS AUTOUR DE MOI */}
+          {filters.lat !== undefined && filters.lng !== undefined ? (
+            <span className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full bg-forest-950 text-lime-300 text-xs font-bold shadow-xs shrink-0 animate-in fade-in">
+              <Compass className="w-3.5 h-3.5 text-lime-300 animate-spin" style={{ animationDuration: '4s' }} />
+              <span>Autour de vous (GPS)</span>
+              <button
+                onClick={() => updateFilters({ lat: null, lng: null, rayon: null })}
+                className="hover:bg-forest-800 rounded-full p-0.5 transition-colors ml-0.5"
+                aria-label="Réinitialiser position GPS"
+              >
+                <X className="w-3.5 h-3.5" />
+              </button>
+            </span>
+          ) : (
+            <button
+              onClick={handleGpsLocation}
+              disabled={gpsLoading}
+              className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full text-xs font-bold border border-forest-600/40 bg-forest-50 hover:bg-forest-100 text-forest-800 transition-all shadow-xs shrink-0 active:scale-95"
+            >
+              {gpsLoading ? (
+                <Loader2 className="w-3.5 h-3.5 text-forest-600 animate-spin" />
+              ) : (
+                <Compass className="w-3.5 h-3.5 text-forest-600" />
+              )}
+              <span>Autour de moi</span>
+            </button>
+          )}
+
+          {/* 0.5. PASTILLE DERNIÈRE MINUTE -15% */}
+          <button
+            onClick={() => updateFilters({ derniereMinute: filters.derniereMinute ? null : '1' })}
+            className={cn(
+              'inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full text-xs transition-all shadow-xs shrink-0 active:scale-95',
+              filters.derniereMinute
+                ? 'bg-lime-400 text-forest-950 border border-lime-400 font-black shadow-sm'
+                : 'border border-lime-500/40 bg-lime-50/60 hover:bg-lime-100 text-forest-950 font-bold'
+            )}
+          >
+            <Zap className={cn('w-3.5 h-3.5', filters.derniereMinute ? 'text-forest-950 fill-forest-950' : 'text-forest-900')} />
+            <span>-15% Dernière minute</span>
+            {filters.derniereMinute && (
+              <X className="w-3.5 h-3.5 ml-0.5 hover:opacity-75" />
+            )}
+          </button>
+
           {/* 1. PASTILLE VILLE (Si active : Saly ✕) */}
           {filters.ville ? (
             <span className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full bg-forest-950 text-lime-300 text-xs font-bold shadow-xs shrink-0 animate-in fade-in">
@@ -525,6 +602,28 @@ export function FilterBar({ filters }: FilterBarProps) {
             {/* Corps du Modal avec scroll fluide */}
             <div className="p-5 sm:p-6 overflow-y-auto space-y-6 flex-1">
               
+              {/* 0. GPS Autour de moi */}
+              <div className="bg-forest-50/70 border border-forest-100 p-3.5 rounded-2xl flex items-center justify-between gap-3">
+                <div className="flex items-center gap-2.5">
+                  <div className="w-8 h-8 rounded-xl bg-forest-900 text-lime-300 flex items-center justify-center shrink-0">
+                    <Compass className="w-4 h-4 text-lime-300" />
+                  </div>
+                  <div>
+                    <p className="text-xs font-bold text-forest-950">Autour de vous (GPS)</p>
+                    <p className="text-[10px] font-medium text-foreground-muted">Rechercher les annonces les plus proches</p>
+                  </div>
+                </div>
+
+                <button
+                  type="button"
+                  onClick={handleGpsLocation}
+                  disabled={gpsLoading}
+                  className="px-3.5 py-2 bg-forest-900 text-lime-300 text-xs font-extrabold rounded-xl shadow-xs active:scale-95 transition-all flex items-center gap-1.5 shrink-0"
+                >
+                  {gpsLoading ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : 'Activer GPS'}
+                </button>
+              </div>
+
               {/* 1. Ville */}
               <div>
                 <label className="block text-xs font-bold text-foreground-muted uppercase tracking-wider mb-2.5">
@@ -535,7 +634,7 @@ export function FilterBar({ filters }: FilterBarProps) {
                     <button
                       key={v}
                       type="button"
-                      onClick={() => updateFilters({ ville: filters.ville === v ? null : v })}
+                      onClick={() => updateFilters({ ville: filters.ville === v ? null : v, lat: null, lng: null })}
                       className={cn(
                         'py-2.5 px-3 rounded-xl text-xs font-semibold border transition-all text-center truncate active:scale-95',
                         filters.ville === v
@@ -546,6 +645,33 @@ export function FilterBar({ filters }: FilterBarProps) {
                       {v}
                     </button>
                   ))}
+                </div>
+              </div>
+
+              {/* 1.5. Quartiers Populaires */}
+              <div>
+                <label className="block text-xs font-bold text-foreground-muted uppercase tracking-wider mb-2.5">
+                  Quartiers Prisés
+                </label>
+                <div className="flex flex-wrap gap-1.5">
+                  {QUARTIERS_POPULAIRES.map((q) => {
+                    const isSelected = filters.quartier === q;
+                    return (
+                      <button
+                        key={q}
+                        type="button"
+                        onClick={() => updateFilters({ quartier: isSelected ? null : q, lat: null, lng: null })}
+                        className={cn(
+                          'py-1.5 px-3 rounded-full text-xs font-semibold border transition-all active:scale-95',
+                          isSelected
+                            ? 'bg-forest-950 text-lime-300 border-forest-950 font-bold'
+                            : 'bg-background-alt border-border text-foreground hover:bg-neutral-100'
+                        )}
+                      >
+                        {q}
+                      </button>
+                    );
+                  })}
                 </div>
               </div>
 

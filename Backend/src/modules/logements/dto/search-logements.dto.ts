@@ -1,5 +1,5 @@
-import { IsDateString, IsEnum, IsInt, IsNumber, IsOptional, IsString, Max, Min } from 'class-validator';
-import { Type } from 'class-transformer';
+import { IsBoolean, IsDateString, IsEnum, IsInt, IsNumber, IsOptional, IsString, Max, Min } from 'class-validator';
+import { Transform, Type } from 'class-transformer';
 import { ApiPropertyOptional } from '@nestjs/swagger';
 import { TypeLogement } from '@prisma/client';
 
@@ -8,6 +8,23 @@ export class SearchLogementsDto {
   @IsOptional()
   @IsString()
   ville?: string;
+
+  @ApiPropertyOptional({ example: 'almadies' })
+  @IsOptional()
+  @IsString()
+  quartier?: string;
+
+  @ApiPropertyOptional({ example: true, description: 'Filtrer uniquement les offres dernière minute' })
+  @IsOptional()
+  @Transform(({ value }) => value === 'true' || value === true || value === '1')
+  @IsBoolean()
+  derniereMinuteOnly?: boolean;
+
+  @ApiPropertyOptional({ example: true, description: 'Filtrer uniquement les offres dernière minute' })
+  @IsOptional()
+  @Transform(({ value }) => value === 'true' || value === true || value === '1')
+  @IsBoolean()
+  derniereMinute?: boolean;
 
   @ApiPropertyOptional({ example: 14.7167, description: 'Latitude GPS pour recherche à proximité' })
   @IsOptional()
@@ -52,12 +69,26 @@ export class SearchLogementsDto {
   @IsEnum(TypeLogement)
   type?: TypeLogement;
 
+  @ApiPropertyOptional({ minimum: 0, example: 25000 })
+  @IsOptional()
+  @Type(() => Number)
+  @IsInt()
+  @Min(0)
+  prixMin?: number;
+
   @ApiPropertyOptional({ minimum: 0, example: 100000 })
   @IsOptional()
   @Type(() => Number)
   @IsInt()
   @Min(0)
   prixMax?: number;
+
+  @ApiPropertyOptional({ minimum: 1, example: 2 })
+  @IsOptional()
+  @Type(() => Number)
+  @IsInt()
+  @Min(1)
+  capaciteMin?: number;
 
   @ApiPropertyOptional({ minimum: 1, default: 1 })
   @IsOptional()

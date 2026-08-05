@@ -90,11 +90,16 @@ export function PublicPropertyCard({ listing }: Props) {
       {/* Content */}
       <div className="flex flex-col flex-1 p-5">
         {/* Localisation */}
-        <div className="flex items-center gap-1.5 mb-2.5">
+        <div className="flex items-center gap-1.5 mb-2.5 flex-wrap">
           <MapPin className="w-4 h-4 text-foreground-muted shrink-0" />
           <span className="text-[13px] font-semibold text-foreground-muted line-clamp-1">
             {location || 'Sénégal'}
           </span>
+          {listing.distanceKm !== undefined && listing.distanceKm !== null && (
+            <span className="inline-flex items-center gap-0.5 rounded-full bg-forest-50 px-2 py-0.5 text-[10px] font-extrabold text-forest-800 border border-forest-100/80 shrink-0">
+              📍 À {(listing.distanceKm as number).toFixed(1)} km
+            </span>
+          )}
         </div>
 
         {/* Titre */}

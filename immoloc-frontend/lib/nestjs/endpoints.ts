@@ -101,4 +101,10 @@ export const NEST_API = {
     RECENT_ACTIVITY:  `${BASE}/dashboard/owner/recent-activity`,
     UPCOMING_EVENTS:  `${BASE}/dashboard/owner/upcoming-events`,
   },
+  PUSH_NOTIFICATIONS: {
+    VAPID_PUBLIC_KEY: `${BASE}/notifications/vapid-public-key`,
+    SUBSCRIBE:        `${BASE}/notifications/subscribe`,
+    UNSUBSCRIBE:      `${BASE}/notifications/unsubscribe`,
+    TEST:             `${BASE}/notifications/test`,
+  },
 } as const;

@@ -16,8 +16,15 @@ export const TRI_VALUES = ['pertinence', 'prix_asc', 'prix_desc', 'note_desc', '
  * Un paramètre invalide est ignoré, jamais une erreur 500
  */
 export const filtersSchema = z.object({
-  // Lieu
+  // Lieu & GPS
   ville: z.string().min(1).optional(),
+  quartier: z.string().min(1).optional(),
+  lat: z.coerce.number().optional(),
+  lng: z.coerce.number().optional(),
+  rayon: z.coerce.number().min(1).max(500).optional(),
+
+  // Offre Spéciale
+  derniereMinute: z.literal('1').optional(),
 
   // Dates (format YYYY-MM-DD)
   arrivee: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).optional(),
@@ -94,6 +101,9 @@ export function countActiveFilters(filters: SearchFilters): number {
   let count = 0;
 
   if (filters.ville) count++;
+  if (filters.quartier) count++;
+  if (filters.lat !== undefined && filters.lng !== undefined) count++;
+  if (filters.derniereMinute) count++;
   if (filters.arrivee && filters.depart) count++;
   if (filters.voyageurs) count++;
   if (filters.type && filters.type.length > 0) count++;

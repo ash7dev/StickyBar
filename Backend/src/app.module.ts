@@ -20,6 +20,7 @@ import { UsersModule } from './modules/users/users.module';
 import { ReviewsModule } from './modules/reviews/reviews.module';
 import { DisputesModule } from './modules/disputes/disputes.module';
 import { CalendrierModule } from './modules/calendrier/calendrier.module';
+import { NotificationsModule } from './modules/notifications/notifications.module';
 import { JwtAuthGuard } from './shared/guards/jwt-auth.guard';
 import { RolesGuard } from './shared/guards/roles.guard';
 
@@ -53,6 +54,7 @@ import { RolesGuard } from './shared/guards/roles.guard';
     ReviewsModule,
     DisputesModule,
     CalendrierModule,
+    NotificationsModule,
   ],
   providers: [
     { provide: APP_GUARD, useClass: ThrottlerGuard },

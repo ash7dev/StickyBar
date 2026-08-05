@@ -14,6 +14,7 @@ import { createClient } from '@/lib/supabase/client';
 import { useRoleStore } from '@/stores/role.store';
 import { useAuth } from '@/features/auth/hooks/use-auth';
 import { useSwitchRole } from '@/features/auth/hooks/use-switch-role';
+import { PushNotificationWidget } from '@/components/pwa/PushNotificationWidget';
 import { cn } from '@/lib/utils/cn';
 
 interface NavLink {
@@ -213,6 +214,8 @@ export function Navbar() {
 
             {/* ── Actions desktop ──────────────────────────────── */}
             <div className="hidden md:flex items-center gap-3">
+              <PushNotificationWidget variant="compact" userId={userId || undefined} />
+
               {loading ? (
                 <div className="flex items-center gap-2">
                   <div className="h-9 w-9 rounded-full bg-neutral-100 animate-pulse" />

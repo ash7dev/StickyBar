@@ -17,6 +17,7 @@ import { ProfileInfoCard }    from '@/features/profile/components/ProfileInfoCar
 import { ProfileKycCard }     from '@/features/profile/components/ProfileKycCard';
 import { ProfileActionsCard } from '@/features/profile/components/ProfileActionsCard';
 import { ParametresSkeleton } from '@/features/profile/components/ParametresSkeleton';
+import { PushNotificationWidget } from '@/components/pwa/PushNotificationWidget';
 
 function ParametresContent() {
   const store       = useRoleStore();
@@ -106,7 +107,8 @@ function ParametresContent() {
               user={user}
               onKycClick={() => setGateOpen(true)}
             />
-            <div className="lg:col-span-2">
+            <div className="lg:col-span-2 space-y-6">
+              <PushNotificationWidget userId={user.id} />
               <ProfileActionsCard user={user} />
             </div>
           </div>
