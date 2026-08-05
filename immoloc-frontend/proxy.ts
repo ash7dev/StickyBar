@@ -11,6 +11,14 @@ const AUTH_ROUTES = ['/login', '/register', '/verify', '/complete-profile', '/au
 const PUBLIC_ROUTES = ['/', '/logements', '/contact', '/cgu', '/legal', '/privacy', '/comment-ca-marche', '/become-host'];
 
 export async function proxy(request: NextRequest) {
+  // ── Protection contre les cookies géants (HTTP 431) ──────────────────────
+  const oversized = request.cookies.getAll().filter(c => c.value && c.value.length > 4096);
+  if (oversized.length > 0) {
+    const cleanResponse = NextResponse.redirect(new URL(request.nextUrl.pathname, request.url));
+    oversized.forEach(c => cleanResponse.cookies.delete(c.name));
+    return cleanResponse;
+  }
+
   let supabaseResponse = NextResponse.next({ request });
 
   const supabase = createServerClient(

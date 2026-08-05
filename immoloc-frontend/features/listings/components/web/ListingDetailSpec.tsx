@@ -1,6 +1,7 @@
 'use client';
 
 import Image from 'next/image';
+import Link from 'next/link';
 import { useMemo, useState } from 'react';
 import {
   AirVent, Bath, BedDouble, ChevronDown, CheckCircle2, Coins, Droplets,
@@ -385,66 +386,46 @@ export function ListingDetailSpec({ listing }: ListingDetailSpecProps) {
           Votre hôte
         </h2>
 
-        <div className="flex flex-col items-start justify-between gap-6 rounded-card border border-border bg-background-card p-6 shadow-xs sm:flex-row sm:items-center">
-          <div className="flex items-center gap-4">
-            {proprietaire?.avatarUrl ? (
-              <div className="relative h-14 w-14 shrink-0 overflow-hidden rounded-pill border border-border">
-                <Image src={proprietaire.avatarUrl} alt="" fill sizes="56px" className="object-cover" />
-              </div>
-            ) : (
-              /* Le dégradé vert vif sur l'avatar était la seule surface
-                 dégradée de la page, dans une couleur absente du système. */
-              <span className="grid h-14 w-14 shrink-0 place-items-center rounded-pill bg-forest-100 text-lg font-semibold text-forest-700">
-                {hostInitials}
-              </span>
-            )}
-
-            <div>
-              <h3 className="font-display text-lg font-semibold leading-snug text-forest-900">
-                {hostName}
-              </h3>
-              {hostYear && (
-                <p className="mt-0.5 text-xs text-foreground-muted">Hôte depuis {hostYear}</p>
-              )}
-
-              {isKycVerified && (
-                /* La vérification d'identité est un statut mérité :
-                   l'or, comme le badge « Vérifié » des annonces. */
-                <span className="mt-2 inline-flex items-center gap-1.5 rounded-pill border border-gold-200 bg-gold-50 px-2.5 py-1 text-xs font-semibold text-gold-700">
-                  <ShieldCheck className="h-3.5 w-3.5" aria-hidden="true" />
-                  Identité vérifiée
+          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-6 w-full">
+            <Link 
+              href={`/hotes/${proprietaire?.id}`}
+              className="flex items-center gap-4 group/host hover:opacity-90 transition-opacity"
+            >
+              {proprietaire?.avatarUrl ? (
+                <div className="relative h-14 w-14 shrink-0 overflow-hidden rounded-pill border border-border group-hover/host:ring-2 group-hover/host:ring-forest-900 transition-all">
+                  <Image src={proprietaire.avatarUrl} alt="" fill sizes="56px" className="object-cover" />
+                </div>
+              ) : (
+                <span className="grid h-14 w-14 shrink-0 place-items-center rounded-pill bg-forest-100 text-lg font-semibold text-forest-700 group-hover/host:bg-forest-900 group-hover/host:text-lime-300 transition-colors">
+                  {hostInitials}
                 </span>
               )}
-            </div>
-          </div>
 
-          {/* « < 1h · Réponse » était écrit en dur : une performance affichée
-             sans aucune mesure derrière. Retirée. */}
-          <dl className="grid w-full grid-cols-2 gap-6 border-t border-border pt-4 sm:w-auto sm:border-l sm:border-t-0 sm:pl-6 sm:pt-0">
-            <div>
-              <dt className="text-xs text-foreground-muted">
-                Séjour{totalSejours > 1 ? 's' : ''} accueilli{totalSejours > 1 ? 's' : ''}
-              </dt>
-              <dd className="text-base font-semibold tabular-nums text-foreground">{totalSejours}</dd>
-            </div>
-
-            <div>
-              <dt className="text-xs text-foreground-muted">Évaluation</dt>
-              <dd className="flex items-center gap-1 text-base font-semibold text-foreground">
-                {totalAvis > 0 && proprietaire?.noteProprietaire != null ? (
-                  <>
-                    <Star className="h-4 w-4 fill-current text-gold-500" aria-hidden="true" />
-                    {/* La note sortait brute : 4.666666 s'affichait tel quel. */}
-                    <span className="tabular-nums">{fmtNote.format(Number(proprietaire.noteProprietaire))}</span>
-                    <span className="text-xs font-normal tabular-nums text-foreground-faint">({totalAvis})</span>
-                  </>
-                ) : (
-                  <span className="text-sm font-normal text-foreground-muted">Aucun avis</span>
+              <div>
+                <h3 className="font-display text-lg font-semibold leading-snug text-forest-900 group-hover/host:underline flex items-center gap-1">
+                  <span>{hostName}</span>
+                </h3>
+                {hostYear && (
+                  <p className="mt-0.5 text-xs text-foreground-muted">Hôte depuis {hostYear}</p>
                 )}
-              </dd>
-            </div>
-          </dl>
-        </div>
+
+                {isKycVerified && (
+                  <span className="mt-2 inline-flex items-center gap-1.5 rounded-pill border border-gold-200 bg-gold-50 px-2.5 py-1 text-xs font-semibold text-gold-700">
+                    <ShieldCheck className="h-3.5 w-3.5" aria-hidden="true" />
+                    Identité vérifiée
+                  </span>
+                )}
+              </div>
+            </Link>
+
+            <Link
+              href={`/hotes/${proprietaire?.id}`}
+              className="w-full sm:w-auto px-5 py-2.5 rounded-full bg-forest-900 text-lime-300 hover:bg-forest-950 hover:scale-[1.02] active:scale-95 text-xs font-extrabold transition-all text-center shadow-md flex items-center justify-center gap-1"
+            >
+              <span>Voir le profil de l'hôte</span>
+              <span>→</span>
+            </Link>
+          </div>
       </section>
     </div>
   );

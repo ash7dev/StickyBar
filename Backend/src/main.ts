@@ -9,6 +9,12 @@ async function bootstrap() {
   const app = await NestFactory.create(AppModule);
   const config = app.get(ConfigService);
 
+  // Augmenter la taille maximale des en-têtes HTTP pour éviter les erreurs HTTP 431
+  const server = app.getHttpServer();
+  if (server) {
+    server.maxHeaderSize = 65536;
+  }
+
   // Sécurité
   app.use(helmet());
 
@@ -52,6 +58,8 @@ async function bootstrap() {
     const document = SwaggerModule.createDocument(app, swaggerConfig);
     SwaggerModule.setup('api/docs', app, document);
   }
+
+  app.enableShutdownHooks();
 
   const port = config.get<number>('PORT', 4000);
   await app.listen(port);

@@ -75,6 +75,7 @@ export const NEST_API = {
   USERS: {
     ME: `${BASE}/users/me`,
     DELETE_ME: `${BASE}/users/me`,
+    OWNER_PROFILE: (id: string) => `${BASE}/users/owner-profile/${id}`,
   },
   KYC: {
     SUBMIT: `${BASE}/kyc/submit`,

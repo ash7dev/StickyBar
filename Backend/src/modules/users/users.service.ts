@@ -33,6 +33,125 @@ export class UsersService {
     return user;
   }
 
+  /**
+   * Profil public complet du propriétaire / hôte (style Instagram / Superhost Airbnb)
+   */
+  async getPublicOwnerProfile(targetId: string) {
+    const owner = await this.prisma.utilisateur.findFirst({
+      where: {
+        OR: [{ id: targetId }, { userId: targetId }],
+      },
+      select: {
+        id: true,
+        userId: true,
+        prenom: true,
+        nom: true,
+        avatarUrl: true,
+        creeLe: true,
+        statutKyc: true,
+        estProprietaire: true,
+        noteProprietaire: true,
+        totalAvis: true,
+      },
+    });
+
+    if (!owner) {
+      throw new NotFoundException('Propriétaire introuvable');
+    }
+
+    // 1. Récupérer les logements publiés de cet hôte
+    const logements = await this.prisma.logement.findMany({
+      where: {
+        proprietaireId: owner.id,
+        statut: 'PUBLISHED',
+      },
+      select: {
+        id: true,
+        titre: true,
+        description: true,
+        prixBase: true,
+        ville: true,
+        quartier: true,
+        capaciteMax: true,
+        nombreChambres: true,
+        nombreSallesBain: true,
+        note: true,
+        totalAvis: true,
+        photos: {
+          select: { url: true, estPrincipale: true, position: true },
+          orderBy: [{ estPrincipale: 'desc' }, { position: 'asc' }],
+          take: 5,
+        },
+      },
+      orderBy: { creeLe: 'desc' },
+    });
+
+    // 2. Récupérer les avis reçus par cet hôte
+    const avis = await this.prisma.avis.findMany({
+      where: {
+        cibleId: owner.id,
+      },
+      select: {
+        id: true,
+        note: true,
+        commentaire: true,
+        typeAvis: true,
+        creeLe: true,
+        auteur: {
+          select: {
+            id: true,
+            prenom: true,
+            nom: true,
+            avatarUrl: true,
+          },
+        },
+        reservation: {
+          select: {
+            id: true,
+            logement: {
+              select: {
+                id: true,
+                titre: true,
+              },
+            },
+          },
+        },
+      },
+      orderBy: { creeLe: 'desc' },
+      take: 20,
+    });
+
+    const noteMoyenneNum = Number(owner.noteProprietaire) || (avis.length > 0 ? (avis.reduce((acc, a) => acc + Number(a.note), 0) / avis.length) : 5.0);
+    const isSuperhost = noteMoyenneNum >= 4.7 && avis.length >= 2;
+    const isKycVerified = owner.statutKyc === 'VERIFIE';
+
+    return {
+      owner: {
+        id: owner.id,
+        userId: owner.userId,
+        prenom: owner.prenom,
+        nom: owner.nom,
+        avatarUrl: owner.avatarUrl,
+        creeLe: owner.creeLe,
+        statutKyc: owner.statutKyc,
+        estProprietaire: owner.estProprietaire,
+        noteProprietaire: noteMoyenneNum.toFixed(1),
+        totalAvis: owner.totalAvis || avis.length,
+        isSuperhost,
+        isKycVerified,
+      },
+      stats: {
+        totalLogements: logements.length,
+        noteMoyenne: noteMoyenneNum.toFixed(1),
+        totalAvisCount: owner.totalAvis || avis.length,
+        tauxReponse: '99%',
+        delaiReponse: '< 1 heure',
+      },
+      logements,
+      avis,
+    };
+  }
+
   async updateProfile(userId: string, dto: UpdateProfileDto) {
     const utilisateur = await this.prisma.utilisateur.findUnique({
       where: { id: userId },

@@ -1,6 +1,7 @@
-import { Body, Controller, Delete, Get, Patch, UseGuards } from '@nestjs/common';
+import { Body, Controller, Delete, Get, Param, Patch, UseGuards } from '@nestjs/common';
 import { ApiTags, ApiBearerAuth, ApiOperation } from '@nestjs/swagger';
 import { JwtAuthGuard } from '@shared/guards/jwt-auth.guard';
+import { Public } from '@shared/decorators/public.decorator';
 import { CurrentUser } from '@shared/decorators/current-user.decorator';
 import { AuthUser } from '@shared/types/jwt-payload.type';
 import { UsersService } from './users.service';
@@ -12,6 +13,13 @@ import { UpdateProfileDto } from './dto/update-user.dto';
 @Controller('users')
 export class UsersController {
   constructor(private readonly usersService: UsersService) {}
+
+  @Public()
+  @Get('owner-profile/:id')
+  @ApiOperation({ summary: 'Profil public complet du propriétaire (annonces, statistiques, avis)' })
+  getOwnerProfile(@Param('id') id: string) {
+    return this.usersService.getPublicOwnerProfile(id);
+  }
 
   @Get('me')
   @ApiOperation({ summary: 'Profil complet de l\'utilisateur connecté' })

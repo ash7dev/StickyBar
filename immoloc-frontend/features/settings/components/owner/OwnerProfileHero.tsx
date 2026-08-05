@@ -32,6 +32,45 @@ export function OwnerProfileHero({
 
   const fullName = prenom && nom ? `${prenom} ${nom}` : (prenom || 'Propriétaire Klef');
 
+  const compressAvatarImage = (file: File): Promise<string> => {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        const img = new Image();
+        img.onload = () => {
+          const canvas = document.createElement('canvas');
+          const MAX_SIZE = 300;
+          let width = img.width;
+          let height = img.height;
+
+          if (width > height) {
+            if (width > MAX_SIZE) {
+              height = Math.round((height * MAX_SIZE) / width);
+              width = MAX_SIZE;
+            }
+          } else {
+            if (height > MAX_SIZE) {
+              width = Math.round((width * MAX_SIZE) / height);
+              height = MAX_SIZE;
+            }
+          }
+
+          canvas.width = width;
+          canvas.height = height;
+          const ctx = canvas.getContext('2d');
+          if (!ctx) return resolve(e.target?.result as string);
+          ctx.drawImage(img, 0, 0, width, height);
+          const compressedDataUrl = canvas.toDataURL('image/jpeg', 0.82);
+          resolve(compressedDataUrl);
+        };
+        img.onerror = reject;
+        img.src = e.target?.result as string;
+      };
+      reader.onerror = reject;
+      reader.readAsDataURL(file);
+    });
+  };
+
   const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
@@ -39,36 +78,32 @@ export function OwnerProfileHero({
     setIsUploading(true);
 
     try {
-      // 1. Instant preview using FileReader
-      const reader = new FileReader();
-      reader.onload = async () => {
-        const previewDataUrl = reader.result as string;
-        setPhotoUrl(previewDataUrl);
+      // 1. Compresser l'image en 300x300 (~20KB) pour éviter l'erreur HTTP 431
+      const compressedDataUrl = await compressAvatarImage(file);
+      setPhotoUrl(compressedDataUrl);
 
-        // 2. Update Supabase user metadata avatar_url
-        const supabase = createClient();
-        await supabase.auth.updateUser({
-          data: { avatar_url: previewDataUrl, photoUrl: previewDataUrl },
+      // 2. Mettre à jour Supabase user metadata avatar_url
+      const supabase = createClient();
+      await supabase.auth.updateUser({
+        data: { avatar_url: compressedDataUrl, photoUrl: compressedDataUrl },
+      });
+
+      // 3. Mettre à jour l'API NestJS Utilisateur (PostgreSQL)
+      try {
+        await nestFetch(NEST_API.USERS.ME, {
+          method: 'PATCH',
+          body: JSON.stringify({ avatarUrl: compressedDataUrl }),
         });
+      } catch (e) {
+        console.warn('Erreur mise à jour avatar API NestJS:', e);
+      }
 
-        // 3. Update NestJS backend PostgreSQL Utilisateur avatarUrl
-        try {
-          await nestFetch(NEST_API.USERS.ME, {
-            method: 'PATCH',
-            body: JSON.stringify({ avatarUrl: previewDataUrl }),
-          });
-        } catch (e) {
-          console.warn('Erreur mise à jour avatar API NestJS:', e);
-        }
-
-        if (onPhotoUpdated) {
-          onPhotoUpdated(previewDataUrl);
-        }
-        setIsUploading(false);
-      };
-      reader.readAsDataURL(file);
+      if (onPhotoUpdated) {
+        onPhotoUpdated(compressedDataUrl);
+      }
     } catch (err) {
       console.error('Erreur téléversement photo profil:', err);
+    } finally {
       setIsUploading(false);
     }
   };
