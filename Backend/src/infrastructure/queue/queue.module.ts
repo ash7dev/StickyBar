@@ -19,6 +19,13 @@ import { CronJobsService } from './cron-jobs.service';
             password: parsed.password,
             username: parsed.username || 'default',
             tls: parsed.protocol === 'rediss:' ? {} : undefined,
+            maxRetriesPerRequest: null, // Requis par Bull
+            enableReadyCheck: false,
+            connectTimeout: 10_000,
+            retryStrategy: (times: number) => {
+              if (times > 10) return null; // Stop après 10 essais
+              return Math.min(times * 200, 5000);
+            },
           },
         };
       },

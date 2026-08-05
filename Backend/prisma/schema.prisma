@@ -650,7 +650,7 @@ model Avis {
 
 model PushSubscription {
   id         String   @id @default(uuid())
-  userId     String
+  userId     String?
   endpoint   String   @unique
   p256dh     String
   auth       String
@@ -659,7 +659,7 @@ model PushSubscription {
   creeLe     DateTime @default(now()) @map("created_at")
   misAJourLe DateTime @updatedAt @map("updated_at")
 
-  utilisateur Utilisateur @relation(fields: [userId], references: [userId], onDelete: Cascade)
+  utilisateur Utilisateur? @relation(fields: [userId], references: [userId], onDelete: Cascade)
 
   @@index([userId])
   @@map("push_subscriptions")

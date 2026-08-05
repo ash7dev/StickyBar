@@ -44,10 +44,16 @@ export class NotificationsService implements OnModuleInit {
   }
 
   async subscribe(dto: SubscribePushDto, currentUserId?: string) {
-    const targetUserId = dto.userId || currentUserId;
+    const candidateUserId = dto.userId || currentUserId || null;
 
-    if (!targetUserId) {
-      throw new Error('Un utilisateur valide doit être associé à l\'abonnement Push.');
+    // Vérifie que l'utilisateur existe en base (si un userId est fourni)
+    let validUserId: string | null = null;
+    if (candidateUserId) {
+      const userExists = await this.prisma.utilisateur.findUnique({
+        where: { userId: candidateUserId },
+        select: { userId: true },
+      });
+      validUserId = userExists ? candidateUserId : null;
     }
 
     const subscription = await this.prisma.pushSubscription.upsert({
@@ -56,20 +62,20 @@ export class NotificationsService implements OnModuleInit {
         endpoint: dto.endpoint,
         p256dh: dto.keys.p256dh,
         auth: dto.keys.auth,
-        userId: targetUserId,
+        userId: validUserId,
         userAgent: dto.userAgent,
         deviceType: dto.deviceType,
       },
       update: {
         p256dh: dto.keys.p256dh,
         auth: dto.keys.auth,
-        userId: targetUserId,
+        userId: validUserId,
         userAgent: dto.userAgent,
         deviceType: dto.deviceType,
       },
     });
 
-    this.logger.log(`Abonnement Push enregistré pour l'utilisateur ${targetUserId}`);
+    this.logger.log(`Abonnement Push enregistré${validUserId ? ` pour l'utilisateur ${validUserId}` : ' (anonyme)'}`);
     return { success: true, subscriptionId: subscription.id };
   }
 

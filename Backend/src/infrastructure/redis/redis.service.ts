@@ -32,9 +32,15 @@ export class RedisService implements OnModuleInit, OnModuleDestroy {
       tls: url.startsWith('rediss://') ? {} : undefined,
       maxRetriesPerRequest: 3,
       lazyConnect: false,
+      enableOfflineQueue: false,
+      connectTimeout: 10_000,
+      disconnectTimeout: 5_000,
       retryStrategy: (times) => {
-        // Exponentiel backoff: 100ms, 200ms, 400ms, 800ms, puis max 3s
-        const delay = Math.min(times * 100, 3000);
+        if (times > 10) {
+          this.logger.error('❌ Redis : abandon des tentatives après 10 essais');
+          return null; // Stop retrying → évite accumulation de connexions zombies
+        }
+        const delay = Math.min(times * 200, 5000);
         return delay;
       },
     });
@@ -60,7 +66,18 @@ export class RedisService implements OnModuleInit, OnModuleDestroy {
   }
 
   async onModuleDestroy() {
-    await this.client.quit();
+    try {
+      // Timeout de 3s : si quit() ne répond pas, on force disconnect()
+      await Promise.race([
+        this.client.quit(),
+        new Promise((_, reject) =>
+          setTimeout(() => reject(new Error('Redis quit timeout')), 3000)
+        ),
+      ]);
+    } catch {
+      this.logger.warn('⚠️  Redis quit timeout — forçage disconnect()');
+      this.client.disconnect();
+    }
   }
 
   /**
