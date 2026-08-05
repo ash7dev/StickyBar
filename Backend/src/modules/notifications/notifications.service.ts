@@ -46,14 +46,27 @@ export class NotificationsService implements OnModuleInit {
   async subscribe(dto: SubscribePushDto, currentUserId?: string) {
     const candidateUserId = dto.userId || currentUserId || null;
 
-    // Vérifie que l'utilisateur existe en base (si un userId est fourni)
+    // Vérifie que l'utilisateur existe en base (par userId Supabase OU par id Prisma)
     let validUserId: string | null = null;
     if (candidateUserId) {
-      const userExists = await this.prisma.utilisateur.findUnique({
+      // Cherche d'abord par userId (champ Supabase Auth ID)
+      let userRecord = await this.prisma.utilisateur.findUnique({
         where: { userId: candidateUserId },
         select: { userId: true },
       });
-      validUserId = userExists ? candidateUserId : null;
+
+      // Fallback : cherche par id (UUID Prisma)
+      if (!userRecord) {
+        userRecord = await this.prisma.utilisateur.findUnique({
+          where: { id: candidateUserId },
+          select: { userId: true },
+        });
+      }
+
+      validUserId = userRecord ? userRecord.userId : null;
+      if (!validUserId) {
+        this.logger.warn(`Utilisateur non trouvé pour Push subscription (candidateId: ${candidateUserId})`);
+      }
     }
 
     const subscription = await this.prisma.pushSubscription.upsert({
