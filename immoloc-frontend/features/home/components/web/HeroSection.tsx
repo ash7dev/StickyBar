@@ -308,9 +308,7 @@ function ListingCard({
 
   return (
     <Link
-      // C'etait /explorer/${id} : troisieme convention d'URL dans la base,
-      // apres /logements/${slug} et /logements/${id}.
-      href={`/logements/${slug}`}
+      href={`/explorer/${slug}`}
       style={style}
       className={`block overflow-hidden rounded-card border border-white/70 bg-neutral-100 shadow-lg transition-transform duration-200 ease-[cubic-bezier(0.22,1,0.36,1)] hover:-translate-y-1 motion-reduce:transition-none ${className}`}
     >

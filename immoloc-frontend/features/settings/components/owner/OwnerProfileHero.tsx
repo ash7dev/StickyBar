@@ -2,8 +2,8 @@
 
 import { useState, useRef } from 'react';
 import { ShieldCheck, Calendar, Star, Building2, Camera, Loader2 } from 'lucide-react';
-import { createClient } from '@/lib/supabase/client';
 import { nestFetch, NEST_API } from '@/lib/nestjs';
+import { createClient } from '@/lib/supabase/client';
 
 interface Props {
   prenom?: string;
@@ -32,7 +32,10 @@ export function OwnerProfileHero({
 
   const fullName = prenom && nom ? `${prenom} ${nom}` : (prenom || 'Propriétaire Klef');
 
-  const compressAvatarImage = (file: File): Promise<string> => {
+  /**
+   * Compresse l'image en JPEG 300x300 et retourne un Blob (~20KB)
+   */
+  const compressAvatarToBlob = (file: File): Promise<Blob> => {
     return new Promise((resolve, reject) => {
       const reader = new FileReader();
       reader.onload = (e) => {
@@ -58,10 +61,16 @@ export function OwnerProfileHero({
           canvas.width = width;
           canvas.height = height;
           const ctx = canvas.getContext('2d');
-          if (!ctx) return resolve(e.target?.result as string);
+          if (!ctx) return reject(new Error('Canvas context not available'));
           ctx.drawImage(img, 0, 0, width, height);
-          const compressedDataUrl = canvas.toDataURL('image/jpeg', 0.82);
-          resolve(compressedDataUrl);
+          canvas.toBlob(
+            (blob) => {
+              if (blob) resolve(blob);
+              else reject(new Error('Failed to create blob'));
+            },
+            'image/jpeg',
+            0.82,
+          );
         };
         img.onerror = reject;
         img.src = e.target?.result as string;
@@ -78,29 +87,42 @@ export function OwnerProfileHero({
     setIsUploading(true);
 
     try {
-      // 1. Compresser l'image en 300x300 (~20KB) pour éviter l'erreur HTTP 431
-      const compressedDataUrl = await compressAvatarImage(file);
-      setPhotoUrl(compressedDataUrl);
+      // 1. Compresser l'image en 300x300 JPEG (~20KB)
+      const blob = await compressAvatarToBlob(file);
 
-      // 2. Mettre à jour Supabase user metadata avatar_url
+      // 2. Upload sur Supabase Storage (bucket "avatars")
       const supabase = createClient();
-      await supabase.auth.updateUser({
-        data: { avatar_url: compressedDataUrl, photoUrl: compressedDataUrl },
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) throw new Error('Utilisateur non connecté');
+
+      const filePath = `${user.id}/avatar.jpg`;
+
+      const { error: uploadError } = await supabase.storage
+        .from('avatars')
+        .upload(filePath, blob, {
+          contentType: 'image/jpeg',
+          upsert: true, // Écraser l'avatar existant
+          cacheControl: '3600',
+        });
+
+      if (uploadError) throw uploadError;
+
+      // 3. Obtenir l'URL publique
+      const { data: { publicUrl } } = supabase.storage
+        .from('avatars')
+        .getPublicUrl(filePath);
+
+      // Ajouter un cache-buster pour forcer le rafraîchissement
+      const avatarPublicUrl = `${publicUrl}?t=${Date.now()}`;
+
+      // 4. Mettre à jour l'URL dans PostgreSQL via NestJS (PAS de base64 !)
+      await nestFetch(NEST_API.USERS.ME, {
+        method: 'PATCH',
+        body: JSON.stringify({ avatarUrl: avatarPublicUrl }),
       });
 
-      // 3. Mettre à jour l'API NestJS Utilisateur (PostgreSQL)
-      try {
-        await nestFetch(NEST_API.USERS.ME, {
-          method: 'PATCH',
-          body: JSON.stringify({ avatarUrl: compressedDataUrl }),
-        });
-      } catch (e) {
-        console.warn('Erreur mise à jour avatar API NestJS:', e);
-      }
-
-      if (onPhotoUpdated) {
-        onPhotoUpdated(compressedDataUrl);
-      }
+      setPhotoUrl(avatarPublicUrl);
+      onPhotoUpdated?.(avatarPublicUrl);
     } catch (err) {
       console.error('Erreur téléversement photo profil:', err);
     } finally {
