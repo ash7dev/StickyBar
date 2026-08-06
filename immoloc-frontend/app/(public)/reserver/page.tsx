@@ -174,6 +174,8 @@ export default function ReserverPage({ searchParams }: Props) {
           dateDebut,
           dateFin,
           nbPersonnes,
+          typePaiement,
+          fournisseur,
         }),
       });
       router.push(`/reservations/${res.reservationId}`);

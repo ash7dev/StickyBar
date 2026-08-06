@@ -968,10 +968,14 @@ export function ReservationActionPanel({ id, res, onRefetch }: Props) {
               {sideActions}
 
               <div className="border-t border-border pt-4">
-                <GhostButton onClick={() => { clearFeedback(); setShowCancelModal(true); }}>
-                  <X className="h-3.5 w-3.5" aria-hidden="true" />
+                <button
+                  type="button"
+                  onClick={() => { clearFeedback(); setShowCancelModal(true); }}
+                  className="inline-flex items-center gap-2 rounded-pill border border-error-200 bg-error-50/60 hover:bg-error-50 hover:border-error-300 px-4 py-2.5 text-xs font-semibold text-error-600 transition-colors"
+                >
+                  <X className="h-3.5 w-3.5 text-error-600" aria-hidden="true" />
                   Annuler la réservation
-                </GhostButton>
+                </button>
               </div>
             </>
           )}

@@ -35,13 +35,22 @@ export function ReservationPaymentCard({ paiement: directPaiement, reservation }
   const p = directPaiement ?? reservation?.paiement;
   if (!p && !reservation) return null;
 
-  const typePaiement = reservation?.typePaiement ?? (p ? 'FULL' : undefined);
-  const totalLocataire = reservation?.totalLocataire;
+  const totalLocataire = Number(reservation?.totalLocataire ?? 0);
   const reductionNuits = Number(reservation?.reductionNuits ?? 0);
-  const soldeRestant = Number(reservation?.montantSoldeRestant ?? 0);
-  const montantRegle = Number(p?.montant ?? reservation?.montantAcompte ?? totalLocataire ?? 0);
+  const montantAcompte = Number(reservation?.montantAcompte ?? 0);
+  const montantRegle = Number(p?.montant ?? (montantAcompte > 0 ? montantAcompte : totalLocataire));
+  const rawSolde = Number(reservation?.montantSoldeRestant ?? 0);
 
-  const isDeposit = typePaiement === 'DEPOSIT' || soldeRestant > 0;
+  // Détection infaillible d'un paiement par acompte
+  const isDeposit =
+    reservation?.typePaiement === 'DEPOSIT' ||
+    rawSolde > 0 ||
+    (montantAcompte > 0 && totalLocataire > 0 && montantAcompte < totalLocataire) ||
+    (montantRegle > 0 && totalLocataire > 0 && montantRegle < totalLocataire);
+
+  const soldeRestant = isDeposit
+    ? (rawSolde > 0 ? rawSolde : Math.max(0, totalLocataire - montantRegle))
+    : 0;
 
   const statut = p
     ? (STATUT_PAIEMENT[p.statut] ?? { label: p.statut, tone: 'warning' as const })
@@ -54,8 +63,8 @@ export function ReservationPaymentCard({ paiement: directPaiement, reservation }
 
       <header className="flex flex-wrap items-center justify-between gap-3 border-b border-border pb-3">
         <div className="flex min-w-0 items-center gap-2.5">
-          <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-inner border border-forest-100 bg-forest-50 text-forest-700">
-            <CreditCard className="h-4 w-4" aria-hidden="true" />
+          <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-inner border border-lime-400/20 bg-forest-950 text-lime-400 shadow-2xs">
+            <CreditCard className="h-4 w-4 text-lime-400" aria-hidden="true" />
           </span>
           <div className="min-w-0">
             <h3 className="font-display text-base font-semibold text-foreground">

@@ -29,4 +29,9 @@ export class CreateReservationDto {
   @IsOptional()
   @IsString()
   typePaiement?: string;
+
+  @ApiProperty({ example: 'WAVE', required: false })
+  @IsOptional()
+  @IsString()
+  fournisseur?: string;
 }
