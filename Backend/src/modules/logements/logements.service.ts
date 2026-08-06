@@ -9,7 +9,7 @@ import {
   NotFoundException,
   UnprocessableEntityException,
 } from '@nestjs/common';
-import { Logement, PhotoLogement, Prisma, StatutLogement, StatutReservation, TarifNuits, TarifPersonnes, TypeHote, TypeLogement } from '@prisma/client';
+import { Logement, PhotoLogement, Prisma, StatutLogement, StatutReservation, TarifNuits, TarifPersonnes, TypeAvis, TypeHote, TypeLogement } from '@prisma/client';
 import { v2 as cloudinary } from 'cloudinary';
 import { CloudinaryService } from '../../infrastructure/cloudinary/cloudinary.service';
 import { PrismaService } from '../../infrastructure/prisma/prisma.service';
@@ -36,7 +36,7 @@ export class LogementsService {
     private readonly prisma: PrismaService,
     private readonly cloudinaryService: CloudinaryService,
     private readonly redis: RedisService,
-  ) {}
+  ) { }
 
   // ── Recherche publique avec cache Redis ────────────────────────────────────
 
@@ -47,9 +47,9 @@ export class LogementsService {
     const a =
       Math.sin(dLat / 2) * Math.sin(dLat / 2) +
       Math.cos((lat1 * Math.PI) / 180) *
-        Math.cos((lat2 * Math.PI) / 180) *
-        Math.sin(dLon / 2) *
-        Math.sin(dLon / 2);
+      Math.cos((lat2 * Math.PI) / 180) *
+      Math.sin(dLon / 2) *
+      Math.sin(dLon / 2);
     const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
     return Math.round(R * c * 10) / 10;
   }
@@ -255,28 +255,28 @@ export class LogementsService {
       archiveLe: null,
     };
 
-    const POOL  = 40; // pool large fetchée en DB…
+    const POOL = 40; // pool large fetchée en DB…
     const LIMIT = 12; // …dont on retourne 12 aléatoires
 
     const cardSelect = {
-      id:           true,
-      titre:        true,
-      type:         true,
-      sousType:     true,
-      ville:        true,
-      quartier:     true,
-      prixBase:     true,
-      capaciteMax:  true,
-      note:         true,
+      id: true,
+      titre: true,
+      type: true,
+      sousType: true,
+      ville: true,
+      quartier: true,
+      prixBase: true,
+      capaciteMax: true,
+      note: true,
       totalSejours: true,
-      creeLe:       true,
+      creeLe: true,
       isInstantBooking: true,
       derniereMinuteActive: true,
-      videoUrl:     true,
+      videoUrl: true,
       photos: {
-        where:  { estPrincipale: true },
+        where: { estPrincipale: true },
         select: { url: true, estPrincipale: true },
-        take:   1,
+        take: 1,
       },
       equipements: {
         select: {
@@ -287,42 +287,42 @@ export class LogementsService {
     } satisfies Prisma.LogementSelect;
 
     type SectionDef = {
-      id:      string;
-      where:   Prisma.LogementWhereInput;
+      id: string;
+      where: Prisma.LogementWhereInput;
       orderBy: Prisma.LogementOrderByWithRelationInput;
     };
 
     const sections: SectionDef[] = [
       // Règle stricte : au moins 1 réservation confirmée
-      { id: 'popular',      where: { ...base, totalSejours: { gt: 0 } },                                         orderBy: { totalSejours: 'desc' } },
+      { id: 'popular', where: { ...base, totalSejours: { gt: 0 } }, orderBy: { totalSejours: 'desc' } },
       // 12 derniers ajoutés — toujours distinct de la grille principale
-      { id: 'newest',       where: base,                                                                          orderBy: { creeLe:        'desc' } },
+      { id: 'newest', where: base, orderBy: { creeLe: 'desc' } },
       // Règle stricte : note >= 4
-      { id: 'rated',        where: { ...base, note: { gte: 4 } },                                                orderBy: { note:          'desc' } },
+      { id: 'rated', where: { ...base, note: { gte: 4 } }, orderBy: { note: 'desc' } },
       // En vedette par type — au moins 1 réservation, sinon fallback sans filtre
-      { id: 'villas',       where: { ...base, type: TypeLogement.VILLA,       totalSejours: { gt: 0 } },         orderBy: { totalSejours: 'desc' } },
-      { id: 'appartements', where: { ...base, type: TypeLogement.APPARTEMENT, totalSejours: { gt: 0 } },         orderBy: { totalSejours: 'desc' } },
-      { id: 'chambres',     where: { ...base, type: TypeLogement.CHAMBRE,     note:         { gt: 0 } },         orderBy: { note:         'desc' } },
-      { id: 'penthouse',    where: { ...base, type: TypeLogement.APPARTEMENT, sousType: 'Penthouse' },           orderBy: { note:         'desc' } },
-      { id: 'loft',         where: { ...base, type: TypeLogement.APPARTEMENT, sousType: 'Loft' },                orderBy: { note:         'desc' } },
-      { id: 'villa-pool',   where: { ...base, type: TypeLogement.VILLA,       sousType: 'Villa avec piscine' },  orderBy: { note:         'desc' } },
-      { id: 'villa-sea',    where: { ...base, type: TypeLogement.VILLA,       sousType: 'Villa bord de mer' },   orderBy: { note:         'desc' } },
-      { id: 'villa-luxe',   where: { ...base, type: TypeLogement.VILLA,       sousType: 'Villa de luxe' },       orderBy: { note:         'desc' } },
-      { id: 'villa-fam',    where: { ...base, type: TypeLogement.VILLA,       sousType: 'Villa familiale' },     orderBy: { note:         'desc' } },
-      { id: 'villa-event',  where: { ...base, type: TypeLogement.VILLA,       sousType: 'Villa pour événement' },orderBy: { note:         'desc' } },
-      { id: 'suite',             where: { ...base, type: TypeLogement.CHAMBRE, sousType: 'Suite meublée' },                              orderBy: { note: 'desc' } },
-      { id: 'maison',            where: { ...base, type: TypeLogement.AUTRES, sousType: 'Maison entière' },                             orderBy: { note: 'desc' } },
+      { id: 'villas', where: { ...base, type: TypeLogement.VILLA, totalSejours: { gt: 0 } }, orderBy: { totalSejours: 'desc' } },
+      { id: 'appartements', where: { ...base, type: TypeLogement.APPARTEMENT, totalSejours: { gt: 0 } }, orderBy: { totalSejours: 'desc' } },
+      { id: 'chambres', where: { ...base, type: TypeLogement.CHAMBRE, note: { gt: 0 } }, orderBy: { note: 'desc' } },
+      { id: 'penthouse', where: { ...base, type: TypeLogement.APPARTEMENT, sousType: 'Penthouse' }, orderBy: { note: 'desc' } },
+      { id: 'loft', where: { ...base, type: TypeLogement.APPARTEMENT, sousType: 'Loft' }, orderBy: { note: 'desc' } },
+      { id: 'villa-pool', where: { ...base, type: TypeLogement.VILLA, sousType: 'Villa avec piscine' }, orderBy: { note: 'desc' } },
+      { id: 'villa-sea', where: { ...base, type: TypeLogement.VILLA, sousType: 'Villa bord de mer' }, orderBy: { note: 'desc' } },
+      { id: 'villa-luxe', where: { ...base, type: TypeLogement.VILLA, sousType: 'Villa de luxe' }, orderBy: { note: 'desc' } },
+      { id: 'villa-fam', where: { ...base, type: TypeLogement.VILLA, sousType: 'Villa familiale' }, orderBy: { note: 'desc' } },
+      { id: 'villa-event', where: { ...base, type: TypeLogement.VILLA, sousType: 'Villa pour événement' }, orderBy: { note: 'desc' } },
+      { id: 'suite', where: { ...base, type: TypeLogement.CHAMBRE, sousType: 'Suite meublée' }, orderBy: { note: 'desc' } },
+      { id: 'maison', where: { ...base, type: TypeLogement.AUTRES, sousType: 'Maison entière' }, orderBy: { note: 'desc' } },
       // Sections par zone géographique
-      { id: 'zone-almadies',     where: { ...base, ville: { contains: 'Almadies',    mode: 'insensitive' } },                           orderBy: { note: 'desc' } },
-      { id: 'zone-saly',         where: { ...base, ville: { contains: 'Saly',        mode: 'insensitive' } },                           orderBy: { note: 'desc' } },
-      { id: 'zone-ngor',         where: { ...base, ville: { contains: 'Ngor',        mode: 'insensitive' } },                           orderBy: { note: 'desc' } },
-      { id: 'zone-mermoz',       where: { ...base, ville: { contains: 'Mermoz',      mode: 'insensitive' } },                           orderBy: { note: 'desc' } },
-      { id: 'zone-ngaparou',     where: { ...base, ville: { contains: 'Ngaparou',    mode: 'insensitive' } },                           orderBy: { note: 'desc' } },
-      { id: 'zone-saint-louis',  where: { ...base, ville: { contains: 'Saint-Louis', mode: 'insensitive' } },                           orderBy: { note: 'desc' } },
-      { id: 'zone-plateau',      where: { ...base, ville: { contains: 'Plateau',     mode: 'insensitive' } },                           orderBy: { note: 'desc' } },
-      { id: 'zone-cap-skirring', where: { ...base, ville: { contains: 'Cap Skirring',mode: 'insensitive' } },                           orderBy: { note: 'desc' } },
-      { id: 'zone-yoff',         where: { ...base, ville: { contains: 'Yoff',        mode: 'insensitive' } },                           orderBy: { note: 'desc' } },
-      { id: 'zone-somone',       where: { ...base, ville: { contains: 'Somone',      mode: 'insensitive' } },                           orderBy: { note: 'desc' } },
+      { id: 'zone-almadies', where: { ...base, ville: { contains: 'Almadies', mode: 'insensitive' } }, orderBy: { note: 'desc' } },
+      { id: 'zone-saly', where: { ...base, ville: { contains: 'Saly', mode: 'insensitive' } }, orderBy: { note: 'desc' } },
+      { id: 'zone-ngor', where: { ...base, ville: { contains: 'Ngor', mode: 'insensitive' } }, orderBy: { note: 'desc' } },
+      { id: 'zone-mermoz', where: { ...base, ville: { contains: 'Mermoz', mode: 'insensitive' } }, orderBy: { note: 'desc' } },
+      { id: 'zone-ngaparou', where: { ...base, ville: { contains: 'Ngaparou', mode: 'insensitive' } }, orderBy: { note: 'desc' } },
+      { id: 'zone-saint-louis', where: { ...base, ville: { contains: 'Saint-Louis', mode: 'insensitive' } }, orderBy: { note: 'desc' } },
+      { id: 'zone-plateau', where: { ...base, ville: { contains: 'Plateau', mode: 'insensitive' } }, orderBy: { note: 'desc' } },
+      { id: 'zone-cap-skirring', where: { ...base, ville: { contains: 'Cap Skirring', mode: 'insensitive' } }, orderBy: { note: 'desc' } },
+      { id: 'zone-yoff', where: { ...base, ville: { contains: 'Yoff', mode: 'insensitive' } }, orderBy: { note: 'desc' } },
+      { id: 'zone-somone', where: { ...base, ville: { contains: 'Somone', mode: 'insensitive' } }, orderBy: { note: 'desc' } },
     ];
 
     const BATCH_SIZE = 2;
@@ -333,10 +333,10 @@ export class LogementsService {
       const batchResults = await Promise.all(
         batch.map(async (s) => {
           const logements = await this.prisma.logement.findMany({
-            where:   s.where,
-            select:  cardSelect,
+            where: s.where,
+            select: cardSelect,
             orderBy: s.orderBy,
-            take:    POOL,
+            take: POOL,
           });
           // Shuffle Fisher-Yates puis on prend les LIMIT premiers
           for (let k = logements.length - 1; k > 0; k--) {
@@ -346,22 +346,22 @@ export class LogementsService {
           return {
             id: s.id,
             listings: logements.slice(0, LIMIT).map((l) => ({
-              id:           l.id,
-              titre:        l.titre,
-              type:         l.type,
-              sousType:     l.sousType,
-              ville:        l.ville,
-              quartier:     l.quartier,
-              prixBase:     Number(l.prixBase),
-              capaciteMax:  l.capaciteMax,
-              note:         l.note ? Number(l.note) : null,
+              id: l.id,
+              titre: l.titre,
+              type: l.type,
+              sousType: l.sousType,
+              ville: l.ville,
+              quartier: l.quartier,
+              prixBase: Number(l.prixBase),
+              capaciteMax: l.capaciteMax,
+              note: l.note ? Number(l.note) : null,
               totalSejours: l.totalSejours,
-              createdAt:    l.creeLe.toISOString(),
+              createdAt: l.creeLe.toISOString(),
               isInstantBooking: l.isInstantBooking,
               derniereMinuteActive: l.derniereMinuteActive,
-              videoUrl:     l.videoUrl ?? null,
-              photos:       l.photos,
-              equipements:  l.equipements
+              videoUrl: l.videoUrl ?? null,
+              photos: l.photos,
+              equipements: l.equipements
                 .map((e) => e.equipement)
                 .filter((e): e is NonNullable<typeof e> => e != null),
             })),
@@ -378,7 +378,7 @@ export class LogementsService {
     try {
       const query = [adresse, quartier, ville, 'Sénégal'].filter(Boolean).join(', ');
       const url = `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(query)}&limit=1`;
-      
+
       const response = await fetch(url, {
         headers: {
           'User-Agent': 'ImmoLoc-Backend/1.0 (contact@immoloc.sn)',
@@ -523,6 +523,22 @@ export class LogementsService {
             dateFin: true,
           },
         },
+        // Avis des voyageurs sur ce logement
+        avis: {
+          where: { typeAvis: TypeAvis.LOCATAIRE_NOTE_LOGEMENT_ET_PROPRIO },
+          orderBy: { creeLe: 'desc' },
+          take: 12,
+          include: {
+            auteur: {
+              select: {
+                id: true,
+                prenom: true,
+                nom: true,
+                avatarUrl: true,
+              },
+            },
+          },
+        },
         // Informations propriétaire enrichies
         proprietaire: {
           select: {
@@ -568,16 +584,16 @@ export class LogementsService {
 
     const proprietaireData = proprietaire
       ? {
-          id: proprietaire.id,
-          prenom: proprietaire.prenom,
-          nom: proprietaire.nom,
-          avatarUrl: proprietaire.avatarUrl,
-          statutKyc: proprietaire.statutKyc,
-          noteProprietaire: Number(proprietaire.noteProprietaire || 0),
-          totalAvis: proprietaire.totalAvis || 0,
-          totalSejours: proprietaire._count?.reservationsProprietaire || 0,
-          creeLe: proprietaire.creeLe,
-        }
+        id: proprietaire.id,
+        prenom: proprietaire.prenom,
+        nom: proprietaire.nom,
+        avatarUrl: proprietaire.avatarUrl,
+        statutKyc: proprietaire.statutKyc,
+        noteProprietaire: Number(proprietaire.noteProprietaire || 0),
+        totalAvis: proprietaire.totalAvis || 0,
+        totalSejours: proprietaire._count?.reservationsProprietaire || 0,
+        creeLe: proprietaire.creeLe,
+      }
       : undefined;
 
     return {
@@ -738,7 +754,7 @@ export class LogementsService {
 
     await this.prisma.$transaction(async (tx) => {
       await tx.tarifPersonnes.deleteMany({ where: { logementId: id } });
-      
+
       const created = await tx.tarifPersonnes.createMany({
         data: tarifs.map((t, index) => ({
           logementId: id,

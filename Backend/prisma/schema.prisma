@@ -205,6 +205,7 @@ model Logement {
   tarifsNuits      TarifNuits[]
   indisponibilites IndisponibiliteLogement[]
   reservations     Reservation[]
+  avis             Avis[]
 
   @@index([proprietaireId])
   @@index([proprietaireId, statut])
@@ -639,6 +640,7 @@ model Avis {
   auteur      Utilisateur @relation("auteur", fields: [auteurId], references: [id])
   cible       Utilisateur @relation("cible", fields: [cibleId], references: [id])
   reservation Reservation @relation(fields: [reservationId], references: [id], onDelete: Cascade)
+  logement    Logement?   @relation(fields: [logementId], references: [id], onDelete: Cascade)
 
   @@unique([reservationId, auteurId])
   @@index([cibleId])

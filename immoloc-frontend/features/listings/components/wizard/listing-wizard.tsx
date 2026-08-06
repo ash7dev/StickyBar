@@ -1,6 +1,6 @@
 'use client';
 
-import { useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { ArrowLeft, ArrowRight, AlertTriangle, Loader2, CheckCircle2 } from 'lucide-react';
@@ -17,92 +17,76 @@ import { NEST_API } from '@/lib/nestjs/endpoints';
 import { cn } from '@/lib/utils/cn';
 
 const STEP_TITLES = [
-  'Votre logement',
-  'Votre annonce',
-  'Équipements & services',
-  'Conditions & règles',
-  'Photos du bien',
-  'Récapitulatif',
+  'Votre logement', 'Votre annonce', 'Équipements et services',
+  'Conditions et règles', 'Photos du bien', 'Récapitulatif',
 ];
 
 const STEP_SUBTITLES = [
-  'Décrivez votre bien et sa localisation au Sénégal',
-  'Rédigez votre annonce et fixez votre tarif de base',
-  'Sélectionnez ce que vous mettez à disposition des voyageurs',
-  'Définissez vos conditions et règles intérieures',
-  'Ajoutez au minimum 5 photos de qualité',
-  'Vérifiez l\'ensemble des informations puis soumettez votre annonce',
+  'Décrivez votre bien et sa localisation',
+  'Rédigez votre annonce et fixez votre tarif',
+  'Sélectionnez ce que vous mettez à disposition',
+  'Définissez vos conditions et votre règlement intérieur',
+  'Ajoutez au minimum 5 photos',
+  'Vérifiez les informations puis soumettez',
 ];
 
-interface ListingWizardProps {
+type UploadParams = {
+  uploadUrl: string; signature: string; timestamp: number;
+  apiKey: string; cloudName: string; folder: string;
+};
+
+interface Props {
   editMode?: boolean;
 }
 
-export function ListingWizard({ editMode = false }: ListingWizardProps) {
+export function ListingWizard({ editMode = false }: Props) {
   const router = useRouter();
+  const store = useListingFormStore();
   const {
-    currentStep,
-    completedSteps,
-    setStep,
-    nextStep,
-    prevStep,
-    markCompleted,
-    bien,
-    annonce,
-    equipements,
-    equipementIds,
-    conditions,
-    tarifsPersonnes,
-    tarifsNuits,
-    photos,
-    video,
-    draftListingId,
-    setDraftListingId,
-    reset,
-  } = useListingFormStore();
+    currentStep, completedSteps, setStep, nextStep, prevStep, markCompleted,
+    bien, annonce, equipements, equipementIds, conditions,
+    tarifsPersonnes, tarifsNuits, photos, video,
+    draftListingId, setDraftListingId, updatePhoto, reset,
+  } = store;
 
   const submitRef = useRef<HTMLButtonElement>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [apiError, setApiError] = useState<string | null>(null);
+  const [progress, setProgress] = useState({ percent: 0, title: '', details: '' });
 
-  const [submitProgress, setSubmitProgress] = useState<{
-    percent: number;
-    title: string;
-    details: string;
-  }>({
-    percent: 0,
-    title: 'Création de l\'annonce',
-    details: 'Initialisation…',
-  });
+  const isConfirmation = currentStep === WIZARD_STEPS.length - 1;
 
-  const isConfirmation = currentStep === 5;
+  /* Un rafraîchissement ou une fermeture pendant le transfert perd les
+     fichiers déjà envoyés et laisse une annonce incomplète. */
+  useEffect(() => {
+    if (!isSubmitting) return;
+    const warn = (e: BeforeUnloadEvent) => { e.preventDefault(); e.returnValue = ''; };
+    window.addEventListener('beforeunload', warn);
+    return () => window.removeEventListener('beforeunload', warn);
+  }, [isSubmitting]);
 
-  function handleStepValidated() {
+  const handleStepValidated = useCallback(() => {
     markCompleted(currentStep);
     nextStep();
     setApiError(null);
     window.scrollTo({ top: 0, behavior: 'smooth' });
-  }
+  }, [currentStep, markCompleted, nextStep]);
 
-  function handlePrev() {
+  const handlePrev = useCallback(() => {
     prevStep();
     setApiError(null);
     window.scrollTo({ top: 0, behavior: 'smooth' });
-  }
+  }, [prevStep]);
 
-  function handleNext() {
+  const handleNext = useCallback(() => {
     if (isConfirmation) return;
     submitRef.current?.click();
-  }
+  }, [isConfirmation]);
 
-  async function handleFinalSubmit() {
+  const handleFinalSubmit = useCallback(async () => {
     setIsSubmitting(true);
     setApiError(null);
-    setSubmitProgress({
-      percent: 5,
-      title: "Création du logement",
-      details: "Enregistrement des informations de l'annonce…",
-    });
+    setProgress({ percent: 5, title: 'Création de l’annonce', details: 'Enregistrement des informations…' });
 
     try {
       let listingId = draftListingId;
@@ -129,7 +113,6 @@ export function ListingWizard({ editMode = false }: ListingWizardProps) {
           method: 'POST',
           body: JSON.stringify({ ...listingPayload, equipementIds: [] }),
         });
-
         listingId = created.id;
         setDraftListingId(listingId);
       } else {
@@ -139,127 +122,119 @@ export function ListingWizard({ editMode = false }: ListingWizardProps) {
         });
       }
 
-      // Photos Cloudinary
-      const photosToUpload = photos.photos.filter((p) => p.file && !p.url);
+      /* ── Photos ────────────────────────────────────────────────────────
+         Séquentiel et marqué au fur et à mesure.
 
-      if (photosToUpload.length > 0) {
-        setSubmitProgress({
+         ⚠️ Avant : `Promise.all` sur tous les envois, et l'`url` n'était
+         jamais écrite dans le store. Un échec à la 7e photo faisait repartir
+         les 6 premières au réessai — elles étaient réenvoyées à Cloudinary
+         ET rattachées une seconde fois à l'annonce. Trois tentatives
+         produisaient 18 doublons. Les envois concurrents non résolus
+         laissaient en plus des fichiers orphelins facturés sur Cloudinary. */
+
+      const pending = photos.photos
+        .map((p, index) => ({ p, index }))
+        .filter(({ p }) => p.file && !p.url);
+
+      if (pending.length > 0) {
+        setProgress({
           percent: 15,
-          title: "Téléversement des photos",
-          details: `Préparation de l'envoi de ${photosToUpload.length} photo${photosToUpload.length > 1 ? 's' : ''} sur Cloudinary…`,
+          title: 'Envoi des photos',
+          details: `${pending.length} photo${pending.length > 1 ? 's' : ''} à transférer`,
         });
 
-        const params = await nestFetch<{ uploadUrl: string; signature: string; timestamp: number; apiKey: string; cloudName: string; folder: string }>(
-          NEST_API.LISTINGS.PHOTO_UPLOAD_PARAMS(listingId),
-          { method: 'GET' },
+        const params = await nestFetch<UploadParams>(
+          NEST_API.LISTINGS.PHOTO_UPLOAD_PARAMS(listingId), { method: 'GET' },
         );
 
-        let photosDone = 0;
-        const totalPhotos = photosToUpload.length;
+        const budget = video?.file ? 35 : 70;
 
-        const cloudinaryResults = await Promise.all(
-          photosToUpload.map(async (photo) => {
-            const formData = new FormData();
-            formData.append('file', photo.file!);
-            formData.append('folder', params.folder);
-            formData.append('signature', params.signature);
-            formData.append('timestamp', String(params.timestamp));
-            formData.append('api_key', params.apiKey);
+        for (let i = 0; i < pending.length; i++) {
+          const { p, index } = pending[i];
 
-            const res = await fetch(params.uploadUrl, { method: 'POST', body: formData });
-            if (!res.ok) {
-              const err = await res.json().catch(() => ({})) as { error?: { message?: string } };
-              throw new Error(`Cloudinary Photo: ${err?.error?.message ?? res.statusText}`);
-            }
-            const data = await res.json() as { secure_url: string; public_id: string };
+          const formData = new FormData();
+          formData.append('file', p.file!);
+          formData.append('folder', params.folder);
+          formData.append('signature', params.signature);
+          formData.append('timestamp', String(params.timestamp));
+          formData.append('api_key', params.apiKey);
 
-            photosDone++;
-            const pct = 15 + Math.round((photosDone / totalPhotos) * (video?.file ? 35 : 70));
-            setSubmitProgress({
-              percent: pct,
-              title: "Téléversement des photos",
-              details: `Photo ${photosDone} sur ${totalPhotos} téléversée avec succès`,
-            });
+          const res = await fetch(params.uploadUrl, { method: 'POST', body: formData });
+          if (!res.ok) {
+            const err = await res.json().catch(() => ({})) as { error?: { message?: string } };
+            throw new Error(`Photo ${i + 1} : ${err?.error?.message ?? res.statusText}`);
+          }
+          const data = await res.json() as { secure_url: string; public_id: string };
 
-            return { photo, url: data.secure_url, publicId: data.public_id };
-          }),
-        );
-
-        await Promise.all(
-          cloudinaryResults.map(({ photo, url, publicId }) =>
-            nestFetch(NEST_API.LISTINGS.ADD_PHOTO(listingId!), {
-              method: 'POST',
-              body: JSON.stringify({
-                url,
-                publicId,
-                categorie: photo.categorie,
-                estPrincipale: photo.estPrincipale,
-                position: photo.position,
-              }),
+          await nestFetch(NEST_API.LISTINGS.ADD_PHOTO(listingId!), {
+            method: 'POST',
+            body: JSON.stringify({
+              url: data.secure_url,
+              publicId: data.public_id,
+              categorie: p.categorie,
+              estPrincipale: p.estPrincipale,
+              position: p.position,
             }),
-          ),
-        );
+          });
+
+          /* Marquée comme envoyée : un réessai ne la reprendra pas. */
+          updatePhoto(index, { url: data.secure_url });
+
+          setProgress({
+            percent: 15 + Math.round(((i + 1) / pending.length) * budget),
+            title: 'Envoi des photos',
+            details: `${i + 1} sur ${pending.length}`,
+          });
+        }
       }
 
-      // Vidéo Cloudinary (suivi par XMLHttpRequest pour progression Mo/s en temps réel)
-      if (video?.file) {
-        setSubmitProgress({
-          percent: 50,
-          title: "Téléversement de la vidéo HD",
-          details: "Obtention des paramètres d'envoi Cloudinary…",
-        });
+      /* ── Vidéo ─────────────────────────────────────────────────────── */
 
-        const videoParams = await nestFetch<{ uploadUrl: string; signature: string; timestamp: number; apiKey: string; cloudName: string; folder: string }>(
-          NEST_API.LISTINGS.VIDEO_UPLOAD_PARAMS(listingId),
-          { method: 'GET' },
+      if (video?.file && !video.url) {
+        setProgress({ percent: 50, title: 'Envoi de la vidéo', details: 'Préparation…' });
+
+        const vParams = await nestFetch<UploadParams>(
+          NEST_API.LISTINGS.VIDEO_UPLOAD_PARAMS(listingId), { method: 'GET' },
         );
 
-        const videoFormData = new FormData();
-        videoFormData.append('file', video.file);
-        videoFormData.append('folder', videoParams.folder);
-        videoFormData.append('signature', videoParams.signature);
-        videoFormData.append('timestamp', String(videoParams.timestamp));
-        videoFormData.append('api_key', videoParams.apiKey);
+        const fd = new FormData();
+        fd.append('file', video.file);
+        fd.append('folder', vParams.folder);
+        fd.append('signature', vParams.signature);
+        fd.append('timestamp', String(vParams.timestamp));
+        fd.append('api_key', vParams.apiKey);
 
         const videoData = await new Promise<{ secure_url: string; public_id: string }>((resolve, reject) => {
           const xhr = new XMLHttpRequest();
-          xhr.open('POST', videoParams.uploadUrl);
+          xhr.open('POST', vParams.uploadUrl);
 
           xhr.upload.onprogress = (evt) => {
-            if (evt.lengthComputable) {
-              const videoPct = Math.round((evt.loaded / evt.total) * 100);
-              const loadedMb = (evt.loaded / (1024 * 1024)).toFixed(1);
-              const totalMb = (evt.total / (1024 * 1024)).toFixed(1);
-              const overallPct = 50 + Math.round((evt.loaded / evt.total) * 40);
-              setSubmitProgress({
-                percent: overallPct,
-                title: "Téléversement de la vidéo HD",
-                details: `Vidéo : ${videoPct}% · ${loadedMb} Mo / ${totalMb} Mo`,
-              });
-            }
+            if (!evt.lengthComputable) return;
+            const ratio = evt.loaded / evt.total;
+            setProgress({
+              percent: 50 + Math.round(ratio * 40),
+              title: 'Envoi de la vidéo',
+              details: `${(evt.loaded / 1048576).toFixed(1)} Mo sur ${(evt.total / 1048576).toFixed(1)} Mo`,
+            });
           };
 
           xhr.onload = () => {
             if (xhr.status >= 200 && xhr.status < 300) {
-              try {
-                resolve(JSON.parse(xhr.responseText));
-              } catch {
-                reject(new Error('Erreur de lecture de la réponse vidéo.'));
-              }
+              try { resolve(JSON.parse(xhr.responseText)); }
+              catch { reject(new Error('Réponse illisible du service vidéo.')); }
             } else {
-              reject(new Error('Échec du téléversement vidéo.'));
+              reject(new Error('L’envoi de la vidéo a échoué.'));
             }
           };
-
-          xhr.onerror = () => reject(new Error('Erreur réseau lors du téléversement de la vidéo.'));
-          xhr.send(videoFormData);
+          xhr.onerror = () => reject(new Error('Connexion interrompue pendant l’envoi de la vidéo.'));
+          /* `xhr.onabort` et `ontimeout` manquaient : une coupure laissait la
+             promesse en attente indéfiniment, modale bloquée à l'écran. */
+          xhr.onabort = () => reject(new Error('Envoi de la vidéo annulé.'));
+          xhr.ontimeout = () => reject(new Error('Délai dépassé pendant l’envoi de la vidéo.'));
+          xhr.send(fd);
         });
 
-        setSubmitProgress({
-          percent: 90,
-          title: "Finalisation de la vidéo",
-          details: "Mise à jour de l'annonce avec la vidéo HD…",
-        });
+        setProgress({ percent: 90, title: 'Finalisation', details: 'Association de la vidéo…' });
 
         await nestFetch(NEST_API.LISTINGS.UPDATE(listingId), {
           method: 'PATCH',
@@ -270,150 +245,137 @@ export function ListingWizard({ editMode = false }: ListingWizardProps) {
         });
       }
 
-      setSubmitProgress({
-        percent: 95,
-        title: "Finalisation de l'annonce",
-        details: "Enregistrement des tarifs, règles et équipements…",
-      });
+      /* ── Tarifs et équipements ─────────────────────────────────────── */
 
-      // Tarifs + Équipements
-      await Promise.all([
-        tarifsPersonnes.length > 0
-          ? nestFetch(NEST_API.LISTINGS.SET_TARIFS_PERSONNES(listingId), {
-              method: 'POST',
-              body: JSON.stringify({ tarifs: tarifsPersonnes }),
-            })
-          : null,
+      setProgress({ percent: 95, title: 'Finalisation', details: 'Tarifs et équipements…' });
 
-        tarifsNuits.length > 0
-          ? nestFetch(NEST_API.LISTINGS.SET_TARIFS_NUITS(listingId), {
-              method: 'POST',
-              body: JSON.stringify({ tarifs: tarifsNuits }),
-            })
-          : null,
+      if (tarifsPersonnes.length > 0) {
+        await nestFetch(NEST_API.LISTINGS.SET_TARIFS_PERSONNES(listingId), {
+          method: 'POST', body: JSON.stringify({ tarifs: tarifsPersonnes }),
+        });
+      }
+      if (tarifsNuits.length > 0) {
+        await nestFetch(NEST_API.LISTINGS.SET_TARIFS_NUITS(listingId), {
+          method: 'POST', body: JSON.stringify({ tarifs: tarifsNuits }),
+        });
+      }
+      if (equipements.equipements.length > 0) {
+        const ids = equipementIds.length > 0
+          ? equipementIds
+          : (await nestFetch<{ id: string; nom: string }[]>(
+            NEST_API.LISTINGS.LIST_EQUIPEMENTS, { method: 'GET' },
+          )).filter((e) => equipements.equipements.includes(e.nom)).map((e) => e.id);
 
-        equipements.equipements.length > 0
-          ? (
-              equipementIds.length > 0
-                ? Promise.resolve(equipementIds)
-                : nestFetch<{ id: string; nom: string }[]>(NEST_API.LISTINGS.LIST_EQUIPEMENTS, { method: 'GET' })
-                    .then((all) => all.filter((e) => equipements.equipements.includes(e.nom)).map((e) => e.id))
-            ).then((ids) =>
-              ids.length > 0
-                ? nestFetch(NEST_API.LISTINGS.SET_EQUIPEMENTS(listingId), {
-                    method: 'PUT',
-                    body: JSON.stringify({ equipementIds: ids }),
-                  })
-                : null,
-            )
-          : null,
-      ]);
+        if (ids.length > 0) {
+          await nestFetch(NEST_API.LISTINGS.SET_EQUIPEMENTS(listingId), {
+            method: 'PUT', body: JSON.stringify({ equipementIds: ids }),
+          });
+        }
+      }
 
       if (!editMode) {
         await nestFetch(NEST_API.LISTINGS.SUBMIT(listingId), { method: 'PATCH' });
       }
 
-      setSubmitProgress({
-        percent: 100,
-        title: "Annonce créée avec succès !",
-        details: "Redirection vers votre tableau de bord…",
-      });
-
+      setProgress({ percent: 100, title: 'Annonce envoyée', details: 'Redirection…' });
       reset();
       router.push(editMode ? `/dashboard/annonces/${listingId}` : '/dashboard/annonces?submitted=1');
     } catch (err) {
-      const rawMsg = err instanceof Error ? err.message : 'Une erreur est survenue';
-      if (
-        rawMsg === 'Load failed' ||
-        rawMsg.includes('Failed to fetch') ||
-        rawMsg.includes('NetworkError') ||
-        rawMsg.includes('Network request failed')
-      ) {
-        setApiError(
-          'Connexion au serveur impossible (serveur backend indisponible ou en réveil). Veuillez ré-essayer dans quelques secondes.',
-        );
-      } else {
-        setApiError(rawMsg);
-      }
-    } finally {
+      const raw = err instanceof Error ? err.message : 'Une erreur est survenue.';
+      const isNetwork = /Load failed|Failed to fetch|NetworkError|Network request failed/i.test(raw);
+      setApiError(
+        isNetwork
+          ? 'Connexion au serveur impossible. Réessayez dans quelques secondes — les éléments déjà envoyés seront conservés.'
+          : raw,
+      );
       setIsSubmitting(false);
     }
-  }
+  }, [
+    draftListingId, annonce, bien, conditions, photos.photos, video,
+    tarifsPersonnes, tarifsNuits, equipements, equipementIds,
+    editMode, setDraftListingId, updatePhoto, reset, router,
+  ]);
 
   return (
-    <div className="min-h-screen bg-background relative overflow-x-hidden pb-16">
+    <div className="relative min-h-screen overflow-x-hidden bg-background pb-16">
 
-      {/* Sticky header (Glass ImmoLoc v2) */}
-      <div className="sticky top-0 z-50 transition-all duration-300">
-        <div className="absolute inset-0 bg-background-card/85 backdrop-blur-xl border-b border-border/80 shadow-xs" />
-        <div className="relative max-w-3xl mx-auto px-3 sm:px-4">
-          <div className="flex items-center justify-between h-14 sm:h-16">
+      {/* ── En-tête ──────────────────────────────────────────────────────── */}
+
+      <div className="sticky top-0 z-40 border-b border-border bg-background-card/90 backdrop-blur-xl">
+        <div className="mx-auto max-w-3xl px-3 sm:px-4">
+          <div className="flex h-14 items-center justify-between gap-3 sm:h-16">
             <Link
               href="/dashboard/annonces"
-              className="btn-ghost text-xs px-3 sm:px-3.5 py-1.5 rounded-pill flex items-center gap-1.5 sm:gap-2"
+              className="btn-ghost flex items-center gap-2 px-3.5 py-1.5 text-sm"
             >
-              <ArrowLeft className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-foreground-muted" />
-              <span className="text-xs font-semibold">Quitter</span>
+              <ArrowLeft className="h-4 w-4" aria-hidden="true" />
+              Quitter
             </Link>
 
             <div className="flex flex-col items-center">
-              <span className="eyebrow text-forest-600 font-bold text-[9px] sm:text-[10px]">
+              <span className="eyebrow text-foreground-muted">
                 Étape {currentStep + 1} / {WIZARD_STEPS.length}
               </span>
-              <div className="h-1.5 w-12 sm:w-16 bg-background-alt border border-border rounded-pill mt-0.5 sm:mt-1 overflow-hidden">
+              <div
+                role="progressbar"
+                aria-valuenow={currentStep + 1}
+                aria-valuemin={1}
+                aria-valuemax={WIZARD_STEPS.length}
+                className="mt-1 h-1.5 w-16 overflow-hidden rounded-pill bg-background-alt"
+              >
                 <div
-                  className="h-full bg-forest-600 transition-all duration-500 rounded-pill"
+                  className="h-full rounded-pill bg-forest-600 transition-[width] duration-500"
                   style={{ width: `${((currentStep + 1) / WIZARD_STEPS.length) * 100}%` }}
                 />
               </div>
             </div>
 
-            <div className="w-12 sm:w-16" />
+            <div className="w-16" aria-hidden="true" />
           </div>
 
           <div className="pb-3 sm:pb-4">
             <WizardStepper
               currentStep={currentStep}
               completedSteps={completedSteps}
-              onStepClick={(s) => {
-                if (s < currentStep || completedSteps.has(s)) setStep(s);
-              }}
+              onStepClick={(s) => { if (s < currentStep || completedSteps.has(s)) setStep(s); }}
             />
           </div>
         </div>
       </div>
 
-      {/* Content Area */}
-      <div className="relative z-10 max-w-3xl mx-auto px-3.5 sm:px-4 py-6 sm:py-10">
+      {/* ── Contenu ──────────────────────────────────────────────────────── */}
 
-        {/* Page Header */}
-        <div className="text-center mb-6 sm:mb-10">
-          <p className="eyebrow text-forest-600 font-bold tracking-[0.2em] mb-1.5 sm:mb-2 text-[10px] sm:text-xs">
-            {editMode ? "Modification d'annonce" : "Création d'annonce"}
+      <div className="mx-auto max-w-3xl px-3.5 py-6 sm:px-4 sm:py-10">
+
+        <div className="mb-6 text-center sm:mb-10">
+          <p className="eyebrow mb-2 text-foreground-muted">
+            {editMode ? 'Modification d’annonce' : 'Création d’annonce'}
           </p>
-          <h1 className="font-display text-2xl sm:text-4xl font-bold text-foreground tracking-tight mb-1.5 sm:mb-2">
+          <h1 className="mb-2 font-display text-2xl font-semibold tracking-tight text-foreground sm:text-4xl">
             {STEP_TITLES[currentStep]}
           </h1>
-          <p className="text-xs sm:text-base text-foreground-muted max-w-xl mx-auto font-medium leading-relaxed">
+          <p className="mx-auto max-w-xl text-sm leading-relaxed text-foreground-muted sm:text-base">
             {STEP_SUBTITLES[currentStep]}
           </p>
         </div>
 
-        {/* Erreur API */}
         {apiError && (
-          <div className="mb-6 sm:mb-8 p-3.5 sm:p-4 bg-error-50 border border-error-500/30 rounded-inner flex items-center justify-between gap-3">
-            <div className="flex items-center gap-3 min-w-0">
-              <div className="w-8 h-8 sm:w-9 sm:h-9 rounded-full bg-error-500/10 flex items-center justify-center shrink-0">
-                <AlertTriangle className="w-4 h-4 sm:w-5 sm:h-5 text-error-600" />
-              </div>
-              <p className="text-xs text-error-600 font-semibold leading-normal">{apiError}</p>
+          <div
+            role="alert"
+            className="mb-6 flex items-center justify-between gap-3 rounded-inner border border-error-500/20 bg-error-50 p-4 sm:mb-8"
+          >
+            <div className="flex min-w-0 items-center gap-3">
+              <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-pill border border-error-500/25 bg-background-card">
+                <AlertTriangle className="h-4 w-4 text-error-600" aria-hidden="true" />
+              </span>
+              <p className="text-xs leading-relaxed text-error-700">{apiError}</p>
             </div>
             {isConfirmation && (
               <button
                 type="button"
                 onClick={handleFinalSubmit}
                 disabled={isSubmitting}
-                className="btn-ghost text-xs px-3 py-1.5 rounded-pill text-error-700 hover:bg-error-100 shrink-0 font-bold border-error-300"
+                className="shrink-0 rounded-pill border border-error-500/25 px-3 py-1.5 text-xs font-semibold text-error-700 transition-colors hover:bg-error-50"
               >
                 Réessayer
               </button>
@@ -421,7 +383,6 @@ export function ListingWizard({ editMode = false }: ListingWizardProps) {
           </div>
         )}
 
-        {/* Dynamic Step Component */}
         <div className="space-y-5 sm:space-y-6">
           {currentStep === 0 && <StepBien onNext={handleStepValidated} submitRef={submitRef} />}
           {currentStep === 1 && <StepAnnonce onNext={handleStepValidated} submitRef={submitRef} />}
@@ -437,86 +398,85 @@ export function ListingWizard({ editMode = false }: ListingWizardProps) {
           )}
         </div>
 
-        {/* Floating Nav Bar (Glass Responsive) */}
-        {!isConfirmation && (
-          <div className="mt-8 sm:mt-10 sticky bottom-4 sm:bottom-6 z-40">
-            <div className="card p-2.5 sm:p-3 bg-background-card/90 backdrop-blur-xl border border-border shadow-2xl rounded-card flex items-center justify-between gap-2">
+        {!isConfirmation ? (
+          <div className="sticky bottom-4 z-30 mt-8 sm:bottom-6 sm:mt-10">
+            <div className="flex items-center justify-between gap-2 rounded-card border border-border bg-background-card/95 p-2.5 shadow-lg backdrop-blur-xl sm:p-3">
               <button
                 type="button"
                 onClick={handlePrev}
                 disabled={currentStep === 0}
-                className={cn(
-                  'btn-ghost text-xs px-3.5 sm:px-5 py-2.5 rounded-pill font-semibold cursor-pointer shrink-0',
-                  currentStep === 0 && 'opacity-40 cursor-not-allowed',
-                )}
+                className="btn-ghost shrink-0 px-4 py-2.5 text-sm disabled:cursor-not-allowed disabled:opacity-40"
               >
-                <ArrowLeft className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
-                <span>Précédent</span>
+                <ArrowLeft className="h-4 w-4" aria-hidden="true" />
+                Précédent
               </button>
 
-              <button
-                type="button"
-                onClick={handleNext}
-                className="btn-action text-xs px-5 sm:px-8 py-2.5 sm:py-3 font-bold flex items-center gap-2 cursor-pointer shadow-action"
-              >
-                <span>{currentStep === 4 ? 'Vérifier l\'annonce' : 'Continuer'}</span>
-                <ArrowRight className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+              <button type="button" onClick={handleNext} className="btn-action px-6 py-3 text-sm sm:px-8">
+                {currentStep === 4 ? 'Vérifier l’annonce' : 'Continuer'}
+                <ArrowRight className="h-4 w-4" aria-hidden="true" />
               </button>
             </div>
           </div>
-        )}
-
-        {isConfirmation && (
-          <div className="mt-8 sm:mt-10 flex justify-start">
-            <button
-              type="button"
-              onClick={handlePrev}
-              className="btn-ghost text-xs px-4 sm:px-5 py-2.5 rounded-pill font-semibold flex items-center gap-2 cursor-pointer"
-            >
-              <ArrowLeft className="w-4 h-4" />
-              <span>Modifier les informations</span>
+        ) : (
+          <div className="mt-8 sm:mt-10">
+            <button type="button" onClick={handlePrev} className="btn-ghost px-5 py-2.5 text-sm">
+              <ArrowLeft className="h-4 w-4" aria-hidden="true" />
+              Modifier les informations
             </button>
           </div>
         )}
       </div>
 
-      {/* Modal de progression de téléversement Cloudinary */}
+      {/* ── Progression ──────────────────────────────────────────────────── */}
+
       {isSubmitting && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-forest-950/80 backdrop-blur-md animate-in fade-in duration-200">
-          <div className="w-full max-w-md space-y-5 rounded-card border border-white/10 bg-forest-950 p-6 text-white shadow-2xl text-center">
-            <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-pill bg-lime-400/15 text-lime-400 border border-lime-400/30">
-              {submitProgress.percent === 100 ? (
-                <CheckCircle2 className="h-8 w-8 text-lime-400" />
+        <div className="fixed inset-0 z-100 flex items-center justify-center bg-forest-950/80 p-4 backdrop-blur-md">
+          <div
+            role="dialog"
+            aria-modal="true"
+            aria-label={progress.title}
+            className="section-inverse w-full max-w-md space-y-5 p-6 text-center"
+          >
+            <span className="mx-auto flex h-16 w-16 items-center justify-center rounded-pill border border-border-inverse bg-white/5">
+              {progress.percent === 100 ? (
+                <CheckCircle2 className="h-8 w-8 text-on-inverse-marker" aria-hidden="true" />
               ) : (
-                <Loader2 className="h-8 w-8 animate-spin text-lime-400" />
+                <Loader2 className="h-8 w-8 animate-spin text-on-inverse-muted" aria-hidden="true" />
               )}
-            </div>
+            </span>
 
             <div className="space-y-1">
-              <h3 className="font-display text-xl font-bold tracking-tight text-white">
-                {submitProgress.title}
-              </h3>
-              <p className="text-xs text-forest-200 font-medium">
-                {submitProgress.details}
+              <h2 className="font-display text-xl font-semibold tracking-tight text-on-inverse-display">
+                {progress.title}
+              </h2>
+              <p aria-live="polite" className="text-xs text-on-inverse-muted">
+                {progress.details}
               </p>
             </div>
 
-            {/* Barre de progression */}
             <div className="space-y-1.5">
-              <div className="h-3 w-full overflow-hidden rounded-full bg-forest-900 border border-forest-800 p-0.5">
+              <div
+                role="progressbar"
+                aria-valuenow={progress.percent}
+                aria-valuemin={0}
+                aria-valuemax={100}
+                className="h-2.5 w-full overflow-hidden rounded-pill bg-white/10"
+              >
                 <div
-                  className="h-full rounded-full bg-lime-400 transition-all duration-300 ease-out"
-                  style={{ width: `${submitProgress.percent}%` }}
+                  className="h-full rounded-pill bg-lime-400 transition-[width] duration-300 ease-out"
+                  style={{ width: `${progress.percent}%` }}
                 />
               </div>
-              <div className="flex items-center justify-between text-[11px] font-bold text-forest-300">
-                <span>Progression du transfert</span>
-                <span className="tabular-nums font-mono text-xs text-lime-400">{submitProgress.percent}%</span>
+              <div className="flex items-center justify-between text-xs text-on-inverse-muted">
+                <span>Transfert en cours</span>
+                <span className="font-semibold tabular-nums text-on-inverse">
+                  {progress.percent} %
+                </span>
               </div>
             </div>
 
-            <p className="text-[11px] text-forest-300/80 border-t border-white/10 pt-3">
-              ⚡ Envoi direct vers Cloudinary. Veuillez ne pas fermer cette page pendant le transfert.
+            <p className="border-t border-border-inverse pt-3 text-xs text-on-inverse-muted">
+              Ne fermez pas cette page pendant le transfert.
             </p>
           </div>
         </div>

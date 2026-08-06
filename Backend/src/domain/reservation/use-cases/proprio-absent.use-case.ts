@@ -63,7 +63,7 @@ export class ProprioAbsentUseCase {
       updated.proprietaireId,
       '⚠️ Locataire vous signale absent !',
       'Le locataire signale que vous êtes injoignable pour le check-in. Vous avez 2h pour répondre, sinon la réservation sera annulée avec remboursement intégral.',
-      `/reservations/${reservationId}`
+      `/dashboard/reservations/${reservationId}`
     ).catch(() => {});
 
     return updated;

@@ -583,6 +583,7 @@ export function ReservationActionPanel({ id, res, onRefetch }: Props) {
   const [showNoshowModal, setShowNoshowModal] = useState(false);
 
   const [checkinHeure, setCheckinHeure] = useState('14:00');
+  const [checkoutHeureInput, setCheckoutHeureInput] = useState('12:00');
   const [rating, setRating] = useState(0);
   const [hoverRating, setHoverRating] = useState(0);
   const [ratingComment, setRatingComment] = useState('');
@@ -620,14 +621,6 @@ export function ReservationActionPanel({ id, res, onRefetch }: Props) {
     ? 'awaiting-completion'
     : checkoutPhotos.length > 0 ? 'photos-uploaded' : 'ready';
 
-  /* Heure de check-out : dérivée du check-in, avec garde sur saisie vide.
-     `<input type="time">` peut être vidé — le calcul produisait « NaN:NaN ». */
-  const checkoutHeure = useMemo(() => {
-    const [h, m] = checkinHeure.split(':').map(Number);
-    if (Number.isNaN(h) || Number.isNaN(m)) return null;
-    return `${String((h + 1) % 24).padStart(2, '0')}:${String(m).padStart(2, '0')}`;
-  }, [checkinHeure]);
-
   /* ── Helpers ──────────────────────────────────────────────────────────── */
 
   const clearFeedback = useCallback(() => {
@@ -660,15 +653,15 @@ export function ReservationActionPanel({ id, res, onRefetch }: Props) {
   /* ── Handlers ─────────────────────────────────────────────────────────── */
 
   const handleConfirm = () => {
-    if (!/^\d{2}:\d{2}$/.test(checkinHeure)) {
-      setErrorMsg('Indiquez une heure de check-in valide.');
+    if (!/^\d{2}:\d{2}$/.test(checkinHeure) || !/^\d{2}:\d{2}$/.test(checkoutHeureInput)) {
+      setErrorMsg('Indiquez des heures de check-in et check-out valides (HH:mm).');
       return;
     }
     setShowTimeModal(false);
     run(async () => {
       await nestFetch(NEST_API.RESERVATIONS.CONFIRM(id), {
         method: 'PATCH',
-        body: JSON.stringify({ heureDebut: checkinHeure }),
+        body: JSON.stringify({ heureDebut: checkinHeure, heureFin: checkoutHeureInput }),
       });
     }, 'Réservation confirmée.');
   };
@@ -822,6 +815,13 @@ export function ReservationActionPanel({ id, res, onRefetch }: Props) {
 
           {errorMsg && <Feedback type="error" message={errorMsg} />}
           {successMsg && <Feedback type="success" message={successMsg} />}
+
+          {res.absenceSignaleeLe && (
+            <Notice tone="error" icon={AlertTriangle} title="⚠️ URGENT : Le locataire signale votre absence le jour J !">
+              Le locataire a indiqué être sans nouvelles de vous pour l&apos;arrivée (signalé le{' '}
+              <span className="font-semibold">{formatDateTime(res.absenceSignaleeLe)}</span>). Vous disposez de 2h à compter du signalement pour réaliser l&apos;état des lieux ou contacter le locataire, sans quoi la réservation sera annulée avec remboursement à 100%.
+            </Notice>
+          )}
 
           {/* ══ PENDING ══ */}
           {statut === 'PENDING' && (
@@ -1243,34 +1243,40 @@ export function ReservationActionPanel({ id, res, onRefetch }: Props) {
               </div>
             </div>
 
-            <div className="space-y-2">
-              <label htmlFor="checkin-heure" className="block text-xs font-semibold text-foreground">
-                Heure de check-in
-              </label>
-              <div className="relative">
-                <Clock className="pointer-events-none absolute top-1/2 left-4 h-4 w-4 -translate-y-1/2 text-foreground-muted" aria-hidden="true" />
-                <input
-                  id="checkin-heure"
-                  type="time"
-                  required
-                  value={checkinHeure}
-                  onChange={(e) => setCheckinHeure(e.target.value)}
-                  className="w-full rounded-field border border-border bg-background py-3 pr-4 pl-11 font-semibold text-foreground focus:border-forest-500 focus:outline-none"
-                />
+            <div className="grid grid-cols-2 gap-3">
+              <div className="space-y-1.5">
+                <label htmlFor="checkin-heure" className="block text-xs font-semibold text-foreground">
+                  Heure d&apos;arrivée (Check-in)
+                </label>
+                <div className="relative">
+                  <Clock className="pointer-events-none absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2 text-foreground-muted" aria-hidden="true" />
+                  <input
+                    id="checkin-heure"
+                    type="time"
+                    required
+                    value={checkinHeure}
+                    onChange={(e) => setCheckinHeure(e.target.value)}
+                    className="w-full rounded-field border border-border bg-background py-2.5 pr-3 pl-9 text-xs font-semibold text-foreground focus:border-forest-500 focus:outline-none"
+                  />
+                </div>
               </div>
-              <p className="text-xs leading-relaxed text-foreground-muted">
-                À partir de cette heure, le logement est disponible pour le locataire.
-              </p>
-            </div>
 
-            <div className="flex items-center gap-3 rounded-inner border border-border bg-background-alt px-4 py-3">
-              <Clock className="h-3.5 w-3.5 shrink-0 text-foreground-muted" aria-hidden="true" />
-              <p className="min-w-0 text-xs text-foreground-muted">
-                <span className="font-semibold text-foreground">Check-out automatique : </span>
-                {checkoutHeure
-                  ? <>le locataire devra quitter le logement avant <span className="font-semibold text-foreground tabular-nums">{checkoutHeure}</span> le jour du départ.</>
-                  : 'renseignez une heure de check-in valide.'}
-              </p>
+              <div className="space-y-1.5">
+                <label htmlFor="checkout-heure" className="block text-xs font-semibold text-foreground">
+                  Heure de départ (Check-out)
+                </label>
+                <div className="relative">
+                  <Clock className="pointer-events-none absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2 text-foreground-muted" aria-hidden="true" />
+                  <input
+                    id="checkout-heure"
+                    type="time"
+                    required
+                    value={checkoutHeureInput}
+                    onChange={(e) => setCheckoutHeureInput(e.target.value)}
+                    className="w-full rounded-field border border-border bg-background py-2.5 pr-3 pl-9 text-xs font-semibold text-foreground focus:border-forest-500 focus:outline-none"
+                  />
+                </div>
+              </div>
             </div>
 
             <Notice tone="forest" icon={Lock} title="Fonds en séquestre">
@@ -1288,7 +1294,7 @@ export function ReservationActionPanel({ id, res, onRefetch }: Props) {
                 <PrimaryButton
                   onClick={handleConfirm}
                   loading={isSubmitting}
-                  disabled={!checkoutHeure}
+                  disabled={!checkoutHeureInput}
                   loadingLabel="Confirmation…"
                 >
                   Confirmer

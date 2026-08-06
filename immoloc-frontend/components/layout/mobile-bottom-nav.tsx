@@ -2,9 +2,9 @@
 
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import {
-  ArrowLeftRight, CalendarDays, Compass, Home, Loader2, Settings,
+  ArrowLeftRight, CalendarDays, Compass, Home, List, Loader2, Map, Settings,
 } from 'lucide-react';
 import { useRoleStore, useIsAuthenticated } from '@/stores/role.store';
 import { useSwitchRole } from '@/features/auth/hooks/use-switch-role';
@@ -12,22 +12,7 @@ import { cn } from '@/lib/utils/cn';
 
 /* ---------------------------------------------------------------------------
    Barre de navigation locataire.
-
-   LIBELLES CONSERVES, et c'est un choix argumente.
-
-   Instagram et Pinterest s'en passent, mais trois conditions le leur
-   permettent : des symboles universels (maison, loupe), une ouverture
-   plusieurs dizaines de fois par jour qui fait apprendre les icones, et un
-   A/B testing a l'echelle de millions d'utilisateurs.
-
-   Ici « Reservations » n'a pas de symbole universel — un calendrier peut
-   etre un agenda, un planning, des dates — et Klef s'ouvre quelques fois
-   par mois. Sans libelle, l'etat actif ne reposerait que sur la couleur,
-   donc illisible en niveaux de gris ou pour un daltonien.
-
-   Le premium se joue ailleurs : pastille flottante, graisses d'icones,
-   indicateur qui glisse, zone sure, cibles a 48px.
-   --------------------------------------------------------------------------- */
+--------------------------------------------------------------------------- */
 
 const NAV = [
   { href: '/', label: 'Accueil', icon: Home, exact: true },
@@ -36,17 +21,6 @@ const NAV = [
   { href: '/parametres', label: 'Réglages', icon: Settings, exact: false },
 ] as const;
 
-/*
-  Racines ou la barre s'affiche.
-
-  L'original tenait une LISTE NOIRE de routes a exclure : chaque nouvelle
-  page de detail devait y etre ajoutee a la main, sinon la barre reapparaissait
-  au milieu d'un tunnel de reservation. Une liste blanche s'inverse : par
-  defaut la barre est absente, elle n'apparait que sur les quatre onglets.
-
-  A terme, le bon endroit pour ce composant est le layout d'un groupe de
-  routes — app/(locataire)/layout.tsx — plutot qu'un test de pathname.
-*/
 const VISIBLE_ON = new Set<string>(['/', '/explorer', '/reservations', '/parametres']);
 
 export function MobileBottomNav() {
@@ -56,6 +30,21 @@ export function MobileBottomNav() {
   const { activeRole, estProprietaire } = useRoleStore();
   const { switchRole, isSwitching } = useSwitchRole();
   const [switchError, setSwitchError] = useState(false);
+  const [explorerView, setExplorerView] = useState<'list' | 'map'>('list');
+
+  useEffect(() => {
+    const handleViewChanged = (e: Event) => {
+      const customEvent = e as CustomEvent<'list' | 'map'>;
+      if (customEvent.detail) {
+        setExplorerView(customEvent.detail);
+      }
+    };
+
+    window.addEventListener('explorer-view-changed', handleViewChanged);
+    return () => {
+      window.removeEventListener('explorer-view-changed', handleViewChanged);
+    };
+  }, []);
 
   /*
     Le composant ne s'affiche que sur les 4 onglets principaux et masqué
@@ -92,40 +81,64 @@ export function MobileBottomNav() {
       <div aria-hidden="true" className="md:hidden h-3.5" />
 
       <div
-        className="fixed inset-x-0 z-50 mx-auto flex w-[calc(100%-1.5rem)] max-w-md flex-col items-end gap-2 md:hidden"
+        className="fixed inset-x-0 z-50 mx-auto flex w-[calc(100%-1.5rem)] max-w-md flex-col gap-2 md:hidden"
         style={{ bottom: 'calc(0.75rem + env(safe-area-inset-bottom, 0px))' }}
       >
         {switchError && (
-          <p role="alert" className="rounded-pill bg-error-600 px-3.5 py-2 text-xs font-medium text-white shadow-lg">
+          <p role="alert" className="self-end rounded-pill bg-error-600 px-3.5 py-2 text-xs font-medium text-white shadow-lg">
             Basculement impossible. Réessayez.
           </p>
         )}
 
-        <button
-          type="button"
-          onClick={handleSwitch}
-          disabled={isSwitching}
-          aria-label={isOwner ? 'Passer en mode locataire' : (estProprietaire ? 'Passer en mode hôte' : 'Devenir hôte')}
-          className={cn(
-            'inline-flex h-11 items-center gap-2 rounded-pill px-4 text-sm font-semibold transition-all duration-150 disabled:opacity-60',
-            isOwner
-              ? 'bg-forest-900 text-lime-400 border border-forest-700 shadow-lg hover:bg-forest-950'
-              : 'bg-lime-400 text-forest-800 shadow-[0_6px_20px_rgba(155,194,44,0.30)] hover:bg-lime-300'
-          )}
-        >
-          {isSwitching ? (
-            <Loader2 className="h-4 w-4 shrink-0 animate-spin" aria-hidden="true" />
-          ) : (
-            <ArrowLeftRight className="h-4 w-4 shrink-0" aria-hidden="true" />
-          )}
-          <span className="whitespace-nowrap">
-            {isOwner
-              ? 'Passer en mode locataire'
-              : estProprietaire
-              ? 'Passer en mode hôte'
-              : 'Devenir hôte'}
-          </span>
-        </button>
+        {/* ── Action bar supérieure (Même ligne : Carte/Liste à gauche + Mode Hôte à droite) ── */}
+        <div className="flex w-full items-center justify-between gap-2">
+          {pathname === '/explorer' ? (
+            <button
+              type="button"
+              onClick={() => window.dispatchEvent(new CustomEvent('explorer-toggle-view'))}
+              aria-label={explorerView === 'list' ? 'Afficher la carte' : 'Afficher la liste'}
+              className="inline-flex h-11 items-center gap-2 rounded-pill px-4 text-sm font-semibold bg-forest-950 text-white shadow-[0_6px_20px_rgba(4,25,18,0.25)] border border-white/15 active:scale-95 transition-all duration-150"
+            >
+              {explorerView === 'list' ? (
+                <>
+                  <Map className="h-4 w-4 text-lime-300 shrink-0" aria-hidden="true" />
+                  <span className="whitespace-nowrap">Carte</span>
+                </>
+              ) : (
+                <>
+                  <List className="h-4 w-4 text-lime-300 shrink-0" aria-hidden="true" />
+                  <span className="whitespace-nowrap">Liste</span>
+                </>
+              )}
+            </button>
+          ) : <div />}
+
+          <button
+            type="button"
+            onClick={handleSwitch}
+            disabled={isSwitching}
+            aria-label={isOwner ? 'Passer en mode locataire' : (estProprietaire ? 'Passer en mode hôte' : 'Devenir hôte')}
+            className={cn(
+              'inline-flex h-11 items-center gap-2 rounded-pill px-4 text-sm font-semibold transition-all duration-150 disabled:opacity-60 shrink-0',
+              isOwner
+                ? 'bg-forest-900 text-lime-400 border border-forest-700 shadow-lg hover:bg-forest-950'
+                : 'bg-lime-400 text-forest-800 shadow-[0_6px_20px_rgba(155,194,44,0.30)] hover:bg-lime-300'
+            )}
+          >
+            {isSwitching ? (
+              <Loader2 className="h-4 w-4 shrink-0 animate-spin" aria-hidden="true" />
+            ) : (
+              <ArrowLeftRight className="h-4 w-4 shrink-0" aria-hidden="true" />
+            )}
+            <span className="whitespace-nowrap">
+              {isOwner
+                ? 'Passer en mode locataire'
+                : estProprietaire
+                ? 'Passer en mode hôte'
+                : 'Devenir hôte'}
+            </span>
+          </button>
+        </div>
 
         <nav
           aria-label="Navigation principale"

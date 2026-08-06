@@ -16,6 +16,7 @@ import { CheckoutProprioUseCase } from '../../domain/reservation/use-cases/check
 import { PrismaService } from '../../infrastructure/prisma/prisma.service';
 import { AuthUser, Role } from '../../shared/types/jwt-payload.type';
 import { CreateReservationDto } from './dto/create-reservation.dto';
+import { NotificationsService } from '../notifications/notifications.service';
 import { StatutReservation, TypeAvis } from '@prisma/client';
 import { Decimal } from '@prisma/client/runtime/library';
 
@@ -37,6 +38,7 @@ export class ReservationsService {
     private readonly addEtatLieuxPhotoUseCase: AddEtatLieuxPhotoUseCase,
     private readonly checkinProprioUseCase: CheckinProprioUseCase,
     private readonly checkoutProprioUseCase: CheckoutProprioUseCase,
+    private readonly notifications: NotificationsService,
   ) {}
 
   async findMine(userId: string, activeRole: Role, statut?: StatutReservation) {
@@ -89,8 +91,8 @@ export class ReservationsService {
     return this.createUseCase.execute(user, dto as CreateReservationInput, idempotencyKey);
   }
 
-  async confirm(id: string, userId: string, heureDebut?: string) {
-    return this.confirmUseCase.execute(id, userId, heureDebut);
+  async confirm(id: string, userId: string, heureDebut?: string, heureFin?: string) {
+    return this.confirmUseCase.execute(id, userId, heureDebut, heureFin);
   }
 
   async cancel(id: string, userId: string, raison: string) {
@@ -190,7 +192,7 @@ export class ReservationsService {
    * Signal tenant no-show (owner only, T+2h after start)
    */
   async signalTenantNoshow(userId: string, reservationId: string, commentaire?: string) {
-    return await this.prisma.$transaction(async (tx) => {
+    const result = await this.prisma.$transaction(async (tx) => {
       // Pessimistic lock sur la réservation
       const reservation = await tx.$queryRaw<Array<{
         id: string;
@@ -236,8 +238,18 @@ export class ReservationsService {
         },
       });
 
-      return { message: 'Absence signalée. La réservation sera annulée automatiquement si le locataire ne se présente pas.' };
+      return { locataireId: reservation.locataireId, message: 'Absence signalée. La réservation sera annulée automatiquement si le locataire ne se présente pas.' };
     }, { isolationLevel: 'RepeatableRead' });
+
+    // Notification Push au locataire (URGENTE ⚠️)
+    this.notifications.sendReservationPush(
+      result.locataireId,
+      '⚠️ Votre hôte a signalé votre absence !',
+      'Votre hôte signale que vous ne vous êtes pas présenté. Veuillez le contacter immédiatement ou valider votre arrivée.',
+      `/reservations/${reservationId}`
+    ).catch(() => {});
+
+    return { message: result.message };
   }
 
   /**
@@ -409,11 +421,14 @@ export class ReservationsService {
         },
       });
 
-      return { proprietaireId: reservation.proprietaireId, note };
+      return { proprietaireId: reservation.proprietaireId, logementId: reservation.logementId, note };
     }, { isolationLevel: 'RepeatableRead' });
 
     // Update owner's average rating outside transaction to avoid deadlocks
     await this.updateUserAverageRating(result.proprietaireId, 'PROPRIETAIRE');
+    if (result.logementId) {
+      await this.updateLogementAverageRating(result.logementId);
+    }
 
     return { message: `Évaluation de ${result.note}/5 publiée avec succès` };
   }
@@ -457,6 +472,40 @@ export class ReservationsService {
         where: { id: userId },
         data: {
           [fieldName]: new Decimal(average.toFixed(2)),
+          totalAvis: count,
+        },
+      });
+    }, { isolationLevel: 'Serializable' });
+  }
+
+  /**
+   * Recalculate and update Logement average rating atomically
+   */
+  private async updateLogementAverageRating(logementId: string) {
+    await this.prisma.$transaction(async (tx) => {
+      await tx.$queryRaw`
+        SELECT id FROM "Logement"
+        WHERE id = ${logementId}
+        FOR UPDATE
+      `;
+
+      const result = await tx.avis.aggregate({
+        where: { logementId, typeAvis: TypeAvis.LOCATAIRE_NOTE_LOGEMENT_ET_PROPRIO },
+        _avg: { note: true },
+        _count: { id: true },
+      });
+
+      if (!result._count.id || result._count.id === 0) {
+        return;
+      }
+
+      const average = result._avg.note || 0;
+      const count = result._count.id;
+
+      await tx.logement.update({
+        where: { id: logementId },
+        data: {
+          note: new Decimal(average.toFixed(2)),
           totalAvis: count,
         },
       });

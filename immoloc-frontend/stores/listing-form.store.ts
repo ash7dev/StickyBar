@@ -14,17 +14,18 @@ import type { ListingDetail } from '@/lib/nestjs/types';
 // ── Step definitions ─────────────────────────────────────────────────────────
 
 export const STEPS = [
-  { id: 'bien',         label: 'Le bien',          icon: 'home' },
-  { id: 'annonce',      label: 'Votre annonce',    icon: 'pen' },
-  { id: 'equipements',  label: 'Équipements',      icon: 'equipements' },
-  { id: 'conditions',   label: 'Conditions',       icon: 'rules' },
-  { id: 'photos',       label: 'Photos',           icon: 'photos' },
-  { id: 'confirmation', label: 'Récapitulatif',    icon: 'check' },
+  { id: 'bien', label: 'Le bien', icon: 'home' },
+  { id: 'annonce', label: 'Votre annonce', icon: 'pen' },
+  { id: 'equipements', label: 'Équipements', icon: 'equipements' },
+  { id: 'conditions', label: 'Conditions', icon: 'rules' },
+  { id: 'photos', label: 'Photos', icon: 'photos' },
+  { id: 'confirmation', label: 'Récapitulatif', icon: 'check' },
 ] as const;
 
 export type StepId = (typeof STEPS)[number]['id'];
 
 export interface VideoItem {
+  url?: string;
   file?: File;
   previewUrl: string;
   name?: string;
@@ -241,7 +242,7 @@ export const useListingFormStore = create<ListingFormState>((set, get) => ({
           position: p.position,
         })),
       },
-      video: listing.videoUrl ? { previewUrl: listing.videoUrl } : null,
+      video: listing.videoUrl ? { url: listing.videoUrl, previewUrl: listing.videoUrl } : null,
     }),
 
   // Reset

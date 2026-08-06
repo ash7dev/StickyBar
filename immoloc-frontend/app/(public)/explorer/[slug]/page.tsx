@@ -11,6 +11,7 @@ import { ListingDetailSpec } from '@/features/listings/components/web/ListingDet
 import { PricePreviewWidget } from '@/features/listings/components/web/PricePreviewWidget';
 import { ListingFilters } from '@/features/listings/components/web/ListingFilters';
 import { PublicPropertyGrid } from '@/features/listings/components/web/PublicPropertyGrid';
+import { SimilarListingsSection } from '@/features/listings/components/web/SimilarListingsSection';
 import { PageBanner } from '@/components/ui/page-banner';
 import { BRAND } from '@/lib/config';
 
@@ -113,23 +114,33 @@ async function CityListingsPage({
 function getDisabledDates(listing: any): Date[] {
   const disabled: Date[] = [];
 
-  // Bloquer toutes les dates dans les réservations actives
+  // Bloquer les nuits réservées (la date de départ libère la journée pour un nouveau check-in)
   (listing.reservations || []).forEach((res: any) => {
+    if (!res.dateDebut || !res.dateFin) return;
     const start = new Date(res.dateDebut);
+    start.setHours(0, 0, 0, 0);
     const end = new Date(res.dateFin);
+    end.setHours(0, 0, 0, 0);
 
-    for (let d = new Date(start); d <= end; d.setDate(d.getDate() + 1)) {
+    const d = new Date(start);
+    while (d < end) {
       disabled.push(new Date(d));
+      d.setDate(d.getDate() + 1);
     }
   });
 
-  // Bloquer toutes les dates dans les indisponibilités manuelles
+  // Bloquer les nuits en indisponibilité manuelle
   (listing.indisponibilites || []).forEach((indispo: any) => {
+    if (!indispo.dateDebut || !indispo.dateFin) return;
     const start = new Date(indispo.dateDebut);
+    start.setHours(0, 0, 0, 0);
     const end = new Date(indispo.dateFin);
+    end.setHours(0, 0, 0, 0);
 
-    for (let d = new Date(start); d <= end; d.setDate(d.getDate() + 1)) {
+    const d = new Date(start);
+    while (d < end) {
       disabled.push(new Date(d));
+      d.setDate(d.getDate() + 1);
     }
   });
 
@@ -183,6 +194,11 @@ async function ListingDetailPage({ slug }: { slug: string }) {
                 />
               </div>
             </div>
+          </div>
+
+          {/* ── Logements Similaires & à Proximité — PLEINE LARGEUR DU CONTENEUR ── */}
+          <div className="w-full pt-4 border-t border-border">
+            <SimilarListingsSection currentListing={listing} />
           </div>
         </div>
       </div>

@@ -16,19 +16,19 @@ import { Footer } from '@/features/home/components/web/Footer';
 /* ─── TOC items ───────────────────────────────────────────────────────────── */
 
 const SECTIONS = [
-  { id: 'objet',           label: 'Objet & champ d\'application', icon: FileText },
-  { id: 'definitions',     label: 'Définitions',                   icon: BookOpen },
-  { id: 'inscription',     label: 'Inscription & KYC',             icon: Users },
-  { id: 'annonces',        label: 'Annonces & propriétaires',      icon: Home },
-  { id: 'reservations',    label: 'Réservations & locataires',     icon: Star },
-  { id: 'paiements',       label: 'Paiements & séquestre',         icon: Banknote },
-  { id: 'commission',      label: 'Commission & frais',            icon: CreditCard },
-  { id: 'annulations',     label: 'Annulations',                   icon: XCircle },
-  { id: 'etat-des-lieux',  label: 'État des lieux',               icon: CheckCircle2 },
-  { id: 'litiges',         label: 'Litiges & médiation',           icon: Scale },
-  { id: 'responsabilites', label: 'Responsabilités',               icon: Shield },
-  { id: 'donnees',         label: 'Données personnelles',          icon: Lock },
-  { id: 'droit',           label: 'Droit applicable',              icon: Building2 },
+  { id: 'objet', label: 'Objet & champ d\'application', icon: FileText },
+  { id: 'definitions', label: 'Définitions', icon: BookOpen },
+  { id: 'inscription', label: 'Inscription & KYC', icon: Users },
+  { id: 'annonces', label: 'Annonces & propriétaires', icon: Home },
+  { id: 'reservations', label: 'Réservations & locataires', icon: Star },
+  { id: 'paiements', label: 'Paiements & séquestre', icon: Banknote },
+  { id: 'commission', label: 'Commission & frais', icon: CreditCard },
+  { id: 'annulations', label: 'Annulations', icon: XCircle },
+  { id: 'etat-des-lieux', label: 'État des lieux', icon: CheckCircle2 },
+  { id: 'litiges', label: 'Litiges & médiation', icon: Scale },
+  { id: 'responsabilites', label: 'Responsabilités', icon: Shield },
+  { id: 'donnees', label: 'Données personnelles', icon: Lock },
+  { id: 'droit', label: 'Droit applicable', icon: Building2 },
 ] as const;
 
 /* ─── Shared sub-components ───────────────────────────────────────────────── */
@@ -57,10 +57,10 @@ function InfoBox({ type = 'info', children }: {
   children: React.ReactNode;
 }) {
   const cfg = {
-    info:    { bg: 'bg-forest-50/80 border-forest-200/70',   icon: '💡', text: 'text-forest-900' },
-    warning: { bg: 'bg-warning-50 border-warning-500/30',   icon: '⚠️',  text: 'text-warning-700' },
-    key:     { bg: 'bg-lime-50/80 border-lime-200/80',      icon: '🔑',  text: 'text-forest-900' },
-    success: { bg: 'bg-success-50 border-success-500/30',   icon: '✅',  text: 'text-success-700' },
+    info: { bg: 'bg-forest-50/80 border-forest-200/70', icon: '💡', text: 'text-forest-900' },
+    warning: { bg: 'bg-warning-50 border-warning-500/30', icon: '⚠️', text: 'text-warning-700' },
+    key: { bg: 'bg-lime-50/80 border-lime-200/80', icon: '🔑', text: 'text-forest-900' },
+    success: { bg: 'bg-success-50 border-success-500/30', icon: '✅', text: 'text-success-700' },
   }[type];
 
   return (
@@ -193,9 +193,9 @@ export function CGUPage() {
             {/* Meta strip */}
             <div className="flex flex-wrap gap-4">
               {[
-                { icon: Clock,   label: 'En vigueur depuis',  value: '1er janvier 2025' },
-                { icon: FileText, label: 'Version',            value: '2.1' },
-                { icon: Building2, label: 'Droit applicable',  value: 'République du Sénégal' },
+                { icon: Clock, label: 'En vigueur depuis', value: '1er janvier 2025' },
+                { icon: FileText, label: 'Version', value: '2.1' },
+                { icon: Building2, label: 'Droit applicable', value: 'République du Sénégal' },
               ].map(({ icon: Icon, label, value }) => (
                 <div key={label} className="flex items-center gap-2.5 px-4 py-2.5 bg-forest-900/60 border border-forest-800/80 rounded-xl shadow-xs">
                   <Icon className="w-4 h-4 text-lime-400" />
@@ -292,16 +292,16 @@ export function CGUPage() {
             {/* ── Article 2 ── Définitions ─────────────────────────────── */}
             <ArticleHeading id="definitions" number="2" title="Définitions" icon={BookOpen} />
             <Dl items={[
-              { term: 'Plateforme',     desc: `Le site web et l'application mobile ${BRAND.name}, ainsi que tous les services associés.` },
-              { term: 'Utilisateur',    desc: 'Toute personne physique ou morale ayant créé un compte sur la Plateforme.' },
-              { term: 'Propriétaire',   desc: 'Utilisateur publiant une ou plusieurs annonces de logement à louer.' },
-              { term: 'Locataire',      desc: 'Utilisateur effectuant une réservation de logement via la Plateforme.' },
-              { term: 'Annonce',        desc: "Description détaillée d'un logement mise en ligne par un Propriétaire, incluant photos, tarifs et conditions." },
-              { term: 'Réservation',    desc: 'Accord contractuel entre un Propriétaire et un Locataire, validé via la Plateforme.' },
-              { term: 'Séquestre',      desc: `Mécanisme par lequel ${BRAND.name} retient temporairement le montant de la réservation jusqu'à la confirmation du check-in par les deux parties.` },
-              { term: 'KYC',            desc: 'Know Your Customer — Procédure de vérification d\'identité obligatoire pour tout Propriétaire souhaitant publier une annonce.' },
-              { term: 'Commission',     desc: `Frais de service prélevés par ${BRAND.name} sur chaque transaction, permettant de financer la Plateforme et ses services.` },
-              { term: 'FCFA',           desc: 'Franc CFA (XOF), monnaie officielle utilisée pour toutes les transactions sur la Plateforme.' },
+              { term: 'Plateforme', desc: `Le site web et l'application mobile ${BRAND.name}, ainsi que tous les services associés.` },
+              { term: 'Utilisateur', desc: 'Toute personne physique ou morale ayant créé un compte sur la Plateforme.' },
+              { term: 'Propriétaire', desc: 'Utilisateur publiant une ou plusieurs annonces de logement à louer.' },
+              { term: 'Locataire', desc: 'Utilisateur effectuant une réservation de logement via la Plateforme.' },
+              { term: 'Annonce', desc: "Description détaillée d'un logement mise en ligne par un Propriétaire, incluant photos, tarifs et conditions." },
+              { term: 'Réservation', desc: 'Accord contractuel entre un Propriétaire et un Locataire, validé via la Plateforme.' },
+              { term: 'Séquestre', desc: `Mécanisme par lequel ${BRAND.name} retient temporairement le montant de la réservation jusqu'à la confirmation du check-in par les deux parties.` },
+              { term: 'KYC', desc: 'Know Your Customer — Procédure de vérification d\'identité obligatoire pour tout Propriétaire souhaitant publier une annonce.' },
+              { term: 'Commission', desc: `Frais de service prélevés par ${BRAND.name} sur chaque transaction, permettant de financer la Plateforme et ses services.` },
+              { term: 'FCFA', desc: 'Franc CFA (XOF), monnaie officielle utilisée pour toutes les transactions sur la Plateforme.' },
             ]} />
 
             <Divider />
@@ -492,7 +492,7 @@ export function CGUPage() {
             <Para>
               Toute annulation s&apos;effectue directement depuis l&apos;application. Le barème de remboursement et les pénalités sont calculés automatiquement selon le délai restant avant le début du séjour :
             </Para>
-            
+
             <p className="font-bold text-sm text-foreground mt-4 mb-2">1. Annulation par le Locataire :</p>
             <div className="space-y-3 my-3">
               {[

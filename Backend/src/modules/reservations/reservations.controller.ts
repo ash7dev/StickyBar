@@ -87,7 +87,7 @@ export class ReservationsController {
   @ApiOperation({ summary: 'Confirmer une réservation (propriétaire uniquement)' })
   @ApiParam({ name: 'id', description: 'UUID de la réservation' })
   confirm(@Param('id') id: string, @CurrentUser() user: AuthUser, @Body() dto: ConfirmReservationDto) {
-    return this.reservationsService.confirm(id, user.id, dto.heureDebut);
+    return this.reservationsService.confirm(id, user.id, dto.heureDebut, dto.heureFin);
   }
 
   @Patch(':id/cancel')

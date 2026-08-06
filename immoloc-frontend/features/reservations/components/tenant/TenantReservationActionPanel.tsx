@@ -160,16 +160,22 @@ export function TenantReservationActionPanel({ id, res, onRefetch }: Props) {
     }, 'Votre évaluation a été publiée.');
   };
 
-  if (!['CONFIRMED', 'CHECKED_IN', 'COMPLETED'].includes(statut)) return null;
+  const isOwnerNoshowReported = useMemo(() => {
+    return res.historique?.some((h) => h.modifiePar === 'OWNER_SIGNAL_TENANT_NOSHOW') ?? false;
+  }, [res.historique]);
+
+  if (!['CONFIRMED', 'CHECKED_IN', 'COMPLETED', 'DISPUTED'].includes(statut)) return null;
 
   /* ── En-tête ──────────────────────────────────────────────────────────── */
 
   const header =
-    statut === 'COMPLETED'
-      ? { icon: CheckCircle2, label: 'Séjour terminé', chip: 'Terminé', subtitle: 'Partagez votre expérience avec la communauté' }
-      : statut === 'CHECKED_IN'
-        ? { icon: Home, label: 'Séjour en cours', chip: 'En cours', subtitle: 'Vos garanties Klef sont actives' }
-        : { icon: LogIn, label: 'Check-in', chip: 'Étape 3', subtitle: SUBTITLES[subState] };
+    statut === 'DISPUTED'
+      ? { icon: AlertTriangle, label: 'Litige en cours', chip: 'Litige', subtitle: 'Dossier en cours d’examen par l’équipe support Klef' }
+      : statut === 'COMPLETED'
+        ? { icon: CheckCircle2, label: 'Séjour terminé', chip: 'Terminé', subtitle: 'Partagez votre expérience avec la communauté' }
+        : statut === 'CHECKED_IN'
+          ? { icon: Home, label: 'Séjour en cours', chip: 'En cours', subtitle: 'Vos garanties Klef sont actives' }
+          : { icon: LogIn, label: 'Check-in', chip: 'Étape 3', subtitle: SUBTITLES[subState] };
 
   const HeaderIcon = header.icon;
 
@@ -265,6 +271,19 @@ export function TenantReservationActionPanel({ id, res, onRefetch }: Props) {
 
           {errorMsg && <Feedback type="error" message={errorMsg} />}
           {successMsg && <Feedback type="success" message={successMsg} />}
+
+          {isOwnerNoshowReported && (
+            <Notice tone="warning" icon={ShieldAlert} title="⚠️ Votre hôte a signalé votre absence (No-Show)">
+              Votre hôte signale ne pas vous avoir vu sur les lieux. Si vous êtes arrivé ou en route, contactez rapidement votre hôte ou validez votre état des lieux pour empêcher l&apos;annulation automatique.
+            </Notice>
+          )}
+
+          {res.litige && (
+            <Notice tone="error" icon={AlertTriangle} title="🚨 Litige en cours sur ce séjour">
+              Un litige est actif (déclaré par {res.litige.declarePar ? res.litige.declarePar.toLowerCase() : 'une partie'}). Motif :{' '}
+              <span className="font-semibold">{res.litige.motif.replace(/_/g, ' ')}</span>. Les fonds restent sécurisés en séquestre pendant l&apos;analyse par le support Klef.
+            </Notice>
+          )}
 
           {/* ── Livret d'accueil ─────────────────────────────────────────── */}
 

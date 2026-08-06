@@ -1,7 +1,6 @@
 'use client';
 
-import { useState } from 'react';
-import { Map, List, Sparkles } from 'lucide-react';
+import { useEffect, useState } from 'react';
 import type { Listing } from '@/lib/nestjs/types';
 import { ResultsGrid } from './results-grid';
 import { ExplorerMap } from './explorer-map';
@@ -14,11 +13,25 @@ interface ExplorerViewManagerProps {
 /**
  * Gestionnaire réactif d'affichage Explorer
  * Desktop : Split 2 colonnes (Liste + Carte)
- * Mobile : Commutation fluide via le bouton flottant (🗺️ Carte / 📋 Liste)
+ * Mobile : Commutation fluide via l'action bar sur la même ligne que "Passer en mode hôte"
  */
 export function ExplorerViewManager({ listings }: ExplorerViewManagerProps) {
   // Sur mobile : 'list' | 'map'
   const [mobileView, setMobileView] = useState<'list' | 'map'>('list');
+
+  useEffect(() => {
+    // Notifier le sous-système de navigation mobile du statut courant
+    window.dispatchEvent(new CustomEvent('explorer-view-changed', { detail: mobileView }));
+
+    const handleToggle = () => {
+      setMobileView((prev) => (prev === 'list' ? 'map' : 'list'));
+    };
+
+    window.addEventListener('explorer-toggle-view', handleToggle);
+    return () => {
+      window.removeEventListener('explorer-toggle-view', handleToggle);
+    };
+  }, [mobileView]);
 
   return (
     <div className="relative">
@@ -48,26 +61,6 @@ export function ExplorerViewManager({ listings }: ExplorerViewManagerProps) {
           <ExplorerMap listings={listings} />
         </aside>
 
-      </div>
-
-      {/* ── BOUTON FLOTTANT MOBILE (Bascule Carte ↔ Liste) ─────────────── */}
-      <div className="fixed bottom-20 left-4 z-40 lg:hidden animate-in fade-in slide-in-from-bottom-4">
-        <button
-          onClick={() => setMobileView(mobileView === 'list' ? 'map' : 'list')}
-          className="inline-flex items-center gap-2.5 px-6 py-3.5 rounded-full bg-forest-950 text-white font-bold text-sm shadow-2xl backdrop-blur-xl border border-white/20 active:scale-95 transition-all"
-        >
-          {mobileView === 'list' ? (
-            <>
-              <Map className="w-[18px] h-[18px] text-lime-300" />
-              <span>Afficher la carte</span>
-            </>
-          ) : (
-            <>
-              <List className="w-[18px] h-[18px] text-lime-300" />
-              <span>Afficher la liste</span>
-            </>
-          )}
-        </button>
       </div>
 
     </div>

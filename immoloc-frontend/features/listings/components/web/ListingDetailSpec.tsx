@@ -14,6 +14,7 @@ import { formatPrixPublic, getPrixPublic, getPrixDerniereMinute } from '@/lib/pr
 import { useRecentlyViewed } from '@/lib/hooks/useRecentlyViewed';
 import { ListingVideoSection } from './ListingVideoSection';
 import { ListingLocationMap } from './ListingLocationMap';
+import { ListingReviewsSection } from './ListingReviewsSection';
 
 interface ListingDetailSpecProps {
   listing: Listing;
@@ -407,6 +408,9 @@ export function ListingDetailSpec({ listing }: ListingDetailSpecProps) {
         latitude={listing.latitude}
         longitude={listing.longitude}
       />
+
+      {/* -- Avis des Voyageurs ----------------------------------------- */}
+      <ListingReviewsSection listing={listing} />
 
       {/* -- Hôte -------------------------------------------------------- */}
       <section className="space-y-4 border-t border-border pt-8">

@@ -259,8 +259,11 @@ function ListingCalendar({ listingId, reservations }: { listingId: string; reser
     const s = new Set<string>();
     for (const r of reservations) {
       if (['CANCELLED', 'DISPUTED'].includes(r.statut)) continue;
-      const cur = new Date(r.dateDebut), end = new Date(r.dateFin);
-      while (cur <= end) { s.add(isoDay(cur)); cur.setDate(cur.getDate() + 1); }
+      const cur = new Date(r.dateDebut);
+      cur.setHours(0, 0, 0, 0);
+      const end = new Date(r.dateFin);
+      end.setHours(0, 0, 0, 0);
+      while (cur < end) { s.add(isoDay(cur)); cur.setDate(cur.getDate() + 1); }
     }
     return s;
   }, [reservations]);
@@ -268,8 +271,11 @@ function ListingCalendar({ listingId, reservations }: { listingId: string; reser
   const blockedMap = useMemo(() => {
     const m = new Map<string, Indispo>();
     for (const ind of calData?.indisponibilites ?? []) {
-      const cur = new Date(ind.dateDebut), end = new Date(ind.dateFin);
-      while (cur <= end) { m.set(isoDay(cur), ind); cur.setDate(cur.getDate() + 1); }
+      const cur = new Date(ind.dateDebut);
+      cur.setHours(0, 0, 0, 0);
+      const end = new Date(ind.dateFin);
+      end.setHours(0, 0, 0, 0);
+      while (cur < end) { m.set(isoDay(cur), ind); cur.setDate(cur.getDate() + 1); }
     }
     return m;
   }, [calData]);

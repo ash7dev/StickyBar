@@ -342,6 +342,13 @@ export function PricePreviewWidget({
               minNights={nuitesMinimum}
               compact
             />
+            <div className="mt-2.5 flex flex-wrap items-center justify-between gap-1 rounded-inner border border-border bg-background-alt px-3 py-2 text-xs text-foreground-muted">
+              <span>🔑 Arrivée : <strong className="font-semibold text-foreground">dès 14:00</strong></span>
+              <span>🚪 Départ : <strong className="font-semibold text-foreground">avant 12:00</strong></span>
+            </div>
+            <p className="mt-1 text-[10px] text-foreground-faint text-center">
+              Horaires indicatifs — personnalisables par l&apos;hôte lors de la confirmation
+            </p>
           </div>
 
           {/* ── Voyageurs ────────────────────────────────────────────────── */}

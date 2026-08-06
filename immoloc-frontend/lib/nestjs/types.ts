@@ -206,6 +206,18 @@ export interface Listing {
   totalSejours?: number;
   createdAt: string;
   updatedAt: string;
+  avis?: Array<{
+    id: string;
+    note: number;
+    commentaire?: string | null;
+    creeLe: string;
+    auteur: {
+      id: string;
+      prenom: string;
+      nom: string;
+      avatarUrl?: string | null;
+    };
+  }>;
   proprietaire?: {
     id: string;
     prenom: string;
@@ -540,6 +552,7 @@ export interface ReservationDetail {
     id: string;
     ancienStatut?: string | null;
     nouveauStatut: string;
+    modifiePar?: string | null;
     raison?: string | null;
     modifieLe: string;
   }>;
@@ -548,6 +561,7 @@ export interface ReservationDetail {
   litige?: {
     id: string;
     statut: StatutLitige;
+    declarePar?: string;
     motif: string;
     description: string;
     creeLe: string;

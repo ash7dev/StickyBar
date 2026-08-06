@@ -31,7 +31,7 @@ export class ConfirmReservationUseCase {
     private readonly notifications: NotificationsService,
   ) {}
 
-  async execute(reservationId: string, userId: string, heureDebut?: string) {
+  async execute(reservationId: string, userId: string, heureDebut?: string, heureFin?: string) {
     const result = await this.prisma.$transaction(async (tx) => {
       const reservation = await tx.reservation.findUnique({
         where: { id: reservationId },
@@ -73,21 +73,19 @@ export class ConfirmReservationUseCase {
       this.stateMachine.transition(reservation.statut, StatutReservation.CONFIRMED);
 
       /*
-       * Si l'owner a fourni une heure (HH:mm), on met à jour dateDebut et dateFin
-       * pour refléter les vrais horaires du séjour plutôt que minuit par défaut.
-       * dateFin = même heure + 1h pour donner une marge de nettoyage à l'owner.
+       * Mise à jour des vrais horaires de séjour (dateDebut / dateFin).
+       * Heure de check-in : heureDebut (ex: 14:00)
+       * Heure de check-out : heureFin (ex: 12:00)
        */
       let newDateDebut = reservation.dateDebut;
       let newDateFin   = reservation.dateFin;
 
       if (heureDebut) {
         newDateDebut = applyTime(reservation.dateDebut, heureDebut);
-
-        const [h, m] = heureDebut.split(':').map(Number);
-        const checkoutH = (h + 1) % 24;
-        const checkoutHhmm = `${String(checkoutH).padStart(2, '0')}:${String(m).padStart(2, '0')}`;
-        newDateFin = applyTime(reservation.dateFin, checkoutHhmm);
       }
+
+      const finalCheckoutTime = heureFin || '12:00';
+      newDateFin = applyTime(reservation.dateFin, finalCheckoutTime);
 
       const updated = await tx.reservation.update({
         where: { id: reservationId },
@@ -105,9 +103,7 @@ export class ConfirmReservationUseCase {
           ancienStatut:  reservation.statut,
           nouveauStatut: StatutReservation.CONFIRMED,
           modifiePar:    userId,
-          raison: heureDebut
-            ? `Confirmation par le propriétaire — check-in ${heureDebut}`
-            : 'Confirmation par le propriétaire',
+          raison: `Confirmation par le propriétaire — Check-in ${heureDebut || '14:00'}, Check-out ${finalCheckoutTime}`,
         },
       });
 

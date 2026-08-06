@@ -4,24 +4,26 @@ import Link from 'next/link';
 import { ChevronRight } from 'lucide-react';
 import { ListingCard } from './ListingCard';
 
-interface Listing {
+export interface ListingItem {
   id: string;
   titre: string;
   type: string;
-  sousType?: string;
+  sousType?: string | null;
   ville: string;
-  quartier?: string;
-  prixBase: number;
-  note: number | null;
-  totalSejours: number;
+  quartier?: string | null;
+  prixBase: number | any;
+  note?: number | null;
+  totalSejours?: number;
   photos: { url: string }[];
+  isInstantBooking?: boolean;
   derniereMinuteActive?: boolean;
+  videoUrl?: string | null;
 }
 
 interface ListingsSectionProps {
   title: string;
   subtitle?: string;
-  listings: Listing[];
+  listings: ListingItem[];
   viewAllLink?: string;
   variant?: 'standard' | 'premium';
 }
@@ -76,7 +78,22 @@ export function ListingsSection({
                 key={listing.id}
                 className="flex-shrink-0 w-[280px] sm:w-[320px] snap-start"
               >
-                <ListingCard {...listing} variant={variant} />
+                <ListingCard
+                  id={listing.id}
+                  titre={listing.titre}
+                  type={listing.type}
+                  sousType={listing.sousType}
+                  ville={listing.ville}
+                  quartier={listing.quartier}
+                  prixBase={Number(listing.prixBase)}
+                  note={listing.note ? Number(listing.note) : null}
+                  totalSejours={listing.totalSejours ?? 0}
+                  photos={listing.photos}
+                  isInstantBooking={listing.isInstantBooking}
+                  derniereMinuteActive={listing.derniereMinuteActive}
+                  videoUrl={listing.videoUrl}
+                  variant={variant}
+                />
               </div>
             ))}
           </div>

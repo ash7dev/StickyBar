@@ -21,9 +21,9 @@ export interface ListingCardProps {
   slug?: string;
   titre: string;
   type: string;
-  sousType?: string;
+  sousType?: string | null;
   ville: string;
-  quartier?: string;
+  quartier?: string | null;
   prixBase: number;
   note: number | null;
   totalSejours: number;

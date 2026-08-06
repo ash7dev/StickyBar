@@ -96,11 +96,15 @@ export class DisputesService {
 
     // Notification Push à l'autre partie
     const autrePartieId = isLocataire ? reservation.proprietaireId : reservation.locataireId;
+    const redirectUrl = isLocataire
+      ? `/dashboard/reservations/${dto.reservationId}`
+      : `/reservations/${dto.reservationId}`;
+
     this.notifications.sendDisputePush(
       autrePartieId,
       'Nouveau litige déclaré 🚨',
       'Un litige a été ouvert concernant votre réservation. L\'équipe Klef examine le dossier.',
-      '/dashboard'
+      redirectUrl
     ).catch((err) => this.logger.error(`Erreur Push litige create: ${err.message}`));
 
     return result;
