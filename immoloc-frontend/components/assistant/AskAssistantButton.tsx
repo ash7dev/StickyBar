@@ -17,13 +17,13 @@ interface AskAssistantButtonProps {
 }
 
 export function AskAssistantButton({
-  label = 'Demander un assistant',
+  label = "Demander à l'assistant",
   subject,
   category = 'RESERVATION',
   reservationId,
   logementId,
   message,
-  variant = 'outline',
+  variant = 'lime',
   size = 'md',
   className,
 }: AskAssistantButtonProps) {
@@ -47,7 +47,7 @@ export function AskAssistantButton({
       className={cn(
         'inline-flex items-center justify-center gap-2 font-semibold transition-all rounded-pill shadow-sm hover:scale-[1.02] active:scale-[0.98]',
         variant === 'primary' && 'bg-forest-950 text-neutral-0 hover:bg-forest-900',
-        variant === 'lime' && 'bg-lime-400 text-forest-950 hover:bg-lime-500 font-bold',
+        variant === 'lime' && 'bg-lime-400 text-forest-950 hover:bg-lime-300 font-extrabold shadow-md border border-lime-500/30',
         variant === 'outline' && 'border border-border bg-background-card text-foreground hover:bg-background-alt hover:border-forest-300',
         variant === 'ghost' && 'text-forest-700 dark:text-forest-300 hover:bg-forest-50 dark:hover:bg-forest-950/40',
         size === 'sm' && 'px-3 py-1.5 text-xs',
@@ -56,7 +56,7 @@ export function AskAssistantButton({
         className,
       )}
     >
-      <Sparkles className="h-4 w-4 text-lime-500 shrink-0" />
+      <Sparkles className={cn("h-4 w-4 shrink-0", variant === 'lime' ? 'text-forest-950' : 'text-lime-500')} />
       <span>{label}</span>
     </button>
   );

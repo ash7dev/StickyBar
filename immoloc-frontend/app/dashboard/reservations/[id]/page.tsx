@@ -788,7 +788,7 @@ export default function ReservationDetailPage({ params }: { params: Promise<{ id
             category="RESERVATION"
             reservationId={res.id}
             logementId={res.logement?.id}
-            variant="outline"
+            variant="lime"
           />
         </section>
 
