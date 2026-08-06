@@ -448,10 +448,9 @@ export function ListingDetailSpec({ listing }: ListingDetailSpecProps) {
 
             <Link
               href={`/hotes/${proprietaire?.id}`}
-              className="w-full sm:w-auto px-5 py-2.5 rounded-full bg-forest-900 text-lime-300 hover:bg-forest-950 hover:scale-[1.02] active:scale-95 text-xs font-extrabold transition-all text-center shadow-md flex items-center justify-center gap-1"
+              className="btn-primary w-full sm:w-auto"
             >
-              <span>Voir le profil de l'hôte</span>
-              <span>→</span>
+              Voir le profil de l'hôte →
             </Link>
           </div>
       </section>
