@@ -14,6 +14,11 @@ export class SearchLogementsDto {
   @IsString()
   quartier?: string;
 
+  @ApiPropertyOptional({ example: 'Villa avec piscine' })
+  @IsOptional()
+  @IsString()
+  sousType?: string;
+
   @ApiPropertyOptional({ example: true, description: 'Filtrer uniquement les offres dernière minute' })
   @IsOptional()
   @Transform(({ value }) => value === 'true' || value === true || value === '1')

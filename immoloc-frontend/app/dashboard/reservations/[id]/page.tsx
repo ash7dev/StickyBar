@@ -1,22 +1,19 @@
-/* eslint-disable @typescript-eslint/no-unused-vars */
 'use client';
 
-import { use, useState } from 'react';
+import { use, useCallback, useEffect, useRef, useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
+import Link from 'next/link';
+import Image from 'next/image';
+import {
+  ArrowLeft, FileText, User, Home, AlertTriangle, CheckCircle2, Shield,
+  ShieldCheck, MapPin, Phone, PhoneCall, Star, Banknote, Users, Moon,
+  TrendingUp, ExternalLink, Clock, ChevronUp, X, Lock,
+} from 'lucide-react';
+import { cn } from '@/lib/utils/cn';
 import { nestFetch } from '@/lib/nestjs/api-client';
 import { NEST_API } from '@/lib/nestjs/endpoints';
 import type { ReservationDetail } from '@/lib/nestjs/types';
 import { useRoleStore } from '@/stores/role.store';
-import Link from 'next/link';
-import Image from 'next/image';
-import {
-  ArrowLeft, FileText, User, Home, CreditCard,
-  AlertTriangle, CheckCircle2, Shield, ShieldCheck,
-  MapPin, Phone, PhoneCall, Star, Camera, History, Banknote,
-  Users, Moon, TrendingUp, ExternalLink, Clock,
-  ChevronUp, X, Lock,
-} from 'lucide-react';
-import { cn } from '@/lib/utils/cn';
 import { ReservationActionPanel } from '@/features/reservations/components/owner/ReservationActionPanel';
 import { TenantReservationActionPanel } from '@/features/reservations/components/tenant/TenantReservationActionPanel';
 import { PhotosEtatLieuSection } from '@/features/reservations/components/owner/PhotosEtatLieuSection';
@@ -24,93 +21,154 @@ import { ReservationPaymentCard } from '@/features/reservations/components/share
 import { ReservationTimeline } from '@/features/reservations/components/shared/ReservationTimeline';
 import { canSeeCoordonnees } from '@/features/reservations/utils';
 
+/* ═══════════════════════════════════════════════════════════════════════════
+   DIRECTION VISUELLE ASSUMÉE
+   ───────────────────────────────────────────────────────────────────────────
+   Le lime et le rouge sont ici des outils d'emphase, volontairement.
+   La contrainte qui les rend efficaces : ils ne servent QU'À ÇA.
+
+     · lime  → le revenu net (hero + détail financier) et le CTA contrat.
+     · rouge → la commission déduite et les états d'alerte (litige, annulée).
+
+   Tout le reste — icônes de section, avatars, pastilles, halos, téléphone,
+   barres — passe en vert et neutres. Le fichier précédent comptait 18
+   occurrences de lime : un chiffre lime au milieu de 17 autres éléments lime
+   ne ressort pas. C'est la rareté qui produit l'impact, pas la quantité.
+   ═══════════════════════════════════════════════════════════════════════════ */
+
 /* ─── Helpers ─────────────────────────────────────────────────────────────── */
 
-function fcfa(n: number) {
-  return new Intl.NumberFormat('fr-FR').format(Math.round(n));
-}
+const fcfa = (n: number | string) =>
+  new Intl.NumberFormat('fr-FR').format(Math.round(Number(n) || 0));
 
-function dateLong(s: string) {
-  return new Date(s).toLocaleDateString('fr-FR', {
-    day: 'numeric', month: 'long', year: 'numeric',
-  });
-}
+const dateLong = (s: string) =>
+  new Date(s).toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' });
 
-function dateTime(s: string) {
-  return new Date(s).toLocaleDateString('fr-FR', {
-    day: 'numeric', month: 'short', year: 'numeric',
+const dateTimeLong = (s: string) =>
+  new Date(s).toLocaleDateString('fr-FR', {
+    weekday: 'long', day: 'numeric', month: 'long', year: 'numeric',
     hour: '2-digit', minute: '2-digit',
   });
+
+/* Même piège que dans CheckInTimeCard et TenantReservationHero : `dateDebut`
+   arrive souvent en date seule, lue à minuit UTC. `toLocaleTimeString()`
+   affichait « 00:00 » depuis Dakar et « 02:00 » depuis Paris — présenté comme
+   l'heure d'arrivée confirmée par l'hôte. On n'affiche que ce qui existe. */
+function timeOrNull(iso: string) {
+  if (!/\d{2}:\d{2}/.test(iso)) return null;
+  const d = new Date(iso);
+  return Number.isNaN(d.getTime())
+    ? null
+    : d.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' });
 }
 
-/* ─── Config statut (Klef Design System v2) ───────────────────────────── */
+/* ─── Statuts ─────────────────────────────────────────────────────────────
+   ⚠️ Corrigé : `warning-400`, `error-400`, `neutral-700/800/300/400`
+   n'existent pas dans la palette Klef. PENDING, CANCELLED, DISPUTED,
+   COMPLETED et EXPIRED rendaient sans couleur de texte ni pastille — cinq
+   statuts sur huit. Toutes les classes sont désormais écrites en entier. */
 
-const STATUT_CFG: Record<string, {
+type StatutStyle = {
   label: string;
   badge: string;
   dot: string;
   icon: typeof CheckCircle2;
-}> = {
-  PENDING:    { label: 'En attente',      badge: 'bg-warning-50/20 text-warning-400 border-warning-400/30', dot: 'bg-warning-400', icon: Clock },
-  PAID:       { label: 'Sous séquestre',  badge: 'bg-forest-900/90 text-lime-300 border-lime-400/30',       dot: 'bg-lime-400',    icon: ShieldCheck },
-  CONFIRMED:  { label: 'Confirmée',       badge: 'bg-forest-900/90 text-lime-300 border-lime-400/30',       dot: 'bg-lime-400',    icon: CheckCircle2 },
-  CHECKED_IN: { label: 'Séjour en cours', badge: 'bg-forest-900/90 text-lime-300 border-lime-400/30 ring-1 ring-lime-400/50', dot: 'bg-lime-400', icon: CheckCircle2 },
-  COMPLETED:  { label: 'Terminée',        badge: 'bg-neutral-800/60 text-neutral-300 border-neutral-700/50', dot: 'bg-neutral-400', icon: CheckCircle2 },
-  CANCELLED:  { label: 'Annulée',         badge: 'bg-error-500/20 text-error-400 border-error-500/30',       dot: 'bg-error-400',   icon: AlertTriangle },
-  DISPUTED:   { label: 'Litige',          badge: 'bg-error-500/20 text-error-400 border-error-500/30',       dot: 'bg-error-400',   icon: AlertTriangle },
-  EXPIRED:    { label: 'Expirée',         badge: 'bg-neutral-800/60 text-neutral-400 border-neutral-700/50', dot: 'bg-neutral-400', icon: Clock },
+  /** Une pastille qui pulse dit « en cours ». Pas « terminé ». */
+  live?: boolean;
 };
 
-const HISTORIQUE_CFG: Record<string, { label: string; icon: typeof CheckCircle2; accent: string }> = {
-  PENDING:    { label: 'Réservation créée',     icon: Clock,         accent: 'text-warning-400 bg-warning-50/20 border-warning-400/30' },
-  PAID:       { label: 'Paiement confirmé',     icon: Banknote,      accent: 'text-lime-300 bg-forest-900/90 border-lime-400/30' },
-  CONFIRMED:  { label: 'Réservation confirmée', icon: CheckCircle2,  accent: 'text-lime-300 bg-forest-900/90 border-lime-400/30' },
-  CHECKED_IN: { label: 'Check-in effectué',     icon: CheckCircle2,  accent: 'text-lime-300 bg-forest-900/90 border-lime-400/30' },
-  COMPLETED:  { label: 'Séjour terminé',        icon: CheckCircle2,  accent: 'text-neutral-300 bg-neutral-800/60 border-neutral-700/50' },
-  CANCELLED:  { label: 'Annulée',               icon: AlertTriangle, accent: 'text-error-400 bg-error-500/20 border-error-500/30' },
-  DISPUTED:   { label: 'Litige déclaré',        icon: AlertTriangle, accent: 'text-error-400 bg-error-500/20 border-error-500/30' },
-  EXPIRED:    { label: 'Expirée',               icon: Clock,         accent: 'text-neutral-400 bg-neutral-800/60 border-neutral-700/50' },
+const STATUT_CFG: Record<string, StatutStyle> = {
+  PENDING: {
+    label: 'En attente',
+    badge: 'border-warning-500/30 bg-warning-500/12 text-warning-50',
+    dot: 'bg-warning-500', icon: Clock, live: true,
+  },
+  PAID: {
+    label: 'Sous séquestre',
+    badge: 'border-border-inverse bg-white/8 text-on-inverse',
+    dot: 'bg-forest-300', icon: ShieldCheck,
+  },
+  CONFIRMED: {
+    label: 'Confirmée',
+    badge: 'border-border-inverse bg-white/8 text-on-inverse',
+    dot: 'bg-forest-300', icon: CheckCircle2,
+  },
+  CHECKED_IN: {
+    label: 'Séjour en cours',
+    badge: 'border-border-inverse bg-white/8 text-on-inverse',
+    dot: 'bg-forest-300', icon: CheckCircle2, live: true,
+  },
+  COMPLETED: {
+    label: 'Terminée',
+    badge: 'border-border-inverse bg-white/5 text-on-inverse-muted',
+    dot: 'bg-forest-400', icon: CheckCircle2,
+  },
+  CANCELLED: {
+    label: 'Annulée',
+    badge: 'border-error-500/35 bg-error-500/15 text-error-50',
+    dot: 'bg-error-500', icon: AlertTriangle,
+  },
+  DISPUTED: {
+    label: 'Litige',
+    badge: 'border-error-500/35 bg-error-500/15 text-error-50',
+    dot: 'bg-error-500', icon: AlertTriangle, live: true,
+  },
+  EXPIRED: {
+    label: 'Expirée',
+    badge: 'border-border-inverse bg-white/5 text-on-inverse-muted',
+    dot: 'bg-forest-400', icon: Clock,
+  },
 };
 
-/* ─── Skeleton Premium ────────────────────────────────────────────────────── */
+const MOTIFS_LITIGE: Record<string, string> = {
+  DEPASSEMENT_PERSONNES: 'Dépassement du nombre de voyageurs',
+  DEGRADATION: 'Dégradation du logement',
+  LOGEMENT_NON_CONFORME: 'Logement non conforme',
+  NON_PAIEMENT: 'Non-paiement de frais supplémentaires',
+  NUISANCES: 'Nuisances ou comportement inapproprié',
+  AUTRE: 'Autre motif',
+};
+
+/* ─── Skeleton ────────────────────────────────────────────────────────────── */
 
 export function ReservationDetailSkeleton() {
   return (
-    <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 pt-10 lg:pt-12 pb-24 space-y-6">
-      {/* Navigation retour */}
+    <div
+      aria-busy="true"
+      className="mx-auto max-w-6xl space-y-6 px-4 pt-10 pb-24 sm:px-6 lg:px-8 lg:pt-12"
+    >
+      <span className="sr-only">Chargement de la réservation…</span>
+
       <div className="flex items-center justify-between">
-        <div className="h-8 w-36 bg-background-alt border border-border rounded-pill animate-pulse" />
-        <div className="h-7 w-28 bg-background-alt border border-border rounded-pill animate-pulse" />
+        <div className="h-8 w-40 animate-pulse rounded-pill bg-border" />
+        <div className="h-7 w-28 animate-pulse rounded-pill bg-border" />
       </div>
 
-      {/* Hero dark card */}
-      <div className="bg-forest-950 rounded-card overflow-hidden border border-forest-800/90 animate-pulse p-6 md:p-8 space-y-6">
-        <div className="flex flex-col md:flex-row gap-6">
+      <div className="section-inverse space-y-6 p-6 md:p-8">
+        <div className="flex flex-col gap-6 md:flex-row">
           <div className="flex-1 space-y-5">
             <div className="flex items-center gap-3">
-              <div className="h-7 w-28 bg-forest-900/80 rounded-pill" />
-              <div className="h-4 w-36 bg-forest-900/80 rounded-inner" />
+              <div className="h-7 w-28 animate-pulse rounded-pill bg-white/10" />
+              <div className="h-4 w-36 animate-pulse rounded-pill bg-white/[0.07]" />
             </div>
             <div className="space-y-2">
-              <div className="h-3 w-32 bg-forest-900/80 rounded" />
-              <div className="h-8 w-72 bg-forest-900/80 rounded-inner" />
+              <div className="h-3 w-32 animate-pulse rounded-pill bg-white/[0.07]" />
+              <div className="h-8 w-72 animate-pulse rounded-pill bg-white/10" />
             </div>
-            <div className="h-16 w-full max-w-sm bg-forest-900/60 rounded-inner" />
-            <div className="h-5 w-32 bg-forest-900/80 rounded-inner" />
+            <div className="h-20 w-full max-w-sm animate-pulse rounded-inner bg-white/[0.07]" />
           </div>
-          <div className="md:w-56 shrink-0 space-y-3">
-            <div className="h-36 w-full bg-forest-900/80 rounded-inner" />
-            <div className="h-20 bg-forest-900/80 rounded-inner" />
+          <div className="shrink-0 space-y-3 md:w-56">
+            <div className="h-36 w-full animate-pulse rounded-inner bg-white/10" />
+            <div className="h-24 animate-pulse rounded-inner bg-white/10" />
           </div>
         </div>
       </div>
 
-      {/* Cards skeleton */}
-      <div className="grid md:grid-cols-2 gap-5">
-        {[...Array(2)].map((_, i) => (
-          <div key={i} className="bg-background-card rounded-card border border-border/80 p-5 space-y-4 animate-pulse">
-            <div className="h-6 w-32 bg-background-alt rounded-inner" />
-            <div className="h-24 w-full bg-background-alt rounded-inner" />
+      <div className="grid gap-5 md:grid-cols-2">
+        {[0, 1].map((i) => (
+          <div key={i} className="space-y-4 rounded-card border border-border bg-background-card p-5">
+            <div className="h-6 w-32 animate-pulse rounded-pill bg-border" />
+            <div className="h-24 w-full animate-pulse rounded-inner bg-border" />
           </div>
         ))}
       </div>
@@ -118,56 +176,46 @@ export function ReservationDetailSkeleton() {
   );
 }
 
-/* ─── Composants utilitaires : Cards ─────────────────────────────────────── */
+/* ─── Briques ─────────────────────────────────────────────────────────────── */
 
-function DarkCard({ children, className }: { children: React.ReactNode; className?: string }) {
+function Card({ children, className }: { children: React.ReactNode; className?: string }) {
   return (
-    <div className={cn(
-      'bg-forest-950 text-white border border-forest-800/90 rounded-card overflow-hidden shadow-xl relative',
-      className,
-    )}>
+    <section className={cn('space-y-4 rounded-card border border-border bg-background-card p-5 shadow-sm', className)}>
       {children}
-    </div>
+    </section>
   );
 }
 
-function GlassCard({ children, className }: { children: React.ReactNode; className?: string }) {
+function CardHeader({ icon: Icon, title }: { icon: typeof User; title: string }) {
   return (
-    <div className={cn(
-      'bg-background-card border border-border/80 rounded-card p-5 space-y-4 shadow-2xs',
-      className,
-    )}>
-      {children}
-    </div>
+    <header className="flex items-center gap-2.5 border-b border-border pb-3">
+      <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-inner border border-forest-100 bg-forest-50 text-forest-700">
+        <Icon className="h-4 w-4" aria-hidden="true" />
+      </span>
+      <h2 className="font-display text-base font-semibold text-foreground">{title}</h2>
+    </header>
   );
 }
 
-function DarkCardHeader({ icon, title, subtitle }: { icon: React.ReactNode; title: string; subtitle?: string }) {
+function InverseHeader({ icon: Icon, title, subtitle }: {
+  icon: typeof User; title: string; subtitle?: string;
+}) {
   return (
-    <div className="flex items-center gap-3 px-6 py-4 border-b border-forest-800/80">
-      <div className="w-8 h-8 rounded-inner bg-forest-900 border border-lime-400/20 text-lime-400 flex items-center justify-center shrink-0">
-        {icon}
+    <header className="flex items-center gap-3 border-b border-border-inverse pb-4">
+      <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-inner border border-border-inverse bg-white/5 text-on-inverse-muted">
+        <Icon className="h-4 w-4" aria-hidden="true" />
+      </span>
+      <div className="min-w-0">
+        <h2 className="font-display text-base font-semibold text-on-inverse-display">{title}</h2>
+        {subtitle && <p className="mt-0.5 text-xs text-on-inverse-muted">{subtitle}</p>}
       </div>
-      <div>
-        <h4 className="font-display text-base font-bold text-white">{title}</h4>
-        {subtitle && <p className="text-xs text-forest-300 mt-0.5">{subtitle}</p>}
-      </div>
-    </div>
+    </header>
   );
 }
 
-function GlassCardHeader({ icon, title }: { icon: React.ReactNode; title: string }) {
-  return (
-    <div className="flex items-center gap-2.5 pb-3 border-b border-border/60">
-      <div className="w-8 h-8 rounded-inner bg-forest-950 text-lime-400 border border-lime-400/20 flex items-center justify-center shrink-0">
-        {icon}
-      </div>
-      <h4 className="font-display text-base font-bold text-forest-950">{title}</h4>
-    </div>
-  );
-}
-
-/* ─── Page Principale ─────────────────────────────────────────────────────── */
+/* ═══════════════════════════════════════════════════════════════════════════
+   PAGE
+   ═══════════════════════════════════════════════════════════════════════════ */
 
 export default function ReservationDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = use(params);
@@ -181,23 +229,53 @@ export default function ReservationDetailPage({ params }: { params: Promise<{ id
   });
 
   const [panelOpen, setPanelOpen] = useState(false);
+  const sheetRef = useRef<HTMLDivElement>(null);
+  const closeTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  /* Le `setTimeout(…, 1500)` d'origine n'était jamais nettoyé : quitter la
+     page pendant le délai déclenchait un setState sur composant démonté. */
+  useEffect(() => () => {
+    if (closeTimer.current) clearTimeout(closeTimer.current);
+  }, []);
+
+  /* Le bottom sheet n'avait ni Échap, ni verrou de scroll : la page défilait
+     derrière lui sur mobile. */
+  useEffect(() => {
+    if (!panelOpen) return;
+    const previousOverflow = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+    const onKeyDown = (e: KeyboardEvent) => { if (e.key === 'Escape') setPanelOpen(false); };
+    window.addEventListener('keydown', onKeyDown);
+    return () => {
+      window.removeEventListener('keydown', onKeyDown);
+      document.body.style.overflow = previousOverflow;
+    };
+  }, [panelOpen]);
+
+  const handleRefetchAndClose = useCallback(() => {
+    refetch();
+    if (closeTimer.current) clearTimeout(closeTimer.current);
+    closeTimer.current = setTimeout(() => setPanelOpen(false), 1500);
+  }, [refetch]);
 
   if (isLoading) return <ReservationDetailSkeleton />;
 
   if (error || !res) {
     return (
-      <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
-        <div className="bg-error-50 border border-error-200 rounded-card p-6 text-center space-y-3 max-w-md mx-auto">
-          <div className="w-12 h-12 rounded-inner bg-error-100 flex items-center justify-center mx-auto text-error-700">
-            <AlertTriangle className="w-6 h-6 text-error-600" />
-          </div>
-          <p className="text-sm text-error-800 font-bold">Impossible de charger cette réservation.</p>
+      <div className="mx-auto max-w-6xl px-4 py-12 sm:px-6 lg:px-8">
+        <div className="mx-auto max-w-md space-y-3 rounded-card border border-error-500/20 bg-error-50 p-6 text-center">
+          <span className="mx-auto flex h-12 w-12 items-center justify-center rounded-pill border border-error-500/25 bg-background-card">
+            <AlertTriangle className="h-6 w-6 text-error-600" aria-hidden="true" />
+          </span>
+          <p className="text-sm font-semibold text-error-700">
+            Impossible de charger cette réservation.
+          </p>
           <Link
             href="/dashboard/reservations"
-            className="inline-flex items-center gap-2 px-5 py-2.5 rounded-pill bg-forest-900 text-white font-bold text-xs"
+            className="inline-flex items-center gap-2 rounded-pill bg-button-primary px-5 py-2.5 text-xs font-semibold text-on-button-primary transition-colors hover:bg-button-primary-hover"
           >
-            <ArrowLeft className="w-4 h-4" />
-            <span>Retour à mes réservations</span>
+            <ArrowLeft className="h-4 w-4" aria-hidden="true" />
+            Retour à mes réservations
           </Link>
         </div>
       </div>
@@ -206,490 +284,574 @@ export default function ReservationDetailPage({ params }: { params: Promise<{ id
 
   const cfg = STATUT_CFG[res.statut] ?? STATUT_CFG.PENDING;
   const StatusIcon = cfg.icon;
+
   const isOwner = res.proprietaire.id === userId && activeRole === 'PROPRIETAIRE';
   const canSeePhone = canSeeCoordonnees(res.statut, res.dateDebut);
-  const mainPhoto = res.logement.photos.find((p) => p.estPrincipale)?.url ?? res.logement.photos[0]?.url;
+
+  const mainPhoto =
+    res.logement?.photos.find((p) => p.estPrincipale)?.url ?? res.logement?.photos[0]?.url;
   const checkinPhotos = res.photosEtatLieu.filter((p) => p.type === 'CHECKIN');
   const checkoutPhotos = res.photosEtatLieu.filter((p) => p.type === 'CHECKOUT');
-  const commissionPct = Math.round(res.tauxCommission * 100);
+
+  const commissionPct = Math.round(Number(res.tauxCommission) * 100);
   const ownPct = 100 - commissionPct;
-  const ACTIVE_STATUTS = ['PENDING', 'PAID', 'CONFIRMED', 'CHECKED_IN', 'COMPLETED', 'DISPUTED'];
-  const TENANT_ACTIVE_STATUTS = ['CONFIRMED', 'COMPLETED'];
-  const showStickyBar = (isOwner && ACTIVE_STATUTS.includes(res.statut)) || (!isOwner && TENANT_ACTIVE_STATUTS.includes(res.statut));
 
-  const OWNER_PANEL_CTA: Record<string, { label: string; btnLabel: string; btnCls: string; chipBg: string; chipIcon: string }> = {
-    PENDING:    { label: 'En attente du paiement', btnLabel: 'Voir',    btnCls: 'bg-forest-900 text-white border border-forest-800',                     chipBg: 'bg-warning-50/20 border-warning-400/30', chipIcon: 'text-warning-400' },
-    PAID:       { label: 'Décision requise',        btnLabel: 'Décider', btnCls: 'bg-lime-400 text-forest-950 font-extrabold shadow-md',                 chipBg: 'bg-forest-900 border-lime-400/30',       chipIcon: 'text-lime-400' },
-    CONFIRMED:  { label: 'Check-in à gérer',        btnLabel: 'Gérer',   btnCls: 'bg-lime-400 text-forest-950 font-extrabold shadow-md',                 chipBg: 'bg-forest-900 border-lime-400/30',       chipIcon: 'text-lime-400' },
-    CHECKED_IN: { label: 'Check-out à gérer',       btnLabel: 'Gérer',   btnCls: 'bg-error-500 text-white font-extrabold shadow-md',                     chipBg: 'bg-error-500/20 border-error-500/30',    chipIcon: 'text-error-400' },
-    COMPLETED:  { label: 'Noter votre expérience',  btnLabel: 'Noter',   btnCls: 'bg-lime-400 text-forest-950 font-extrabold shadow-md',                 chipBg: 'bg-forest-900 border-lime-400/30',       chipIcon: 'text-lime-400' },
-    DISPUTED:   { label: 'Litige en cours',         btnLabel: 'Voir',    btnCls: 'bg-error-500 text-white font-extrabold shadow-md',                     chipBg: 'bg-error-500/20 border-error-500/30',    chipIcon: 'text-error-400' },
-  };
+  const heureArrivee = res.confirmeeLe ? timeOrNull(res.dateDebut) : null;
+  const heureDepart = res.confirmeeLe ? timeOrNull(res.dateFin) : null;
 
-  const TENANT_PANEL_CTA: Record<string, { label: string; btnLabel: string; btnCls: string; chipBg: string; chipIcon: string }> = {
-    CONFIRMED:  { label: 'Check-in à valider',       btnLabel: 'Valider', btnCls: 'bg-lime-400 text-forest-950 font-extrabold shadow-md',                 chipBg: 'bg-forest-900 border-lime-400/30',       chipIcon: 'text-lime-400' },
-    COMPLETED:  { label: 'Noter votre séjour',       btnLabel: 'Noter',   btnCls: 'bg-lime-400 text-forest-950 font-extrabold shadow-md',                 chipBg: 'bg-forest-900 border-lime-400/30',       chipIcon: 'text-lime-400' },
-  };
+  const initiales =
+    `${res.locataire.prenom?.[0] ?? ''}${res.locataire.nom?.[0] ?? ''}`.toUpperCase() || '?';
 
-  const cta = (isOwner ? OWNER_PANEL_CTA[res.statut] : TENANT_PANEL_CTA[res.statut]) ?? {
-    label: cfg.label, btnLabel: 'Voir', btnCls: 'bg-forest-900 text-white border border-forest-800', chipBg: 'bg-forest-900 border-forest-800', chipIcon: 'text-forest-200',
-  };
+  const OWNER_STATUTS = ['PENDING', 'PAID', 'CONFIRMED', 'CHECKED_IN', 'COMPLETED', 'DISPUTED'];
+  const TENANT_STATUTS = ['CONFIRMED', 'COMPLETED'];
+  const showStickyBar = isOwner
+    ? OWNER_STATUTS.includes(res.statut)
+    : TENANT_STATUTS.includes(res.statut);
+
+  /* Le CTA mobile : une seule variante lime — l'action réellement attendue.
+     Les états passifs et les alertes ne portent pas d'aplat lime. */
+  const CTA: Record<string, { label: string; btn: string; urgent?: boolean }> = isOwner
+    ? {
+      PENDING: { label: 'En attente du paiement', btn: 'Voir' },
+      PAID: { label: 'Décision requise', btn: 'Décider', urgent: true },
+      CONFIRMED: { label: 'Check-in à gérer', btn: 'Gérer', urgent: true },
+      CHECKED_IN: { label: 'Check-out à gérer', btn: 'Gérer', urgent: true },
+      COMPLETED: { label: 'Noter votre expérience', btn: 'Noter' },
+      DISPUTED: { label: 'Litige en cours', btn: 'Voir' },
+    }
+    : {
+      CONFIRMED: { label: 'Check-in à valider', btn: 'Valider', urgent: true },
+      COMPLETED: { label: 'Noter votre séjour', btn: 'Noter' },
+    };
+
+  const cta = CTA[res.statut] ?? { label: cfg.label, btn: 'Voir' };
+
+  const ligneMontants: {
+    label: string;
+    value: string;
+    kind?: 'total' | 'deduction' | 'net';
+  }[] = [
+      { label: 'Prix de base', value: `${fcfa(res.prixBase)} FCFA` },
+      { label: 'Supplément voyageurs', value: `+${fcfa(res.supplementPersonnes)} FCFA` },
+      {
+        label: `Réduction séjour (${res.nbNuits} nuits)`,
+        value: Number(res.reductionNuits) > 0 ? `−${fcfa(res.reductionNuits)} FCFA` : '—',
+      },
+      { label: 'Total payé par le locataire', value: `${fcfa(res.totalLocataire)} FCFA`, kind: 'total' },
+      {
+        label: `Commission Klef (${commissionPct} %)`,
+        value: `−${fcfa(res.montantCommission)} FCFA`,
+        kind: 'deduction',
+      },
+      { label: 'Votre revenu net', value: `${fcfa(res.netProprietaire)} FCFA`, kind: 'net' },
+    ];
 
   return (
     <>
-      <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 pt-10 lg:pt-12 pb-40 lg:pb-24 space-y-6">
+      <div className="mx-auto max-w-6xl space-y-6 px-4 pt-10 pb-40 sm:px-6 lg:px-8 lg:pt-12 lg:pb-24">
 
-        {/* ── Navigation Retour + RÉF ── */}
-        <div className="flex items-center justify-between">
+        {/* ── Navigation ───────────────────────────────────────────────── */}
+
+        <div className="flex items-center justify-between gap-3">
           <Link
             href="/dashboard/reservations"
-            className="inline-flex items-center gap-2 text-xs font-bold text-foreground-muted hover:text-forest-950 transition-colors group"
+            className="group inline-flex items-center gap-2 text-xs font-semibold text-foreground-muted transition-colors hover:text-foreground"
           >
-            <span className="w-8 h-8 rounded-inner bg-background-alt border border-border flex items-center justify-center group-hover:border-forest-300 transition-colors">
-              <ArrowLeft className="w-4 h-4 text-forest-700" />
+            <span className="flex h-8 w-8 items-center justify-center rounded-pill border border-border bg-background-alt transition-colors group-hover:border-border-hover">
+              <ArrowLeft className="h-4 w-4 text-forest-700" aria-hidden="true" />
             </span>
-            <span>Retour aux réservations</span>
+            Retour aux réservations
           </Link>
 
-          <span className="text-[11px] font-mono font-bold text-foreground-faint bg-background-alt border border-border/80 px-3.5 py-1.5 rounded-pill tracking-wider">
-            RÉF: #{res.id.slice(0, 8).toUpperCase()}
+          <span className="rounded-pill border border-border bg-background-alt px-3.5 py-1.5 text-xs font-semibold tracking-wider text-foreground-muted tabular-nums">
+            RÉF #{res.id.slice(0, 8).toUpperCase()}
           </span>
         </div>
 
-        {/* ══ HERO PRINCIPAL DE LA RÉSERVATION ══ */}
-        <div className="relative rounded-card border border-forest-800/90 bg-gradient-to-b from-forest-950 via-forest-900 to-forest-950 p-6 md:p-8 shadow-2xl overflow-hidden text-white">
-          {/* Halos de fond */}
-          <div className="pointer-events-none absolute -top-24 -right-24 w-64 h-64 rounded-full bg-lime-400/10 blur-3xl" />
-          <div className="pointer-events-none absolute -bottom-24 -left-24 w-64 h-64 rounded-full bg-forest-600/20 blur-3xl" />
+        {/* ══ HERO ═══════════════════════════════════════════════════════ */}
 
-          <div className="relative flex flex-col md:flex-row md:items-start gap-6">
+        <section className="section-inverse relative overflow-hidden p-6 md:p-8">
+          <div
+            aria-hidden="true"
+            className="pointer-events-none absolute -top-24 -right-24 h-64 w-64 rounded-pill bg-forest-700/40 blur-3xl"
+          />
 
-            {/* Colonne Gauche */}
-            <div className="flex-1 min-w-0 space-y-4">
-              <div className="flex items-center gap-3 flex-wrap">
+          <div className="relative flex flex-col gap-6 md:flex-row md:items-start">
+
+            <div className="min-w-0 flex-1 space-y-4">
+              <div className="flex flex-wrap items-center gap-3">
                 <span className={cn(
-                  'inline-flex items-center gap-1.5 px-3 py-1 rounded-pill border text-xs font-bold backdrop-blur-md',
+                  'inline-flex items-center gap-1.5 rounded-pill border px-3 py-1 text-xs font-semibold',
                   cfg.badge,
                 )}>
-                  <span className={cn('w-1.5 h-1.5 rounded-full animate-pulse', cfg.dot)} />
-                  <StatusIcon className="w-3.5 h-3.5" />
+                  <span
+                    aria-hidden="true"
+                    className={cn('h-1.5 w-1.5 rounded-pill', cfg.dot, cfg.live && 'animate-pulse')}
+                  />
+                  <StatusIcon className="h-3.5 w-3.5" />
                   {cfg.label}
                 </span>
-                <span className="text-xs text-forest-300/80 font-medium">
+                <span className="text-xs text-on-inverse-muted">
                   Créée le {dateLong(res.creeLe)}
                 </span>
               </div>
 
               <div>
-                <p className="text-[10px] font-extrabold uppercase tracking-wider text-forest-300 mb-1">
-                  {res.logement.type} · {res.logement.ville}
-                  {res.logement.quartier ? ` · ${res.logement.quartier}` : ''}
+                <p className="mb-1 text-xs font-semibold uppercase tracking-wider text-on-inverse-muted">
+                  {[res.logement?.type, res.logement?.ville, res.logement?.quartier]
+                    .filter(Boolean).join(' · ')}
                 </p>
-                <h1 className="font-display text-2xl md:text-3xl font-bold text-white leading-tight tracking-tight">
-                  {res.logement.titre}
+                <h1 className="font-display text-2xl font-semibold leading-tight tracking-tight text-on-inverse-display md:text-3xl">
+                  {res.logement?.titre ?? 'Réservation'}
                 </h1>
               </div>
 
-              {/* Widget Dates Box */}
-              <div className="flex items-stretch bg-forest-900/60 border border-forest-800/80 rounded-inner overflow-hidden w-full max-w-sm backdrop-blur-md">
+              <div className="flex w-full max-w-sm items-stretch overflow-hidden rounded-inner border border-border-inverse bg-white/5">
                 <div className="flex-1 px-4 py-3 text-center">
-                  <p className="text-[9px] font-extrabold uppercase tracking-wider text-forest-300 mb-1">Arrivée</p>
-                  <p className="text-sm font-bold text-white">{dateLong(res.dateDebut)}</p>
-                  {res.confirmeeLe && (
-                    <p className="text-[10px] font-semibold text-lime-300 mt-1 flex items-center justify-center gap-1">
-                      <Clock className="w-3 h-3 text-lime-400" />
-                      {new Date(res.dateDebut).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })}
+                  <p className="mb-1 text-xs font-semibold uppercase tracking-wider text-on-inverse-muted">
+                    Arrivée
+                  </p>
+                  <p className="text-sm font-semibold text-on-inverse">
+                    <time dateTime={res.dateDebut.slice(0, 10)}>{dateLong(res.dateDebut)}</time>
+                  </p>
+                  {heureArrivee && (
+                    <p className="mt-1 flex items-center justify-center gap-1 text-xs tabular-nums text-on-inverse-muted">
+                      <Clock className="h-3 w-3" aria-hidden="true" />
+                      {heureArrivee}
                     </p>
                   )}
                 </div>
 
-                <div className="flex flex-col items-center justify-center px-4 border-x border-forest-800/80 bg-forest-950/40">
-                  <Moon className="w-4 h-4 text-lime-400" />
-                  <span className="text-base font-extrabold text-white tabular-nums leading-none mt-0.5">{res.nbNuits}</span>
-                  <span className="text-[8px] font-bold text-forest-300 uppercase">nuit{res.nbNuits > 1 ? 's' : ''}</span>
+                <div className="flex flex-col items-center justify-center border-x border-border-inverse bg-white/[0.04] px-4">
+                  <Moon className="h-4 w-4 text-on-inverse-muted" aria-hidden="true" />
+                  <span className="mt-0.5 text-base font-semibold leading-none tabular-nums text-on-inverse">
+                    {res.nbNuits}
+                  </span>
+                  <span className="text-xs uppercase text-on-inverse-muted">
+                    nuit{res.nbNuits > 1 ? 's' : ''}
+                  </span>
                 </div>
 
                 <div className="flex-1 px-4 py-3 text-center">
-                  <p className="text-[9px] font-extrabold uppercase tracking-wider text-forest-300 mb-1">Départ</p>
-                  <p className="text-sm font-bold text-white">{dateLong(res.dateFin)}</p>
-                  {res.confirmeeLe && (
-                    <p className="text-[10px] font-semibold text-forest-300 mt-1 flex items-center justify-center gap-1">
-                      <Clock className="w-3 h-3" />
-                      {new Date(res.dateFin).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })}
+                  <p className="mb-1 text-xs font-semibold uppercase tracking-wider text-on-inverse-muted">
+                    Départ
+                  </p>
+                  <p className="text-sm font-semibold text-on-inverse">
+                    <time dateTime={res.dateFin.slice(0, 10)}>{dateLong(res.dateFin)}</time>
+                  </p>
+                  {heureDepart && (
+                    <p className="mt-1 flex items-center justify-center gap-1 text-xs tabular-nums text-on-inverse-muted">
+                      <Clock className="h-3 w-3" aria-hidden="true" />
+                      {heureDepart}
                     </p>
                   )}
                 </div>
               </div>
 
-              <div className="flex items-center gap-2 text-xs font-semibold text-forest-200">
-                <Users className="w-4 h-4 text-lime-400" />
-                <span>{res.nbPersonnes} voyageur{res.nbPersonnes > 1 ? 's' : ''}</span>
-              </div>
+              <p className="flex items-center gap-2 text-xs font-semibold text-on-inverse-muted">
+                <Users className="h-4 w-4" aria-hidden="true" />
+                {res.nbPersonnes} voyageur{res.nbPersonnes > 1 ? 's' : ''}
+              </p>
             </div>
 
-            {/* Colonne Droite : Photo & Revenu Net */}
-            <div className="flex flex-col gap-3 md:w-56 shrink-0">
+            {/* Colonne droite : photo + LE chiffre lime du hero */}
+            <div className="flex shrink-0 flex-col gap-3 md:w-56">
               {mainPhoto && (
-                <div className="relative w-full h-36 md:h-40 rounded-inner overflow-hidden border border-forest-800 bg-forest-950">
-                  <Image src={mainPhoto} alt={res.logement.titre} fill className="object-cover" />
+                <div className="relative h-36 w-full overflow-hidden rounded-inner border border-border-inverse md:h-40">
+                  <Image
+                    src={mainPhoto}
+                    alt={res.logement?.titre ?? ''}
+                    fill
+                    sizes="(min-width: 768px) 224px, 100vw"
+                    className="object-cover"
+                  />
                 </div>
               )}
 
-              <div className="rounded-inner bg-forest-900/80 border border-forest-800/80 p-4 text-center backdrop-blur-md space-y-1">
-                <p className="text-[9px] font-extrabold uppercase tracking-wider text-neutral-300">Votre Revenu Net</p>
-                <p className="font-display text-2xl font-extrabold text-lime-400 leading-none">{fcfa(res.netProprietaire)}</p>
-                <p className="text-[10px] font-bold text-neutral-400">FCFA</p>
+              {/* ★ Emphase 1/2 : le revenu net. Seul aplat lime du hero. */}
+              <div className="space-y-1 rounded-inner border border-lime-400/35 bg-lime-400/12 p-4 text-center">
+                <p className="text-xs font-semibold uppercase tracking-wider text-on-inverse-muted">
+                  {isOwner ? 'Votre revenu net' : 'Total réglé'}
+                </p>
+                <p className="font-display text-3xl font-semibold leading-none tabular-nums text-lime-300">
+                  {fcfa(isOwner ? res.netProprietaire : res.totalLocataire)}
+                </p>
+                <p className="text-xs font-semibold text-on-inverse-muted">FCFA</p>
               </div>
             </div>
-
           </div>
+        </section>
+
+        {/* ══ PANNEAU D'ACTIONS — desktop ═══════════════════════════════ */}
+
+        <div className="hidden lg:block">
+          {isOwner ? (
+            <ReservationActionPanel id={id} res={res} onRefetch={refetch} />
+          ) : (
+            <TenantReservationActionPanel id={id} res={res} onRefetch={refetch} />
+          )}
         </div>
 
-        {/* ══ ACTIONS PROPRIÉTAIRE — desktop inline ══ */}
-        {isOwner && (
-          <div className="hidden lg:block">
-            <ReservationActionPanel id={id} res={res} onRefetch={refetch} />
-          </div>
-        )}
+        {/* ══ CONTRAT ════════════════════════════════════════════════════ */}
 
-        {/* ══ ACTIONS LOCATAIRE — desktop inline ══ */}
-        {!isOwner && (
-          <div className="hidden lg:block">
-            <TenantReservationActionPanel id={id} res={res} onRefetch={refetch} />
-          </div>
-        )}
-
-        {/* ══ CONTRAT DE LOCATION KLEF ══ */}
-        <div className="bg-forest-950 text-white rounded-card p-5 border border-forest-800/80 shadow-xs flex flex-wrap items-center justify-between gap-4">
-          <div className="flex items-center gap-3.5">
-            <div className="w-11 h-11 rounded-inner bg-forest-900 border border-forest-800 flex items-center justify-center text-lime-400 shrink-0">
-              <FileText className="w-5 h-5 text-lime-400" />
-            </div>
-            <div>
-              <p className="font-display text-base font-bold text-white">Contrat de location vérifié</p>
-              <p className="text-xs text-neutral-300">Généré automatiquement par Klef · Horodaté & Signé numériquement</p>
+        <section className="section-inverse flex flex-wrap items-center justify-between gap-4 p-5">
+          <div className="flex min-w-0 items-center gap-3.5">
+            <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-inner border border-border-inverse bg-white/5 text-on-inverse-muted">
+              <FileText className="h-5 w-5" aria-hidden="true" />
+            </span>
+            <div className="min-w-0">
+              <p className="font-display text-base font-semibold text-on-inverse-display">
+                Contrat de location vérifié
+              </p>
+              <p className="text-xs text-on-inverse-muted">
+                Généré par Klef, horodaté et signé numériquement
+              </p>
             </div>
           </div>
 
+          {/* ★ Emphase 2/2 : l'action. Seul bouton lime de la page. */}
           <Link
             href={`/dashboard/reservations/${id}/contrat`}
-            className="inline-flex items-center gap-2 px-5 py-2.5 rounded-pill bg-lime-400 hover:bg-lime-300 text-forest-950 font-extrabold text-xs shadow-md transition-all active:scale-95"
+            className="inline-flex shrink-0 items-center gap-2 rounded-pill bg-action px-5 py-2.5 text-xs font-semibold text-on-action shadow-action transition-[background-color,box-shadow,transform] hover:bg-action-hover hover:shadow-action-hover active:scale-[0.98]"
           >
-            <ExternalLink className="w-4 h-4 text-forest-950" />
-            <span>Consulter le Contrat PDF</span>
+            <ExternalLink className="h-4 w-4" aria-hidden="true" />
+            Consulter le contrat PDF
           </Link>
-        </div>
+        </section>
 
-        {/* ══ GRILLE LOCATAIRE + LOGEMENT ══ */}
-        <div className="grid md:grid-cols-2 gap-5">
-          {/* Card Locataire */}
-          <GlassCard>
-            <GlassCardHeader icon={<User className="w-4 h-4 text-lime-400" />} title="Locataire" />
+        {/* ══ LOCATAIRE + LOGEMENT ═══════════════════════════════════════ */}
+
+        <div className="grid gap-5 md:grid-cols-2">
+
+          <Card>
+            <CardHeader icon={User} title="Locataire" />
 
             <div className="flex items-center gap-3.5">
-              <div className="relative shrink-0">
-                <div className="w-14 h-14 rounded-inner bg-forest-950 text-lime-400 font-display font-extrabold text-base flex items-center justify-center border border-lime-400/20 overflow-hidden shadow-2xs">
-                  {res.locataire.avatarUrl ? (
-                    <Image src={res.locataire.avatarUrl} alt="" fill className="object-cover" />
-                  ) : (
-                    `${res.locataire.prenom[0]}${res.locataire.nom[0]}`.toUpperCase()
-                  )}
-                </div>
-                <span className="absolute -bottom-0.5 -right-0.5 w-3.5 h-3.5 bg-lime-400 border-2 border-background-card rounded-full" />
+              <div className="relative flex h-14 w-14 shrink-0 items-center justify-center overflow-hidden rounded-inner border border-border bg-forest-800 font-display text-base font-semibold text-neutral-50">
+                {res.locataire.avatarUrl ? (
+                  <Image src={res.locataire.avatarUrl} alt="" fill sizes="56px" className="object-cover" />
+                ) : initiales}
               </div>
 
               <div className="min-w-0 flex-1">
-                <p className="text-[10px] font-extrabold uppercase tracking-wider text-foreground-muted mb-0.5">Locataire réservataire</p>
-                <h4 className="font-display text-base font-bold text-forest-950 leading-tight truncate">
+                <p className="mb-0.5 text-xs font-semibold uppercase tracking-wider text-foreground-muted">
+                  Réservataire
+                </p>
+                <h3 className="truncate font-display text-base font-semibold leading-tight text-foreground">
                   {res.locataire.prenom} {res.locataire.nom}
-                </h4>
-                <div className="mt-1">
+                </h3>
+                <div className="mt-1.5">
                   {res.locataire.statutKyc === 'VERIFIE' ? (
-                    <span className="inline-flex items-center gap-1 text-[10px] font-extrabold text-forest-800 bg-forest-50 border border-forest-100 px-2.5 py-0.5 rounded-pill">
-                      <ShieldCheck className="w-3 h-3 text-forest-600" />
-                      <span>Identité vérifiée (KYC)</span>
+                    <span className="inline-flex items-center gap-1 rounded-pill border border-gold-200 bg-gold-50 px-2.5 py-0.5 text-xs font-semibold text-gold-700">
+                      <ShieldCheck className="h-3 w-3" aria-hidden="true" />
+                      Identité vérifiée
                     </span>
                   ) : (
-                    <span className="inline-flex items-center gap-1 text-[10px] font-extrabold text-warning-700 bg-warning-50 border border-warning-200 px-2.5 py-0.5 rounded-pill">
-                      <AlertTriangle className="w-3 h-3 text-warning-600" />
-                      <span>KYC {res.locataire.statutKyc?.toLowerCase() ?? 'Non vérifié'}</span>
+                    <span className="inline-flex items-center gap-1 rounded-pill border border-warning-500/25 bg-warning-50 px-2.5 py-0.5 text-xs font-semibold text-warning-700">
+                      <AlertTriangle className="h-3 w-3" aria-hidden="true" />
+                      Identité non vérifiée
                     </span>
                   )}
                 </div>
               </div>
             </div>
 
-            {/* Téléphone & Note */}
-            <div className="space-y-3 pt-3 border-t border-border/60">
+            <div className="space-y-3 border-t border-border pt-3">
               {canSeePhone && res.locataire.telephone ? (
                 <a
-                  href={`tel:${res.locataire.telephone}`}
-                  className="flex items-center gap-3.5 w-full bg-forest-950 hover:bg-forest-900 border border-forest-800 rounded-inner p-3.5 transition-all group"
+                  href={`tel:${res.locataire.telephone.replace(/\s/g, '')}`}
+                  className="group flex w-full items-center gap-3.5 rounded-inner border border-border bg-background-alt p-3.5 transition-colors hover:border-border-hover hover:bg-background-card"
                 >
-                  <div className="w-9 h-9 rounded-inner bg-lime-400 flex items-center justify-center shrink-0 shadow-2xs group-hover:scale-105 transition-transform">
-                    <PhoneCall className="w-4 h-4 text-forest-950" />
-                  </div>
-                  <div className="min-w-0">
-                    <p className="text-[10px] font-extrabold uppercase tracking-wider text-neutral-300">Appeler le locataire</p>
-                    <p className="text-sm font-mono font-extrabold text-lime-400 tracking-wide">{res.locataire.telephone}</p>
-                  </div>
+                  <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-inner border border-forest-100 bg-forest-50 text-forest-700">
+                    <PhoneCall className="h-4 w-4" aria-hidden="true" />
+                  </span>
+                  <span className="min-w-0">
+                    <span className="block text-xs font-semibold uppercase tracking-wider text-foreground-muted">
+                      Appeler le locataire
+                    </span>
+                    <span className="block text-sm font-semibold tabular-nums text-foreground">
+                      {res.locataire.telephone}
+                    </span>
+                  </span>
                 </a>
               ) : (
-                <div className="flex items-center gap-3.5 bg-background-alt border border-border/80 rounded-inner p-3.5">
-                  <div className="w-9 h-9 rounded-inner bg-background-card border border-border flex items-center justify-center shrink-0">
-                    <Lock className="w-4 h-4 text-foreground-faint" />
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <p className="text-xs font-bold text-forest-950">Numéro masqué</p>
-                    <p className="text-[10px] text-foreground-muted mt-0.5 leading-relaxed">
-                      Visible 48h avant le check-in
+                <div className="flex items-center gap-3.5 rounded-inner border border-border bg-background-alt p-3.5">
+                  <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-inner border border-border bg-background-card">
+                    <Lock className="h-4 w-4 text-foreground-muted" aria-hidden="true" />
+                  </span>
+                  <div className="min-w-0 flex-1">
+                    <p className="text-xs font-semibold text-foreground">Numéro masqué</p>
+                    <p className="mt-0.5 text-xs text-foreground-muted">
+                      Visible 48 h avant le check-in
                     </p>
                   </div>
-                  <Phone className="w-4 h-4 text-foreground-faint shrink-0" />
+                  <Phone className="h-4 w-4 shrink-0 text-foreground-muted" aria-hidden="true" />
                 </div>
               )}
 
-              {/* Note Locataire */}
-              <div className="flex items-center gap-2.5 bg-gold-50 border border-gold-100 rounded-inner p-3">
-                <Star className="w-4 h-4 text-gold-500 fill-gold-500 shrink-0" />
-                <span className="text-xs font-bold text-gold-700">Note du locataire :</span>
-                <span className="text-xs font-extrabold text-forest-950">{res.locataire.noteLocataire?.toFixed(1) ?? 'Nouveau locataire'}</span>
+              <div className="flex items-center gap-2.5 rounded-inner border border-gold-200 bg-gold-50 p-3">
+                <Star className="h-4 w-4 shrink-0 fill-gold-400 text-gold-400" aria-hidden="true" />
+                <span className="text-xs text-gold-700">Note du locataire</span>
+                <span className="ml-auto text-xs font-semibold tabular-nums text-gold-700">
+                  {res.locataire.noteLocataire != null
+                    ? `${res.locataire.noteLocataire.toFixed(1)} / 5`
+                    : 'Nouveau'}
+                </span>
               </div>
             </div>
-          </GlassCard>
+          </Card>
 
-          {/* Card Logement */}
-          <GlassCard>
-            <GlassCardHeader icon={<Home className="w-4 h-4 text-lime-400" />} title="Logement loué" />
-            
+          <Card>
+            <CardHeader icon={Home} title="Logement loué" />
+
             {mainPhoto && (
-              <div className="relative w-full h-32 rounded-inner overflow-hidden border border-border bg-background-alt shadow-2xs">
-                <Image src={mainPhoto} alt={res.logement.titre} fill className="object-cover" />
+              <div className="relative h-32 w-full overflow-hidden rounded-inner border border-border bg-background-alt">
+                <Image
+                  src={mainPhoto}
+                  alt={res.logement?.titre ?? ''}
+                  fill
+                  sizes="(min-width: 768px) 50vw, 100vw"
+                  className="object-cover"
+                />
               </div>
             )}
 
             <div>
-              <h5 className="font-display text-base font-bold text-forest-950 leading-snug">
-                {res.logement.titre}
-              </h5>
-              <p className="text-[10px] font-extrabold uppercase tracking-wider text-foreground-muted mt-0.5">{res.logement.type}</p>
-            </div>
-
-            <div className="flex items-start gap-2.5 pt-3 border-t border-border/60 text-xs text-foreground-muted">
-              <div className="w-7 h-7 rounded-inner bg-forest-50 border border-forest-100 flex items-center justify-center shrink-0 mt-0.5">
-                <MapPin className="w-3.5 h-3.5 text-forest-700" />
-              </div>
-              <p className="leading-relaxed text-forest-950 font-medium">
-                {res.logement.adresse}
-                {res.logement.quartier ? `, ${res.logement.quartier}` : ''}
-                {`, ${res.logement.ville}`}
+              <h3 className="font-display text-base font-semibold leading-snug text-foreground">
+                {res.logement?.titre}
+              </h3>
+              <p className="mt-0.5 text-xs font-semibold uppercase tracking-wider text-foreground-muted">
+                {res.logement?.type}
               </p>
             </div>
-          </GlassCard>
+
+            <div className="flex items-start gap-2.5 border-t border-border pt-3">
+              <span className="mt-0.5 flex h-7 w-7 shrink-0 items-center justify-center rounded-inner border border-forest-100 bg-forest-50">
+                <MapPin className="h-3.5 w-3.5 text-forest-700" aria-hidden="true" />
+              </span>
+              <address className="text-xs not-italic leading-relaxed text-foreground">
+                {[res.logement?.adresse, res.logement?.quartier, res.logement?.ville]
+                  .filter(Boolean).join(', ')}
+              </address>
+            </div>
+          </Card>
         </div>
 
-        {/* ══ DÉTAIL FINANCIER HÔTE ══ */}
-        <DarkCard className="p-6 space-y-5">
-          <DarkCardHeader
-            icon={<TrendingUp className="w-4 h-4 text-lime-400" />}
-            title="Détail financier & Répartition"
-          />
+        {/* ══ DÉTAIL FINANCIER ═══════════════════════════════════════════ */}
 
-          <div className="space-y-4">
-            <div className="space-y-1">
-              {[
-                { label: 'Prix de base',                         value: `${fcfa(res.prixBase)} FCFA`,                                                   muted: true  },
-                { label: 'Supplément personnes',                  value: `+${fcfa(res.supplementPersonnes)} FCFA`,                                       muted: true  },
-                { label: `Réduction (${res.nbNuits} nuits)`,     value: res.reductionNuits > 0 ? `-${fcfa(res.reductionNuits)} FCFA` : '—',            muted: true  },
-                { label: 'Total payé par le locataire',           value: `${fcfa(res.totalLocataire)} FCFA`,          bold: true                              },
-                { label: `Commission Klef (${commissionPct}%)`, value: `-${fcfa(res.montantCommission)} FCFA`,     muted: true, red: true                  },
-                { label: 'Votre revenu net',                      value: `${fcfa(res.netProprietaire)} FCFA`,         bold: true, highlightNet: true          },
-              ].map((row) => (
-                <div key={row.label} className={cn(
-                  'flex items-center justify-between py-2.5',
-                  !row.muted && 'border-t border-forest-800/80 pt-3',
-                )}>
-                  <span className={cn('text-sm', row.bold ? 'font-bold text-white' : 'font-medium text-neutral-300')}>
+        {isOwner && (
+          <section className="section-inverse space-y-5 p-6">
+            <InverseHeader icon={TrendingUp} title="Détail financier" subtitle="Répartition du montant réglé" />
+
+            <dl className="space-y-1">
+              {ligneMontants.map((row) => (
+                <div
+                  key={row.label}
+                  className={cn(
+                    'flex items-center justify-between gap-3 py-2.5',
+                    row.kind && 'border-t border-border-inverse pt-3',
+                  )}
+                >
+                  <dt className={cn(
+                    'text-sm',
+                    row.kind === 'total' || row.kind === 'net'
+                      ? 'font-semibold text-on-inverse'
+                      : 'text-on-inverse-muted',
+                  )}>
                     {row.label}
-                  </span>
-                  <span className={cn(
-                    'text-sm font-bold',
-                    row.highlightNet
-                      ? 'font-display text-xl text-lime-400 bg-lime-400/10 px-3 py-1 rounded-pill border border-lime-400/20'
-                      : row.red
-                        ? 'text-rose-400'
-                        : row.bold
-                          ? 'text-white'
-                          : 'text-neutral-200',
+                  </dt>
+                  <dd className={cn(
+                    'text-sm font-semibold tabular-nums',
+                    row.kind === 'net'
+                      /* ★ Le revenu net, à nouveau en lime : c'est le chiffre
+                         que le propriétaire vient chercher. */
+                      ? 'rounded-pill border border-lime-400/30 bg-lime-400/12 px-3 py-1 font-display text-xl text-lime-300'
+                      /* ★ La commission : seule ligne rouge de la page. */
+                      : row.kind === 'deduction'
+                        ? 'text-error-500'
+                        : 'text-on-inverse',
                   )}>
                     {row.value}
-                  </span>
+                  </dd>
                 </div>
               ))}
-            </div>
+            </dl>
 
-            {/* Barre de répartition */}
-            <div className="space-y-2 pt-3 border-t border-forest-800/80">
-              <div className="flex justify-between text-[10px] font-extrabold uppercase tracking-wider text-neutral-400">
-                <span>Votre part — {ownPct}%</span>
-                <span>Commission Klef — {commissionPct}%</span>
+            <div className="space-y-2 border-t border-border-inverse pt-3">
+              <div className="flex justify-between text-xs font-semibold uppercase tracking-wider text-on-inverse-muted">
+                <span>Votre part — {ownPct} %</span>
+                <span>Klef — {commissionPct} %</span>
               </div>
-              <div className="h-2 rounded-pill bg-forest-900 overflow-hidden">
+              <div
+                role="img"
+                aria-label={`Votre part : ${ownPct} %. Commission Klef : ${commissionPct} %.`}
+                className="h-2 overflow-hidden rounded-pill bg-white/10"
+              >
                 <div
-                  className="h-full rounded-pill bg-gradient-to-r from-lime-400 to-lime-500 transition-all duration-700"
+                  className="h-full rounded-pill bg-lime-400 transition-[width] duration-700"
                   style={{ width: `${ownPct}%` }}
                 />
               </div>
             </div>
 
-            {/* Info séquestre */}
-            <div className="flex items-start gap-3 bg-forest-900/80 border border-forest-800 rounded-inner p-3.5">
-              <Shield className="w-4 h-4 text-lime-400 shrink-0 mt-0.5" />
-              <p className="text-xs text-neutral-200 font-medium leading-relaxed">
-                La commission de <span className="text-white font-bold">{commissionPct}%</span> couvre la garantie de paiement sous séquestre, le support 7j/7 et la protection contre les dégradations.
+            <div className="flex items-start gap-3 rounded-inner border border-border-inverse bg-white/5 p-3.5">
+              <Shield className="mt-0.5 h-4 w-4 shrink-0 text-on-inverse-muted" aria-hidden="true" />
+              <p className="text-xs leading-relaxed text-on-inverse-muted">
+                La commission couvre la garantie de paiement sous séquestre, le support 7 j/7 et
+                la protection contre les dégradations.
               </p>
             </div>
-          </div>
-        </DarkCard>
+          </section>
+        )}
 
-        {/* ══ PAIEMENT LOCATAIRE ══ */}
+        {/* ══ PAIEMENT ═══════════════════════════════════════════════════ */}
+
         <ReservationPaymentCard paiement={res.paiement} reservation={res} />
 
-        {/* ══ PHOTOS ÉTAT DES LIEUX ══ */}
-        <PhotosEtatLieuSection
-          checkinPhotos={checkinPhotos}
-          checkoutPhotos={checkoutPhotos}
-        />
+        {/* ══ ÉTAT DES LIEUX ═════════════════════════════════════════════ */}
 
-        {/* ══ LITIGE ÉVENTUEL ══ */}
+        <PhotosEtatLieuSection checkinPhotos={checkinPhotos} checkoutPhotos={checkoutPhotos} />
+
+        {/* ══ LITIGE ═════════════════════════════════════════════════════ */}
+
         {res.litige && (
-          <div className="bg-forest-950 border border-error-500/30 rounded-card overflow-hidden shadow-2xl p-6 space-y-5 text-white">
-            <div className="flex items-start justify-between gap-4">
-              <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-inner bg-error-500/20 border border-error-500/30 flex items-center justify-center shrink-0">
-                  <AlertTriangle className="w-5 h-5 text-error-400" />
-                </div>
-                <div>
-                  <h4 className="font-display text-base font-bold text-white">Litige déclaré</h4>
-                  <p className="text-xs text-forest-300 mt-0.5">
+          <section className="space-y-5 rounded-card border border-error-500/25 bg-background-card p-6 shadow-sm">
+            <header className="flex items-start justify-between gap-4">
+              <div className="flex min-w-0 items-center gap-3">
+                <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-inner border border-error-500/25 bg-error-50 text-error-600">
+                  <AlertTriangle className="h-5 w-5" aria-hidden="true" />
+                </span>
+                <div className="min-w-0">
+                  <h2 className="font-display text-base font-semibold text-foreground">
+                    Litige déclaré
+                  </h2>
+                  <p className="mt-0.5 text-xs text-foreground-muted">
                     Par le {isOwner ? 'propriétaire' : 'locataire'}
                   </p>
                 </div>
               </div>
+
               <span className={cn(
-                'inline-flex items-center gap-1.5 px-3 py-1 rounded-pill text-xs font-bold shrink-0',
-                res.litige.statut === 'EN_ATTENTE' && 'bg-warning-50/20 text-warning-400 border border-warning-400/30',
-                res.litige.statut === 'FONDE' && 'bg-error-500/20 text-error-400 border border-error-500/30',
-                res.litige.statut === 'NON_FONDE' && 'bg-forest-900 text-lime-300 border border-lime-400/30',
+                'inline-flex shrink-0 items-center gap-1.5 rounded-pill border px-3 py-1 text-xs font-semibold',
+                res.litige.statut === 'EN_ATTENTE' && 'border-warning-500/25 bg-warning-50 text-warning-700',
+                res.litige.statut === 'FONDE' && 'border-error-500/25 bg-error-50 text-error-700',
+                res.litige.statut === 'NON_FONDE' && 'border-success-500/25 bg-success-50 text-success-700',
               )}>
-                <span className={cn('w-1.5 h-1.5 rounded-full animate-pulse',
-                  res.litige.statut === 'EN_ATTENTE' && 'bg-warning-400',
-                  res.litige.statut === 'FONDE' && 'bg-error-400',
-                  res.litige.statut === 'NON_FONDE' && 'bg-lime-400',
-                )} />
-                {res.litige.statut === 'EN_ATTENTE' && 'En cours d\'examen'}
+                {res.litige.statut === 'EN_ATTENTE' && 'En cours d’examen'}
                 {res.litige.statut === 'FONDE' && 'Litige fondé'}
                 {res.litige.statut === 'NON_FONDE' && 'Litige non fondé'}
               </span>
-            </div>
+            </header>
 
-            {/* Motif & Description */}
-            <div className="bg-forest-900/60 border border-forest-800/80 rounded-inner p-4 space-y-2">
-              <p className="text-[10px] font-extrabold uppercase tracking-wider text-forest-300">Motif du litige</p>
-              <p className="text-sm font-bold text-white">
-                {res.litige.motif === 'DEPASSEMENT_PERSONNES' && 'Dépassement du nombre de voyageurs'}
-                {res.litige.motif === 'DEGRADATION' && 'Dégradation du logement'}
-                {res.litige.motif === 'LOGEMENT_NON_CONFORME' && 'Logement non conforme'}
-                {res.litige.motif === 'NON_PAIEMENT' && 'Non-paiement de frais supplémentaires'}
-                {res.litige.motif === 'NUISANCES' && 'Nuisances ou comportement inapproprié'}
-                {res.litige.motif === 'AUTRE' && 'Autre motif'}
-                {!['DEPASSEMENT_PERSONNES', 'DEGRADATION', 'LOGEMENT_NON_CONFORME', 'NON_PAIEMENT', 'NUISANCES', 'AUTRE'].includes(res.litige.motif) && res.litige.motif.replace(/_/g, ' ')}
-              </p>
-            </div>
+            <dl className="space-y-4">
+              <div>
+                <dt className="mb-1.5 text-xs font-semibold uppercase tracking-wider text-foreground-muted">
+                  Motif
+                </dt>
+                <dd className="text-sm font-semibold text-foreground">
+                  {MOTIFS_LITIGE[res.litige.motif] ?? res.litige.motif.replace(/_/g, ' ')}
+                </dd>
+              </div>
 
-            <div className="bg-forest-900/60 border border-forest-800/80 rounded-inner p-4 space-y-2">
-              <p className="text-[10px] font-extrabold uppercase tracking-wider text-forest-300">Description</p>
-              <p className="text-xs text-forest-200 leading-relaxed">{res.litige.description}</p>
-            </div>
+              <div>
+                <dt className="mb-1.5 text-xs font-semibold uppercase tracking-wider text-foreground-muted">
+                  Description
+                </dt>
+                <dd className="rounded-inner border border-border bg-background-alt p-3 text-xs leading-relaxed text-foreground">
+                  {res.litige.description}
+                </dd>
+              </div>
+            </dl>
 
-            <div className="flex items-center gap-2 text-xs text-forest-300">
-              <Clock className="w-3.5 h-3.5 shrink-0" />
-              <span>Ouvert le {new Date(res.litige.creeLe).toLocaleDateString('fr-FR', {
-                weekday: 'long', day: 'numeric', month: 'long', year: 'numeric', hour: '2-digit', minute: '2-digit',
-              })}</span>
-            </div>
-          </div>
+            <p className="flex items-center gap-2 text-xs text-foreground-muted">
+              <Clock className="h-3.5 w-3.5 shrink-0" aria-hidden="true" />
+              Ouvert le {dateTimeLong(res.litige.creeLe)}
+            </p>
+          </section>
         )}
 
-        {/* ══ CHRONOLOGIE DÉTAILLÉE ══ */}
-        <ReservationTimeline historique={res.historique} variant="dark" isOwner={true} />
+        {/* ══ CHRONOLOGIE ════════════════════════════════════════════════ */}
 
+        <ReservationTimeline historique={res.historique} variant="dark" isOwner={isOwner} />
       </div>
 
-      {/* ══ BARRE STICKY MOBILE ══ */}
-      {showStickyBar && (
-        <div className="lg:hidden fixed bottom-[calc(0.75rem+env(safe-area-inset-bottom,0px))] left-0 right-0 z-30 px-3">
+      {/* ══ BARRE STICKY MOBILE ══════════════════════════════════════════ */}
+
+      {showStickyBar && !panelOpen && (
+        <div className="fixed inset-x-0 bottom-[calc(0.75rem+env(safe-area-inset-bottom,0px))] z-30 px-3 lg:hidden">
           <button
+            type="button"
             onClick={() => setPanelOpen(true)}
-            className="w-full rounded-card border border-forest-800/90 bg-forest-950/95 backdrop-blur-xl shadow-2xl overflow-hidden active:scale-[0.985] transition-transform"
+            aria-expanded={panelOpen}
+            className="section-inverse w-full overflow-hidden shadow-xl transition-transform active:scale-[0.985]"
           >
-            <div className="flex items-center gap-3 px-4 py-3.5">
-              <div className={cn('w-9 h-9 rounded-inner border flex items-center justify-center shrink-0', cta.chipBg)}>
-                <StatusIcon className={cn('w-4 h-4', cta.chipIcon)} />
-              </div>
-              <div className="flex-1 min-w-0 text-left">
-                <p className="text-sm font-black text-white leading-tight truncate">{cta.label}</p>
-                <p className="text-[11px] font-medium text-forest-300 mt-0.5 truncate">
-                  {res.locataire.prenom} {res.locataire.nom} · {res.nbNuits} nuit{res.nbNuits > 1 ? 's' : ''}
-                </p>
-              </div>
-              <span className={cn('flex items-center gap-1.5 px-4 py-2.5 rounded-pill text-xs font-extrabold shrink-0', cta.btnCls)}>
-                {cta.btnLabel}
-                <ChevronUp className="w-3.5 h-3.5" />
+            <span className="flex items-center gap-3 px-4 py-3.5">
+              <span className={cn(
+                'flex h-9 w-9 shrink-0 items-center justify-center rounded-inner border',
+                cfg.badge,
+              )}>
+                <StatusIcon className="h-4 w-4" aria-hidden="true" />
               </span>
-            </div>
+              <span className="min-w-0 flex-1 text-left">
+                <span className="block truncate text-sm font-semibold leading-tight text-on-inverse">
+                  {cta.label}
+                </span>
+                <span className="mt-0.5 block truncate text-xs text-on-inverse-muted">
+                  {res.locataire.prenom} {res.locataire.nom} · {res.nbNuits} nuit
+                  {res.nbNuits > 1 ? 's' : ''}
+                </span>
+              </span>
+              <span className={cn(
+                'flex shrink-0 items-center gap-1.5 rounded-pill px-4 py-2.5 text-xs font-semibold',
+                cta.urgent
+                  ? 'bg-action text-on-action shadow-action'
+                  : 'border border-border-inverse bg-white/8 text-on-inverse',
+              )}>
+                {cta.btn}
+                <ChevronUp className="h-3.5 w-3.5" aria-hidden="true" />
+              </span>
+            </span>
           </button>
         </div>
       )}
 
-      {/* ══ BOTTOM SHEET MOBILE ══ */}
+      {/* ══ BOTTOM SHEET ═════════════════════════════════════════════════ */}
+
       {showStickyBar && panelOpen && (
         <>
           <div
-            className="lg:hidden fixed inset-0 z-30 bg-black/60 backdrop-blur-sm"
+            className="fixed inset-0 z-40 bg-forest-950/70 backdrop-blur-sm lg:hidden"
             onClick={() => setPanelOpen(false)}
           />
-          <div className="lg:hidden fixed inset-x-0 bottom-0 z-40 bg-background rounded-t-card max-h-[88dvh] overflow-y-auto shadow-2xl">
-            <div className="sticky top-0 bg-background z-10 pt-3">
-              <div className="flex justify-center mb-2.5">
-                <div className="w-10 h-1 rounded-pill bg-border" />
+          <div
+            ref={sheetRef}
+            role="dialog"
+            aria-modal="true"
+            aria-label={cta.label}
+            className="fixed inset-x-0 bottom-0 z-50 max-h-[88dvh] overflow-y-auto rounded-t-card bg-background shadow-xl lg:hidden"
+          >
+            <div className="sticky top-0 z-10 bg-background pt-3">
+              <div className="mb-2.5 flex justify-center">
+                <span aria-hidden="true" className="h-1 w-10 rounded-pill bg-border-hover" />
               </div>
-              <div className="flex items-center justify-between px-5 pb-3.5 border-b border-border/60">
-                <div className="flex items-center gap-2.5">
-                  <span className={cn('w-2 h-2 rounded-full', cfg.dot)} />
-                  <p className="font-display text-sm font-bold text-forest-950">{cfg.label}</p>
-                </div>
+              <div className="flex items-center justify-between gap-3 border-b border-border px-5 pb-3.5">
+                <p className="font-display text-sm font-semibold text-foreground">{cfg.label}</p>
                 <button
+                  type="button"
                   onClick={() => setPanelOpen(false)}
-                  className="w-8 h-8 rounded-inner bg-background-alt hover:bg-border flex items-center justify-center transition-colors active:scale-90"
+                  aria-label="Fermer"
+                  className="flex h-8 w-8 items-center justify-center rounded-pill border border-border text-foreground-muted transition-colors hover:bg-background-alt active:scale-90"
                 >
-                  <X className="w-4 h-4 text-foreground-muted" />
+                  <X className="h-4 w-4" />
                 </button>
               </div>
             </div>
+
             <div className="p-4 pb-10">
               {isOwner ? (
-                <ReservationActionPanel
-                  id={id}
-                  res={res}
-                  onRefetch={() => { refetch(); setTimeout(() => setPanelOpen(false), 1500); }}
-                />
+                <ReservationActionPanel id={id} res={res} onRefetch={handleRefetchAndClose} />
               ) : (
-                <TenantReservationActionPanel
-                  id={id}
-                  res={res}
-                  onRefetch={() => { refetch(); setTimeout(() => setPanelOpen(false), 1500); }}
-                />
+                <TenantReservationActionPanel id={id} res={res} onRefetch={handleRefetchAndClose} />
               )}
             </div>
           </div>

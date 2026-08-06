@@ -1,110 +1,271 @@
 'use client';
 
-import { useState } from 'react';
-import { Wallet, Smartphone, Save, Loader2, CheckCircle2 } from 'lucide-react';
+import { useCallback, useEffect, useId, useMemo, useRef, useState } from 'react';
+import { Wallet, Smartphone, Save, Loader2, CheckCircle2, AlertCircle, ShieldCheck } from 'lucide-react';
 import { cn } from '@/lib/utils/cn';
+import { nestFetch } from '@/lib/nestjs/api-client';
+import { NEST_API } from '@/lib/nestjs/endpoints';
+
+type Operateur = 'WAVE' | 'ORANGE_MONEY';
+
+interface PayoutSettings {
+  methode: Operateur;
+  numeroRetrait: string;
+}
+
+const OPERATEURS: { value: Operateur; label: string }[] = [
+  { value: 'WAVE', label: 'Wave' },
+  { value: 'ORANGE_MONEY', label: 'Orange Money' },
+];
+
+/** Mobile sénégalais : 7 suivi de 0/5/6/7/8, puis 7 chiffres. */
+const SN_MOBILE = /^(?:\+?221)?7[05678]\d{7}$/;
+
+const normalise = (v: string) => v.replace(/[\s.\-()]/g, '');
+
+/** 77 123 45 67 — groupé à la sénégalaise pour la relecture. */
+function formatSN(raw: string) {
+  const d = normalise(raw).replace(/^\+?221/, '');
+  if (d.length !== 9) return raw;
+  return `${d.slice(0, 2)} ${d.slice(2, 5)} ${d.slice(5, 7)} ${d.slice(7, 9)}`;
+}
 
 interface Props {
   telephoneInitial?: string;
 }
 
 export function OwnerPayoutSettingsCard({ telephoneInitial = '' }: Props) {
-  const [methode, setMethode] = useState<'WAVE' | 'ORANGE_MONEY'>('WAVE');
-  const [numeroRetrait, setNumeroRetrait] = useState(telephoneInitial);
+  const [methode, setMethode] = useState<Operateur>('WAVE');
+  const [numero, setNumero] = useState(telephoneInitial);
+  const [saved, setSaved] = useState<PayoutSettings | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
-  const [savedSuccess, setSavedSuccess] = useState(false);
+  const [success, setSuccess] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
-  const handleSave = (e: React.FormEvent) => {
+  const numeroId = useId();
+  const hintId = useId();
+  const groupId = useId();
+
+  const mounted = useRef(true);
+  const successTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  useEffect(() => {
+    mounted.current = true;
+    return () => {
+      mounted.current = false;
+      if (successTimer.current) clearTimeout(successTimer.current);
+    };
+  }, []);
+
+  /* Les coordonnées de retrait doivent venir du serveur, pas d'un défaut
+     local : afficher « Wave » par défaut alors que l'utilisateur a
+     enregistré Orange Money lui fait croire que son réglage a été perdu. */
+  useEffect(() => {
+    (async () => {
+      try {
+        const data = await nestFetch<PayoutSettings>(NEST_API.USERS.PAYOUT_SETTINGS);
+        if (!mounted.current) return;
+        if (data?.methode) setMethode(data.methode);
+        if (data?.numeroRetrait) setNumero(formatSN(data.numeroRetrait));
+        setSaved(data ?? null);
+      } catch {
+        if (!mounted.current) return;
+        setError('Impossible de charger vos coordonnées de retrait. Rechargez la page.');
+      } finally {
+        if (mounted.current) setIsLoading(false);
+      }
+    })();
+  }, []);
+
+  const digits = normalise(numero);
+  const isValid = SN_MOBILE.test(digits);
+  const isDirty =
+    !saved || saved.methode !== methode || normalise(saved.numeroRetrait) !== digits;
+
+  const handleSave = useCallback(async (e: React.FormEvent) => {
     e.preventDefault();
+
+    /* Aucune validation auparavant : une faute de frappe envoyait les
+       reversements vers un numéro inexistant, sans le moindre contrôle. */
+    if (!isValid) {
+      setError('Numéro invalide. Saisissez un mobile sénégalais à 9 chiffres, par exemple 77 123 45 67.');
+      return;
+    }
+
     setIsSaving(true);
-    setTimeout(() => {
-      setIsSaving(false);
-      setSavedSuccess(true);
-      setTimeout(() => setSavedSuccess(false), 3000);
-    }, 600);
-  };
+    setError(null);
+    setSuccess(false);
+
+    try {
+      const payload: PayoutSettings = {
+        methode,
+        numeroRetrait: digits.replace(/^\+?221/, ''),
+      };
+      await nestFetch(NEST_API.USERS.PAYOUT_SETTINGS, {
+        method: 'PATCH',
+        body: JSON.stringify(payload),
+      });
+      if (!mounted.current) return;
+      setSaved(payload);
+      setNumero(formatSN(payload.numeroRetrait));
+      setSuccess(true);
+      if (successTimer.current) clearTimeout(successTimer.current);
+      successTimer.current = setTimeout(() => {
+        if (mounted.current) setSuccess(false);
+      }, 5000);
+    } catch (err) {
+      if (!mounted.current) return;
+      setError(
+        err instanceof Error && err.message
+          ? err.message
+          : 'L’enregistrement n’a pas abouti. Réessayez dans un instant.',
+      );
+    } finally {
+      if (mounted.current) setIsSaving(false);
+    }
+  }, [isValid, methode, digits]);
+
+  const operateurLabel = useMemo(
+    () => OPERATEURS.find((o) => o.value === methode)?.label ?? '',
+    [methode],
+  );
 
   return (
-    <div className="card p-6 sm:p-8 space-y-6">
-      <div className="flex items-center gap-3 pb-4 border-b border-border/80">
-        <div className="w-10 h-10 rounded-inner bg-forest-950 border border-forest-800 text-lime-400 flex items-center justify-center shrink-0 shadow-xs">
-          <Wallet className="w-5 h-5" />
-        </div>
-        <div>
-          <h2 className="font-display text-lg font-semibold text-foreground">Coordonnées de Retrait</h2>
-          <p className="text-xs text-foreground-muted">Recevez les loyers de vos locations directement sur Mobile Money</p>
-        </div>
-      </div>
+    <section className="card space-y-6 p-6 sm:p-8">
 
-      {savedSuccess && (
-        <div className="flex items-center gap-3 p-3.5 rounded-inner bg-success-50 border border-success-500/30 text-success-700 text-xs font-semibold">
-          <CheckCircle2 className="w-4 h-4 text-success-600 shrink-0" />
-          <span>Coordonnées de retrait mises à jour.</span>
-        </div>
-      )}
-
-      <form onSubmit={handleSave} className="space-y-4">
-        <div>
-          <label className="eyebrow block mb-2">Opérateur par défaut</label>
-          <div className="grid grid-cols-2 gap-3 max-w-md">
-            <button
-              type="button"
-              onClick={() => setMethode('WAVE')}
-              className={cn(
-                'flex items-center justify-center gap-2 py-3 px-4 rounded-pill border text-xs font-semibold transition-all',
-                methode === 'WAVE'
-                  ? 'bg-forest-950 text-lime-300 border-forest-900 shadow-sm'
-                  : 'bg-background-alt text-foreground-muted border-border hover:bg-background-card',
-              )}
-            >
-              <Smartphone className="w-4 h-4 text-sky-400" />
-              Wave Senegal
-            </button>
-
-            <button
-              type="button"
-              onClick={() => setMethode('ORANGE_MONEY')}
-              className={cn(
-                'flex items-center justify-center gap-2 py-3 px-4 rounded-pill border text-xs font-semibold transition-all',
-                methode === 'ORANGE_MONEY'
-                  ? 'bg-forest-950 text-lime-300 border-forest-900 shadow-sm'
-                  : 'bg-background-alt text-foreground-muted border-border hover:bg-background-card',
-              )}
-            >
-              <Smartphone className="w-4 h-4 text-orange-400" />
-              Orange Money
-            </button>
-          </div>
-        </div>
-
-        <div className="max-w-md">
-          <label className="eyebrow block mb-2">Numéro de Réception par défaut</label>
-          <input
-            type="text"
-            value={numeroRetrait}
-            onChange={(e) => setNumeroRetrait(e.target.value)}
-            placeholder="77 123 45 67"
-            className="w-full px-4 py-3 rounded-field bg-background-alt border border-border text-sm font-semibold text-foreground focus:outline-none focus:border-forest-600 focus:ring-2 focus:ring-forest-500/20 transition-all"
-          />
-          <p className="text-xs text-foreground-muted mt-1.5">
-            Ce numéro sera automatiquement sélectionné lors de vos demandes de retrait sur votre portefeuille.
+      <header className="flex items-center gap-3 border-b border-border pb-4">
+        <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-inner border border-forest-100 bg-forest-50 text-forest-700">
+          <Wallet className="h-5 w-5" aria-hidden="true" />
+        </span>
+        <div className="min-w-0">
+          <h2 className="font-display text-lg font-semibold text-foreground">
+            Coordonnées de retrait
+          </h2>
+          <p className="text-xs text-foreground-muted">
+            Le compte Mobile Money qui reçoit vos revenus de location
           </p>
         </div>
+      </header>
 
-        <div className="flex justify-end pt-2">
-          <button
-            type="submit"
-            disabled={isSaving}
-            className="btn-action px-6 text-xs justify-center cursor-pointer disabled:opacity-50"
-          >
-            {isSaving ? (
-              <><Loader2 className="w-4 h-4 animate-spin" /> Enregistrement…</>
-            ) : (
-              <><Save className="w-4 h-4" /> Enregistrer</>
-            )}
-          </button>
+      <div aria-live="polite" className="empty:hidden">
+        {success && (
+          <div className="flex items-center gap-3 rounded-inner border border-success-500/25 bg-success-50 p-3.5 text-xs text-success-700">
+            <CheckCircle2 className="h-4 w-4 shrink-0" aria-hidden="true" />
+            Coordonnées enregistrées : {operateurLabel} · {formatSN(numero)}
+          </div>
+        )}
+        {error && (
+          <div role="alert" className="flex items-center gap-3 rounded-inner border border-error-500/20 bg-error-50 p-3.5 text-xs text-error-700">
+            <AlertCircle className="h-4 w-4 shrink-0" aria-hidden="true" />
+            {error}
+          </div>
+        )}
+      </div>
+
+      {isLoading ? (
+        <div aria-busy="true" className="space-y-4">
+          <span className="sr-only">Chargement de vos coordonnées…</span>
+          <div className="h-12 max-w-md animate-pulse rounded-pill bg-background-alt" />
+          <div className="h-12 max-w-md animate-pulse rounded-field bg-background-alt" />
         </div>
-      </form>
-    </div>
+      ) : (
+        <form onSubmit={handleSave} className="space-y-5">
+          <fieldset disabled={isSaving} className="space-y-5">
+
+            <div>
+              <legend id={groupId} className="eyebrow mb-2 block">Opérateur</legend>
+              <div role="radiogroup" aria-labelledby={groupId} className="grid max-w-md grid-cols-2 gap-3">
+                {OPERATEURS.map(({ value, label }) => {
+                  const active = methode === value;
+                  return (
+                    <button
+                      key={value}
+                      type="button"
+                      role="radio"
+                      aria-checked={active}
+                      onClick={() => { setMethode(value); setSuccess(false); }}
+                      className={cn(
+                        'flex items-center justify-center gap-2 rounded-pill border px-4 py-3 text-sm font-semibold transition-colors',
+                        active
+                          ? 'border-forest-600 bg-forest-50 text-forest-700'
+                          : 'border-border bg-background-alt text-foreground-muted hover:border-border-hover hover:bg-background-card',
+                      )}
+                    >
+                      <Smartphone className="h-4 w-4" aria-hidden="true" />
+                      {label}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+
+            <div className="max-w-md">
+              <label htmlFor={numeroId} className="eyebrow mb-2 block">
+                Numéro de réception
+              </label>
+              <input
+                id={numeroId}
+                type="tel"
+                inputMode="numeric"
+                autoComplete="tel-national"
+                value={numero}
+                onChange={(e) => { setNumero(e.target.value); setSuccess(false); }}
+                onBlur={() => setNumero((v) => formatSN(v))}
+                placeholder="77 123 45 67"
+                aria-describedby={hintId}
+                aria-invalid={numero.length > 0 && !isValid}
+                className={cn(
+                  'w-full rounded-field border bg-background-alt px-4 py-3 tabular-nums text-foreground placeholder:text-foreground-faint focus:outline-none',
+                  numero.length > 0 && !isValid
+                    ? 'border-error-500 focus:border-error-600'
+                    : 'border-border focus:border-forest-500',
+                )}
+              />
+              <p id={hintId} className="mt-1.5 text-xs leading-relaxed text-foreground-muted">
+                Mobile sénégalais à 9 chiffres. Ce numéro est présélectionné lors de vos demandes
+                de retrait — vérifiez-le, c’est lui qui reçoit vos fonds.
+              </p>
+            </div>
+
+            {/* Un changement de coordonnées bancaires mérite d'être relu
+                avant validation, pas seulement confirmé après. */}
+            {isDirty && isValid && (
+              <div className="flex items-start gap-3 rounded-inner border border-warning-500/25 bg-warning-50 p-3.5 max-w-md">
+                <ShieldCheck className="mt-0.5 h-4 w-4 shrink-0 text-warning-600" aria-hidden="true" />
+                <p className="text-xs leading-relaxed text-warning-700">
+                  Vos prochains reversements seront envoyés sur{' '}
+                  <span className="font-semibold tabular-nums">{formatSN(numero)}</span> via{' '}
+                  <span className="font-semibold">{operateurLabel}</span>.
+                </p>
+              </div>
+            )}
+          </fieldset>
+
+          <div className="flex items-center justify-end gap-3">
+            {isDirty && (
+              <p className="text-xs text-foreground-muted">Modifications non enregistrées</p>
+            )}
+            <button
+              type="submit"
+              disabled={isSaving || !isDirty || !isValid}
+              className="btn-action text-sm disabled:cursor-not-allowed disabled:opacity-50"
+            >
+              {isSaving ? (
+                <>
+                  <Loader2 className="h-4 w-4 animate-spin" aria-hidden="true" />
+                  Enregistrement…
+                </>
+              ) : (
+                <>
+                  <Save className="h-4 w-4" aria-hidden="true" />
+                  Enregistrer
+                </>
+              )}
+            </button>
+          </div>
+        </form>
+      )}
+    </section>
   );
 }

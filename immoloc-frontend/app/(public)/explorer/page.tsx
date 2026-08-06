@@ -40,6 +40,7 @@ export default async function ExplorerPage({ searchParams }: ExplorerPageProps) 
     ...(filters.type && filters.type.length > 0 && {
       type: (filters.type[0].toUpperCase() === 'AUTRE' ? 'AUTRES' : filters.type[0].toUpperCase()) as any,
     }),
+    ...(filters.sousType && { sousType: filters.sousType }),
     ...(filters.min !== undefined && { prixMin: filters.min }),
     ...(filters.max !== undefined && { prixMax: filters.max }),
     ...(filters.voyageurs && { capaciteMin: filters.voyageurs }),

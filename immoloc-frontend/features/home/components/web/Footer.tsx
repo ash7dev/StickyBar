@@ -195,7 +195,7 @@ export function Footer() {
             </div>
 
             <div className="flex flex-wrap items-center justify-center gap-6">
-              {LEGAL_LINKS.map((link, index) => (
+              {LEGAL_LINKS.map((link) => (
                 <Link
                   key={link.href}
                   href={link.href}
@@ -204,6 +204,16 @@ export function Footer() {
                   {link.label}
                 </Link>
               ))}
+              <button
+                onClick={() => {
+                  if (typeof window !== 'undefined') {
+                    window.dispatchEvent(new Event('open-klef-cookie-modal'));
+                  }
+                }}
+                className="text-sm text-neutral-500 hover:text-lime-400 transition-colors duration-200"
+              >
+                Gestion des cookies
+              </button>
             </div>
           </div>
         </div>

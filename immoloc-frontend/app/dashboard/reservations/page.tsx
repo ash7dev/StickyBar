@@ -3,7 +3,7 @@
 import { useState, useEffect, useCallback, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { LayoutGrid, List, Search, AlertCircle, X } from 'lucide-react';
+import { LayoutGrid, List, Search, AlertCircle, X, History, ChevronDown, Sparkles } from 'lucide-react';
 import { nestFetch } from '@/lib/nestjs/api-client';
 import { NEST_API } from '@/lib/nestjs/endpoints';
 import type { Reservation } from '@/features/reservations/components/reservation-card';
@@ -16,13 +16,15 @@ import DashboardLoading from '../loading';
 /* ─── Status Filter Tabs Config ─────────────────────────────────────────────── */
 
 const STATUS_TABS = [
-  { id: 'ALL',        label: 'Toutes'     },
-  { id: 'PENDING',    label: 'En attente' },
-  { id: 'CONFIRMED',  label: 'Confirmées' },
-  { id: 'CHECKED_IN', label: 'En séjour'   },
-  { id: 'COMPLETED',  label: 'Terminées'  },
-  { id: 'CANCELLED',  label: 'Annulées'   },
+  { id: 'ALL',        label: 'Toutes',     dot: 'bg-forest-600' },
+  { id: 'PENDING',    label: 'En attente', dot: 'bg-amber-500' },
+  { id: 'CONFIRMED',  label: 'Confirmées', dot: 'bg-blue-600' },
+  { id: 'CHECKED_IN', label: 'En séjour',   dot: 'bg-emerald-500 animate-pulse' },
+  { id: 'COMPLETED',  label: 'Terminées',  dot: 'bg-slate-400' },
+  { id: 'CANCELLED',  label: 'Annulées',   dot: 'bg-rose-500' },
 ];
+
+const ACTIVE_STATUSES = ['PENDING', 'CONFIRMED', 'CHECKED_IN', 'PAID', 'DISPUTED'];
 
 function ReservationsContent() {
   const router = useRouter();
@@ -30,6 +32,8 @@ function ReservationsContent() {
   const qc = useQueryClient();
   const [activeTab, setActiveTab] = useState<string>('ALL');
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('list');
+  const [showHistory, setShowHistory] = useState<boolean>(false);
+
   // Initialise depuis le param URL ?q= (venant du header search ou d'un lien direct)
   const [searchQuery, setSearchQuery] = useState(() => searchParams.get('q') ?? '');
 
@@ -48,7 +52,6 @@ function ReservationsContent() {
   useEffect(() => {
     const urlQ = searchParams.get('q') ?? '';
     if (urlQ !== searchQuery) setSearchQuery(urlQ);
-    // On veut seulement réagir au changement de l'URL param, pas à searchQuery
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [searchParams]);
 
@@ -76,6 +79,10 @@ function ReservationsContent() {
     const locataire = `${r.locataire?.prenom ?? ''} ${r.locataire?.nom ?? ''}`.toLowerCase();
     return titre.includes(q) || locataire.includes(q);
   });
+
+  // Split active vs history for "ALL" tab
+  const activeList = filteredReservations.filter((r) => ACTIVE_STATUSES.includes(r.statut));
+  const historyList = filteredReservations.filter((r) => !ACTIVE_STATUSES.includes(r.statut));
 
   // Mutations
   const confirmMutation = useMutation({
@@ -183,12 +190,13 @@ function ReservationsContent() {
               type="button"
               onClick={() => setActiveTab(tab.id)}
               className={cn(
-                'inline-flex items-center gap-2 px-4 py-2 rounded-pill text-xs font-extrabold shrink-0 transition-all border shadow-2xs',
+                'inline-flex items-center gap-2 px-4 py-2 rounded-pill text-xs font-extrabold shrink-0 transition-all border shadow-2xs cursor-pointer',
                 isActive
                   ? 'bg-forest-950 text-lime-400 border-forest-950 shadow-md'
                   : 'bg-background-card hover:bg-background-alt text-forest-950 border-border/80',
               )}
             >
+              <span className={cn('w-2 h-2 rounded-full shrink-0', tab.dot)} />
               <span>{tab.label}</span>
               <span
                 className={cn(
@@ -229,17 +237,93 @@ function ReservationsContent() {
 
       {/* ══ Reservations List ═════════════════════════════════════════════════ */}
       {!isLoading && !error && filteredReservations.length > 0 && (
-        <div className={cn(viewMode === 'grid' ? 'grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5' : 'space-y-3.5')}>
-          {filteredReservations.map((reservation) => (
-            <OwnerReservationCard
-              key={reservation.id}
-              reservation={reservation}
-              viewMode={viewMode}
-              onConfirm={(id) => confirmMutation.mutate(id)}
-              onCancel={(id) => cancelMutation.mutate(id)}
-            />
-          ))}
-        </div>
+        <>
+          {/* Si onglet "Toutes", on sépare Réservations Actives vs Historique dépliable */}
+          {activeTab === 'ALL' ? (
+            <div className="space-y-8">
+              {/* Section 1: Réservations Actives / En cours */}
+              {activeList.length > 0 ? (
+                <div className={cn(viewMode === 'grid' ? 'grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5' : 'space-y-3.5')}>
+                  {activeList.map((reservation) => (
+                    <OwnerReservationCard
+                      key={reservation.id}
+                      reservation={reservation}
+                      viewMode={viewMode}
+                      onConfirm={(id) => confirmMutation.mutate(id)}
+                      onCancel={(id) => cancelMutation.mutate(id)}
+                    />
+                  ))}
+                </div>
+              ) : (
+                <div className="p-4 rounded-card border border-border bg-background-alt text-xs font-semibold text-foreground-muted">
+                  Aucune réservation active en cours ou à venir.
+                </div>
+              )}
+
+              {/* Section 2: Historique Dépliable (Terminées, Annulées) */}
+              {historyList.length > 0 && (
+                <div className="border-t border-border/80 pt-6 space-y-4">
+                  <button
+                    type="button"
+                    onClick={() => setShowHistory((v) => !v)}
+                    className="flex items-center justify-between w-full p-4 rounded-card border border-border bg-background-card hover:bg-background-alt transition-colors group shadow-2xs cursor-pointer"
+                  >
+                    <div className="flex items-center gap-3">
+                      <span className="flex h-9 w-9 items-center justify-center rounded-inner bg-slate-100 text-slate-700">
+                        <History className="h-4.5 w-4.5" />
+                      </span>
+                      <div className="text-left">
+                        <h3 className="font-display text-sm font-semibold text-foreground flex items-center gap-2">
+                          Historique des séjours & annulations
+                          <span className="px-2 py-0.5 rounded-pill bg-slate-100 text-slate-700 text-xs font-bold border border-slate-200">
+                            {historyList.length}
+                          </span>
+                        </h3>
+                        <p className="text-xs text-foreground-muted mt-0.5">
+                          {showHistory
+                            ? 'Cliquez pour replier la liste de l\'historique'
+                            : 'Séjours terminés, annulations et réservations archivées'}
+                        </p>
+                      </div>
+                    </div>
+
+                    <div className="flex items-center gap-1.5 text-xs font-semibold text-forest-700 bg-forest-50 border border-forest-100 px-3 py-1.5 rounded-pill group-hover:bg-forest-100 transition-colors">
+                      <span>{showHistory ? 'Masquer' : 'Dérouler l\'historique'}</span>
+                      <ChevronDown className={cn('h-4 w-4 transition-transform duration-200', showHistory && 'rotate-180')} />
+                    </div>
+                  </button>
+
+                  {showHistory && (
+                    <div className={cn(viewMode === 'grid' ? 'grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5' : 'space-y-3.5')}>
+                      {historyList.map((reservation) => (
+                        <OwnerReservationCard
+                          key={reservation.id}
+                          reservation={reservation}
+                          viewMode={viewMode}
+                          onConfirm={(id) => confirmMutation.mutate(id)}
+                          onCancel={(id) => cancelMutation.mutate(id)}
+                        />
+                      ))}
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
+          ) : (
+            /* Si un onglet spécifique est sélectionné (ex: Terminées, Annulées, En séjour...) */
+            <div className={cn(viewMode === 'grid' ? 'grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5' : 'space-y-3.5')}>
+              {filteredReservations.map((reservation) => (
+                <OwnerReservationCard
+                  key={reservation.id}
+                  reservation={reservation}
+                  viewMode={viewMode}
+                  onConfirm={(id) => confirmMutation.mutate(id)}
+                  onCancel={(id) => cancelMutation.mutate(id)}
+                />
+              ))}
+            </div>
+          )}
+        </>
       )}
 
     </div>

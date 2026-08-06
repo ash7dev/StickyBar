@@ -2,7 +2,7 @@
 
 import Image from 'next/image';
 import Link from 'next/link';
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import {
   AirVent, Bath, BedDouble, ChevronDown, CheckCircle2, Coins, Droplets,
   Dumbbell, Flame, Home, Info, Maximize, MapPin, Moon, ParkingCircle, Refrigerator,
@@ -11,7 +11,9 @@ import {
 } from 'lucide-react';
 import type { Listing } from '@/lib/nestjs';
 import { formatPrixPublic, getPrixPublic, getPrixDerniereMinute } from '@/lib/pricing';
+import { useRecentlyViewed } from '@/lib/hooks/useRecentlyViewed';
 import { ListingVideoSection } from './ListingVideoSection';
+import { ListingLocationMap } from './ListingLocationMap';
 
 interface ListingDetailSpecProps {
   listing: Listing;
@@ -60,6 +62,23 @@ function getEquipementIcon(nom: string) {
 export function ListingDetailSpec({ listing }: ListingDetailSpecProps) {
   const [descOpen, setDescOpen] = useState(false);
   const [amenitiesOpen, setAmenitiesOpen] = useState(false);
+
+  const { addRecentlyViewed } = useRecentlyViewed();
+
+  useEffect(() => {
+    if (listing?.id) {
+      const mainPhoto = listing.photos?.find((p) => p.estPrincipale) ?? listing.photos?.[0];
+      addRecentlyViewed({
+        id: listing.id,
+        titre: listing.titre,
+        type: listing.type,
+        ville: listing.ville,
+        quartier: listing.quartier,
+        prixBase: listing.prixBase,
+        photoUrl: mainPhoto?.url,
+      });
+    }
+  }, [listing, addRecentlyViewed]);
 
   const location = [listing.quartier, listing.ville].filter(Boolean).join(', ');
   const categoryLabel = listing.sousType || listing.type;
@@ -379,6 +398,15 @@ export function ListingDetailSpec({ listing }: ListingDetailSpecProps) {
           </p>
         )}
       </section>
+
+      {/* -- Emplacement & Carte ---------------------------------------- */}
+      <ListingLocationMap
+        ville={listing.ville}
+        quartier={listing.quartier}
+        adresse={listing.adresse}
+        latitude={listing.latitude}
+        longitude={listing.longitude}
+      />
 
       {/* -- Hôte -------------------------------------------------------- */}
       <section className="space-y-4 border-t border-border pt-8">

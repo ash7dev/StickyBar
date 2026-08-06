@@ -273,10 +273,13 @@ export interface SearchListingsParams {
   ville?: string;
   quartier?: string;
   type?: ListingType;
+  sousType?: string;
   prixMin?: number;
   prixMax?: number;
   capaciteMin?: number;
   derniereMinuteOnly?: boolean;
+  dateDebut?: string;
+  dateFin?: string;
   lat?: number;
   lng?: number;
   radiusKm?: number;

@@ -92,6 +92,34 @@ const SECTION_CONFIG: Record<string, { title: string; subtitle?: string; link?: 
     subtitle: 'Centre historique de Dakar',
     link: '/explorer?ville=Plateau',
   },
+  /* 
+    -- SECTIONS EN ATTENTE D'ACTIVATION (A décommenter ultérieurement avec plus de données) --
+    
+    // 1. Offres Dernière Minute (-15%)
+    'last-minute': {
+      title: 'Offres Dernière Minute (-15%)',
+      subtitle: 'Profitez de -15% de réduction sur les séjours imminents',
+      link: '/explorer?derniereMinute=true',
+    },
+    // 2. Studios & F2 Business & Workation
+    'business-studios': {
+      title: 'Studios & F2 Business',
+      subtitle: 'Espaces autonomes avec Wifi haut débit et climatisation',
+      link: '/explorer?type=APPARTEMENT&sousType=Studio',
+    },
+    // 3. Échappées Balnéaires (Petite Côte)
+    'coastal-escape': {
+      title: 'Échappées Balnéaires',
+      subtitle: 'Séjours détente à Saly, Somone et Ngaparou',
+      link: '/explorer?ville=Saly',
+    },
+    // 5. Villas pour Événements & Familles
+    'villa-events': {
+      title: 'Villas Familles & Événements',
+      subtitle: 'Grands espaces avec jardin et piscine pour vos réceptions',
+      link: '/explorer?type=VILLA&sousType=Villa+pour+événement',
+    },
+  */
 };
 
 // Cache clé pour sessionStorage

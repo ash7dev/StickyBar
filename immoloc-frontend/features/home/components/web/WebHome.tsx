@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import { HeroSection } from './HeroSection';
 import { CategoriesSection } from './CategoriesSection';
 import { NearbyListingsSection } from './NearbyListingsSection';
+import { WeekendListingsSection } from './WeekendListingsSection';
 import { FeedSections } from './FeedSections';
 import { HowItWorksSection } from './HowItWorksSection';
 import { OwnerCTASection } from './OwnerCTASection';
@@ -32,6 +33,9 @@ export function WebHome() {
 
       {/* Categories Section */}
       <CategoriesSection />
+
+      {/* Weekend Available Listings Section */}
+      <WeekendListingsSection />
 
       {/* Nearby Listings Section (Geolocation GPS) */}
       <NearbyListingsSection />

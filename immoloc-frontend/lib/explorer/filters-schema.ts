@@ -33,11 +33,14 @@ export const filtersSchema = z.object({
   // Capacité
   voyageurs: z.coerce.number().int().min(1).max(16).optional(),
 
-  // Type (peut être multiple, séparé par virgule)
+  // Type (peut être multiple, séparé par virgule, insensible à la casse)
   type: z.string()
-    .transform(str => str.split(',').filter(Boolean))
+    .transform(str => str.split(',').map(s => s.trim().toLowerCase()).filter(Boolean))
     .pipe(z.array(z.enum(TYPE_LOGEMENT_VALUES)))
     .optional(),
+
+  // Sous-type (ex: "Villa avec piscine")
+  sousType: z.string().min(1).optional(),
 
   // Prix (FCFA / nuit)
   min: z.coerce.number().int().min(0).optional(),
@@ -82,6 +85,13 @@ export function parseSearchParams(raw: RawSearchParams): SearchFilters {
     normalized[key] = Array.isArray(value) ? value[0] : value;
   }
 
+  // Alias sort -> tri
+  if (normalized.sort && !normalized.tri) {
+    if (normalized.sort === 'popular') normalized.tri = 'pertinence';
+    else if (normalized.sort === 'newest') normalized.tri = 'recent';
+    else if (normalized.sort === 'rated') normalized.tri = 'note_desc';
+  }
+
   // Parser avec safeParse pour éviter les erreurs
   const result = filtersSchema.safeParse(normalized);
 
@@ -89,7 +99,7 @@ export function parseSearchParams(raw: RawSearchParams): SearchFilters {
     return result.data;
   }
 
-  // En cas d'erreur, retourner les valeurs par défaut
+  // En cas d'erreur, logguer et retourner les valeurs par défaut
   console.warn('[filters-schema] Invalid search params:', result.error.issues);
   return filtersSchema.parse({});
 }
@@ -107,6 +117,7 @@ export function countActiveFilters(filters: SearchFilters): number {
   if (filters.arrivee && filters.depart) count++;
   if (filters.voyageurs) count++;
   if (filters.type && filters.type.length > 0) count++;
+  if (filters.sousType) count++;
   if (filters.min !== undefined || filters.max !== undefined) count++;
   if (filters.verifie) count++;
   if (filters.bbox) count++;

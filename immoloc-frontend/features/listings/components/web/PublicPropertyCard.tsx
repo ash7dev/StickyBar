@@ -3,6 +3,7 @@ import Link from 'next/link';
 import { Star, MapPin, Users, ArrowRight, Images } from 'lucide-react';
 import type { Listing } from '@/lib/nestjs';
 import { TenantPriceDisplay } from '@/components/ui/TenantPriceDisplay';
+import { FavoriteButton } from '@/components/ui/FavoriteButton';
 
 const TYPE_LABELS: Record<string, string> = {
   APPARTEMENT: 'Appartement',
@@ -62,13 +63,16 @@ export function PublicPropertyCard({ listing }: Props) {
           )}
         </div>
 
-        {/* Rating */}
-        {rating && (
-          <div className="absolute top-4 right-4 z-10 flex items-center gap-1.5 px-3 py-1.5 bg-background-card/95 backdrop-blur-sm rounded-full shadow-lg">
-            <Star className="w-3.5 h-3.5 text-warning-500 fill-warning-500" />
-            <span className="text-[11px] font-black text-foreground">{rating.toFixed(1)}</span>
-          </div>
-        )}
+        {/* Favorite Button */}
+        <div className="absolute top-4 right-4 z-20 flex items-center gap-2">
+          {rating && (
+            <div className="flex items-center gap-1.5 px-3 py-1.5 bg-background-card/95 backdrop-blur-sm rounded-full shadow-lg">
+              <Star className="w-3.5 h-3.5 text-warning-500 fill-warning-500" />
+              <span className="text-[11px] font-black text-foreground">{rating.toFixed(1)}</span>
+            </div>
+          )}
+          <FavoriteButton listingId={listing.id} size="sm" />
+        </div>
 
         {/* Photo count */}
         {listing.photos.length > 1 && (

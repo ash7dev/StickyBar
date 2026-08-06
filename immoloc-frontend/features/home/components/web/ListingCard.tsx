@@ -8,6 +8,7 @@ import type { Listing } from '@/lib/nestjs/types';
 import { VideoReelsModal } from '@/features/listings/components/web/VideoReelsModal';
 
 import { TenantPriceDisplay } from '@/components/ui/TenantPriceDisplay';
+import { FavoriteButton } from '@/components/ui/FavoriteButton';
 
 const money = new Intl.NumberFormat('fr-FR', { maximumFractionDigits: 0 });
 const rating = new Intl.NumberFormat('fr-FR', {
@@ -126,19 +127,9 @@ export function ListingCard({
             )}
           </div>
 
-          <button
-            type="button"
-            onClick={() => onToggleFavorite?.(id, !isFavorite)}
-            aria-pressed={isFavorite}
-            aria-label={isFavorite ? `Retirer ${titre} des favoris` : `Ajouter ${titre} aux favoris`}
-            className={`absolute right-3 top-3 z-20 grid h-9 w-9 place-items-center rounded-pill border transition-colors duration-150 ${
-              isFavorite
-                ? 'border-error-500/25 bg-white text-error-500'
-                : 'border-white/60 bg-white/80 text-forest-700 backdrop-blur-md hover:bg-white'
-            }`}
-          >
-            <Heart className={`h-4 w-4 ${isFavorite ? 'fill-current' : ''}`} aria-hidden="true" />
-          </button>
+          <div className="absolute right-3 top-3 z-20">
+            <FavoriteButton listingId={id} size="md" />
+          </div>
         </div>
 
         {/* ── Contenu ─────────────────────────────────────────────────────── */}

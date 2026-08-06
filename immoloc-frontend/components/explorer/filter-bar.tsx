@@ -21,7 +21,7 @@ const VILLES = [
 ];
 
 const QUARTIERS_POPULAIRES = [
-  'Almadies', 'Ngor', 'Mermoz', 'Virage', 'Plateau', 'Fann', 'Mamelles', 'Saly', 'Somone', 'Popenguine',
+  'Almadies', 'Ngor', 'Mermoz', 'Virage', 'Les Mamelles', 'Point E', 'Sacré-Cœur', 'Cité Keur Gorgui', 'Nord Foire', 'Yoff', 'Ouakam', 'Plateau', 'Hann Maristes', 'Saly', 'Somone', 'Popenguine',
 ];
 
 const PRIX_PRESETS = [
@@ -162,6 +162,7 @@ export function FilterBar({ filters }: FilterBarProps) {
     filters.arrivee && filters.depart,
     filters.voyageurs && filters.voyageurs > 1,
     filters.type && filters.type.length > 0,
+    filters.sousType,
     filters.min !== undefined || filters.max !== undefined,
     filters.verifie,
   ].filter(Boolean).length;
@@ -361,6 +362,21 @@ export function FilterBar({ filters }: FilterBarProps) {
               <span>Type</span>
               <ChevronDown className="w-3.5 h-3.5 text-neutral-400" />
             </button>
+          )}
+
+          {/* 5.5. PASTILLE SOUS-TYPE (Si actif : Villa avec piscine ✕) */}
+          {filters.sousType && (
+            <span className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full bg-forest-950 text-lime-300 text-xs font-bold shadow-xs shrink-0 animate-in fade-in">
+              <Building2 className="w-3.5 h-3.5 text-lime-300" />
+              {filters.sousType}
+              <button
+                onClick={() => removeFilter('sousType')}
+                className="hover:bg-forest-800 rounded-full p-0.5 transition-colors ml-0.5"
+                aria-label="Supprimer sous-type"
+              >
+                <X className="w-3.5 h-3.5" />
+              </button>
+            </span>
           )}
 
           {/* Bouton Effacer Tout si filtres actifs */}

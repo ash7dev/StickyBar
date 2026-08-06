@@ -3,7 +3,7 @@
 import { useRef, useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { ArrowLeft, ArrowRight, AlertTriangle } from 'lucide-react';
+import { ArrowLeft, ArrowRight, AlertTriangle, Loader2, CheckCircle2 } from 'lucide-react';
 import { WizardStepper, WIZARD_STEPS } from './wizard-stepper';
 import { StepBien } from './steps/step-bien';
 import { StepAnnonce } from './steps/step-annonce';
@@ -55,6 +55,7 @@ export function ListingWizard({ editMode = false }: ListingWizardProps) {
     tarifsPersonnes,
     tarifsNuits,
     photos,
+    video,
     draftListingId,
     setDraftListingId,
     reset,
@@ -63,6 +64,16 @@ export function ListingWizard({ editMode = false }: ListingWizardProps) {
   const submitRef = useRef<HTMLButtonElement>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [apiError, setApiError] = useState<string | null>(null);
+
+  const [submitProgress, setSubmitProgress] = useState<{
+    percent: number;
+    title: string;
+    details: string;
+  }>({
+    percent: 0,
+    title: 'Création de l\'annonce',
+    details: 'Initialisation…',
+  });
 
   const isConfirmation = currentStep === 5;
 
@@ -87,6 +98,11 @@ export function ListingWizard({ editMode = false }: ListingWizardProps) {
   async function handleFinalSubmit() {
     setIsSubmitting(true);
     setApiError(null);
+    setSubmitProgress({
+      percent: 5,
+      title: "Création du logement",
+      details: "Enregistrement des informations de l'annonce…",
+    });
 
     try {
       let listingId = draftListingId;
@@ -127,10 +143,19 @@ export function ListingWizard({ editMode = false }: ListingWizardProps) {
       const photosToUpload = photos.photos.filter((p) => p.file && !p.url);
 
       if (photosToUpload.length > 0) {
+        setSubmitProgress({
+          percent: 15,
+          title: "Téléversement des photos",
+          details: `Préparation de l'envoi de ${photosToUpload.length} photo${photosToUpload.length > 1 ? 's' : ''} sur Cloudinary…`,
+        });
+
         const params = await nestFetch<{ uploadUrl: string; signature: string; timestamp: number; apiKey: string; cloudName: string; folder: string }>(
           NEST_API.LISTINGS.PHOTO_UPLOAD_PARAMS(listingId),
           { method: 'GET' },
         );
+
+        let photosDone = 0;
+        const totalPhotos = photosToUpload.length;
 
         const cloudinaryResults = await Promise.all(
           photosToUpload.map(async (photo) => {
@@ -144,16 +169,25 @@ export function ListingWizard({ editMode = false }: ListingWizardProps) {
             const res = await fetch(params.uploadUrl, { method: 'POST', body: formData });
             if (!res.ok) {
               const err = await res.json().catch(() => ({})) as { error?: { message?: string } };
-              throw new Error(`Cloudinary: ${err?.error?.message ?? res.statusText}`);
+              throw new Error(`Cloudinary Photo: ${err?.error?.message ?? res.statusText}`);
             }
             const data = await res.json() as { secure_url: string; public_id: string };
+
+            photosDone++;
+            const pct = 15 + Math.round((photosDone / totalPhotos) * (video?.file ? 35 : 70));
+            setSubmitProgress({
+              percent: pct,
+              title: "Téléversement des photos",
+              details: `Photo ${photosDone} sur ${totalPhotos} téléversée avec succès`,
+            });
+
             return { photo, url: data.secure_url, publicId: data.public_id };
           }),
         );
 
         await Promise.all(
           cloudinaryResults.map(({ photo, url, publicId }) =>
-            nestFetch(NEST_API.LISTINGS.ADD_PHOTO(listingId), {
+            nestFetch(NEST_API.LISTINGS.ADD_PHOTO(listingId!), {
               method: 'POST',
               body: JSON.stringify({
                 url,
@@ -166,6 +200,81 @@ export function ListingWizard({ editMode = false }: ListingWizardProps) {
           ),
         );
       }
+
+      // Vidéo Cloudinary (suivi par XMLHttpRequest pour progression Mo/s en temps réel)
+      if (video?.file) {
+        setSubmitProgress({
+          percent: 50,
+          title: "Téléversement de la vidéo HD",
+          details: "Obtention des paramètres d'envoi Cloudinary…",
+        });
+
+        const videoParams = await nestFetch<{ uploadUrl: string; signature: string; timestamp: number; apiKey: string; cloudName: string; folder: string }>(
+          NEST_API.LISTINGS.VIDEO_UPLOAD_PARAMS(listingId),
+          { method: 'GET' },
+        );
+
+        const videoFormData = new FormData();
+        videoFormData.append('file', video.file);
+        videoFormData.append('folder', videoParams.folder);
+        videoFormData.append('signature', videoParams.signature);
+        videoFormData.append('timestamp', String(videoParams.timestamp));
+        videoFormData.append('api_key', videoParams.apiKey);
+
+        const videoData = await new Promise<{ secure_url: string; public_id: string }>((resolve, reject) => {
+          const xhr = new XMLHttpRequest();
+          xhr.open('POST', videoParams.uploadUrl);
+
+          xhr.upload.onprogress = (evt) => {
+            if (evt.lengthComputable) {
+              const videoPct = Math.round((evt.loaded / evt.total) * 100);
+              const loadedMb = (evt.loaded / (1024 * 1024)).toFixed(1);
+              const totalMb = (evt.total / (1024 * 1024)).toFixed(1);
+              const overallPct = 50 + Math.round((evt.loaded / evt.total) * 40);
+              setSubmitProgress({
+                percent: overallPct,
+                title: "Téléversement de la vidéo HD",
+                details: `Vidéo : ${videoPct}% · ${loadedMb} Mo / ${totalMb} Mo`,
+              });
+            }
+          };
+
+          xhr.onload = () => {
+            if (xhr.status >= 200 && xhr.status < 300) {
+              try {
+                resolve(JSON.parse(xhr.responseText));
+              } catch {
+                reject(new Error('Erreur de lecture de la réponse vidéo.'));
+              }
+            } else {
+              reject(new Error('Échec du téléversement vidéo.'));
+            }
+          };
+
+          xhr.onerror = () => reject(new Error('Erreur réseau lors du téléversement de la vidéo.'));
+          xhr.send(videoFormData);
+        });
+
+        setSubmitProgress({
+          percent: 90,
+          title: "Finalisation de la vidéo",
+          details: "Mise à jour de l'annonce avec la vidéo HD…",
+        });
+
+        await nestFetch(NEST_API.LISTINGS.UPDATE(listingId), {
+          method: 'PATCH',
+          body: JSON.stringify({
+            videoUrl: videoData.secure_url,
+            videoPublicId: videoData.public_id,
+          }),
+        });
+      }
+
+      setSubmitProgress({
+        percent: 95,
+        title: "Finalisation de l'annonce",
+        details: "Enregistrement des tarifs, règles et équipements…",
+      });
 
       // Tarifs + Équipements
       await Promise.all([
@@ -203,6 +312,12 @@ export function ListingWizard({ editMode = false }: ListingWizardProps) {
       if (!editMode) {
         await nestFetch(NEST_API.LISTINGS.SUBMIT(listingId), { method: 'PATCH' });
       }
+
+      setSubmitProgress({
+        percent: 100,
+        title: "Annonce créée avec succès !",
+        details: "Redirection vers votre tableau de bord…",
+      });
 
       reset();
       router.push(editMode ? `/dashboard/annonces/${listingId}` : '/dashboard/annonces?submitted=1');
@@ -364,6 +479,48 @@ export function ListingWizard({ editMode = false }: ListingWizardProps) {
           </div>
         )}
       </div>
+
+      {/* Modal de progression de téléversement Cloudinary */}
+      {isSubmitting && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-forest-950/80 backdrop-blur-md animate-in fade-in duration-200">
+          <div className="w-full max-w-md space-y-5 rounded-card border border-white/10 bg-forest-950 p-6 text-white shadow-2xl text-center">
+            <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-pill bg-lime-400/15 text-lime-400 border border-lime-400/30">
+              {submitProgress.percent === 100 ? (
+                <CheckCircle2 className="h-8 w-8 text-lime-400" />
+              ) : (
+                <Loader2 className="h-8 w-8 animate-spin text-lime-400" />
+              )}
+            </div>
+
+            <div className="space-y-1">
+              <h3 className="font-display text-xl font-bold tracking-tight text-white">
+                {submitProgress.title}
+              </h3>
+              <p className="text-xs text-forest-200 font-medium">
+                {submitProgress.details}
+              </p>
+            </div>
+
+            {/* Barre de progression */}
+            <div className="space-y-1.5">
+              <div className="h-3 w-full overflow-hidden rounded-full bg-forest-900 border border-forest-800 p-0.5">
+                <div
+                  className="h-full rounded-full bg-lime-400 transition-all duration-300 ease-out"
+                  style={{ width: `${submitProgress.percent}%` }}
+                />
+              </div>
+              <div className="flex items-center justify-between text-[11px] font-bold text-forest-300">
+                <span>Progression du transfert</span>
+                <span className="tabular-nums font-mono text-xs text-lime-400">{submitProgress.percent}%</span>
+              </div>
+            </div>
+
+            <p className="text-[11px] text-forest-300/80 border-t border-white/10 pt-3">
+              ⚡ Envoi direct vers Cloudinary. Veuillez ne pas fermer cette page pendant le transfert.
+            </p>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

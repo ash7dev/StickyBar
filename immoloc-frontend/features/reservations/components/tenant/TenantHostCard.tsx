@@ -7,6 +7,9 @@ import type { ReservationDetail } from '@/lib/nestjs/types';
 
 type Proprietaire = ReservationDetail['proprietaire'];
 
+/** Statuts pour lesquels le numéro ne sera jamais accessible. */
+const STATUTS_CLOS = ['CANCELLED', 'COMPLETED', 'EXPIRED', 'DISPUTED'];
+
 interface Props {
   proprietaire: Proprietaire;
   statut: string;
@@ -15,65 +18,83 @@ interface Props {
 
 export function TenantHostCard({ proprietaire, statut, dateDebut }: Props) {
   const canSeePhone = canSeeCoordonnees(statut, dateDebut);
-  const initiales = `${proprietaire.prenom[0]}${proprietaire.nom[0]}`.toUpperCase();
+
+  /* `prenom[0]` sur une chaîne vide vaut undefined → « undefinedundefined ». */
+  const initiales =
+    `${proprietaire.prenom?.[0] ?? ''}${proprietaire.nom?.[0] ?? ''}`.toUpperCase() || '?';
+
+  const nomComplet =
+    [proprietaire.prenom, proprietaire.nom].filter(Boolean).join(' ') || 'Votre hôte';
 
   return (
-    <div className="bg-background-card rounded-card border border-border/80 p-5 space-y-4 shadow-2xs">
-      {/* Avatar + identité */}
+    <section className="space-y-4 rounded-card border border-border bg-background-card p-5 shadow-sm">
+
+      {/* ── Identité ─────────────────────────────────────────────────────── */}
+
       <div className="flex items-center gap-3.5">
-        <div className="relative shrink-0">
-          <div className="w-14 h-14 rounded-inner bg-forest-950 text-lime-400 font-display font-extrabold text-base flex items-center justify-center border border-lime-400/20 overflow-hidden shadow-2xs">
-            {proprietaire.avatarUrl ? (
-              <Image src={proprietaire.avatarUrl} alt="" fill className="object-cover" />
-            ) : (
-              initiales
-            )}
-          </div>
-          <span className="absolute -bottom-0.5 -right-0.5 w-3.5 h-3.5 bg-lime-400 border-2 border-background-card rounded-full" />
+        {/* `Image fill` exige un parent positionné : le `relative` était sur
+            le wrapper externe, donc l'image se dimensionnait sur lui. */}
+        <div className="relative flex h-14 w-14 shrink-0 items-center justify-center overflow-hidden rounded-inner border border-border bg-forest-800 font-display text-base font-semibold text-neutral-50">
+          {proprietaire.avatarUrl ? (
+            <Image
+              src={proprietaire.avatarUrl}
+              alt=""
+              fill
+              sizes="56px"
+              className="object-cover"
+            />
+          ) : initiales}
         </div>
 
         <div className="min-w-0 flex-1">
-          <p className="text-[10px] font-extrabold uppercase tracking-wider text-foreground-muted mb-0.5">Votre hôte</p>
-          <h4 className="font-display text-base font-bold text-forest-950 leading-tight truncate">
-            {proprietaire.prenom} {proprietaire.nom}
-          </h4>
-          <span className="inline-flex items-center gap-1 mt-1 text-[10px] font-extrabold text-forest-800 bg-forest-50 border border-forest-100 px-2.5 py-0.5 rounded-pill">
-            <ShieldCheck className="w-3 h-3 text-forest-600" />
-            <span>Propriétaire vérifié</span>
+          <p className="mb-0.5 text-xs font-semibold uppercase tracking-wider text-foreground-muted">
+            Votre hôte
+          </p>
+          <h3 className="truncate font-display text-base font-semibold leading-tight text-foreground">
+            {nomComplet}
+          </h3>
+          <span className="mt-1.5 inline-flex items-center gap-1 rounded-pill border border-gold-200 bg-gold-50 px-2.5 py-0.5 text-xs font-semibold text-gold-700">
+            <ShieldCheck className="h-3 w-3" aria-hidden="true" />
+            Hôte vérifié
           </span>
         </div>
       </div>
 
-      {/* Téléphone */}
+      {/* ── Contact ──────────────────────────────────────────────────────── */}
+
       {canSeePhone && proprietaire.telephone ? (
         <a
-          href={`tel:${proprietaire.telephone}`}
-          className="flex items-center gap-3.5 w-full bg-forest-950 hover:bg-forest-900 border border-forest-800 rounded-inner p-3.5 transition-all group"
+          href={`tel:${proprietaire.telephone.replace(/[\s.\-()]/g, '')}`}
+          className="group flex w-full items-center gap-3.5 rounded-inner border border-border bg-background-alt p-3.5 transition-colors hover:border-border-hover hover:bg-background-card"
         >
-          <div className="w-9 h-9 rounded-inner bg-lime-400 flex items-center justify-center shrink-0 shadow-2xs group-hover:scale-105 transition-transform">
-            <PhoneCall className="w-4 h-4 text-forest-950" />
-          </div>
-          <div className="min-w-0">
-            <p className="text-[10px] font-extrabold uppercase tracking-wider text-forest-200">Appeler l&apos;hôte</p>
-            <p className="text-sm font-mono font-extrabold text-lime-300 tracking-wide">{proprietaire.telephone}</p>
-          </div>
+          <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-inner border border-forest-100 bg-forest-50 text-forest-700">
+            <PhoneCall className="h-4 w-4" aria-hidden="true" />
+          </span>
+          <span className="min-w-0">
+            <span className="block text-xs font-semibold uppercase tracking-wider text-foreground-muted">
+              Appeler l’hôte
+            </span>
+            <span className="block text-sm font-semibold tabular-nums text-foreground">
+              {proprietaire.telephone}
+            </span>
+          </span>
         </a>
       ) : (
-        <div className="flex items-center gap-3.5 bg-background-alt border border-border/80 rounded-inner p-3.5">
-          <div className="w-9 h-9 rounded-inner bg-background-card border border-border flex items-center justify-center shrink-0">
-            <Lock className="w-4 h-4 text-foreground-faint" />
-          </div>
-          <div className="flex-1 min-w-0">
-            <p className="text-xs font-bold text-forest-950">Numéro masqué</p>
-            <p className="text-[10px] text-foreground-muted mt-0.5 leading-relaxed">
-              {['CANCELLED', 'COMPLETED', 'EXPIRED'].includes(statut)
+        <div className="flex items-center gap-3.5 rounded-inner border border-border bg-background-alt p-3.5">
+          <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-inner border border-border bg-background-card">
+            <Lock className="h-4 w-4 text-foreground-muted" aria-hidden="true" />
+          </span>
+          <div className="min-w-0 flex-1">
+            <p className="text-xs font-semibold text-foreground">Numéro masqué</p>
+            <p className="mt-0.5 text-xs leading-relaxed text-foreground-muted">
+              {STATUTS_CLOS.includes(statut)
                 ? 'Non disponible pour cette réservation'
-                : 'Visible 24h avant votre arrivée'}
+                : 'Visible 24 h avant votre arrivée'}
             </p>
           </div>
-          <Phone className="w-4 h-4 text-foreground-faint shrink-0" />
+          <Phone className="h-4 w-4 shrink-0 text-foreground-muted" aria-hidden="true" />
         </div>
       )}
-    </div>
+    </section>
   );
 }

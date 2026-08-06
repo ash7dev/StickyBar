@@ -24,6 +24,13 @@ export const STEPS = [
 
 export type StepId = (typeof STEPS)[number]['id'];
 
+export interface VideoItem {
+  file?: File;
+  previewUrl: string;
+  name?: string;
+  duration?: number;
+}
+
 // ── Store shape ──────────────────────────────────────────────────────────────
 
 interface ListingFormState {
@@ -42,6 +49,7 @@ interface ListingFormState {
   tarifsPersonnes: TarifPersonnes[];
   tarifsNuits: TarifNuits[];
   photos: StepPhotosInput;
+  video: VideoItem | null;
 
   // Actions — navigation
   setStep: (step: number) => void;
@@ -69,6 +77,7 @@ interface ListingFormState {
   updatePhoto: (index: number, patch: Partial<PhotoItem>) => void;
   reorderPhotos: (fromIndex: number, toIndex: number) => void;
   setPrincipalPhoto: (index: number) => void;
+  setVideo: (video: VideoItem | null) => void;
 
   // Hydrate from existing listing (for edit mode)
   hydrate: (listing: ListingDetail) => void;
@@ -98,6 +107,7 @@ export const useListingFormStore = create<ListingFormState>((set, get) => ({
   tarifsPersonnes: [],
   tarifsNuits: [],
   photos: DEFAULT_PHOTOS,
+  video: null,
 
   // Navigation
   setStep: (step) => set({ currentStep: Math.max(0, Math.min(step, STEPS.length - 1)) }),
@@ -184,6 +194,7 @@ export const useListingFormStore = create<ListingFormState>((set, get) => ({
         photos: s.photos.photos.map((p, i) => ({ ...p, estPrincipale: i === index })),
       },
     })),
+  setVideo: (video) => set({ video }),
 
   // Hydrate store from an existing listing (edit mode)
   hydrate: (listing) =>
@@ -230,6 +241,7 @@ export const useListingFormStore = create<ListingFormState>((set, get) => ({
           position: p.position,
         })),
       },
+      video: listing.videoUrl ? { previewUrl: listing.videoUrl } : null,
     }),
 
   // Reset
@@ -246,5 +258,6 @@ export const useListingFormStore = create<ListingFormState>((set, get) => ({
       tarifsPersonnes: [],
       tarifsNuits: [],
       photos: DEFAULT_PHOTOS,
+      video: null,
     }),
 }));

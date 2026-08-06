@@ -86,6 +86,7 @@ export class LogementsService {
       ...((dto as any).quartier && { quartier: { contains: (dto as any).quartier, mode: 'insensitive' } }),
       ...(((dto as any).derniereMinuteOnly || (dto as any).derniereMinute) && { derniereMinuteActive: true }),
       ...(dto.type && { type: dto.type }),
+      ...(dto.sousType && { sousType: { contains: dto.sousType, mode: 'insensitive' } }),
       ...(dto.prixMax !== undefined && { prixBase: { lte: dto.prixMax } }),
       ...(withDates && {
         reservations: {

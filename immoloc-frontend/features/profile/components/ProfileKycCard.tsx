@@ -1,6 +1,10 @@
 'use client';
 
-import { ShieldCheck, ShieldAlert, ShieldX, Clock, RefreshCw, ArrowRight, Shield } from 'lucide-react';
+import {
+  ShieldCheck, ShieldAlert, ShieldX, Clock, RefreshCw, ArrowRight,
+  Shield, Check, X,
+} from 'lucide-react';
+import { cn } from '@/lib/utils/cn';
 import type { UserProfile, StatutKyc } from '../types';
 import { KYC_CONFIG } from '../types';
 
@@ -9,125 +13,228 @@ interface Props {
   onKycClick?: () => void;
 }
 
-const KYC_ICONS: Record<StatutKyc, React.ComponentType<{ className?: string }>> = {
-  NON_VERIFIE:  ShieldAlert,
-  EN_ATTENTE:   Clock,
-  VERIFIE:      ShieldCheck,
-  REJETE:       ShieldX,
-  A_RENOUVELER: RefreshCw,
-  SUSPENDU:     ShieldX,
+/* ─── Tonalité par statut ─────────────────────────────────────────────────
+   L'ancienne version peignait tout en vert et lime quel que soit l'état :
+   un KYC rejeté affichait un badge vert pulsant et un bouclier lime. */
+
+type Tone = 'neutral' | 'gold' | 'warning' | 'error';
+
+const KYC_TONE: Record<StatutKyc, Tone> = {
+  NON_VERIFIE: 'neutral',
+  EN_ATTENTE: 'warning',
+  VERIFIE: 'gold',
+  REJETE: 'error',
+  A_RENOUVELER: 'warning',
+  SUSPENDU: 'error',
 };
 
-const KYC_STEPS = [
-  { label: 'Soumission',   statuts: ['EN_ATTENTE', 'VERIFIE', 'REJETE', 'A_RENOUVELER', 'SUSPENDU'] },
-  { label: 'Vérification', statuts: ['VERIFIE', 'REJETE', 'A_RENOUVELER', 'SUSPENDU'] },
-  { label: 'Validé',       statuts: ['VERIFIE'] },
-];
+const TONE_CLS: Record<Tone, { chip: string; dot: string; marker: string }> = {
+  neutral: {
+    chip: 'border-border bg-background-alt text-foreground-muted',
+    dot: 'bg-forest-400',
+    marker: 'text-on-inverse-muted',
+  },
+  gold: {
+    chip: 'border-gold-200 bg-gold-50 text-gold-700',
+    dot: 'bg-gold-400',
+    marker: 'text-gold-300',
+  },
+  warning: {
+    chip: 'border-warning-500/25 bg-warning-50 text-warning-700',
+    dot: 'bg-warning-500',
+    marker: 'text-warning-500',
+  },
+  error: {
+    chip: 'border-error-500/25 bg-error-50 text-error-700',
+    dot: 'bg-error-500',
+    marker: 'text-error-500',
+  },
+};
+
+const KYC_ICONS: Record<StatutKyc, React.ComponentType<{ className?: string }>> = {
+  NON_VERIFIE: ShieldAlert,
+  EN_ATTENTE: Clock,
+  VERIFIE: ShieldCheck,
+  REJETE: ShieldX,
+  A_RENOUVELER: RefreshCw,
+  SUSPENDU: ShieldX,
+};
+
+/* ─── Progression ─────────────────────────────────────────────────────────
+   Table explicite : chaque statut décrit l'état de ses trois étapes.
+   Impossible qu'un rejet s'affiche comme une étape franchie. */
+
+type StepState = 'pending' | 'current' | 'done' | 'failed';
+
+const STEP_LABELS = ['Soumission', 'Vérification', 'Validation'] as const;
+
+const KYC_PROGRESS: Record<StatutKyc, [StepState, StepState, StepState]> = {
+  NON_VERIFIE: ['current', 'pending', 'pending'],
+  EN_ATTENTE: ['done', 'current', 'pending'],
+  VERIFIE: ['done', 'done', 'done'],
+  REJETE: ['done', 'failed', 'pending'],
+  A_RENOUVELER: ['done', 'done', 'current'],
+  SUSPENDU: ['done', 'done', 'failed'],
+};
+
+const STEP_CLS: Record<StepState, { circle: string; label: string; line: string }> = {
+  done: {
+    circle: 'border-forest-600 bg-forest-600 text-neutral-0',
+    label: 'text-foreground',
+    line: 'bg-forest-600',
+  },
+  current: {
+    circle: 'border-forest-600 bg-background-card text-forest-700',
+    label: 'text-foreground',
+    line: 'bg-border',
+  },
+  failed: {
+    circle: 'border-error-600 bg-error-600 text-neutral-0',
+    label: 'text-error-700',
+    line: 'bg-border',
+  },
+  pending: {
+    circle: 'border-border bg-background-card text-foreground-muted',
+    label: 'text-foreground-muted',
+    line: 'bg-border',
+  },
+};
 
 export function ProfileKycCard({ user, onKycClick }: Props) {
-  const cfg  = KYC_CONFIG[user.statutKyc];
+  const cfg = KYC_CONFIG[user.statutKyc];
   const Icon = KYC_ICONS[user.statutKyc];
+  const tone = KYC_TONE[user.statutKyc] ?? 'neutral';
+  const t = TONE_CLS[tone];
+  const steps = KYC_PROGRESS[user.statutKyc] ?? KYC_PROGRESS.NON_VERIFIE;
+
+  const doneCount = steps.filter((s) => s === 'done').length;
 
   return (
-    <div className="bg-background-card rounded-card border border-border/80 p-5 space-y-4 shadow-2xs">
-      {/* Header */}
-      <div className="flex items-center justify-between pb-3 border-b border-border/60">
-        <div className="flex items-center gap-3">
-          <div className="w-9 h-9 rounded-inner bg-forest-950 text-lime-400 border border-lime-400/20 flex items-center justify-center shrink-0 shadow-2xs">
-            <Shield className="w-4 h-4 text-lime-400" />
-          </div>
-          <div>
-            <h3 className="font-display text-base font-bold text-forest-950">Vérification KYC</h3>
-            <p className="text-[10px] font-extrabold text-foreground-muted uppercase tracking-wider">Identité & Sécurité</p>
+    <section className="space-y-4 rounded-card border border-border bg-background-card p-5 shadow-sm">
+
+      {/* ── En-tête ──────────────────────────────────────────────────────── */}
+
+      <header className="flex flex-wrap items-center justify-between gap-3 border-b border-border pb-3">
+        <div className="flex min-w-0 items-center gap-3">
+          <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-inner border border-forest-100 bg-forest-50 text-forest-700">
+            <Shield className="h-4 w-4" aria-hidden="true" />
+          </span>
+          <div className="min-w-0">
+            <h2 className="font-display text-base font-semibold text-foreground">
+              Vérification d’identité
+            </h2>
+            <p className="text-xs text-foreground-muted">Sécurité du compte</p>
           </div>
         </div>
 
-        <span className="shrink-0 inline-flex items-center gap-1.5 px-3 py-1 rounded-pill border text-[11px] font-extrabold bg-forest-50 text-forest-800 border-forest-100">
-          <span className="w-1.5 h-1.5 rounded-full bg-forest-600 animate-pulse" />
-          <span>{cfg.label}</span>
+        <span className={cn(
+          'inline-flex shrink-0 items-center gap-1.5 rounded-pill border px-3 py-1 text-xs font-semibold',
+          t.chip,
+        )}>
+          <span
+            aria-hidden="true"
+            className={cn('h-1.5 w-1.5 rounded-pill', t.dot, user.statutKyc === 'EN_ATTENTE' && 'animate-pulse')}
+          />
+          {cfg.label}
         </span>
-      </div>
+      </header>
 
-      <div className="space-y-4">
-        {/* Bloc statut coloré */}
-        <div className="flex items-start gap-3.5 bg-forest-950 text-white rounded-inner p-4 border border-forest-800 shadow-2xs">
-          <div className="w-10 h-10 rounded-inner bg-forest-900 border border-lime-400/20 flex items-center justify-center shrink-0 text-lime-400">
-            <Icon className="w-5 h-5 text-lime-400" />
-          </div>
-          <div className="flex-1 min-w-0 pt-0.5">
-            <p className="font-display text-sm font-bold text-white">{cfg.label}</p>
-            <p className="text-xs text-forest-200 font-medium mt-0.5 leading-relaxed">
+      {/* ── Bloc statut ──────────────────────────────────────────────────── */}
+
+      <div className="section-inverse relative overflow-hidden p-5">
+        <div
+          aria-hidden="true"
+          className="pointer-events-none absolute -top-16 -right-12 h-40 w-40 rounded-pill bg-forest-700/40 blur-3xl"
+        />
+        <div className="relative flex items-start gap-4">
+          <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-inner border border-border-inverse bg-white/5">
+            <Icon className={cn('h-5 w-5', t.marker)} aria-hidden="true" />
+          </span>
+          <div className="min-w-0 flex-1">
+            <p className="font-display text-base font-semibold text-on-inverse-display">
+              {cfg.label}
+            </p>
+            <p className="mt-1 text-xs leading-relaxed text-on-inverse-muted">
               {cfg.description}
             </p>
           </div>
         </div>
-
-        {/* Étapes de progression */}
-        <div className="bg-background-alt p-3.5 rounded-inner border border-border/80 space-y-2">
-          <p className="text-[10px] font-extrabold text-foreground-muted uppercase tracking-wider">Progression de vérification</p>
-          <div className="flex items-center gap-0 pt-1">
-            {KYC_STEPS.map((step, i) => {
-              const done     = step.statuts.includes(user.statutKyc);
-              const isLast   = i === KYC_STEPS.length - 1;
-              const isCurrent = !done && (i === 0
-                ? !KYC_STEPS[0].statuts.includes(user.statutKyc)
-                : KYC_STEPS[i - 1].statuts.includes(user.statutKyc) && !done);
-
-              return (
-                <div key={step.label} className="flex items-center flex-1">
-                  <div className="flex flex-col items-center gap-1">
-                    <div className={`w-7 h-7 rounded-full flex items-center justify-center border-2 transition-all ${
-                      done
-                        ? 'bg-forest-900 border-lime-400 text-lime-400 shadow-2xs'
-                        : isCurrent
-                          ? 'bg-forest-950 border-lime-400 text-lime-400'
-                          : 'bg-background-card border-border text-foreground-faint'
-                    }`}>
-                      {done ? (
-                        <ShieldCheck className="w-3.5 h-3.5 text-lime-400" />
-                      ) : isCurrent ? (
-                        <span className="w-2 h-2 rounded-full bg-lime-400 animate-pulse" />
-                      ) : (
-                        <span className="w-2 h-2 rounded-full bg-border" />
-                      )}
-                    </div>
-                    <span className={`text-[9px] font-bold uppercase tracking-wider whitespace-nowrap ${
-                      done ? 'text-forest-950' : isCurrent ? 'text-forest-700' : 'text-foreground-faint'
-                    }`}>
-                      {step.label}
-                    </span>
-                  </div>
-                  {!isLast && (
-                    <div className={`flex-1 h-0.5 mb-4 mx-1 ${done ? 'bg-lime-500' : 'bg-border'}`} />
-                  )}
-                </div>
-              );
-            })}
-          </div>
-        </div>
-
-        {/* CTA ou confirmation */}
-        {cfg.cta ? (
-          <button
-            onClick={onKycClick}
-            className="w-full inline-flex items-center justify-center gap-2 px-6 py-3 rounded-pill bg-lime-400 hover:bg-lime-300 text-forest-950 font-extrabold text-xs shadow-md transition-all active:scale-95"
-          >
-            <Icon className="w-4 h-4 text-forest-950" />
-            <span>{cfg.cta}</span>
-            <ArrowRight className="w-4 h-4 text-forest-950 ml-auto" />
-          </button>
-        ) : user.statutKyc === 'VERIFIE' ? (
-          <div className="flex items-center justify-center gap-2 py-3 rounded-pill bg-forest-50 border border-forest-100 text-forest-800 text-xs font-extrabold">
-            <ShieldCheck className="w-4 h-4 text-forest-600" />
-            <span>Identité confirmée & vérifiée par Klef</span>
-          </div>
-        ) : user.statutKyc === 'EN_ATTENTE' ? (
-          <div className="flex items-center justify-center gap-2 py-3 rounded-pill bg-warning-50 border border-warning-200 text-warning-800 text-xs font-extrabold">
-            <Clock className="w-4 h-4 text-warning-600 animate-pulse" />
-            <span>Vérification en cours par nos équipes…</span>
-          </div>
-        ) : null}
       </div>
-    </div>
+
+      {/* ── Progression ──────────────────────────────────────────────────── */}
+
+      <div
+        className="space-y-3 rounded-inner border border-border bg-background-alt p-4"
+        role="group"
+        aria-label={`Progression de la vérification : ${doneCount} étape${doneCount > 1 ? 's' : ''} sur 3`}
+      >
+        <p className="text-xs font-semibold uppercase tracking-wider text-foreground-muted">
+          Progression
+        </p>
+
+        <ol className="flex items-start">
+          {STEP_LABELS.map((label, i) => {
+            const state = steps[i];
+            const s = STEP_CLS[state];
+            const isLast = i === STEP_LABELS.length - 1;
+
+            return (
+              <li key={label} className="flex flex-1 items-start">
+                <div className="flex w-full min-w-0 flex-col items-center gap-1.5">
+                  <span className={cn(
+                    'flex h-7 w-7 items-center justify-center rounded-pill border-2 transition-colors',
+                    s.circle,
+                  )}>
+                    {state === 'done' && <Check className="h-3.5 w-3.5" aria-hidden="true" />}
+                    {state === 'failed' && <X className="h-3.5 w-3.5" aria-hidden="true" />}
+                    {state === 'current' && (
+                      <span aria-hidden="true" className="h-2 w-2 rounded-pill bg-forest-600" />
+                    )}
+                    {state === 'pending' && (
+                      <span aria-hidden="true" className="h-2 w-2 rounded-pill bg-border-hover" />
+                    )}
+                  </span>
+                  <span className={cn('text-center text-xs font-semibold', s.label)}>
+                    {label}
+                  </span>
+                </div>
+
+                {!isLast && (
+                  <span
+                    aria-hidden="true"
+                    className={cn('mx-1 mt-3.5 h-0.5 flex-1 rounded-pill', s.line)}
+                  />
+                )}
+              </li>
+            );
+          })}
+        </ol>
+      </div>
+
+      {/* ── Action ───────────────────────────────────────────────────────── */}
+
+      {cfg.cta ? (
+        /* ★ Seul aplat lime de la carte. */
+        <button
+          type="button"
+          onClick={onKycClick}
+          className="inline-flex w-full items-center justify-center gap-2 rounded-pill bg-action px-6 py-3 text-xs font-semibold text-on-action shadow-action transition-[background-color,box-shadow,transform] hover:bg-action-hover hover:shadow-action-hover active:scale-[0.98]"
+        >
+          <Icon className="h-4 w-4" aria-hidden="true" />
+          {cfg.cta}
+          <ArrowRight className="h-4 w-4" aria-hidden="true" />
+        </button>
+      ) : user.statutKyc === 'VERIFIE' ? (
+        <p className="flex items-center justify-center gap-2 rounded-pill border border-gold-200 bg-gold-50 py-3 text-xs font-semibold text-gold-700">
+          <ShieldCheck className="h-4 w-4" aria-hidden="true" />
+          Identité confirmée par Klef
+        </p>
+      ) : user.statutKyc === 'EN_ATTENTE' ? (
+        <p className="flex items-center justify-center gap-2 rounded-pill border border-warning-500/25 bg-warning-50 py-3 text-xs font-semibold text-warning-700">
+          <Clock className="h-4 w-4" aria-hidden="true" />
+          Vérification en cours par nos équipes
+        </p>
+      ) : null}
+    </section>
   );
 }

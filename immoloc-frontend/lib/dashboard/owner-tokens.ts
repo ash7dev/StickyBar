@@ -61,40 +61,43 @@ export interface StatutConfig {
 export const STATUT_CFG: Record<string, StatutConfig> = {
   PENDING: {
     label: 'En attente',
-    bg: 'bg-warning-500/15', text: 'text-warning-500',
-    border: 'border-warning-500/30', dot: 'bg-warning-500',
+    bg: 'bg-amber-500/15', text: 'text-amber-400',
+    border: 'border-amber-500/30', dot: 'bg-amber-500',
   },
   PAID: {
     label: 'Payée',
-    bg: 'bg-success-500/15', text: 'text-success-500',
-    border: 'border-success-500/30', dot: 'bg-success-500',
+    bg: 'bg-emerald-500/15', text: 'text-emerald-400',
+    border: 'border-emerald-500/30', dot: 'bg-emerald-500',
   },
   CONFIRMED: {
     label: 'Confirmée',
-    bg: 'bg-lime-400/15', text: 'text-lime-300',
-    border: 'border-lime-400/30', dot: 'bg-lime-400',
+    bg: 'bg-blue-500/15', text: 'text-blue-400',
+    border: 'border-blue-500/30', dot: 'bg-blue-500',
   },
   CHECKED_IN: {
     label: 'En séjour',
-    bg: 'bg-lime-400/20', text: 'text-lime-300',
-    border: 'border-lime-400/40',
-    // Le point clignotait en boucle. Une animation infinie dans une liste
-    // de cinq lignes tire l'oeil en permanence et coûte du compositing.
-    dot: 'bg-lime-400',
+    bg: 'bg-emerald-500/20', text: 'text-emerald-300',
+    border: 'border-emerald-400/40',
+    dot: 'bg-emerald-400 animate-pulse',
   },
   COMPLETED: {
     label: 'Terminée',
-    bg: 'bg-forest-900', text: 'text-forest-200',
-    border: 'border-forest-800', dot: 'bg-forest-400',
+    bg: 'bg-slate-900/60', text: 'text-slate-300',
+    border: 'border-slate-700', dot: 'bg-slate-400',
   },
   CANCELLED: {
     label: 'Annulée',
-    bg: 'bg-error-500/15', text: 'text-error-500',
-    border: 'border-error-500/30', dot: 'bg-error-500',
+    bg: 'bg-rose-500/15', text: 'text-rose-400',
+    border: 'border-rose-500/30', dot: 'bg-rose-500',
+  },
+  EXPIRED: {
+    label: 'Expirée',
+    bg: 'bg-neutral-800/60', text: 'text-neutral-400',
+    border: 'border-neutral-700', dot: 'bg-neutral-500',
   },
   DISPUTED: {
     label: 'Litige',
-    bg: 'bg-error-500/25', text: 'text-error-500',
+    bg: 'bg-error-500/25', text: 'text-error-400',
     border: 'border-error-500/40', dot: 'bg-error-500',
   },
 };
@@ -207,9 +210,15 @@ export const catRank = (c: string) => {
 // parce que le même token d'opacité ne donne pas le même contraste selon
 // le fond — pas parce qu'on a dupliqué par inadvertance.
 //
-// CONFIRMED et CHECKED_IN étaient tous deux en lime avec texte forest :
-// deux statuts distincts rendus quasi identiques. CHECKED_IN, qui est le
-// seul état « en cours », garde le lime ; CONFIRMED passe en forest.
+// Distinct visual identities:
+// - PENDING: Amber / Yellow
+// - PAID: Emerald / Green
+// - CONFIRMED: Blue
+// - CHECKED_IN: Emerald / Lime vibrant (en séjour)
+// - COMPLETED: Slate / Gray soft
+// - CANCELLED: Rose / Red soft
+// - EXPIRED: Neutral Gray
+// - DISPUTED: Error Red alert
 // ---------------------------------------------------------------------------
 
 export interface StatutConfigLight {
@@ -219,11 +228,12 @@ export interface StatutConfigLight {
 }
 
 export const STATUT_CFG_LIGHT: Record<string, StatutConfigLight> = {
-  PENDING:    { label: 'En attente', cls: 'bg-warning-50 text-warning-700', dot: 'bg-warning-500' },
-  PAID:       { label: 'Payée',      cls: 'bg-success-50 text-success-700', dot: 'bg-success-500' },
-  CONFIRMED:  { label: 'Confirmée',  cls: 'bg-forest-100 text-forest-800',  dot: 'bg-forest-600'  },
-  CHECKED_IN: { label: 'En séjour',  cls: 'bg-lime-100 text-forest-800',    dot: 'bg-lime-600'    },
-  COMPLETED:  { label: 'Terminée',   cls: 'bg-neutral-100 text-foreground-muted', dot: 'bg-neutral-400' },
-  CANCELLED:  { label: 'Annulée',    cls: 'bg-neutral-100 text-foreground-muted', dot: 'bg-neutral-400' },
-  DISPUTED:   { label: 'Litige',     cls: 'bg-error-50 text-error-700',     dot: 'bg-error-500'   },
+  PENDING:    { label: 'En attente',   cls: 'bg-amber-50 text-amber-800 border border-amber-200/80 font-semibold',        dot: 'bg-amber-500' },
+  PAID:       { label: 'Payée',        cls: 'bg-emerald-50 text-emerald-800 border border-emerald-200/80 font-semibold',    dot: 'bg-emerald-500' },
+  CONFIRMED:  { label: 'Confirmée',    cls: 'bg-blue-50 text-blue-800 border border-blue-200/80 font-semibold',          dot: 'bg-blue-600'    },
+  CHECKED_IN: { label: 'En séjour',    cls: 'bg-emerald-100 text-emerald-900 border border-emerald-300 ring-2 ring-emerald-400/30 font-bold', dot: 'bg-emerald-600 animate-pulse' },
+  COMPLETED:  { label: 'Terminée',     cls: 'bg-slate-100 text-slate-700 border border-slate-200/80 font-medium',        dot: 'bg-slate-400' },
+  CANCELLED:  { label: 'Annulée',      cls: 'bg-rose-50 text-rose-700 border border-rose-200/80 font-medium',          dot: 'bg-rose-500' },
+  EXPIRED:    { label: 'Expirée',      cls: 'bg-neutral-100 text-neutral-500 border border-neutral-200/80 font-medium', dot: 'bg-neutral-400' },
+  DISPUTED:   { label: 'Litige',       cls: 'bg-error-50 text-error-800 border border-error-300 font-bold', dot: 'bg-error-600'   },
 };

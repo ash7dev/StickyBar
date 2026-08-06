@@ -1,215 +1,251 @@
 'use client';
 
-import { useEffect, useState } from 'react';
-import { Bell, BellRing, BellOff, Send, Loader2, Smartphone, ShieldCheck, Sparkles, Check } from 'lucide-react';
+import { useCallback, useEffect, useRef, useState } from 'react';
+import { Bell, BellRing, BellOff, Send, Loader2, Check, AlertTriangle } from 'lucide-react';
+import { cn } from '@/lib/utils/cn';
 import {
   checkPushSubscriptionStatus,
   subscribeToPushNotifications,
   sendTestPushNotification,
   type PushStatus,
 } from '@/lib/pwa/push-manager';
-import { cn } from '@/lib/utils/cn';
-
 import { playNotificationChime } from '@/lib/pwa/sound-effects';
 
-interface PushNotificationWidgetProps {
+const TEST_TITLE = 'Klef — notification de test';
+const TEST_BODY = 'Vos notifications fonctionnent sur cet appareil.';
+const TEST_URL = '/explorer';
+
+interface Props {
   userId?: string;
   variant?: 'card' | 'compact';
 }
 
-export function PushNotificationWidget({ userId, variant = 'card' }: PushNotificationWidgetProps) {
+export function PushNotificationWidget({ userId, variant = 'card' }: Props) {
   const [status, setStatus] = useState<PushStatus | null>(null);
   const [loading, setLoading] = useState(false);
   const [testLoading, setTestLoading] = useState(false);
   const [feedback, setFeedback] = useState<{ type: 'success' | 'error'; message: string } | null>(null);
 
-  const refreshStatus = async () => {
+  /* Le composant faisait des setState après démontage : `refreshStatus` et
+     les deux handlers sont asynchrones et ne vérifiaient rien au retour. */
+  const mounted = useRef(true);
+  useEffect(() => {
+    mounted.current = true;
+    return () => { mounted.current = false; };
+  }, []);
+
+  const refreshStatus = useCallback(async () => {
     const s = await checkPushSubscriptionStatus();
-    setStatus(s);
-  };
+    if (mounted.current) setStatus(s);
+  }, []);
 
   useEffect(() => {
     refreshStatus();
 
-    // Écouter les messages du Service Worker pour jouer le son de notification
-    const handleServiceWorkerMessage = (event: MessageEvent) => {
-      if (event.data && event.data.type === 'PLAY_NOTIFICATION_SOUND') {
-        playNotificationChime();
-      }
+    if (typeof window === 'undefined' || !('serviceWorker' in navigator)) return;
+
+    const onMessage = (event: MessageEvent) => {
+      if (event.data?.type === 'PLAY_NOTIFICATION_SOUND') playNotificationChime();
     };
+    navigator.serviceWorker.addEventListener('message', onMessage);
+    return () => navigator.serviceWorker.removeEventListener('message', onMessage);
+  }, [refreshStatus]);
 
-    if (typeof window !== 'undefined' && 'serviceWorker' in navigator) {
-      navigator.serviceWorker.addEventListener('message', handleServiceWorkerMessage);
-    }
+  /* Le message restait affiché indéfiniment, y compris après changement d'état. */
+  useEffect(() => {
+    if (!feedback) return;
+    const timer = setTimeout(() => setFeedback(null), 8_000);
+    return () => clearTimeout(timer);
+  }, [feedback]);
 
-    return () => {
-      if (typeof window !== 'undefined' && 'serviceWorker' in navigator) {
-        navigator.serviceWorker.removeEventListener('message', handleServiceWorkerMessage);
-      }
-    };
-  }, []);
-
-  const handleEnablePush = async () => {
+  const handleEnablePush = useCallback(async () => {
     setLoading(true);
     setFeedback(null);
-
     const result = await subscribeToPushNotifications(userId);
+    if (!mounted.current) return;
     setLoading(false);
 
     if (result.success) {
-      setFeedback({
-        type: 'success',
-        message: 'Notifications Push activées avec succès !',
-      });
+      setFeedback({ type: 'success', message: 'Notifications activées sur cet appareil.' });
       await refreshStatus();
     } else {
       setFeedback({
         type: 'error',
-        message: result.error || 'Erreur lors de l\'activation des notifications Push.',
+        message: result.error || 'L’activation n’a pas abouti. Vérifiez les autorisations du navigateur.',
       });
     }
-  };
+  }, [userId, refreshStatus]);
 
-  const handleSendTestNotification = async () => {
+  const handleSendTest = useCallback(async () => {
     setTestLoading(true);
     setFeedback(null);
 
-    let result = await sendTestPushNotification(
-      'Klef - Notification Test Instantanée 🚀',
-      'Votre système de notifications Push Web PWA fonctionne parfaitement en temps réel !',
-      '/explorer'
-    );
+    let result = await sendTestPushNotification(TEST_TITLE, TEST_BODY, TEST_URL);
 
-    // Si aucun appareil trouvé en base, on re-subscribe automatiquement puis on retente
+    /* Réabonnement automatique si l'appareil n'est plus en base.
+       ⚠️ Le test portait sur `message?.includes('Aucun appareil')` : toute
+       reformulation du message serveur cassait silencieusement ce repli.
+       À remplacer par un code d'erreur stable côté API. */
     if (!result.success && result.message?.includes('Aucun appareil')) {
-      const resubResult = await subscribeToPushNotifications(userId);
-      if (resubResult.success) {
-        result = await sendTestPushNotification(
-          'Klef - Notification Test Instantanée 🚀',
-          'Votre système de notifications Push Web PWA fonctionne parfaitement en temps réel !',
-          '/explorer'
-        );
+      const resub = await subscribeToPushNotifications(userId);
+      if (resub.success) {
+        await refreshStatus();
+        result = await sendTestPushNotification(TEST_TITLE, TEST_BODY, TEST_URL);
       }
     }
 
+    if (!mounted.current) return;
     setTestLoading(false);
 
     if (result.success) {
       playNotificationChime();
-      setFeedback({
-        type: 'success',
-        message: 'Notification de test envoyée ! Regardez le haut de votre écran et écoutez le son.',
-      });
+      setFeedback({ type: 'success', message: 'Notification envoyée. Vérifiez le haut de votre écran.' });
     } else {
       setFeedback({
         type: 'error',
-        message: result.message || 'Impossible d\'envoyer la notification de test.',
+        message: result.message || 'L’envoi de la notification de test a échoué.',
       });
     }
-  };
+  }, [userId, refreshStatus]);
 
+  /* `if (!status) return null` masquait le widget pendant tout le temps de la
+     vérification, sans rien annoncer. On réserve la place. */
   if (!status) {
-    return null;
+    return variant === 'compact' ? (
+      <div className="h-8 w-36 animate-pulse rounded-pill bg-border" aria-hidden="true" />
+    ) : (
+      <div
+        aria-busy="true"
+        className="h-28 animate-pulse rounded-card border border-border bg-background-alt"
+      >
+        <span className="sr-only">Vérification des notifications…</span>
+      </div>
+    );
   }
 
   if (!status.isSupported) {
     return (
-      <div className="p-4 rounded-2xl bg-neutral-100 border border-neutral-200 text-xs font-semibold text-neutral-600 flex items-center gap-2">
-        <BellOff className="w-4 h-4 text-neutral-400" />
-        <span>Les notifications Push Web ne sont pas supportées par votre navigateur.</span>
+      <div className="flex items-center gap-2 rounded-inner border border-border bg-background-alt p-4 text-xs text-foreground-muted">
+        <BellOff className="h-4 w-4 shrink-0" aria-hidden="true" />
+        Les notifications ne sont pas prises en charge par ce navigateur.
       </div>
     );
   }
+
+  /* ── Variante compacte ─────────────────────────────────────────────────── */
 
   if (variant === 'compact') {
-    return (
-      <div className="flex items-center gap-2">
-        {status.isSubscribed ? (
-          <button
-            onClick={handleSendTestNotification}
-            disabled={testLoading}
-            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-forest-900 text-lime-300 font-extrabold text-xs shadow-xs hover:bg-forest-950 active:scale-95 transition-all"
-          >
-            {testLoading ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Send className="w-3.5 h-3.5" />}
-            <span>Tester Push PWA</span>
-          </button>
-        ) : (
-          <button
-            onClick={handleEnablePush}
-            disabled={loading}
-            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-lime-400 text-forest-950 font-black text-xs shadow-xs hover:bg-lime-300 active:scale-95 transition-all"
-          >
-            {loading ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Bell className="w-3.5 h-3.5" />}
-            <span>Activer Push</span>
-          </button>
-        )}
-      </div>
+    return status.isSubscribed ? (
+      <button
+        type="button"
+        onClick={handleSendTest}
+        disabled={testLoading}
+        className="inline-flex items-center gap-1.5 rounded-pill border border-border bg-background-card px-3 py-1.5 text-xs font-semibold text-foreground transition-colors hover:border-border-hover hover:bg-background-alt disabled:opacity-50"
+      >
+        {testLoading
+          ? <Loader2 className="h-3.5 w-3.5 animate-spin" aria-hidden="true" />
+          : <Send className="h-3.5 w-3.5" aria-hidden="true" />}
+        Tester
+      </button>
+    ) : (
+      /* ★ Seul aplat lime : l'activation, l'action attendue. */
+      <button
+        type="button"
+        onClick={handleEnablePush}
+        disabled={loading}
+        className="inline-flex items-center gap-1.5 rounded-pill bg-action px-3 py-1.5 text-xs font-semibold text-on-action shadow-action transition-[background-color,transform] hover:bg-action-hover active:scale-[0.98] disabled:opacity-50"
+      >
+        {loading
+          ? <Loader2 className="h-3.5 w-3.5 animate-spin" aria-hidden="true" />
+          : <Bell className="h-3.5 w-3.5" aria-hidden="true" />}
+        Activer
+      </button>
     );
   }
 
+  /* ── Variante carte ────────────────────────────────────────────────────── */
+
   return (
-    <div className="rounded-[24px] border border-border bg-background-card p-5 sm:p-6 shadow-sm relative overflow-hidden">
-      {/* Halo décoratif vert forêt / lime */}
-      <div className="absolute -top-10 -right-10 w-36 h-36 rounded-full bg-lime-400/15 blur-2xl pointer-events-none" />
+    <section className="rounded-card border border-border bg-background-card p-5 shadow-sm sm:p-6">
+      <div className="flex flex-col justify-between gap-4 sm:flex-row sm:items-center">
 
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-        <div className="flex items-start gap-3.5">
-          <div className={cn(
-            'w-12 h-12 rounded-2xl flex items-center justify-center shrink-0 shadow-xs',
-            status.isSubscribed ? 'bg-forest-900 text-lime-300' : 'bg-lime-100 text-forest-900'
+        <div className="flex min-w-0 items-start gap-3.5">
+          <span className={cn(
+            'flex h-12 w-12 shrink-0 items-center justify-center rounded-inner border',
+            status.isSubscribed
+              ? 'border-forest-100 bg-forest-50 text-forest-700'
+              : 'border-border bg-background-alt text-foreground-muted',
           )}>
-            {status.isSubscribed ? <BellRing className="w-6 h-6" /> : <Bell className="w-6 h-6" />}
-          </div>
+            {status.isSubscribed
+              ? <BellRing className="h-5 w-5" aria-hidden="true" />
+              : <Bell className="h-5 w-5" aria-hidden="true" />}
+          </span>
 
-          <div>
-            <div className="flex items-center gap-2">
-              <h3 className="font-display text-base font-bold text-foreground">Notifications Push Web PWA</h3>
+          <div className="min-w-0">
+            <div className="flex flex-wrap items-center gap-2">
+              <h3 className="font-display text-base font-semibold text-foreground">
+                Notifications
+              </h3>
               {status.isSubscribed && (
-                <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-lime-400 text-forest-950 text-[10px] font-black uppercase tracking-wider">
-                  <Check className="w-3 h-3" /> Activées
+                <span className="inline-flex items-center gap-1 rounded-pill border border-gold-200 bg-gold-50 px-2.5 py-0.5 text-xs font-semibold text-gold-700">
+                  <Check className="h-3 w-3" aria-hidden="true" />
+                  Activées
                 </span>
               )}
             </div>
-            <p className="text-xs text-foreground-muted mt-1 leading-relaxed">
-              Recevez les confirmations de réservation, messages et rappels en temps réel sur cet appareil (Mac, PC, Android, iPhone).
+            <p className="mt-1 text-xs leading-relaxed text-foreground-muted">
+              Recevez les confirmations de réservation, les messages et les rappels en temps réel
+              sur cet appareil.
             </p>
           </div>
         </div>
 
-        {/* Actions */}
-        <div className="flex flex-wrap items-center gap-2 sm:shrink-0">
-          {!status.isSubscribed ? (
+        <div className="sm:shrink-0">
+          {status.isSubscribed ? (
             <button
-              onClick={handleEnablePush}
-              disabled={loading}
-              className="w-full sm:w-auto px-5 py-2.5 rounded-xl bg-forest-900 text-lime-300 hover:bg-forest-950 font-extrabold text-xs shadow-md active:scale-95 transition-all flex items-center justify-center gap-2"
+              type="button"
+              onClick={handleSendTest}
+              disabled={testLoading}
+              className="flex w-full items-center justify-center gap-2 rounded-pill border border-border bg-background-card px-5 py-2.5 text-xs font-semibold text-foreground transition-colors hover:border-border-hover hover:bg-background-alt disabled:opacity-50 sm:w-auto"
             >
-              {loading ? <Loader2 className="w-4 h-4 animate-spin text-lime-300" /> : <Bell className="w-4 h-4 text-lime-300" />}
-              <span>Activer les notifications Push</span>
+              {testLoading
+                ? <Loader2 className="h-4 w-4 animate-spin" aria-hidden="true" />
+                : <Send className="h-4 w-4" aria-hidden="true" />}
+              Envoyer un test
             </button>
           ) : (
+            /* ★ Seul aplat lime de la carte. */
             <button
-              onClick={handleSendTestNotification}
-              disabled={testLoading}
-              className="w-full sm:w-auto px-5 py-2.5 rounded-xl bg-lime-400 text-forest-950 hover:bg-lime-300 font-black text-xs shadow-md active:scale-95 transition-all flex items-center justify-center gap-2"
+              type="button"
+              onClick={handleEnablePush}
+              disabled={loading}
+              className="flex w-full items-center justify-center gap-2 rounded-pill bg-action px-5 py-2.5 text-xs font-semibold text-on-action shadow-action transition-[background-color,box-shadow,transform] hover:bg-action-hover hover:shadow-action-hover active:scale-[0.98] disabled:opacity-50 sm:w-auto"
             >
-              {testLoading ? <Loader2 className="w-4 h-4 animate-spin text-forest-950" /> : <Send className="w-4 h-4 text-forest-950" />}
-              <span>Tester une notification 🚀</span>
+              {loading
+                ? <Loader2 className="h-4 w-4 animate-spin" aria-hidden="true" />
+                : <Bell className="h-4 w-4" aria-hidden="true" />}
+              Activer les notifications
             </button>
           )}
         </div>
       </div>
 
-      {/* Message de retour */}
       {feedback && (
-        <div className={cn(
-          'mt-4 p-3 rounded-xl text-xs font-bold flex items-center gap-2 animate-in fade-in slide-in-from-top-1',
-          feedback.type === 'success' ? 'bg-forest-50 text-forest-900 border border-forest-200' : 'bg-red-50 text-red-700 border border-red-200'
-        )}>
-          <Sparkles className="w-4 h-4 shrink-0" />
+        <div
+          role={feedback.type === 'error' ? 'alert' : 'status'}
+          className={cn(
+            'mt-4 flex items-start gap-2 rounded-inner border p-3 text-xs leading-relaxed',
+            feedback.type === 'success'
+              ? 'border-success-500/25 bg-success-50 text-success-700'
+              : 'border-error-500/20 bg-error-50 text-error-700',
+          )}
+        >
+          {feedback.type === 'success'
+            ? <Check className="mt-0.5 h-4 w-4 shrink-0" aria-hidden="true" />
+            : <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" aria-hidden="true" />}
           <span>{feedback.message}</span>
         </div>
       )}
-    </div>
+    </section>
   );
 }

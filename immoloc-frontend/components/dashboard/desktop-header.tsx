@@ -1,10 +1,10 @@
 'use client';
 
-import { useState, useEffect, useRef, useCallback } from 'react';
+import { useState, useEffect, useMemo, useRef, useCallback } from 'react';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import {
-  Bell, Plus, LogOut, ChevronDown, Settings, ArrowLeftRight, Menu, Search
+  Bell, Plus, LogOut, ChevronDown, Settings, ArrowLeftRight, Menu, Search,
 } from 'lucide-react';
 import { createClient } from '@/lib/supabase/client';
 import { useRoleStore } from '@/stores/role.store';
@@ -20,206 +20,326 @@ const PAGE_TITLES: Array<[string, string]> = [
   ['/dashboard/profil', 'Mon profil'],
   ['/dashboard/parametres', 'Paramètres'],
   ['/dashboard/annonces', 'Mes annonces'],
-  ['/dashboard', "Vue d'ensemble"],
+  ['/dashboard', 'Vue d’ensemble'],
 ];
 
 interface DesktopHeaderProps {
   onMenuToggle: () => void;
+  /** Nombre de notifications non lues. Sans valeur, aucune pastille. */
+  unreadCount?: number;
 }
 
-export function DesktopHeader({ onMenuToggle }: DesktopHeaderProps) {
+export function DesktopHeader({ onMenuToggle, unreadCount = 0 }: DesktopHeaderProps) {
   const pathname = usePathname();
   const router = useRouter();
+
   const clearSession = useRoleStore((s) => s.clearSession);
+  const activeRole = useRoleStore((s) => s.activeRole);
   const { switchRole, isSwitching } = useSwitchRole();
   const { data: user } = useCurrentUser();
-  const [dropdownOpen, setDropdownOpen] = useState(false);
-  const dropdownRef = useRef<HTMLDivElement>(null);
-  const [notifOpen, setNotifOpen] = useState(false);
-  const notifRef = useRef<HTMLDivElement>(null);
+
+  const [menuOpen, setMenuOpen] = useState<'none' | 'notif' | 'account'>('none');
   const [searchValue, setSearchValue] = useState('');
+  const [isMac, setIsMac] = useState(false);
+
+  const notifRef = useRef<HTMLDivElement>(null);
+  const accountRef = useRef<HTMLDivElement>(null);
   const searchRef = useRef<HTMLInputElement>(null);
-  const supabase = createClient();
 
+  /* `createClient()` était appelé à chaque rendu : un nouveau client Supabase
+     par frappe dans le champ de recherche. */
+  const supabase = useMemo(() => createClient(), []);
+
+  /* Le raccourci affiché doit correspondre à la plateforme : « ⌘K » sur un
+     PC Windows ne dit rien à personne. */
   useEffect(() => {
-    function handleClickOutside(e: MouseEvent) {
-      if (dropdownRef.current && !dropdownRef.current.contains(e.target as Node)) {
-        setDropdownOpen(false);
-      }
-      if (notifRef.current && !notifRef.current.contains(e.target as Node)) {
-        setNotifOpen(false);
-      }
-    }
-    document.addEventListener('mousedown', handleClickOutside);
-    return () => document.removeEventListener('mousedown', handleClickOutside);
+    setIsMac(/Mac|iPhone|iPad/.test(navigator.platform || navigator.userAgent));
   }, []);
 
-  // ⌘K / Ctrl+K → focus the search bar
-  const handleGlobalKeydown = useCallback((e: KeyboardEvent) => {
-    if ((e.metaKey || e.ctrlKey) && e.key === 'k') {
-      e.preventDefault();
-      searchRef.current?.focus();
-    }
-  }, []);
+  /* ── Fermeture des menus ─────────────────────────────────────────────── */
 
   useEffect(() => {
-    document.addEventListener('keydown', handleGlobalKeydown);
-    return () => document.removeEventListener('keydown', handleGlobalKeydown);
-  }, [handleGlobalKeydown]);
+    if (menuOpen === 'none') return;
 
-  function handleSearchSubmit(e: React.FormEvent) {
+    const onPointerDown = (e: PointerEvent) => {
+      const target = e.target as Node;
+      const ref = menuOpen === 'notif' ? notifRef : accountRef;
+      if (ref.current && !ref.current.contains(target)) setMenuOpen('none');
+    };
+    const onKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') setMenuOpen('none');
+    };
+
+    document.addEventListener('pointerdown', onPointerDown);
+    document.addEventListener('keydown', onKeyDown);
+    return () => {
+      document.removeEventListener('pointerdown', onPointerDown);
+      document.removeEventListener('keydown', onKeyDown);
+    };
+  }, [menuOpen]);
+
+  /* Les menus restaient ouverts après une navigation. */
+  useEffect(() => setMenuOpen('none'), [pathname]);
+
+  /* ── Raccourci de recherche ──────────────────────────────────────────── */
+
+  useEffect(() => {
+    const onKeyDown = (e: KeyboardEvent) => {
+      if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'k') {
+        e.preventDefault();
+        searchRef.current?.focus();
+      }
+    };
+    document.addEventListener('keydown', onKeyDown);
+    return () => document.removeEventListener('keydown', onKeyDown);
+  }, []);
+
+  const handleSearchSubmit = useCallback((e: React.FormEvent) => {
     e.preventDefault();
     const q = searchValue.trim();
     if (!q) return;
     router.push(`/dashboard/reservations?q=${encodeURIComponent(q)}`);
     searchRef.current?.blur();
-  }
+  }, [searchValue, router]);
 
-  async function handleLogout() {
-    setDropdownOpen(false);
-    clearSession();
-    await supabase.auth.signOut();
-    window.location.href = '/';
-  }
+  /* ── Déconnexion ─────────────────────────────────────────────────────── */
 
-  const title = PAGE_TITLES.find(([key]) => pathname === key || pathname.startsWith(key + '/'))?.[1] ?? 'Dashboard';
-  const prenom = user?.prenom;
-  const nom = user?.nom;
-  const initials = prenom ? prenom[0].toUpperCase() : (user?.email?.[0]?.toUpperCase() ?? '?');
+  const handleLogout = useCallback(async () => {
+    setMenuOpen('none');
+    try {
+      await supabase.auth.signOut();
+    } catch {
+      /* Même si l'appel échoue, on vide la session locale et on sort :
+         l'ordre inverse laissait l'utilisateur bloqué sur le dashboard avec
+         une session locale déjà effacée. */
+    } finally {
+      clearSession();
+      window.location.href = '/';
+    }
+  }, [supabase, clearSession]);
 
-  const fullName = prenom && nom ? `${prenom} ${nom}` : (prenom || title);
-  const greeting = prenom ? `Bonjour, ${fullName}` : title;
+  /* ── Dérivés ─────────────────────────────────────────────────────────── */
+
+  const title =
+    PAGE_TITLES.find(([key]) => pathname === key || pathname.startsWith(`${key}/`))?.[1]
+    ?? 'Dashboard';
+
+  const prenom = user?.prenom?.trim();
+  const nom = user?.nom?.trim();
+  const initials =
+    (prenom?.[0] ?? user?.email?.[0] ?? '?').toUpperCase();
+
+  const roleCible = activeRole === 'PROPRIETAIRE' ? 'LOCATAIRE' : 'PROPRIETAIRE';
+  const roleLabel = roleCible === 'LOCATAIRE' ? 'Passer en mode locataire' : 'Passer en mode propriétaire';
 
   return (
-    <header className="sticky top-0 z-40 bg-background-card/95 backdrop-blur-md border-b border-border/80 text-forest-950 shadow-sm">
-      <div className="px-5 sm:px-8 py-4.5">
+    <header className="sticky top-0 z-40 border-b border-border bg-background-card/95 text-foreground backdrop-blur-md">
+      <div className="px-5 py-4 sm:px-8">
         <div className="flex items-center justify-between gap-4">
 
-          {/* Gauche : Bouton Hamburger Mobile + Titre */}
-          <div className="flex items-center gap-3.5">
+          {/* ── Gauche ───────────────────────────────────────────────────── */}
+
+          <div className="flex min-w-0 items-center gap-3.5">
             <button
+              type="button"
               onClick={onMenuToggle}
               aria-label="Ouvrir le menu"
-              className="lg:hidden p-2.5 rounded-inner bg-background-alt border border-border/80 text-forest-950 hover:bg-background-card transition-all"
+              className="rounded-inner border border-border bg-background-alt p-2.5 text-foreground transition-colors hover:bg-background-card lg:hidden"
             >
-              <Menu className="h-5 w-5 text-forest-950" />
+              <Menu className="h-5 w-5" />
             </button>
 
-            <div>
-              {/* Titre principal */}
-              <h1 className="font-display text-lg sm:text-xl font-extrabold text-forest-950 tracking-tight leading-none">
-                {greeting}
+            {/* Le titre de page redevient le <h1>.
+                L'ancienne version remplaçait entièrement le titre par
+                « Bonjour, Prénom » dès que l'utilisateur était chargé : sur
+                chaque page du dashboard, le seul <h1> disait la même chose et
+                l'utilisateur ne savait plus où il se trouvait. */}
+            <div className="min-w-0">
+              {prenom && (
+                <p className="truncate text-xs text-foreground-muted">
+                  Bonjour {nom ? `${prenom} ${nom}` : prenom}
+                </p>
+              )}
+              <h1 className="truncate font-display text-lg font-semibold leading-tight tracking-tight text-foreground sm:text-xl">
+                {title}
               </h1>
             </div>
           </div>
 
-          {/* Centre : Barre de Recherche Rapide (Desktop) */}
-          <div className="hidden md:flex items-center flex-1 max-w-sm mx-6">
-            <form onSubmit={handleSearchSubmit} className="relative w-full">
-              <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-foreground-muted" />
+          {/* ── Recherche ────────────────────────────────────────────────── */}
+
+          <div className="mx-6 hidden max-w-sm flex-1 items-center md:flex">
+            <form onSubmit={handleSearchSubmit} role="search" className="relative w-full">
+              <label htmlFor="dashboard-search" className="sr-only">
+                Rechercher une réservation ou un bien
+              </label>
+              <Search
+                className="pointer-events-none absolute top-1/2 left-3.5 h-4 w-4 -translate-y-1/2 text-foreground-muted"
+                aria-hidden="true"
+              />
               <input
+                id="dashboard-search"
                 ref={searchRef}
-                type="search"
+                type="text"
                 value={searchValue}
                 onChange={(e) => setSearchValue(e.target.value)}
-                placeholder="Rechercher une réservation, un bien..."
-                className="w-full h-10 pl-10 pr-9 bg-background-alt border border-border/80 rounded-pill text-xs font-semibold text-forest-950 placeholder:text-foreground-faint focus:outline-none focus:border-forest-600/50 transition-all"
+                placeholder="Rechercher une réservation, un bien…"
+                className="h-10 w-full rounded-pill border border-border bg-background-alt pr-14 pl-10 text-sm text-foreground placeholder:text-foreground-faint focus:border-forest-500 focus:outline-none"
               />
-              <kbd className="absolute right-3 top-1/2 -translate-y-1/2 px-1.5 py-0.5 rounded bg-background-card border border-border/80 text-[9px] font-extrabold text-foreground-muted pointer-events-none">
-                ⌘K
+              <kbd
+                aria-hidden="true"
+                className="pointer-events-none absolute top-1/2 right-3 -translate-y-1/2 rounded-pill border border-border bg-background-card px-2 py-0.5 text-xs font-semibold text-foreground-muted"
+              >
+                {isMac ? '⌘K' : 'Ctrl K'}
               </kbd>
             </form>
           </div>
 
-          {/* Droite : Notifications + Créer annonce + Avatar Dropdown */}
-          <div className="flex items-center gap-3">
+          {/* ── Droite ───────────────────────────────────────────────────── */}
 
-            {/* Notification Dropdown */}
+          <div className="flex shrink-0 items-center gap-3">
+
+            {/* Notifications */}
             <div ref={notifRef} className="relative">
               <button
-                onClick={() => setNotifOpen((v) => !v)}
-                className="relative flex items-center justify-center w-10 h-10 rounded-inner bg-background-alt border border-border/80 hover:bg-background-card text-forest-950 transition-all"
+                type="button"
+                onClick={() => setMenuOpen((m) => (m === 'notif' ? 'none' : 'notif'))}
+                aria-expanded={menuOpen === 'notif'}
+                aria-haspopup="menu"
+                aria-label={
+                  unreadCount > 0
+                    ? `Notifications, ${unreadCount} non lue${unreadCount > 1 ? 's' : ''}`
+                    : 'Notifications'
+                }
+                className="relative flex h-10 w-10 items-center justify-center rounded-inner border border-border bg-background-alt text-foreground transition-colors hover:bg-background-card"
               >
-                <Bell className="h-4.5 w-4.5 text-forest-950" />
-                <span className="absolute top-2 right-2 w-2 h-2 rounded-full bg-lime-500 animate-pulse" />
+                <Bell className="h-4 w-4" aria-hidden="true" />
+                {/* La pastille était affichée en permanence, juste au-dessus
+                    d'un panneau qui annonçait « aucune notification non lue ».
+                    Elle n'apparaît plus que s'il y en a vraiment. */}
+                {unreadCount > 0 && (
+                  <span
+                    aria-hidden="true"
+                    className="absolute top-1.5 right-1.5 flex h-4 min-w-4 items-center justify-center rounded-pill bg-error-600 px-1 text-[0.625rem] font-semibold text-neutral-0 tabular-nums"
+                  >
+                    {unreadCount > 9 ? '9+' : unreadCount}
+                  </span>
+                )}
               </button>
 
-              {notifOpen && (
-                <div className="absolute right-0 top-full mt-2.5 w-80 rounded-card border border-border/80 bg-background-card shadow-xl overflow-hidden z-50 animate-in fade-in slide-in-from-top-2 duration-200">
-                  <div className="px-4 py-3.5 border-b border-border flex justify-between items-center bg-background-alt">
-                    <p className="font-display text-xs font-bold text-forest-950">Notifications</p>
-                    <button className="text-[10px] font-extrabold text-lime-600 hover:text-lime-700 transition-colors">
-                      Tout marquer lu
-                    </button>
+              {menuOpen === 'notif' && (
+                <div
+                  role="menu"
+                  className="absolute top-full right-0 z-50 mt-2.5 w-80 overflow-hidden rounded-card border border-border bg-background-card shadow-xl"
+                >
+                  <div className="flex items-center justify-between border-b border-border bg-background-alt px-4 py-3.5">
+                    <p className="font-display text-sm font-semibold text-foreground">
+                      Notifications
+                    </p>
+                    {unreadCount > 0 && (
+                      <button
+                        type="button"
+                        className="text-xs font-semibold text-link transition-colors hover:underline"
+                      >
+                        Tout marquer comme lu
+                      </button>
+                    )}
                   </div>
 
-                  <div className="p-6 text-center space-y-2">
-                    <div className="w-10 h-10 rounded-inner bg-forest-950 text-lime-400 border border-lime-400/20 flex items-center justify-center mx-auto">
-                      <Bell className="h-5 w-5 text-lime-400" />
-                    </div>
-                    <p className="font-display text-sm font-bold text-forest-950">Aucune notification non lue</p>
-                    <p className="text-xs text-foreground-muted">Toutes vos alertes apparaîtront ici.</p>
+                  <div className="space-y-2 p-6 text-center">
+                    <span className="mx-auto flex h-10 w-10 items-center justify-center rounded-inner border border-border bg-background-alt">
+                      <Bell className="h-5 w-5 text-foreground-muted" aria-hidden="true" />
+                    </span>
+                    <p className="font-display text-sm font-semibold text-foreground">
+                      Aucune notification
+                    </p>
+                    <p className="text-xs text-foreground-muted">
+                      Vos alertes apparaîtront ici.
+                    </p>
                   </div>
                 </div>
               )}
             </div>
 
-            {/* Bouton Créer une annonce */}
+            {/* ★ Le seul aplat lime du header : l'action de création. */}
             <Link
               href="/dashboard/annonces/nouvelle"
-              className="inline-flex items-center gap-2 h-10 px-4.5 rounded-pill bg-lime-400 hover:bg-lime-300 text-forest-950 text-xs font-extrabold shadow-md transition-all active:scale-95"
+              className="inline-flex h-10 items-center gap-2 rounded-pill bg-action px-4 text-xs font-semibold text-on-action shadow-action transition-[background-color,box-shadow,transform] hover:bg-action-hover hover:shadow-action-hover active:scale-[0.98]"
             >
-              <Plus className="h-4 w-4 text-forest-950" />
+              <Plus className="h-4 w-4" aria-hidden="true" />
               <span className="hidden sm:inline">Créer une annonce</span>
               <span className="sm:hidden">Créer</span>
             </Link>
 
-            {/* Avatar avec dropdown */}
-            <div ref={dropdownRef} className="relative">
+            {/* Compte */}
+            <div ref={accountRef} className="relative">
               <button
-                onClick={() => setDropdownOpen((v) => !v)}
-                className="flex items-center h-10 gap-2.5 pl-1.5 pr-3 rounded-pill bg-background-alt hover:bg-background-card border border-border/80 transition-all"
+                type="button"
+                onClick={() => setMenuOpen((m) => (m === 'account' ? 'none' : 'account'))}
+                aria-expanded={menuOpen === 'account'}
+                aria-haspopup="menu"
+                aria-label="Menu du compte"
+                className="flex h-10 items-center gap-2.5 rounded-pill border border-border bg-background-alt pr-3 pl-1.5 transition-colors hover:bg-background-card"
               >
-                <div className="w-7 h-7 rounded-inner bg-forest-950 text-lime-400 border border-lime-400/20 flex items-center justify-center font-display font-semibold text-xs">
+                <span className="flex h-7 w-7 items-center justify-center rounded-inner bg-forest-800 font-display text-xs font-semibold text-neutral-50">
                   {initials}
-                </div>
-                <ChevronDown className={cn('h-3.5 w-3.5 text-foreground-muted transition-transform', dropdownOpen && 'rotate-180')} />
+                </span>
+                <ChevronDown
+                  className={cn(
+                    'h-3.5 w-3.5 text-foreground-muted transition-transform',
+                    menuOpen === 'account' && 'rotate-180',
+                  )}
+                  aria-hidden="true"
+                />
               </button>
 
-              {dropdownOpen && (
-                <div className="absolute right-0 top-full mt-2.5 w-64 rounded-card border border-border/80 bg-background-card shadow-xl overflow-hidden z-50 animate-in fade-in slide-in-from-top-2 duration-200">
-                  <div className="px-4 py-3.5 border-b border-border bg-background-alt">
-                    <p className="text-[10px] font-extrabold text-foreground-muted uppercase tracking-wider mb-0.5">Connecté en tant que</p>
-                    <p className="text-xs font-bold text-forest-950 truncate">{user?.email}</p>
+              {menuOpen === 'account' && (
+                <div
+                  role="menu"
+                  className="absolute top-full right-0 z-50 mt-2.5 w-64 overflow-hidden rounded-card border border-border bg-background-card shadow-xl"
+                >
+                  <div className="border-b border-border bg-background-alt px-4 py-3.5">
+                    <p className="mb-0.5 text-xs font-semibold uppercase tracking-wider text-foreground-muted">
+                      Connecté en tant que
+                    </p>
+                    <p className="truncate text-xs font-semibold text-foreground">{user?.email}</p>
                   </div>
 
-                  <div className="p-2 space-y-1">
+                  <div className="space-y-1 p-2">
+                    {/* Le bouton proposait toujours « Mode Locataire », même
+                        à un utilisateur déjà en mode locataire. Il bascule
+                        maintenant vers le rôle opposé. */}
                     <button
-                      onClick={() => { setDropdownOpen(false); switchRole('LOCATAIRE'); }}
+                      type="button"
+                      role="menuitem"
+                      onClick={() => { setMenuOpen('none'); switchRole(roleCible); }}
                       disabled={isSwitching}
-                      className="w-full flex items-center gap-3 px-3 py-2.5 text-xs font-bold text-forest-950 hover:bg-background-alt rounded-inner transition-colors disabled:opacity-50"
+                      className="flex w-full items-center gap-3 rounded-inner px-3 py-2.5 text-xs font-semibold text-foreground transition-colors hover:bg-background-alt disabled:opacity-50"
                     >
-                      <ArrowLeftRight className="h-4 w-4 text-lime-600" />
-                      <span>Mode Locataire</span>
+                      <ArrowLeftRight className="h-4 w-4 text-foreground-muted" aria-hidden="true" />
+                      {roleLabel}
                     </button>
 
                     <Link
                       href="/dashboard/parametres"
-                      onClick={() => setDropdownOpen(false)}
-                      className="flex items-center gap-3 px-3 py-2.5 text-xs font-bold text-forest-950 hover:bg-background-alt rounded-inner transition-colors"
+                      role="menuitem"
+                      onClick={() => setMenuOpen('none')}
+                      className="flex items-center gap-3 rounded-inner px-3 py-2.5 text-xs font-semibold text-foreground transition-colors hover:bg-background-alt"
                     >
-                      <Settings className="h-4 w-4 text-foreground-muted" />
-                      <span>Paramètres</span>
+                      <Settings className="h-4 w-4 text-foreground-muted" aria-hidden="true" />
+                      Paramètres
                     </Link>
 
-                    <div className="h-px bg-border/60 my-1" />
+                    <div className="my-1 h-px bg-border" />
 
                     <button
+                      type="button"
+                      role="menuitem"
                       onClick={handleLogout}
-                      className="w-full flex items-center gap-3 px-3 py-2.5 text-xs font-bold text-error-700 hover:bg-error-50 rounded-inner transition-all"
+                      className="flex w-full items-center gap-3 rounded-inner px-3 py-2.5 text-xs font-semibold text-error-700 transition-colors hover:bg-error-50"
                     >
-                      <LogOut className="h-4 w-4 text-error-600" />
-                      <span>Déconnexion</span>
+                      <LogOut className="h-4 w-4 text-error-600" aria-hidden="true" />
+                      Déconnexion
                     </button>
                   </div>
                 </div>

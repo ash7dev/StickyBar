@@ -21,6 +21,8 @@ export interface TenantPriceDisplayProps {
   layout?: 'stacked' | 'inline';
   /** Afficher le badge ⚡ -15% */
   showBadge?: boolean;
+  /** Réserver la hauteur de la ligne de promo pour égaliser la hauteur des cartes (par défaut: true) */
+  reserveSpace?: boolean;
   /** Libellé de période (par défaut: "/ nuit") */
   period?: string;
   /** Classes CSS supplémentaires */
@@ -37,6 +39,7 @@ export function TenantPriceDisplay({
   size = 'md',
   layout = 'stacked',
   showBadge = true,
+  reserveSpace = true,
   period = '/ nuit',
   className,
   textColor,
@@ -60,18 +63,21 @@ export function TenantPriceDisplay({
       final: 'font-display text-base font-semibold tabular-nums tracking-tight',
       period: 'text-[11px] font-normal text-foreground-muted ml-1',
       badge: 'px-1.5 py-0.5 text-[9px] font-bold',
+      topSlotHeight: 'h-4',
     },
     md: {
       original: 'text-xs font-medium text-foreground-muted line-through tabular-nums',
       final: 'font-display text-xl sm:text-2xl font-semibold tabular-nums tracking-tight',
       period: 'text-xs sm:text-sm font-normal text-foreground-muted ml-1',
       badge: 'px-2 py-0.5 text-[10px] font-bold',
+      topSlotHeight: 'h-5',
     },
     lg: {
       original: 'text-sm font-medium text-foreground-muted line-through tabular-nums',
       final: 'font-display text-3xl sm:text-[2.25rem] font-semibold tabular-nums tracking-tight',
       period: 'text-sm font-medium text-foreground-muted ml-1.5',
       badge: 'px-2.5 py-0.5 text-[11px] font-bold',
+      topSlotHeight: 'h-6',
     },
   }[size];
 
@@ -82,11 +88,12 @@ export function TenantPriceDisplay({
   const activeFinalColor = textColor || defaultFinalColor;
 
   return (
-    <div className={cn('flex flex-col min-w-0', className)}>
-      {isDiscounted && (
+    <div className={cn('flex flex-col min-w-0 justify-end', className)}>
+      {isDiscounted ? (
         <div
           className={cn(
             'flex items-center gap-1.5 mb-0.5',
+            sizeStyles.topSlotHeight,
             layout === 'inline' ? 'flex-row' : 'flex-row items-center',
           )}
         >
@@ -105,7 +112,9 @@ export function TenantPriceDisplay({
             </span>
           )}
         </div>
-      )}
+      ) : reserveSpace && layout === 'stacked' ? (
+        <div className={cn('mb-0.5 opacity-0 pointer-events-none aria-hidden', sizeStyles.topSlotHeight)} />
+      ) : null}
 
       <div className="flex items-baseline min-w-0">
         <span className={cn(sizeStyles.final, activeFinalColor)}>

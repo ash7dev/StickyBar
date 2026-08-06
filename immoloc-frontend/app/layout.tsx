@@ -6,6 +6,7 @@ import { ThemeProvider } from '@/providers/theme-provider';
 import { NestSessionSync } from '@/providers/nest-session-sync';
 import { QueryProvider } from '@/providers/query-provider';
 import { PWARegister } from '@/components/pwa-register';
+import { CookieConsentModal } from '@/components/cookies/CookieConsentModal';
 import './globals.css';
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -136,6 +137,8 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
               richColors
               closeButton
             />
+
+            <CookieConsentModal />
           </QueryProvider>
         </ThemeProvider>
       </body>

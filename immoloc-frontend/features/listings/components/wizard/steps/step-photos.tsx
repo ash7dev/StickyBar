@@ -1,17 +1,27 @@
 'use client';
 
-import { useRef, useCallback, useState } from 'react';
+import { useCallback, useEffect, useId, useRef, useState } from 'react';
 import {
-  Camera, Upload, Trash2, Star, AlertCircle, CheckCircle2, ChevronDown, Film,
+  Camera, Upload, Trash2, Star, AlertCircle, CheckCircle2, ChevronDown, Film, X,
 } from 'lucide-react';
 import { useListingFormStore } from '@/stores/listing-form.store';
 import { type PhotoItem } from '@/schemas/listing.schema';
 import { cn } from '@/lib/utils/cn';
 
+const MIN_PHOTOS = 5;
+const MAX_PHOTOS = 10;
+const MAX_VIDEO_SECONDS = 90;
+const MAX_PHOTO_BYTES = 10 * 1024 * 1024;
+const ACCEPTED_IMAGES = ['image/jpeg', 'image/png', 'image/webp'];
+
 const CAT_LABELS: Record<string, string> = {
   SALON: 'Salon', CHAMBRE: 'Chambre', CUISINE: 'Cuisine',
   SALLE_DE_BAIN: 'Salle de bain', TERRASSE: 'Terrasse',
   VUE: 'Vue', ENTREE: 'Entrée', PISCINE: 'Piscine', AUTRE: 'Autre',
+};
+
+const revoke = (url?: string) => {
+  if (url?.startsWith('blob:')) URL.revokeObjectURL(url);
 };
 
 interface Props {
@@ -28,18 +38,22 @@ function SectionCard({
   children: React.ReactNode;
 }) {
   return (
-    <div className="card p-0 overflow-hidden shadow-sm">
-      <div className="flex items-center gap-3.5 px-6 py-4.5 border-b border-border/80 bg-background-alt">
-        <div className="w-10 h-10 rounded-inner bg-forest-950 border border-forest-800 text-lime-400 flex items-center justify-center shrink-0 shadow-xs">
-          <Icon className="w-5 h-5 text-lime-400" />
+    <section className="card overflow-hidden p-0 shadow-sm">
+      <header className="flex items-center gap-3.5 border-b border-border bg-background-alt px-6 py-4">
+        <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-inner border border-forest-100 bg-forest-50 text-forest-700">
+          <Icon className="h-5 w-5" aria-hidden="true" />
+        </span>
+        <div className="min-w-0">
+          <h2 className="font-display text-base font-semibold tracking-tight text-foreground">
+            {title}
+          </h2>
+          {description && (
+            <p className="mt-0.5 text-xs text-foreground-muted">{description}</p>
+          )}
         </div>
-        <div>
-          <p className="font-display text-base font-bold text-foreground tracking-tight">{title}</p>
-          {description && <p className="text-xs text-foreground-muted mt-0.5 font-medium">{description}</p>}
-        </div>
-      </div>
-      <div className="p-6 space-y-6">{children}</div>
-    </div>
+      </header>
+      <div className="space-y-6 p-6">{children}</div>
+    </section>
   );
 }
 
@@ -47,16 +61,36 @@ export function StepPhotos({ onNext, submitRef }: Props) {
   const { photos, addPhoto, removePhoto, updatePhoto, setPrincipalPhoto } = useListingFormStore();
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [hasTriedSubmit, setHasTriedSubmit] = useState(false);
+  const [isDragging, setIsDragging] = useState(false);
+  const [fileError, setFileError] = useState<string | null>(null);
 
   const list = photos.photos;
-  const isComplete = list.length >= 5;
-  const remaining  = 5 - list.length;
+  const isComplete = list.length >= MIN_PHOTOS;
+  const remaining = MIN_PHOTOS - list.length;
+  const slotsLeft = MAX_PHOTOS - list.length;
 
   const handleFiles = useCallback((files: FileList | null) => {
-    if (!files) return;
+    if (!files?.length) return;
+    setFileError(null);
+
+    const incoming = Array.from(files);
+    const rejected: string[] = [];
+
+    /* `accept="image/*"` n'est qu'un filtre de boîte de dialogue : un PDF
+       glissé-déposé passait sans contrôle et produisait une vignette cassée. */
+    const valid = incoming.filter((f) => {
+      if (!ACCEPTED_IMAGES.includes(f.type)) { rejected.push(`${f.name} — format non pris en charge`); return false; }
+      if (f.size > MAX_PHOTO_BYTES) { rejected.push(`${f.name} — dépasse 10 Mo`); return false; }
+      return true;
+    });
+
     const currentTotal = list.length;
-    const canAdd = 10 - currentTotal;
-    Array.from(files).slice(0, canAdd).forEach((file, i) => {
+    const accepted = valid.slice(0, MAX_PHOTOS - currentTotal);
+    if (valid.length > accepted.length) {
+      rejected.push(`${valid.length - accepted.length} photo(s) ignorée(s) — maximum ${MAX_PHOTOS}`);
+    }
+
+    accepted.forEach((file, i) => {
       addPhoto({
         file,
         previewUrl: URL.createObjectURL(file),
@@ -65,19 +99,24 @@ export function StepPhotos({ onNext, submitRef }: Props) {
         position: currentTotal + i,
       });
     });
-    setHasTriedSubmit(false);
+
+    if (rejected.length) setFileError(rejected.join(' · '));
+    if (accepted.length) setHasTriedSubmit(false);
   }, [list.length, addPhoto]);
 
-  function handleDrop(e: React.DragEvent) {
-    e.preventDefault();
-    handleFiles(e.dataTransfer.files);
-  }
+  /* Chaque objectURL non révoqué reste en mémoire jusqu'à la fermeture de
+     l'onglet. Sur un formulaire où l'on essaie et retire des photos, ça
+     s'accumule sans limite. */
+  const handleRemove = useCallback((index: number) => {
+    revoke(list[index]?.previewUrl);
+    removePhoto(index);
+  }, [list, removePhoto]);
 
-  function handleSubmit(e: React.FormEvent) {
+  const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!isComplete) { setHasTriedSubmit(true); return; }
     onNext();
-  }
+  };
 
   const principal = list.find((p) => p.estPrincipale) ?? list[0];
 
@@ -86,129 +125,174 @@ export function StepPhotos({ onNext, submitRef }: Props) {
 
       <SectionCard
         icon={Camera}
-        title={`Galerie Photos (${list.length}/10)`}
-        description="Veuillez importer au minimum 5 photos de haute qualité de votre logement"
+        title="Photos du logement"
+        description={`Entre ${MIN_PHOTOS} et ${MAX_PHOTOS} photos. La première visible est celle qui décide du clic.`}
       >
-        {/* Status bar */}
-        <div className={cn(
-          'flex items-center justify-between p-4 rounded-inner border transition-all duration-300',
-          isComplete
-            ? 'bg-forest-950/5 border-forest-600/30'
-            : hasTriedSubmit
-              ? 'bg-error-50 border-error-500/30'
-              : 'bg-background-alt border-border',
-        )}>
-          <div className="flex items-center gap-3">
-            <div className={cn(
-              'w-10 h-10 rounded-inner flex items-center justify-center transition-all',
-              isComplete ? 'bg-forest-600 text-lime-300' : hasTriedSubmit ? 'bg-error-600 text-white' : 'bg-background-card border border-border text-foreground-muted',
+        {/* ── Progression ──────────────────────────────────────────────── */}
+
+        <div
+          aria-live="polite"
+          className={cn(
+            'flex items-center justify-between gap-4 rounded-inner border p-4',
+            isComplete
+              ? 'border-success-500/25 bg-success-50'
+              : hasTriedSubmit
+                ? 'border-error-500/25 bg-error-50'
+                : 'border-border bg-background-alt',
+          )}
+        >
+          <div className="flex min-w-0 items-center gap-3">
+            <span className={cn(
+              'flex h-10 w-10 shrink-0 items-center justify-center rounded-inner border',
+              isComplete
+                ? 'border-success-500/30 bg-success-50 text-success-600'
+                : hasTriedSubmit
+                  ? 'border-error-500/30 bg-error-50 text-error-600'
+                  : 'border-border bg-background-card text-foreground-muted',
             )}>
-              {isComplete ? <CheckCircle2 className="w-5 h-5" /> : <Camera className="w-5 h-5" />}
-            </div>
-            <div>
-              <p className={cn('text-xs font-bold', isComplete ? 'text-forest-600 font-extrabold' : hasTriedSubmit ? 'text-error-600 font-extrabold' : 'text-foreground')}>
-                {isComplete ? 'Minimum de 5 photos atteint !' : `Encore ${remaining} photo${remaining > 1 ? 's' : ''} requise${remaining > 1 ? 's' : ''}`}
+              {isComplete
+                ? <CheckCircle2 className="h-5 w-5" aria-hidden="true" />
+                : <Camera className="h-5 w-5" aria-hidden="true" />}
+            </span>
+            <div className="min-w-0">
+              <p className={cn(
+                'text-sm font-semibold',
+                isComplete ? 'text-success-700' : hasTriedSubmit ? 'text-error-700' : 'text-foreground',
+              )}>
+                {isComplete
+                  ? 'Minimum atteint'
+                  : `Encore ${remaining} photo${remaining > 1 ? 's' : ''}`}
               </p>
-              <p className="text-[11px] text-foreground-muted font-semibold mt-0.5">{list.length} / 10 photos sélectionnées</p>
+              <p className="mt-0.5 text-xs tabular-nums text-foreground-muted">
+                {list.length} / {MAX_PHOTOS} sélectionnées
+              </p>
             </div>
           </div>
-          {/* Dots */}
-          <div className="flex gap-1">
-            {Array.from({ length: 10 }).map((_, i) => (
-              <div key={i} className={cn(
-                'rounded-pill transition-all duration-500',
-                i < list.length
-                  ? 'w-1.5 h-5 bg-forest-600'
-                  : i < 5 ? (hasTriedSubmit ? 'w-1.5 h-3 bg-error-400' : 'w-1.5 h-3 bg-border') : 'w-1.5 h-2 bg-border/40'
-              )} />
+
+          <div aria-hidden="true" className="flex shrink-0 items-end gap-1">
+            {Array.from({ length: MAX_PHOTOS }).map((_, i) => (
+              <span
+                key={i}
+                className={cn(
+                  'w-1.5 rounded-pill transition-all duration-300',
+                  i < list.length
+                    ? 'h-5 bg-forest-600'
+                    : i < MIN_PHOTOS
+                      ? cn('h-3', hasTriedSubmit ? 'bg-error-500' : 'bg-border-hover')
+                      : 'h-2 bg-border',
+                )}
+              />
             ))}
           </div>
         </div>
 
-        {/* Hero Cover Photo */}
-        {list.length > 0 && principal && (
-          <div className="relative w-full aspect-16/10 sm:aspect-video rounded-inner overflow-hidden border-2 border-gold-400 bg-background-alt shadow-md">
-            <img src={principal.previewUrl} alt="Photo principale" className="w-full h-full object-cover" />
-            <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent" />
-            <div className="absolute top-3 left-3">
-              <div className="badge-verified shadow-md">
-                <Star className="w-3.5 h-3.5 text-gold-600 fill-gold-600" />
-                <span className="font-bold">Photo de couverture</span>
-              </div>
-            </div>
-            <div className="absolute bottom-3 left-3 right-3 flex items-center justify-between">
-              <span className="text-xs font-bold text-lime-300 bg-forest-950/90 px-3 py-1.5 rounded-pill backdrop-blur-sm border border-forest-800">
+        {/* ── Couverture ───────────────────────────────────────────────── */}
+
+        {principal && (
+          <figure className="relative aspect-video w-full overflow-hidden rounded-card border border-gold-300 bg-background-alt">
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src={principal.previewUrl} alt="" className="h-full w-full object-cover" />
+            <figcaption className="absolute inset-x-0 bottom-0 flex items-end justify-between gap-3 bg-gradient-to-t from-forest-950/85 to-transparent p-3 pt-10">
+              <span className="inline-flex items-center gap-1.5 rounded-pill border border-gold-400/30 bg-gold-400/15 px-2.5 py-1 text-xs font-semibold text-gold-300 backdrop-blur-sm">
+                <Star className="h-3.5 w-3.5 fill-gold-400 text-gold-400" aria-hidden="true" />
+                Photo de couverture
+              </span>
+              <span className="rounded-pill border border-white/15 bg-white/10 px-3 py-1 text-xs font-semibold text-neutral-50 backdrop-blur-sm">
                 {CAT_LABELS[principal.categorie] ?? principal.categorie}
               </span>
-            </div>
-          </div>
+            </figcaption>
+          </figure>
         )}
 
-        {/* Grid Photos */}
+        {/* ── Grille ───────────────────────────────────────────────────── */}
+
         {list.length > 0 && (
-          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3.5">
+          <ul className="grid grid-cols-1 gap-3.5 sm:grid-cols-2 md:grid-cols-3">
             {list.map((photo, index) => (
               <PhotoCard
                 key={photo.previewUrl}
                 photo={photo}
                 index={index}
                 isPrincipal={photo.estPrincipale}
-                onRemove={() => removePhoto(index)}
+                onRemove={() => handleRemove(index)}
                 onSetPrincipal={() => setPrincipalPhoto(index)}
-                onCategorieChange={(cat) => updatePhoto(index, { categorie: cat as PhotoItem['categorie'] })}
+                onCategorieChange={(cat) =>
+                  updatePhoto(index, { categorie: cat as PhotoItem['categorie'] })}
               />
             ))}
-          </div>
+          </ul>
         )}
 
-        {/* Drop zone */}
-        {list.length < 10 && (
-          <div
-            onDrop={handleDrop}
-            onDragOver={(e) => e.preventDefault()}
-            onClick={() => fileInputRef.current?.click()}
-            className="flex flex-col items-center justify-center gap-2 py-8 rounded-field border-2 border-dashed border-border bg-background-alt hover:border-forest-600 hover:bg-background-card cursor-pointer transition-all text-center"
-          >
-            <div className="w-10 h-10 rounded-inner bg-forest-950 border border-forest-800 text-lime-400 flex items-center justify-center shadow-xs">
-              <Upload className="w-5 h-5" />
-            </div>
-            <div>
-              <p className="text-xs font-bold text-foreground">
-                {list.length === 0 ? 'Cliquez ou glissez vos photos ici' : 'Ajouter d\'autres photos'}
-              </p>
-              <p className="text-[11px] text-foreground-muted font-medium mt-0.5">
-                Format JPG ou PNG ({10 - list.length} restante{10 - list.length > 1 ? 's' : ''})
-              </p>
-            </div>
+        {/* ── Dépôt ────────────────────────────────────────────────────── */}
+
+        {slotsLeft > 0 && (
+          <div>
+            <button
+              type="button"
+              onClick={() => fileInputRef.current?.click()}
+              onDrop={(e) => { e.preventDefault(); setIsDragging(false); handleFiles(e.dataTransfer.files); }}
+              onDragOver={(e) => { e.preventDefault(); setIsDragging(true); }}
+              onDragLeave={() => setIsDragging(false)}
+              className={cn(
+                'flex w-full flex-col items-center justify-center gap-2 rounded-field border-2 border-dashed py-8 text-center transition-colors',
+                isDragging
+                  ? 'border-forest-600 bg-forest-50'
+                  : 'border-border bg-background-alt hover:border-forest-400 hover:bg-background-card',
+              )}
+            >
+              <span className="flex h-10 w-10 items-center justify-center rounded-inner border border-forest-100 bg-forest-50 text-forest-700">
+                <Upload className="h-5 w-5" aria-hidden="true" />
+              </span>
+              <span className="text-sm font-semibold text-foreground">
+                {list.length === 0 ? 'Cliquez ou déposez vos photos' : 'Ajouter d’autres photos'}
+              </span>
+              <span className="text-xs text-foreground-muted">
+                JPEG, PNG ou WebP · 10 Mo max ·{' '}
+                <span className="tabular-nums">{slotsLeft}</span> emplacement
+                {slotsLeft > 1 ? 's' : ''} restant{slotsLeft > 1 ? 's' : ''}
+              </span>
+            </button>
+
             <input
               ref={fileInputRef}
               type="file"
-              accept="image/*"
+              accept={ACCEPTED_IMAGES.join(',')}
               multiple
-              className="hidden"
-              onChange={(e) => handleFiles(e.target.files)}
+              className="sr-only"
+              onChange={(e) => { handleFiles(e.target.files); e.target.value = ''; }}
             />
           </div>
         )}
 
-        {/* Validation Error */}
-        {!isComplete && (hasTriedSubmit || list.length > 0) && (
-          <div className="flex items-center gap-2.5 p-3.5 bg-error-50 border border-error-500/30 rounded-inner">
-            <AlertCircle className="w-4 h-4 text-error-600 shrink-0" />
-            <p className="text-xs text-error-600 font-bold">
-              {list.length === 0 ? 'Veuillez ajouter au moins 5 photos' : `Il manque encore ${remaining} photo${remaining > 1 ? 's' : ''}`}
+        {/* ── Erreurs ──────────────────────────────────────────────────── */}
+
+        {fileError && (
+          <div role="alert" className="flex items-start gap-2.5 rounded-inner border border-warning-500/25 bg-warning-50 p-3.5">
+            <AlertCircle className="mt-0.5 h-4 w-4 shrink-0 text-warning-600" aria-hidden="true" />
+            <p className="text-xs leading-relaxed text-warning-700">{fileError}</p>
+          </div>
+        )}
+
+        {!isComplete && hasTriedSubmit && (
+          <div role="alert" className="flex items-center gap-2.5 rounded-inner border border-error-500/20 bg-error-50 p-3.5">
+            <AlertCircle className="h-4 w-4 shrink-0 text-error-600" aria-hidden="true" />
+            <p className="text-xs text-error-700">
+              {list.length === 0
+                ? `Ajoutez au moins ${MIN_PHOTOS} photos pour continuer.`
+                : `Il manque ${remaining} photo${remaining > 1 ? 's' : ''}.`}
             </p>
           </div>
         )}
       </SectionCard>
 
-      {/* -- Section Vidéo de présentation (60s MAX) ---------------------- */}
       <VideoUploaderSection />
 
       <button type="submit" ref={submitRef} className="sr-only" aria-hidden="true" />
     </form>
   );
 }
+
+/* ─── Vignette ────────────────────────────────────────────────────────────── */
 
 function PhotoCard({
   photo, index, isPrincipal, onRemove, onSetPrincipal, onCategorieChange,
@@ -221,115 +305,164 @@ function PhotoCard({
   onCategorieChange: (cat: string) => void;
 }) {
   const [showCat, setShowCat] = useState(false);
+  const catId = useId();
 
   return (
-    <div className={cn(
-      'group relative aspect-16/10 sm:aspect-4/3 rounded-inner overflow-hidden border-2 bg-background-alt transition-all shadow-xs flex flex-col justify-end',
-      isPrincipal ? 'border-gold-400 ring-2 ring-gold-400/20 shadow-md' : 'border-border',
+    <li className={cn(
+      'group relative aspect-[4/3] overflow-hidden rounded-inner border-2 bg-background-alt transition-shadow',
+      isPrincipal ? 'border-gold-300 shadow-md' : 'border-border',
     )}>
-      <img src={photo.previewUrl} alt={`Photo ${index + 1}`} className="w-full h-full object-cover" />
+      {/* eslint-disable-next-line @next/next/no-img-element */}
+      <img src={photo.previewUrl} alt={`Photo ${index + 1}`} className="h-full w-full object-cover" />
 
       {isPrincipal && (
-        <div className="absolute top-2.5 left-2.5 badge-verified shadow-md z-10">
-          <Star className="w-3.5 h-3.5 text-gold-600 fill-gold-600" />
-          <span className="font-bold">Couverture</span>
-        </div>
+        <span className="absolute top-2.5 left-2.5 z-10 inline-flex items-center gap-1 rounded-pill border border-gold-200 bg-gold-50 px-2.5 py-0.5 text-xs font-semibold text-gold-700">
+          <Star className="h-3 w-3 fill-gold-400 text-gold-400" aria-hidden="true" />
+          Couverture
+        </span>
       )}
 
-      {/* Action bar overlay (persistent sur mobile, hover sur desktop) */}
-      <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/40 to-transparent sm:opacity-0 sm:group-hover:opacity-100 transition-opacity flex items-end justify-between p-2.5 z-10 gap-2">
-        <div className="flex items-center gap-1.5 flex-wrap">
+      {/* Les actions restent visibles sur mobile : le `group-hover` seul les
+          rendait inatteignables au tactile sur la moitié des écrans. */}
+      <div className="absolute inset-0 z-10 flex items-end justify-between gap-2 bg-gradient-to-t from-forest-950/85 via-forest-950/20 to-transparent p-2.5 transition-opacity sm:opacity-0 sm:group-hover:opacity-100 sm:group-focus-within:opacity-100">
+        <div className="flex min-w-0 flex-wrap items-center gap-1.5">
           {!isPrincipal && (
             <button
               type="button"
               onClick={onSetPrincipal}
-              className="px-3 py-1.5 rounded-pill bg-lime-400 text-forest-950 text-xs font-bold shadow-md cursor-pointer flex items-center gap-1 active:scale-95 transition-transform"
+              className="inline-flex items-center gap-1 rounded-pill border border-white/20 bg-white/15 px-3 py-1.5 text-xs font-semibold text-neutral-50 backdrop-blur-sm transition-colors hover:bg-white/25"
             >
-              <Star className="w-3.5 h-3.5 fill-forest-950 text-forest-950" />
-              <span>Couverture</span>
+              <Star className="h-3.5 w-3.5" aria-hidden="true" />
+              Couverture
             </button>
           )}
 
           <button
             type="button"
             onClick={() => setShowCat((v) => !v)}
-            className="px-2.5 py-1.5 rounded-pill bg-forest-950/90 text-lime-300 text-xs font-semibold flex items-center gap-1 border border-forest-800 cursor-pointer"
+            aria-expanded={showCat}
+            aria-controls={catId}
+            className="inline-flex items-center gap-1 rounded-pill border border-white/20 bg-white/15 px-2.5 py-1.5 text-xs font-semibold text-neutral-50 backdrop-blur-sm transition-colors hover:bg-white/25"
           >
-            <span>{CAT_LABELS[photo.categorie]}</span>
-            <ChevronDown className="w-3.5 h-3.5 text-lime-400" />
+            {CAT_LABELS[photo.categorie]}
+            <ChevronDown className={cn('h-3.5 w-3.5 transition-transform', showCat && 'rotate-180')} aria-hidden="true" />
           </button>
         </div>
 
         <button
           type="button"
           onClick={onRemove}
-          className="w-8 h-8 rounded-full bg-error-600 text-white hover:bg-error-700 cursor-pointer shadow-md flex items-center justify-center shrink-0 active:scale-95 transition-transform ml-auto"
-          title="Supprimer la photo"
+          aria-label={`Supprimer la photo ${index + 1}`}
+          className="flex h-8 w-8 shrink-0 items-center justify-center rounded-pill bg-error-600 text-neutral-0 transition-colors hover:bg-error-700"
         >
-          <Trash2 className="w-4 h-4" />
+          <Trash2 className="h-4 w-4" aria-hidden="true" />
         </button>
       </div>
 
       {showCat && (
-        <div className="absolute inset-0 bg-forest-950/95 p-3 flex flex-col overflow-y-auto z-30 rounded-inner space-y-1">
-          <p className="eyebrow text-lime-300 mb-1 text-[10px]">Catégorie de la photo</p>
-          {Object.entries(CAT_LABELS).map(([key, lbl]) => (
+        <div
+          id={catId}
+          className="absolute inset-0 z-30 flex flex-col overflow-y-auto rounded-inner bg-forest-950/95 p-3"
+        >
+          <div className="mb-2 flex items-center justify-between">
+            <p className="text-xs font-semibold uppercase tracking-wider text-on-inverse-muted">
+              Catégorie
+            </p>
             <button
-              key={key}
               type="button"
-              onClick={() => { onCategorieChange(key); setShowCat(false); }}
-              className={cn(
-                'w-full py-2 px-3 text-xs font-semibold text-left rounded-inner transition-colors cursor-pointer',
-                photo.categorie === key ? 'bg-forest-800 text-lime-300 font-bold' : 'text-on-inverse-muted hover:bg-forest-900',
-              )}
+              onClick={() => setShowCat(false)}
+              aria-label="Fermer"
+              className="flex h-6 w-6 items-center justify-center rounded-pill text-on-inverse-muted hover:text-on-inverse"
             >
-              {lbl}
+              <X className="h-3.5 w-3.5" />
             </button>
-          ))}
+          </div>
+          <div className="space-y-1">
+            {Object.entries(CAT_LABELS).map(([key, lbl]) => (
+              <button
+                key={key}
+                type="button"
+                onClick={() => { onCategorieChange(key); setShowCat(false); }}
+                aria-pressed={photo.categorie === key}
+                className={cn(
+                  'w-full rounded-inner px-3 py-2 text-left text-xs font-semibold transition-colors',
+                  photo.categorie === key
+                    ? 'bg-neutral-50 text-forest-900'
+                    : 'text-on-inverse-muted hover:bg-white/10',
+                )}
+              >
+                {lbl}
+              </button>
+            ))}
+          </div>
         </div>
       )}
-    </div>
+    </li>
   );
 }
 
+/* ─── Vidéo ───────────────────────────────────────────────────────────────── */
+
 function VideoUploaderSection() {
-  const [video, setVideo] = useState<{ url: string; duration?: number; name?: string } | null>(null);
+  const { video, setVideo } = useListingFormStore();
   const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => () => revoke(video?.previewUrl), [video?.previewUrl]);
 
   const handleVideoSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
+    e.target.value = '';
     if (!file) return;
 
     setError(null);
-    const objectUrl = URL.createObjectURL(file);
-    const tempVideo = document.createElement('video');
-    tempVideo.preload = 'metadata';
-    tempVideo.src = objectUrl;
+    revoke(video?.previewUrl);
 
-    const onMeta = () => {
-      const duration = tempVideo.duration;
-      if (!isNaN(duration) && isFinite(duration) && duration > 90) {
-        setError(`La vidéo sélectionnée fait ${Math.round(duration)}s. La durée maximale autorisée est de 1m30 (90 secondes).`);
+    const objectUrl = URL.createObjectURL(file);
+    const probe = document.createElement('video');
+    probe.preload = 'metadata';
+
+    /* L'élément de sondage et son objectURL n'étaient nettoyés sur aucun
+       chemin d'erreur : chaque tentative laissait un blob et des handlers. */
+    const cleanupProbe = () => {
+      probe.onloadedmetadata = null;
+      probe.onerror = null;
+      probe.removeAttribute('src');
+      probe.load();
+    };
+
+    probe.onloadedmetadata = () => {
+      const duration = probe.duration;
+      cleanupProbe();
+
+      if (Number.isFinite(duration) && duration > MAX_VIDEO_SECONDS) {
+        setError(
+          `Vidéo de ${Math.round(duration)} s. La durée maximale est de 1 min 30 s.`,
+        );
         URL.revokeObjectURL(objectUrl);
-        e.target.value = '';
         return;
       }
 
       setVideo({
-        url: objectUrl,
+        file,
+        previewUrl: objectUrl,
         name: file.name,
-        duration: !isNaN(duration) && isFinite(duration) ? Math.round(duration) : undefined,
+        duration: Number.isFinite(duration) ? Math.round(duration) : undefined,
       });
     };
 
-    tempVideo.onloadedmetadata = onMeta;
-    tempVideo.onerror = () => {
-      setVideo({ url: objectUrl, name: file.name });
+    probe.onerror = () => {
+      cleanupProbe();
+      URL.revokeObjectURL(objectUrl);
+      /* On acceptait le fichier malgré l'échec de lecture : une vidéo
+         illisible partait au serveur sans que sa durée ait été vérifiée. */
+      setError('Ce fichier n’a pas pu être lu comme une vidéo. Essayez un MP4.');
     };
+
+    probe.src = objectUrl;
   };
 
   const removeVideo = () => {
-    if (video?.url) URL.revokeObjectURL(video.url);
+    revoke(video?.previewUrl);
     setVideo(null);
     setError(null);
   };
@@ -337,59 +470,59 @@ function VideoUploaderSection() {
   return (
     <SectionCard
       icon={Film}
-      title="Visite Vidéo du Logement (1m30 MAX)"
-      description="Optionnel — Une courte vidéo verticale augmente l'attractivité de votre annonce de +60%"
+      title="Visite en vidéo"
+      description="Optionnel · 1 min 30 maximum · le format vertical rend mieux sur mobile"
     >
       <div className="space-y-4">
         {error && (
-          <div className="flex items-center gap-2.5 p-3.5 bg-error-50 border border-error-500/30 rounded-inner text-xs font-bold text-error-600">
-            <AlertCircle className="w-4 h-4 text-error-600 shrink-0" />
-            <span>{error}</span>
+          <div role="alert" className="flex items-start gap-2.5 rounded-inner border border-error-500/20 bg-error-50 p-3.5">
+            <AlertCircle className="mt-0.5 h-4 w-4 shrink-0 text-error-600" aria-hidden="true" />
+            <p className="text-xs leading-relaxed text-error-700">{error}</p>
           </div>
         )}
 
         {video ? (
           <div className="space-y-3">
-            <div className="flex items-center justify-between p-3.5 rounded-inner bg-forest-950/5 border border-forest-600/30">
-              <div className="flex items-center gap-2.5">
-                <CheckCircle2 className="w-4 h-4 text-forest-600 shrink-0" />
-                <div>
-                  <p className="text-xs font-bold text-forest-900">
-                    Vidéo valide {video.duration ? `(${video.duration}s / 1m30 max)` : ''}
+            <div className="flex flex-wrap items-center justify-between gap-3 rounded-inner border border-success-500/25 bg-success-50 p-3.5">
+              <div className="flex min-w-0 items-center gap-2.5">
+                <CheckCircle2 className="h-4 w-4 shrink-0 text-success-600" aria-hidden="true" />
+                <div className="min-w-0">
+                  <p className="text-xs font-semibold text-success-700">
+                    Vidéo prête{video.duration ? ` · ${video.duration} s` : ''}
                   </p>
-                  <p className="text-[11px] text-foreground-muted truncate max-w-[200px] sm:max-w-xs">
-                    {video.name}
+                  <p className="mt-0.5 max-w-[220px] truncate text-xs text-foreground-muted sm:max-w-xs">
+                    {video.name ?? 'Vidéo sélectionnée'}
                   </p>
                 </div>
               </div>
               <button
                 type="button"
                 onClick={removeVideo}
-                className="px-3 py-1.5 rounded-pill bg-error-50 text-error-600 text-xs font-bold hover:bg-error-100 transition-colors"
+                className="shrink-0 rounded-pill border border-error-500/25 px-3 py-1.5 text-xs font-semibold text-error-700 transition-colors hover:bg-error-50"
               >
-                Supprimer
+                Retirer
               </button>
             </div>
 
-            <div className="relative aspect-video w-full max-w-md overflow-hidden rounded-inner border border-border bg-black shadow-md">
-              <video src={video.url} controls className="h-full w-full object-contain" />
+            <div className="mx-auto aspect-[9/16] w-full max-w-xs overflow-hidden rounded-inner border border-border bg-background-alt">
+              <video src={video.previewUrl} controls playsInline className="h-full w-full object-cover" />
             </div>
           </div>
         ) : (
-          <div className="flex flex-col gap-3 sm:flex-row sm:items-center justify-between p-4 rounded-inner border border-border bg-background-alt">
-            <div>
-              <p className="text-xs font-bold text-foreground">Téléverser une vidéo (1m30 MAX)</p>
-              <p className="text-[11px] text-foreground-muted font-medium mt-0.5">
-                Formats acceptés : MP4, MOV, WebM · Maximum 1 min 30 s (90s)
+          <div className="flex flex-col justify-between gap-3 rounded-inner border border-border bg-background-alt p-4 sm:flex-row sm:items-center">
+            <div className="min-w-0">
+              <p className="text-sm font-semibold text-foreground">Ajouter une vidéo</p>
+              <p className="mt-0.5 text-xs text-foreground-muted">
+                MP4, MOV ou WebM · 1 min 30 maximum
               </p>
             </div>
-            <label className="inline-flex shrink-0 cursor-pointer items-center justify-center gap-2 rounded-pill border border-forest-600 bg-forest-950 px-4 py-2 text-xs font-bold text-lime-400 transition-transform active:scale-95 shadow-md">
-              <Upload className="h-3.5 w-3.5 text-lime-400" />
-              <span>Choisir un fichier (1m30)</span>
+            <label className="inline-flex shrink-0 cursor-pointer items-center justify-center gap-2 rounded-pill border border-border bg-background-card px-4 py-2.5 text-sm font-semibold text-foreground transition-colors hover:border-border-hover hover:bg-background-alt">
+              <Upload className="h-4 w-4" aria-hidden="true" />
+              Choisir un fichier
               <input
                 type="file"
                 accept="video/mp4,video/quicktime,video/webm"
-                className="hidden"
+                className="sr-only"
                 onChange={handleVideoSelect}
               />
             </label>

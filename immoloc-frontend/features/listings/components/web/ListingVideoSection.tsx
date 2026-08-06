@@ -1,119 +1,96 @@
 'use client';
 
-import { useRef, useState } from 'react';
-import { Play, Pause, Volume2, VolumeX, Maximize, Film, Sparkles } from 'lucide-react';
+import { useCallback, useEffect, useRef, useState } from 'react';
+import { Play, Film } from 'lucide-react';
+import { cn } from '@/lib/utils/cn';
 
 interface Props {
   videoUrl: string;
   titre?: string;
+  /** Première photo du bien — évite le flash noir avant la première frame. */
+  posterUrl?: string;
 }
 
-export function ListingVideoSection({ videoUrl, titre }: Props) {
+export function ListingVideoSection({ videoUrl, titre, posterUrl }: Props) {
   const videoRef = useRef<HTMLVideoElement>(null);
-  const [isPlaying, setIsPlaying] = useState(false);
-  const [isMuted, setIsMuted] = useState(true);
+  const [started, setStarted] = useState(false);
+  const [isVertical, setIsVertical] = useState(false);
 
-  const togglePlay = () => {
-    if (!videoRef.current) return;
-    if (isPlaying) {
-      videoRef.current.pause();
-      setIsPlaying(false);
-    } else {
-      videoRef.current.play();
-      setIsPlaying(true);
-    }
-  };
+  /* Le ratio est détecté au chargement des métadonnées plutôt que forcé en
+     16/9. Un propriétaire qui filme au téléphone produit du vertical :
+     `object-contain` dans un cadre 16/9 laissait alors deux bandes noires
+     occupant les deux tiers de la largeur. */
+  const handleMetadata = useCallback(() => {
+    const v = videoRef.current;
+    if (!v?.videoWidth) return;
+    setIsVertical(v.videoHeight > v.videoWidth);
+  }, []);
 
-  const toggleMute = () => {
-    if (!videoRef.current) return;
-    videoRef.current.muted = !isMuted;
-    setIsMuted(!isMuted);
-  };
+  const start = useCallback(() => {
+    const v = videoRef.current;
+    if (!v) return;
+    setStarted(true);
+    v.play().catch(() => setStarted(false));
+  }, []);
 
-  const toggleFullscreen = () => {
-    if (!videoRef.current) return;
-    if (videoRef.current.requestFullscreen) {
-      videoRef.current.requestFullscreen();
-    }
-  };
+  /* iOS n'expose pas `requestFullscreen` sur les éléments : sans ce repli,
+     le plein écran ne fonctionnait pas du tout sur iPhone. Les contrôles
+     natifs le gèrent seuls, plus besoin de bouton maison. */
+  useEffect(() => {
+    const v = videoRef.current;
+    if (v) v.setAttribute('webkit-playsinline', 'true');
+  }, []);
 
   return (
-    <section className="space-y-4 rounded-card border border-forest-500/20 bg-forest-950/95 text-white p-6 shadow-xl overflow-hidden">
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-2.5">
-          <span className="grid h-8 w-8 place-items-center rounded-inner bg-lime-400/15 text-lime-400">
-            <Film className="h-4 w-4" />
-          </span>
-          <div>
-            <h2 className="font-display text-lg font-semibold tracking-tight text-white flex items-center gap-2">
-              Visite Vidéo du Logement
-              <span className="rounded-pill bg-lime-400/20 px-2 py-0.5 text-[0.6875rem] font-bold text-lime-400">
-                1m30 MAX
-              </span>
-            </h2>
-            <p className="text-xs text-forest-200">
-              Découvrez les pièces et l&apos;ambiance réelle du bien en vidéo HD.
-            </p>
-          </div>
+    <section className="space-y-3">
+      <header className="flex items-center gap-2.5">
+        <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-inner border border-forest-100 bg-forest-50 text-forest-700">
+          <Film className="h-4 w-4" aria-hidden="true" />
+        </span>
+        <div className="min-w-0">
+          <h2 className="font-display text-lg font-semibold tracking-tight text-foreground">
+            Visite en vidéo
+          </h2>
+          <p className="text-xs text-foreground-muted">
+            Les pièces et l’ambiance réelle du logement
+          </p>
         </div>
-      </div>
+      </header>
 
-      {/* Lecteur Vidéo */}
-      <div className="relative aspect-video w-full overflow-hidden rounded-inner border border-white/10 bg-black group shadow-inner">
+      <div
+        className={cn(
+          'relative mx-auto w-full overflow-hidden rounded-card border border-border bg-background-alt',
+          isVertical ? 'aspect-[9/16] max-w-sm' : 'aspect-video',
+        )}
+      >
         <video
           ref={videoRef}
           src={videoUrl}
+          poster={posterUrl}
           playsInline
-          loop
-          muted={isMuted}
-          onPlay={() => setIsPlaying(true)}
-          onPause={() => setIsPlaying(false)}
-          className="h-full w-full object-contain cursor-pointer"
-          onClick={togglePlay}
+          preload="metadata"
+          controls={started}
+          onLoadedMetadata={handleMetadata}
+          onEnded={() => setStarted(false)}
+          aria-label={titre ? `Visite vidéo — ${titre}` : 'Visite vidéo du logement'}
+          className="h-full w-full object-cover"
         />
 
-        {/* Overlay Play quand en pause */}
-        {!isPlaying && (
-          <div
-            onClick={togglePlay}
-            className="absolute inset-0 flex flex-col items-center justify-center bg-black/40 cursor-pointer backdrop-blur-[2px] transition-opacity"
-          >
-            <div className="grid h-16 w-16 place-items-center rounded-full bg-lime-400 text-forest-950 shadow-2xl transition-transform group-hover:scale-110">
-              <Play className="h-7 w-7 fill-forest-950 ml-1" />
-            </div>
-            <p className="mt-3 text-xs font-semibold text-white tracking-wide">
-              Cliquez pour lancer la visite (1m30 max)
-            </p>
-          </div>
-        )}
-
-        {/* Barre de contrôles bas */}
-        <div className="absolute bottom-0 left-0 right-0 flex items-center justify-between p-3 bg-gradient-to-t from-black/80 via-black/40 to-transparent opacity-90 transition-opacity">
-          <div className="flex items-center gap-2">
-            <button
-              type="button"
-              onClick={togglePlay}
-              className="grid h-8 w-8 place-items-center rounded-full bg-white/20 text-white backdrop-blur-md hover:bg-white/30 transition-colors"
-            >
-              {isPlaying ? <Pause className="h-4 w-4" /> : <Play className="h-4 w-4 fill-white ml-0.5" />}
-            </button>
-            <button
-              type="button"
-              onClick={toggleMute}
-              className="grid h-8 w-8 place-items-center rounded-full bg-white/20 text-white backdrop-blur-md hover:bg-white/30 transition-colors"
-            >
-              {isMuted ? <VolumeX className="h-4 w-4" /> : <Volume2 className="h-4 w-4" />}
-            </button>
-          </div>
-
+        {/* Un seul état avant lecture. Les contrôles natifs prennent le
+            relais ensuite : barre de progression, durée, volume, plein écran
+            et navigation clavier, qui manquaient tous aux contrôles maison. */}
+        {!started && (
           <button
             type="button"
-            onClick={toggleFullscreen}
-            className="grid h-8 w-8 place-items-center rounded-full bg-white/20 text-white backdrop-blur-md hover:bg-white/30 transition-colors"
+            onClick={start}
+            aria-label="Lancer la visite vidéo"
+            className="group absolute inset-0 grid place-items-center bg-forest-950/25 transition-colors hover:bg-forest-950/35"
           >
-            <Maximize className="h-4 w-4" />
+            <span className="flex h-16 w-16 items-center justify-center rounded-pill bg-neutral-0/95 text-forest-900 shadow-lg transition-transform group-hover:scale-105">
+              <Play className="ml-1 h-6 w-6 fill-current" aria-hidden="true" />
+            </span>
           </button>
-        </div>
+        )}
       </div>
     </section>
   );

@@ -1,7 +1,8 @@
 'use client';
 
-import { useState } from 'react';
-import { User, Mail, Phone, Calendar, Hash, Pencil, Check, X, Loader2 } from 'lucide-react';
+import { useCallback, useEffect, useId, useState } from 'react';
+import { User, Mail, Phone, Calendar, Hash, Pencil, Check, X, Loader2, AlertTriangle } from 'lucide-react';
+import { cn } from '@/lib/utils/cn';
 import { nestFetch } from '@/lib/nestjs/api-client';
 import { NEST_API } from '@/lib/nestjs/endpoints';
 import type { UserProfile } from '../types';
@@ -11,13 +12,54 @@ interface Props {
   onUpdated?: () => void;
 }
 
-/* ── Champ lecture seule ──────────────────────────────────────────────────── */
+/** Date civile lisible, sans conversion UTC. */
+function formatDateCivile(iso?: string | null) {
+  if (!iso) return null;
+  const [y, m, d] = iso.slice(0, 10).split('-').map(Number);
+  if (!y || !m || !d) return null;
+  return new Date(y, m - 1, d).toLocaleDateString('fr-FR', {
+    day: 'numeric', month: 'long', year: 'numeric',
+  });
+}
+
+const toDraft = (user: UserProfile) => ({
+  prenom: user.prenom ?? '',
+  nom: user.nom ?? '',
+  telephone: user.telephone ?? '',
+  dateNaissance: user.dateNaissance?.slice(0, 10) ?? '',
+});
+
+/* ── Champs ───────────────────────────────────────────────────────────────── */
+
+function FieldShell({
+  icon: Icon, label, htmlFor, children,
+}: {
+  icon: React.ComponentType<{ className?: string }>;
+  label: string;
+  htmlFor?: string;
+  children: React.ReactNode;
+}) {
+  const Label = htmlFor ? 'label' : 'p';
+  return (
+    <div className="flex items-center gap-3.5 rounded-inner border border-border bg-background-alt p-3.5">
+      <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-inner border border-forest-100 bg-forest-50 text-forest-700">
+        <Icon className="h-4 w-4" aria-hidden="true" />
+      </span>
+      <div className="min-w-0 flex-1">
+        <Label
+          {...(htmlFor ? { htmlFor } : {})}
+          className="mb-1 block text-xs font-semibold uppercase tracking-wider text-foreground-muted"
+        >
+          {label}
+        </Label>
+        {children}
+      </div>
+    </div>
+  );
+}
 
 function ReadRow({
-  icon: Icon,
-  label,
-  value,
-  mono = false,
+  icon, label, value, mono = false,
 }: {
   icon: React.ComponentType<{ className?: string }>;
   label: string;
@@ -25,29 +67,16 @@ function ReadRow({
   mono?: boolean;
 }) {
   return (
-    <div className="bg-background-alt p-3.5 rounded-inner border border-border/80 flex items-center gap-3.5">
-      <div className="w-8 h-8 rounded-inner bg-forest-950 text-lime-400 border border-lime-400/20 flex items-center justify-center shrink-0">
-        <Icon className="w-4 h-4 text-lime-400" />
-      </div>
-      <div className="flex-1 min-w-0">
-        <p className="text-[10px] font-extrabold text-foreground-muted uppercase tracking-wider mb-0.5">{label}</p>
-        <p className={`text-xs font-bold text-forest-950 truncate ${mono ? 'font-mono' : ''}`}>
-          {value ?? <span className="text-foreground-faint font-normal italic">Non renseigné</span>}
-        </p>
-      </div>
-    </div>
+    <FieldShell icon={icon} label={label}>
+      <p className={cn('truncate text-sm font-semibold text-foreground', mono && 'tabular-nums tracking-wider')}>
+        {value ?? <span className="font-normal text-foreground-muted">Non renseigné</span>}
+      </p>
+    </FieldShell>
   );
 }
 
-/* ── Champ éditable ───────────────────────────────────────────────────────── */
-
 function EditRow({
-  icon: Icon,
-  label,
-  value,
-  onChange,
-  type = 'text',
-  placeholder,
+  icon, label, value, onChange, type = 'text', placeholder, autoComplete,
 }: {
   icon: React.ComponentType<{ className?: string }>;
   label: string;
@@ -55,139 +84,145 @@ function EditRow({
   onChange: (v: string) => void;
   type?: string;
   placeholder?: string;
+  autoComplete?: string;
 }) {
+  const id = useId();
   return (
-    <div className="bg-background-alt p-3.5 rounded-inner border border-border/80 flex items-center gap-3.5 relative">
-      <div className="w-8 h-8 rounded-inner bg-forest-950 text-lime-400 border border-lime-400/20 flex items-center justify-center shrink-0">
-        <Icon className="w-4 h-4 text-lime-400" />
-      </div>
-      <div className="flex-1 min-w-0 relative z-10">
-        <p className="text-[10px] font-extrabold text-foreground-muted uppercase tracking-wider mb-1">{label}</p>
-        <input
-          type={type}
-          value={value}
-          onChange={(e) => onChange(e.target.value)}
-          placeholder={placeholder}
-          className="w-full text-xs font-bold text-forest-950 bg-background-card border border-border rounded-inner px-3 py-1.5 outline-none focus:border-forest-600 focus:ring-2 focus:ring-forest-600/20 transition-all placeholder:text-foreground-faint placeholder:font-normal relative z-20"
-        />
-      </div>
-    </div>
+    <FieldShell icon={icon} label={label} htmlFor={id}>
+      <input
+        id={id}
+        type={type}
+        value={value}
+        onChange={(e) => onChange(e.target.value)}
+        placeholder={placeholder}
+        autoComplete={autoComplete}
+        className="w-full rounded-field border border-border bg-background-card px-3 py-2 text-foreground placeholder:text-foreground-faint focus:border-forest-500 focus:outline-none"
+      />
+    </FieldShell>
   );
 }
 
-/* ── Composant principal ──────────────────────────────────────────────────── */
+/* ── Composant ────────────────────────────────────────────────────────────── */
 
 export function ProfileInfoCard({ user, onUpdated }: Props) {
   const [isEditing, setIsEditing] = useState(false);
-  const [isSaving,  setIsSaving]  = useState(false);
-  const [error,     setError]     = useState<string | null>(null);
+  const [isSaving, setIsSaving] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [draft, setDraft] = useState(() => toDraft(user));
 
-  const [draft, setDraft] = useState({
-    prenom:        user.prenom ?? '',
-    nom:           user.nom ?? '',
-    telephone:     user.telephone ?? '',
-    dateNaissance: user.dateNaissance?.slice(0, 10) ?? '',
-  });
+  /* `useState` n'initialise qu'une fois : après un refetch, `draft` gardait
+     les anciennes valeurs et les réécrivait par-dessus les nouvelles. */
+  useEffect(() => {
+    if (!isEditing) setDraft(toDraft(user));
+  }, [user, isEditing]);
 
-  const dateFormatted = user.dateNaissance
-    ? new Date(user.dateNaissance).toLocaleDateString('fr-FR', {
-        day: 'numeric', month: 'long', year: 'numeric',
-      })
-    : null;
+  const set = useCallback(
+    (k: keyof ReturnType<typeof toDraft>) => (v: string) => setDraft((d) => ({ ...d, [k]: v })),
+    [],
+  );
 
-  function handleCancel() {
-    setDraft({
-      prenom:        user.prenom ?? '',
-      nom:           user.nom ?? '',
-      telephone:     user.telephone ?? '',
-      dateNaissance: user.dateNaissance?.slice(0, 10) ?? '',
-    });
+  const handleCancel = useCallback(() => {
+    setDraft(toDraft(user));
     setError(null);
     setIsEditing(false);
-  }
+  }, [user]);
 
-  async function handleSave() {
+  const handleSave = useCallback(async () => {
     setIsSaving(true);
     setError(null);
     try {
       await nestFetch(NEST_API.USERS.ME, {
         method: 'PATCH',
+        /* `|| undefined` retirait la clé du corps : un champ vidé était
+           ignoré par l'API et réapparaissait après sauvegarde. On envoie
+           `null` pour effacer réellement. */
         body: JSON.stringify({
-          prenom:        draft.prenom.trim()        || undefined,
-          nom:           draft.nom.trim()           || undefined,
-          telephone:     draft.telephone.trim()     || undefined,
-          dateNaissance: draft.dateNaissance        || undefined,
+          prenom: draft.prenom.trim() || null,
+          nom: draft.nom.trim() || null,
+          telephone: draft.telephone.trim() || null,
+          dateNaissance: draft.dateNaissance || null,
         }),
       });
       setIsEditing(false);
       onUpdated?.();
-    } catch {
-      setError('Impossible de sauvegarder. Veuillez réessayer.');
+    } catch (e) {
+      setError(
+        e instanceof Error && e.message
+          ? e.message
+          : 'Impossible de sauvegarder. Réessayez dans un instant.',
+      );
     } finally {
       setIsSaving(false);
     }
-  }
+  }, [draft, onUpdated]);
 
   return (
-    <div className="bg-background-card rounded-card border border-border/80 p-5 space-y-4 shadow-2xs overflow-visible">
-      {/* Header */}
-      <div className="flex items-center justify-between pb-3 border-b border-border/60">
-        <div className="flex items-center gap-3">
-          <div className="w-9 h-9 rounded-inner bg-forest-950 text-lime-400 border border-lime-400/20 flex items-center justify-center shrink-0 shadow-2xs">
-            <User className="w-4 h-4 text-lime-400" />
-          </div>
-          <div>
-            <h3 className="font-display text-base font-bold text-forest-950">Informations personnelles</h3>
-            <p className="text-[10px] font-extrabold text-foreground-muted uppercase tracking-wider">Identité & Coordonnées</p>
+    <section className="space-y-4 rounded-card border border-border bg-background-card p-5 shadow-sm">
+
+      <header className="flex flex-wrap items-center justify-between gap-3 border-b border-border pb-3">
+        <div className="flex min-w-0 items-center gap-3">
+          <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-inner border border-forest-100 bg-forest-50 text-forest-700">
+            <User className="h-4 w-4" aria-hidden="true" />
+          </span>
+          <div className="min-w-0">
+            <h2 className="font-display text-base font-semibold text-foreground">
+              Informations personnelles
+            </h2>
+            <p className="text-xs text-foreground-muted">Identité et coordonnées</p>
           </div>
         </div>
 
         {isEditing ? (
-          <div className="flex items-center gap-2">
+          <div className="flex shrink-0 items-center gap-2">
             <button
+              type="button"
               onClick={handleCancel}
               disabled={isSaving}
-              className="w-8 h-8 flex items-center justify-center rounded-inner bg-background-alt border border-border text-foreground-muted hover:text-error-600 transition-colors"
+              aria-label="Annuler les modifications"
+              className="flex h-9 w-9 items-center justify-center rounded-pill border border-border bg-background-alt text-foreground-muted transition-colors hover:text-foreground disabled:opacity-50"
             >
-              <X className="w-4 h-4" />
+              <X className="h-4 w-4" />
             </button>
+            {/* ★ Seul aplat lime de la carte : l'action d'enregistrement. */}
             <button
+              type="button"
               onClick={handleSave}
               disabled={isSaving}
-              className="inline-flex items-center gap-1.5 px-4 py-2 rounded-pill bg-lime-400 hover:bg-lime-300 text-forest-950 text-xs font-extrabold transition-all shadow-md active:scale-95 disabled:opacity-60"
+              className="inline-flex items-center gap-1.5 rounded-pill bg-action px-4 py-2 text-xs font-semibold text-on-action shadow-action transition-[background-color,box-shadow,transform] hover:bg-action-hover active:scale-[0.98] disabled:opacity-60"
             >
-              {isSaving ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Check className="w-3.5 h-3.5" />}
-              <span>{isSaving ? 'Sauvegarde…' : 'Sauvegarder'}</span>
+              {isSaving
+                ? <Loader2 className="h-3.5 w-3.5 animate-spin" aria-hidden="true" />
+                : <Check className="h-3.5 w-3.5" aria-hidden="true" />}
+              {isSaving ? 'Sauvegarde…' : 'Sauvegarder'}
             </button>
           </div>
         ) : (
           <button
+            type="button"
             onClick={() => setIsEditing(true)}
-            className="inline-flex items-center gap-1.5 px-4 py-2 rounded-pill bg-lime-400 hover:bg-lime-300 text-forest-950 text-xs font-extrabold transition-all shadow-md active:scale-95"
+            className="inline-flex shrink-0 items-center gap-1.5 rounded-pill border border-border bg-background-card px-4 py-2 text-xs font-semibold text-foreground transition-colors hover:border-border-hover hover:bg-background-alt"
           >
-            <Pencil className="w-3.5 h-3.5" />
-            <span>Modifier</span>
+            <Pencil className="h-3.5 w-3.5" aria-hidden="true" />
+            Modifier
           </button>
         )}
-      </div>
+      </header>
 
-      {/* Erreur */}
       {error && (
-        <div className="flex items-center gap-2 px-3.5 py-2.5 bg-error-50 border border-error-200 rounded-inner">
-          <X className="w-4 h-4 text-error-600 shrink-0" />
-          <p className="text-xs text-error-700 font-bold">{error}</p>
+        <div role="alert" className="flex items-center gap-2 rounded-inner border border-error-500/20 bg-error-50 px-3.5 py-2.5">
+          <AlertTriangle className="h-4 w-4 shrink-0 text-error-600" aria-hidden="true" />
+          <p className="text-xs text-error-700">{error}</p>
         </div>
       )}
 
-      {/* Grille de champs */}
-      <div className="grid sm:grid-cols-2 gap-3 overflow-visible">
+      <div className="grid gap-3 sm:grid-cols-2">
         {isEditing ? (
           <>
-            <EditRow icon={User} label="Prénom" value={draft.prenom} onChange={(v) => setDraft(d => ({ ...d, prenom: v }))} placeholder="Votre prénom" />
-            <EditRow icon={User} label="Nom de famille" value={draft.nom} onChange={(v) => setDraft(d => ({ ...d, nom: v }))} placeholder="Votre nom" />
-            <EditRow icon={Phone} label="Téléphone" value={draft.telephone} onChange={(v) => setDraft(d => ({ ...d, telephone: v }))} placeholder="+221 7X XXX XX XX" type="tel" />
-            <EditRow icon={Calendar} label="Date de naissance" value={draft.dateNaissance} onChange={(v) => setDraft(d => ({ ...d, dateNaissance: v }))} type="date" />
-            <ReadRow icon={Mail} label="Adresse e-mail (non modifiable)" value={user.email} />
+            <EditRow icon={User} label="Prénom" value={draft.prenom} onChange={set('prenom')} placeholder="Votre prénom" autoComplete="given-name" />
+            <EditRow icon={User} label="Nom de famille" value={draft.nom} onChange={set('nom')} placeholder="Votre nom" autoComplete="family-name" />
+            <EditRow icon={Phone} label="Téléphone" value={draft.telephone} onChange={set('telephone')} placeholder="+221 7X XXX XX XX" type="tel" autoComplete="tel" />
+            <EditRow icon={Calendar} label="Date de naissance" value={draft.dateNaissance} onChange={set('dateNaissance')} type="date" autoComplete="bday" />
+            <ReadRow icon={Mail} label="E-mail (non modifiable)" value={user.email} />
             <ReadRow icon={Hash} label="Identifiant" value={user.id.slice(0, 16).toUpperCase()} mono />
           </>
         ) : (
@@ -196,11 +231,11 @@ export function ProfileInfoCard({ user, onUpdated }: Props) {
             <ReadRow icon={User} label="Nom de famille" value={user.nom} />
             <ReadRow icon={Mail} label="Adresse e-mail" value={user.email} />
             <ReadRow icon={Phone} label="Téléphone" value={user.telephone} />
-            <ReadRow icon={Calendar} label="Date de naissance" value={dateFormatted} />
+            <ReadRow icon={Calendar} label="Date de naissance" value={formatDateCivile(user.dateNaissance)} />
             <ReadRow icon={Hash} label="Identifiant" value={user.id.slice(0, 16).toUpperCase()} mono />
           </>
         )}
       </div>
-    </div>
+    </section>
   );
 }

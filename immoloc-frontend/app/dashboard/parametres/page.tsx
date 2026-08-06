@@ -1,8 +1,13 @@
 'use client';
 
+import { useState } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { nestFetch, NEST_API } from '@/lib/nestjs';
 import { useCurrentUser } from '@/hooks/use-current-user';
+import { useRoleStore } from '@/stores/role.store';
+import { useActionGate } from '@/hooks/use-action-gate';
+import { ActionGateModal } from '@/features/gate/components/ActionGateModal';
+import type { UserProfile } from '@/features/profile/types';
 
 import { OwnerSettingsHeader } from '@/features/settings/components/owner/OwnerSettingsHeader';
 import { OwnerProfileHero } from '@/features/settings/components/owner/OwnerProfileHero';
@@ -15,7 +20,18 @@ import { OwnerSettingsSkeleton } from '@/features/settings/components/owner/Owne
 
 export default function OwnerParametresPage() {
   const queryClient = useQueryClient();
+  const store = useRoleStore();
+  const gate = useActionGate();
+  const [gateOpen, setGateOpen] = useState(false);
+
   const { data: user, isLoading } = useCurrentUser();
+
+  const { data: apiUser } = useQuery<Partial<UserProfile>>({
+    queryKey: ['users', 'me'],
+    queryFn: () => nestFetch<Partial<UserProfile>>(NEST_API.USERS.ME),
+    enabled: store.hasHydrated,
+    staleTime: 60_000,
+  });
 
   const { data: listings } = useQuery<any[]>({
     queryKey: ['listings', 'mine'],
@@ -25,6 +41,9 @@ export default function OwnerParametresPage() {
   if (isLoading) {
     return <OwnerSettingsSkeleton />;
   }
+
+  const statutKyc = apiUser?.statutKyc ?? store.statutKyc;
+  const isVerified = statutKyc === 'VERIFIE';
 
   return (
     <div className="space-y-6 pb-16">
@@ -38,6 +57,7 @@ export default function OwnerParametresPage() {
         email={user?.email}
         photoUrl={user?.photoUrl}
         activeListingsCount={listings?.length ?? 0}
+        isVerified={isVerified}
         onPhotoUpdated={() => queryClient.invalidateQueries({ queryKey: ['user', 'current'] })}
       />
 
@@ -60,7 +80,10 @@ export default function OwnerParametresPage() {
         </div>
 
         <div className="lg:col-span-2">
-          <OwnerKycVerificationCard />
+          <OwnerKycVerificationCard
+            statutKyc={statutKyc}
+            onKycClick={() => setGateOpen(true)}
+          />
         </div>
 
         {/* Section Sécurité : Déconnexion & Suppression Définitive du Compte */}
@@ -68,6 +91,19 @@ export default function OwnerParametresPage() {
           <OwnerActionsCard />
         </div>
       </div>
+
+      {gateOpen && (
+        <ActionGateModal
+          steps={gate.steps}
+          block={gate.block}
+          onComplete={() => {
+            setGateOpen(false);
+            queryClient.invalidateQueries({ queryKey: ['users', 'me'] });
+            queryClient.invalidateQueries({ queryKey: ['user', 'current'] });
+          }}
+          onCancel={() => setGateOpen(false)}
+        />
+      )}
     </div>
   );
 }

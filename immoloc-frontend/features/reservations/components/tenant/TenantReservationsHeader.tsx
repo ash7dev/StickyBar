@@ -19,12 +19,12 @@ export interface TenantReservationsHeaderProps {
   nextCheckInDays?: number | null;
 }
 
-const TABS: Array<{ id: ReservationTabId; label: string; countKey: 'totalCount' | 'confirmedCount' | 'checkedInCount' | 'completedCount' | 'cancelledCount' }> = [
-  { id: 'ALL', label: 'Toutes', countKey: 'totalCount' },
-  { id: 'CONFIRMED', label: 'Confirmées', countKey: 'confirmedCount' },
-  { id: 'CHECKED_IN', label: 'En cours', countKey: 'checkedInCount' },
-  { id: 'COMPLETED', label: 'Terminées', countKey: 'completedCount' },
-  { id: 'CANCELLED', label: 'Annulées', countKey: 'cancelledCount' },
+const TABS: Array<{ id: ReservationTabId; label: string; countKey: 'totalCount' | 'confirmedCount' | 'checkedInCount' | 'completedCount' | 'cancelledCount'; dot: string }> = [
+  { id: 'ALL', label: 'Toutes', countKey: 'totalCount', dot: 'bg-forest-500' },
+  { id: 'CONFIRMED', label: 'Confirmées', countKey: 'confirmedCount', dot: 'bg-blue-600' },
+  { id: 'CHECKED_IN', label: 'En cours', countKey: 'checkedInCount', dot: 'bg-emerald-500 animate-pulse' },
+  { id: 'COMPLETED', label: 'Terminées', countKey: 'completedCount', dot: 'bg-slate-400' },
+  { id: 'CANCELLED', label: 'Annulées', countKey: 'cancelledCount', dot: 'bg-rose-500' },
 ];
 
 export function TenantReservationsHeader({
@@ -156,12 +156,13 @@ export function TenantReservationsHeader({
               type="button"
               onClick={() => onTabChange(tab.id)}
               className={cn(
-                'flex items-center gap-2 px-5 py-2.5 rounded-pill text-xs font-bold transition-all duration-200 whitespace-nowrap shrink-0',
+                'flex items-center gap-2 px-5 py-2.5 rounded-pill text-xs font-bold transition-all duration-200 whitespace-nowrap shrink-0 cursor-pointer',
                 isActive
                   ? 'bg-forest-900 text-lime-300 shadow-md'
                   : 'text-foreground-muted hover:text-forest-900 hover:bg-background-card/80',
               )}
             >
+              <span className={cn('w-2 h-2 rounded-full shrink-0', tab.dot)} />
               <span>{tab.label}</span>
               {count > 0 && (
                 <span
