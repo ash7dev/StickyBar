@@ -116,7 +116,7 @@ export function NearbyListingsSection() {
             type="button"
             onClick={locate}
             disabled={busy}
-            className="inline-flex shrink-0 items-center justify-center gap-2 rounded-pill bg-forest-600 px-5 py-3 text-sm font-semibold text-white transition-colors duration-150 hover:bg-forest-700 disabled:opacity-60"
+            className="btn-action shrink-0 !px-4 !py-2.5 text-sm"
           >
             {busy
               ? <Loader2 className="h-4 w-4 animate-spin" aria-hidden="true" />
@@ -173,7 +173,7 @@ export function NearbyListingsSection() {
               <button
                 type="button"
                 onClick={locate}
-                className="mt-4 inline-flex items-center gap-2 rounded-pill border border-border bg-background-card px-4 py-2.5 text-sm font-semibold text-forest-800 transition-colors duration-150 hover:bg-neutral-100"
+                className="btn-action mt-4"
               >
                 <Navigation className="h-4 w-4" aria-hidden="true" />
                 Me localiser
