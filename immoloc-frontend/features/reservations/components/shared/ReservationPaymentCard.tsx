@@ -1,118 +1,179 @@
 'use client';
 
 import { CreditCard, ShieldCheck, Wallet, ArrowDownRight, Tag } from 'lucide-react';
+import { cn } from '@/lib/utils/cn';
 import { fcfa } from '@/features/reservations/utils';
 import type { ReservationDetail } from '@/lib/nestjs/types';
 
-interface ReservationPaymentCardProps {
+const FOURNISSEUR_LABEL: Record<string, string> = {
+  WAVE: 'Wave Mobile Money',
+  ORANGE_MONEY: 'Orange Money',
+};
+
+/* Le statut brut de l'API (`EN_ATTENTE`, `ECHOUE`…) était affiché tel quel au
+   locataire dès qu'il différait de `CONFIRME` : des libellés en majuscules
+   avec des underscores, sur un écran de paiement. */
+const STATUT_PAIEMENT: Record<string, { label: string; tone: 'success' | 'warning' | 'error' }> = {
+  CONFIRME: { label: 'Séquestré et confirmé', tone: 'success' },
+  EN_ATTENTE: { label: 'En cours de validation', tone: 'warning' },
+  ECHOUE: { label: 'Paiement échoué', tone: 'error' },
+  REMBOURSE: { label: 'Remboursé', tone: 'success' },
+};
+
+const STATUT_TONE = {
+  success: 'text-success-700',
+  warning: 'text-warning-700',
+  error: 'text-error-700',
+} as const;
+
+interface Props {
   paiement?: ReservationDetail['paiement'];
   reservation?: Partial<ReservationDetail>;
 }
 
-const FOURNISSEUR_LABEL: Record<string, string> = {
-  WAVE:         'Wave Mobile Money',
-  ORANGE_MONEY: 'Orange Money',
-  PAYDUNYA:     'PayDunya',
-  STRIPE:       'Carte bancaire (Stripe)',
-};
-
-export function ReservationPaymentCard({
-  paiement: directPaiement,
-  reservation,
-}: ReservationPaymentCardProps) {
+export function ReservationPaymentCard({ paiement: directPaiement, reservation }: Props) {
   const p = directPaiement ?? reservation?.paiement;
   if (!p && !reservation) return null;
 
   const typePaiement = reservation?.typePaiement ?? (p ? 'FULL' : undefined);
   const totalLocataire = reservation?.totalLocataire;
-  const reductionNuits = reservation?.reductionNuits ?? 0;
-  const soldeRestant = reservation?.montantSoldeRestant ?? 0;
-  const montantPayeur = p?.montant ?? reservation?.montantAcompte ?? totalLocataire;
+  const reductionNuits = Number(reservation?.reductionNuits ?? 0);
+  const soldeRestant = Number(reservation?.montantSoldeRestant ?? 0);
+  const montantRegle = Number(p?.montant ?? reservation?.montantAcompte ?? totalLocataire ?? 0);
 
   const isDeposit = typePaiement === 'DEPOSIT' || soldeRestant > 0;
 
+  const statut = p
+    ? (STATUT_PAIEMENT[p.statut] ?? { label: p.statut, tone: 'warning' as const })
+    : null;
+
   return (
-    <div className="bg-background-card rounded-card border border-border/80 p-5 space-y-4 shadow-2xs">
-      <div className="flex items-center justify-between pb-3 border-b border-border/60">
-        <div className="flex items-center gap-2.5">
-          <div className="w-8 h-8 rounded-inner bg-forest-950 text-lime-400 border border-lime-400/20 flex items-center justify-center shrink-0">
-            <CreditCard className="w-4 h-4 text-lime-400" />
-          </div>
-          <div>
-            <h4 className="font-display text-base font-bold text-forest-950">Détails du Paiement</h4>
+    <section className="space-y-4 rounded-card border border-border bg-background-card p-5 shadow-sm">
+
+      {/* ── En-tête ──────────────────────────────────────────────────────── */}
+
+      <header className="flex flex-wrap items-center justify-between gap-3 border-b border-border pb-3">
+        <div className="flex min-w-0 items-center gap-2.5">
+          <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-inner border border-forest-100 bg-forest-50 text-forest-700">
+            <CreditCard className="h-4 w-4" aria-hidden="true" />
+          </span>
+          <div className="min-w-0">
+            <h3 className="font-display text-base font-semibold text-foreground">
+              Détails du paiement
+            </h3>
             <p className="text-xs text-foreground-muted">
-              {isDeposit ? 'Formule Acompte + Solde à l\'arrivée' : 'Paiement intégral en ligne'}
+              {isDeposit ? 'Acompte en ligne, solde à l’arrivée' : 'Paiement intégral en ligne'}
             </p>
           </div>
         </div>
 
         {isDeposit ? (
-          <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-pill bg-amber-50 border border-amber-200 text-amber-900 text-xs font-bold">
-            <Wallet className="w-3.5 h-3.5 text-amber-600" />
-            <span>Acompte réglé</span>
+          <span className="inline-flex shrink-0 items-center gap-1.5 rounded-pill border border-warning-500/25 bg-warning-50 px-2.5 py-1 text-xs font-semibold text-warning-700">
+            <Wallet className="h-3.5 w-3.5" aria-hidden="true" />
+            Acompte réglé
           </span>
         ) : (
-          <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-pill bg-emerald-50 border border-emerald-200 text-emerald-900 text-xs font-bold">
-            <ShieldCheck className="w-3.5 h-3.5 text-emerald-600" />
-            <span>100% Réglé</span>
+          <span className="inline-flex shrink-0 items-center gap-1.5 rounded-pill border border-success-500/25 bg-success-50 px-2.5 py-1 text-xs font-semibold text-success-700">
+            <ShieldCheck className="h-3.5 w-3.5" aria-hidden="true" />
+            Intégralement réglé
           </span>
         )}
-      </div>
+      </header>
 
-      <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-3">
-        {/* Total Séjour */}
+      {/* ── Montants ─────────────────────────────────────────────────────── */}
+
+      <dl className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+
         {totalLocataire !== undefined && (
-          <div className="bg-background-alt p-3.5 rounded-inner border border-border/80 space-y-1">
-            <p className="text-[10px] font-extrabold uppercase tracking-wider text-foreground-muted">Total du séjour</p>
-            <p className="font-display text-base font-extrabold text-forest-950">
-              {fcfa(totalLocataire)} <span className="text-xs font-sans font-bold text-foreground-muted">FCFA</span>
-            </p>
+          <Tile label="Total du séjour">
+            <Amount value={totalLocataire} />
             {reductionNuits > 0 && (
-              <p className="text-[10px] text-emerald-700 font-bold flex items-center gap-0.5">
-                <Tag className="w-3 h-3" />
-                <span>-{fcfa(reductionNuits)} FCFA de remise</span>
+              <p className="flex items-center gap-1 text-xs font-semibold text-success-700">
+                <Tag className="h-3 w-3" aria-hidden="true" />
+                −{fcfa(reductionNuits)} FCFA de remise
               </p>
             )}
-          </div>
+          </Tile>
         )}
 
-        {/* Moyen de paiement */}
         {p && (
-          <div className="bg-background-alt p-3.5 rounded-inner border border-border/80 space-y-1">
-            <p className="text-[10px] font-extrabold uppercase tracking-wider text-foreground-muted">Moyen de paiement</p>
-            <p className="text-xs font-bold text-forest-950">{FOURNISSEUR_LABEL[p.fournisseur] || p.fournisseur}</p>
-            <span className="inline-flex items-center gap-1 text-[10px] font-bold text-forest-700">
-              <ShieldCheck className="w-3 h-3 text-forest-600" />
-              <span>{p.statut === 'CONFIRME' ? 'Séquestré & Confirmé' : p.statut}</span>
-            </span>
-          </div>
+          <Tile label="Moyen de paiement">
+            <p className="text-xs font-semibold text-foreground">
+              {FOURNISSEUR_LABEL[p.fournisseur] ?? p.fournisseur}
+            </p>
+            {statut && (
+              <p className={cn('flex items-center gap-1 text-xs font-semibold', STATUT_TONE[statut.tone])}>
+                <ShieldCheck className="h-3 w-3" aria-hidden="true" />
+                {statut.label}
+              </p>
+            )}
+          </Tile>
         )}
 
-        {/* Montant Payé Aujourd'hui */}
-        <div className="bg-emerald-50/60 p-3.5 rounded-inner border border-emerald-200/80 space-y-1">
-          <p className="text-[10px] font-extrabold uppercase tracking-wider text-emerald-900">
-            {isDeposit ? 'Acompte payé en ligne' : 'Montant réglé en ligne'}
+        <Tile
+          label={isDeposit ? 'Acompte payé en ligne' : 'Montant réglé en ligne'}
+          tone="success"
+        >
+          <Amount value={montantRegle} />
+          <p className="flex items-center gap-1 text-xs font-semibold text-success-700">
+            <ShieldCheck className="h-3 w-3" aria-hidden="true" />
+            Confirmé sous séquestre
           </p>
-          <p className="font-display text-base font-extrabold text-forest-950">
-            {fcfa(montantPayeur ?? 0)} <span className="text-xs font-sans font-bold text-foreground-muted">FCFA</span>
-          </p>
-          <p className="text-[10px] font-semibold text-emerald-800">✅ Confirmé par séquestre</p>
-        </div>
+        </Tile>
 
-        {/* Solde Restant */}
         {isDeposit && (
-          <div className="bg-amber-50/70 p-3.5 rounded-inner border border-amber-200 space-y-1">
-            <p className="text-[10px] font-extrabold uppercase tracking-wider text-amber-900 flex items-center gap-1">
-              <ArrowDownRight className="w-3.5 h-3.5 text-amber-600" />
-              Reste à régler à l&apos;arrivée
+          <Tile label="Reste à régler à l’arrivée" tone="warning" icon={ArrowDownRight}>
+            <Amount value={soldeRestant} />
+            <p className="text-xs font-semibold text-warning-700">
+              À la remise des clés, en espèces ou par Mobile Money
             </p>
-            <p className="font-display text-base font-extrabold text-amber-950">
-              {fcfa(soldeRestant)} <span className="text-xs font-sans font-bold text-amber-800">FCFA</span>
-            </p>
-            <p className="text-[10px] font-semibold text-amber-800">À la remise des clés (espèces / Mobile)</p>
-          </div>
+          </Tile>
         )}
-      </div>
+      </dl>
+    </section>
+  );
+}
+
+/* ─── Briques ────────────────────────────────────────────────────────────── */
+
+function Tile({
+  label, tone = 'neutral', icon: Icon, children,
+}: {
+  label: string;
+  tone?: 'neutral' | 'success' | 'warning';
+  icon?: typeof ArrowDownRight;
+  children: React.ReactNode;
+}) {
+  const box =
+    tone === 'success'
+      ? 'border-success-500/25 bg-success-50'
+      : tone === 'warning'
+        ? 'border-warning-500/25 bg-warning-50'
+        : 'border-border bg-background-alt';
+
+  const labelColor =
+    tone === 'success'
+      ? 'text-success-700'
+      : tone === 'warning'
+        ? 'text-warning-700'
+        : 'text-foreground-muted';
+
+  return (
+    <div className={cn('space-y-1 rounded-inner border p-3.5', box)}>
+      <dt className={cn('flex items-center gap-1 text-xs font-semibold uppercase tracking-wider', labelColor)}>
+        {Icon && <Icon className="h-3.5 w-3.5 shrink-0" aria-hidden="true" />}
+        {label}
+      </dt>
+      <dd className="space-y-1">{children}</dd>
     </div>
+  );
+}
+
+function Amount({ value }: { value: number | string }) {
+  return (
+    <p className="font-display text-base font-semibold tabular-nums text-foreground">
+      {fcfa(Number(value) || 0)}{' '}
+      <span className="font-sans text-xs font-semibold text-foreground-muted">FCFA</span>
+    </p>
   );
 }

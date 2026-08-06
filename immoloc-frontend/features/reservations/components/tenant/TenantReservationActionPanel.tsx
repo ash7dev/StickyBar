@@ -1,22 +1,26 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
 'use client';
 
-import { useState } from 'react';
-import {
-  Clock, CheckCircle2, AlertTriangle, ShieldAlert,
-  Loader2, X, Check, LogIn, RefreshCw, ArrowRight, Images,
-  HelpCircle, Shield, Lock, Star, Home, Smartphone,
-} from 'lucide-react';
-import { CheckinGalleryModal } from './CheckinGalleryModal';
-import { RefuseCheckInModal } from './RefuseCheckInModal';
-import { DigitalWelcomeGuideModal } from './DigitalWelcomeGuideModal';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import Image from 'next/image';
+import {
+  Clock, CheckCircle2, AlertTriangle, ShieldAlert, X, Check, LogIn,
+  RefreshCw, ArrowRight, Images, HelpCircle, Shield, Lock, Home, Smartphone,
+} from 'lucide-react';
 import { cn } from '@/lib/utils/cn';
 import { nestFetch } from '@/lib/nestjs/api-client';
 import { NEST_API } from '@/lib/nestjs/endpoints';
 import type { ReservationDetail } from '@/lib/nestjs/types';
+import { CheckinGalleryModal } from './CheckinGalleryModal';
+import { RefuseCheckInModal } from './RefuseCheckInModal';
+import { DigitalWelcomeGuideModal } from './DigitalWelcomeGuideModal';
+import {
+  Modal, Notice, Feedback, PrimaryButton, GhostButton, DangerButton,
+  RefundScale, StarRating, useNow, resolveRefundTier, MOTIF_MIN, type Tone,
+} from './reservation-ui';
 
-/* ─── Types ───────────────────────────────────────────────────────────────── */
+/* Tolérance après l'heure d'arrivée avant que le signalement d'absence
+   devienne disponible. */
+const ABSENCE_TOLERANCE_MS = 30 * 60 * 1000;
 
 interface Props {
   id: string;
@@ -24,683 +28,461 @@ interface Props {
   onRefetch: () => void;
 }
 
-/* ─── Modal overlay ───────────────────────────────────────────────────────── */
+type SubState = 'owner-ready' | 'photos-pending' | 'absent-reported' | 'absent-time' | 'waiting';
 
-function Modal({
-  title,
-  children,
-  onClose,
-}: {
-  title: string;
-  children: React.ReactNode;
-  onClose: () => void;
-}) {
-  return (
-    <div
-      className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4 bg-black/70 backdrop-blur-sm"
-      onClick={onClose}
-    >
-      <div
-        onClick={(e) => e.stopPropagation()}
-        className="w-full sm:max-w-lg bg-surface-dark border border-white/10 rounded-t-3xl sm:rounded-2xl shadow-2xl shadow-black/60"
-      >
-        <div className="flex items-center justify-between px-6 py-5 border-b border-white/8">
-          <h3 className="text-sm font-bold text-white">{title}</h3>
-          <button
-            onClick={onClose}
-            className="w-8 h-8 rounded-xl bg-white/8 hover:bg-white/12 flex items-center justify-center transition-colors"
-          >
-            <X className="w-4 h-4 text-neutral-400" />
-          </button>
-        </div>
-        {children}
-      </div>
-    </div>
-  );
-}
-
-/* ─── Feedback inline ─────────────────────────────────────────────────────── */
-
-function Feedback({ message }: { message: string }) {
-  return (
-    <div className="flex items-start gap-2.5 bg-error-50 border border-error-200 text-error-700 rounded-xl p-3.5">
-      <AlertTriangle className="w-4 h-4 text-error-500 shrink-0 mt-0.5" />
-      <p className="text-xs font-semibold leading-relaxed">{message}</p>
-    </div>
-  );
-}
-
-/* ─── Composant principal ─────────────────────────────────────────────────── */
+const SUBTITLES: Record<SubState, string> = {
+  'owner-ready': 'Inspectez l’état des lieux et validez votre arrivée',
+  'photos-pending': 'L’hôte finalise l’état des lieux — confirmation en cours',
+  'absent-reported': 'Signalement envoyé — l’hôte dispose de 2 h pour réagir',
+  'absent-time': 'L’hôte n’a pas encore effectué l’état des lieux',
+  waiting: 'En attente de votre arrivée',
+};
 
 export function TenantReservationActionPanel({ id, res, onRefetch }: Props) {
   const { statut, photosEtatLieu, dateDebut, absenceSignaleeLe } = res;
 
-  const [isSubmitting, setIsSubmitting]   = useState(false);
-  const [errorMsg, setErrorMsg]           = useState<string | null>(null);
+  const now = useNow();
 
-  /* Modal galerie */
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [errorMsg, setErrorMsg] = useState<string | null>(null);
+  const [successMsg, setSuccessMsg] = useState<string | null>(null);
+
   const [showGallery, setShowGallery] = useState(false);
-
-  /* Modal Livret d'Accueil Digital */
   const [showWelcomeGuide, setShowWelcomeGuide] = useState(false);
-
-  /* Modal règles */
   const [showRulesModal, setShowRulesModal] = useState(false);
-
-  /* Modal refus check-in */
   const [showRefuseModal, setShowRefuseModal] = useState(false);
-
-  /* Modal confirmation absence */
   const [showAbsentModal, setShowAbsentModal] = useState(false);
-
-  /* Annulation */
   const [showCancelModal, setShowCancelModal] = useState(false);
-  const [cancelReason, setCancelReason]       = useState('');
 
-  /* Rating system for COMPLETED status */
+  const [cancelReason, setCancelReason] = useState('');
   const [rating, setRating] = useState(0);
-  const [hoverRating, setHoverRating] = useState(0);
   const [ratingComment, setRatingComment] = useState('');
 
-  const [now] = useState(() => Date.now());
+  /* ── Données dérivées ─────────────────────────────────────────────────── */
 
-  const checkinPhotos   = photosEtatLieu.filter((p) => p.type === 'CHECKIN');
-  const hasPhotos       = checkinPhotos.length > 0;
-  const hasOwnerCheckin = !!res.checkinProprioLe || hasPhotos;
+  const checkinPhotos = useMemo(
+    () => photosEtatLieu.filter((p) => p.type === 'CHECKIN'),
+    [photosEtatLieu],
+  );
+  const hasPhotos = checkinPhotos.length > 0;
+
+  /* ⚠️ Corrigé : `hasOwnerCheckin` valait `!!checkinProprioLe || hasPhotos`.
+     Comme `photos-pending` exige justement « photos présentes ET pas de
+     confirmation », la condition était contradictoire : la branche
+     photos-pending et son sous-titre étaient du code mort, et surtout le
+     locataire pouvait valider son check-in dès le premier upload, avant que
+     l'hôte n'ait confirmé. Cela contournait la double validation que la
+     modale de règles promet explicitement — et déclenchait le reversement des
+     fonds sur un état des lieux incomplet. */
+  const hasOwnerCheckin = !!res.checkinProprioLe;
   const hasTenantCheckin = !!res.checkinLocataireLe;
-  const checkinTime     = new Date(dateDebut).getTime();
-  const isCheckinDay    = checkinTime <= now;
-  // L'heure de check-in est passée si on est après l'heure prévue + 30 min de tolérance
-  const isCheckinTimePassed = now > checkinTime + (30 * 60 * 1000);
+
+  const debutMs = new Date(dateDebut).getTime();
+  const isCheckinTimePassed = now > debutMs + ABSENCE_TOLERANCE_MS;
   const alreadyReported = !!absenceSignaleeLe;
 
-  /* CONFIRMED, CHECKED_IN et COMPLETED nécessitent le panneau d'action locataire */
-  if (!['CONFIRMED', 'CHECKED_IN', 'COMPLETED'].includes(statut)) return null;
-
-  const clearFeedback = () => setErrorMsg(null);
-  const onError       = (e: any) => setErrorMsg(e?.message ?? 'Une erreur est survenue.');
-
-  const diffMsToCheckin    = new Date(dateDebut).getTime() - now;
-  const diffDaysToCheckin  = diffMsToCheckin / (1000 * 60 * 60 * 24);
-  const diffHoursToCheckin = diffMsToCheckin / 3_600_000;
-  const tenantRefundPct    = diffDaysToCheckin > 7 ? 100 : diffDaysToCheckin >= 3 ? 50 : 25;
-
-  /* ── Handlers ── */
-
-  const handleConfirmCheckin = async () => {
-    clearFeedback(); setIsSubmitting(true);
-    try {
-      await nestFetch(NEST_API.RESERVATIONS.CONFIRM_CHECKIN(id), { method: 'POST' });
-      onRefetch();
-    } catch (e) { onError(e); }
-    finally { setIsSubmitting(false); }
-  };
-
-  const handleReportAbsent = async () => {
-    setShowAbsentModal(false);
-    clearFeedback(); setIsSubmitting(true);
-    try {
-      await nestFetch(NEST_API.RESERVATIONS.REPORT_ABSENT(id), { method: 'POST' });
-      onRefetch();
-    } catch (e) { onError(e); }
-    finally { setIsSubmitting(false); }
-  };
-
-  const handleExtendAbsentTimeout = async () => {
-    clearFeedback(); setIsSubmitting(true);
-    try {
-      await nestFetch(NEST_API.RESERVATIONS.EXTEND_ABSENT_TIMEOUT(id), { method: 'POST' });
-      onRefetch();
-    } catch (e) { onError(e); }
-    finally { setIsSubmitting(false); }
-  };
-
-  const handleCancel = async () => {
-    if (!cancelReason.trim()) { setErrorMsg('Veuillez indiquer un motif.'); return; }
-    clearFeedback(); setIsSubmitting(true);
-    try {
-      await nestFetch(NEST_API.RESERVATIONS.CANCEL(id), {
-        method: 'PATCH',
-        body: JSON.stringify({ raison: cancelReason }),
-      });
-      setShowCancelModal(false); setCancelReason('');
-      onRefetch();
-    } catch (e) { onError(e); }
-    finally { setIsSubmitting(false); }
-  };
-
-  const handleSubmitRating = async () => {
-    if (rating === 0) {
-      setErrorMsg('Veuillez sélectionner une note (1 à 5 étoiles).');
-      return;
-    }
-    clearFeedback(); setIsSubmitting(true);
-    try {
-      await nestFetch(NEST_API.RESERVATIONS.RATE_OWNER(id), {
-        method: 'POST',
-        body: JSON.stringify({ note: rating, commentaire: ratingComment }),
-      });
-      setRating(0); setRatingComment('');
-      onRefetch();
-    } catch (e) { onError(e); }
-    finally { setIsSubmitting(false); }
-  };
-
-  /*
-   * Sous-états dérivés du cycle de vie serveur :
-   *
-   * owner-ready      → checkinProprioLe set : proprio a confirmé → locataire peut valider/refuser
-   * photos-pending   → photos en DB mais checkinProprioLe absent (upload partiel) → galerie visible, pas de confirm
-   * absent-reported  → locataire a déjà signalé l'absence, attente du délai 2h
-   * absent-time      → l'heure de check-in est passée (+ 30 min), pas de checkin proprio, pas encore signalé → bouton absent disponible
-   * waiting          → avant l'heure de check-in, rien à faire
-   */
-  type SubState = 'owner-ready' | 'photos-pending' | 'absent-reported' | 'absent-time' | 'waiting';
+  const hoursToCheckin = (debutMs - now) / 3_600_000;
+  const refundTier = resolveRefundTier(hoursToCheckin);
 
   const subState: SubState = hasOwnerCheckin
     ? 'owner-ready'
     : hasPhotos
       ? 'photos-pending'
       : isCheckinTimePassed
-        ? alreadyReported ? 'absent-reported' : 'absent-time'
+        ? (alreadyReported ? 'absent-reported' : 'absent-time')
         : 'waiting';
 
-  const subtitleMap: Record<SubState, string> = {
-    'owner-ready':     "Inspectez l'état des lieux et validez votre arrivée",
-    'photos-pending':  "L'hôte finalise l'état des lieux — confirmation en cours",
-    'absent-reported': "Signalement envoyé — en attente du propriétaire (2h)",
-    'absent-time':     "L'hôte n'a pas encore effectué l'état des lieux",
-    'waiting':         "En attente de votre arrivée",
+  /* ── Appels API ───────────────────────────────────────────────────────── */
+
+  const run = useCallback(async (fn: () => Promise<void>, success: string) => {
+    setErrorMsg(null);
+    setSuccessMsg(null);
+    setIsSubmitting(true);
+    try {
+      await fn();
+      setSuccessMsg(success);
+      onRefetch();
+    } catch (e) {
+      setErrorMsg(e instanceof Error && e.message ? e.message : 'Une erreur est survenue.');
+    } finally {
+      setIsSubmitting(false);
+    }
+  }, [onRefetch]);
+
+  useEffect(() => {
+    if (!successMsg) return;
+    const timer = setTimeout(() => setSuccessMsg(null), 8_000);
+    return () => clearTimeout(timer);
+  }, [successMsg]);
+
+  const handleConfirmCheckin = () => run(async () => {
+    await nestFetch(NEST_API.RESERVATIONS.CONFIRM_CHECKIN(id), { method: 'POST' });
+  }, 'Check-in validé. Bon séjour !');
+
+  const handleReportAbsent = () => {
+    setShowAbsentModal(false);
+    run(async () => {
+      await nestFetch(NEST_API.RESERVATIONS.REPORT_ABSENT(id), { method: 'POST' });
+    }, 'Absence signalée. L’hôte dispose de 2 h pour effectuer l’état des lieux.');
   };
 
-  /* ─────────────────────────────────────────────────── */
+  const handleExtendAbsentTimeout = () => run(async () => {
+    await nestFetch(NEST_API.RESERVATIONS.EXTEND_ABSENT_TIMEOUT(id), { method: 'POST' });
+  }, 'Deux heures supplémentaires accordées à l’hôte.');
 
-  // Header config based on status
-  const headerConfig = statut === 'COMPLETED'
-    ? {
-        gradient: 'from-forest-800 to-forest-950',
-        iconBg: 'bg-forest-50 border-forest-100',
-        iconColor: 'text-forest-800',
-        icon: CheckCircle2,
-        label: 'Séjour terminé',
-        badge: 'bg-forest-50 text-forest-800 border-forest-100',
-        badgeText: 'Terminé',
-        subtitle: 'Partagez votre expérience avec la communauté',
-      }
-    : statut === 'CHECKED_IN'
-    ? {
-        gradient: 'from-forest-800 to-forest-950',
-        iconBg: 'bg-forest-50 border-forest-100',
-        iconColor: 'text-forest-800',
-        icon: Home,
-        label: 'Séjour en cours',
-        badge: 'bg-forest-50 text-forest-800 border-forest-100',
-        badgeText: 'En cours',
-        subtitle: 'Profitez de votre séjour · Vos garanties Klef sont actives',
-      }
-    : {
-        gradient: 'from-forest-800 to-forest-950',
-        iconBg: 'bg-forest-50 border-forest-100',
-        iconColor: 'text-forest-800',
-        icon: LogIn,
-        label: 'Check-in',
-        badge: 'bg-forest-50 text-forest-800 border-forest-100',
-        badgeText: 'Étape 3/4',
-        subtitle: subtitleMap[subState],
-      };
+  const handleCancel = () => {
+    if (cancelReason.trim().length < MOTIF_MIN) {
+      setErrorMsg(`Le motif doit contenir au moins ${MOTIF_MIN} caractères.`);
+      return;
+    }
+    run(async () => {
+      await nestFetch(NEST_API.RESERVATIONS.CANCEL(id), {
+        method: 'PATCH',
+        body: JSON.stringify({ raison: cancelReason.trim() }),
+      });
+      setShowCancelModal(false);
+      setCancelReason('');
+    }, 'Réservation annulée.');
+  };
 
-  const HeaderIcon = headerConfig.icon;
+  const handleSubmitRating = () => {
+    if (rating === 0) {
+      setErrorMsg('Sélectionnez une note de 1 à 5 étoiles.');
+      return;
+    }
+    run(async () => {
+      await nestFetch(NEST_API.RESERVATIONS.RATE_OWNER(id), {
+        method: 'POST',
+        body: JSON.stringify({ note: rating, commentaire: ratingComment.trim() || undefined }),
+      });
+      setRating(0);
+      setRatingComment('');
+    }, 'Votre évaluation a été publiée.');
+  };
+
+  if (!['CONFIRMED', 'CHECKED_IN', 'COMPLETED'].includes(statut)) return null;
+
+  /* ── En-tête ──────────────────────────────────────────────────────────── */
+
+  const header =
+    statut === 'COMPLETED'
+      ? { icon: CheckCircle2, label: 'Séjour terminé', chip: 'Terminé', subtitle: 'Partagez votre expérience avec la communauté' }
+      : statut === 'CHECKED_IN'
+        ? { icon: Home, label: 'Séjour en cours', chip: 'En cours', subtitle: 'Vos garanties Klef sont actives' }
+        : { icon: LogIn, label: 'Check-in', chip: 'Étape 3', subtitle: SUBTITLES[subState] };
+
+  const HeaderIcon = header.icon;
+
+  /* Bloc « signaler un problème », identique dans trois sous-états. */
+  const reportProblem = (titre: string, libelle: string) => (
+    <div className="border-t border-border pt-4">
+      <p className="mb-3 text-xs font-semibold uppercase tracking-wider text-foreground-muted">
+        {titre}
+      </p>
+      <GhostButton onClick={() => setShowRefuseModal(true)} disabled={isSubmitting}>
+        <AlertTriangle className="h-3.5 w-3.5 text-error-600" aria-hidden="true" />
+        {libelle}
+      </GhostButton>
+    </div>
+  );
+
+  /* Vignettes empilées de l'état des lieux. */
+  const galleryButton = (title: string, subtitle: string, tone: Tone = 'forest') => (
+    <button
+      type="button"
+      onClick={() => setShowGallery(true)}
+      className="relative flex w-full items-center gap-4 overflow-hidden rounded-card border border-border bg-background-alt p-4 text-left transition-[border-color,background-color] duration-200 hover:border-border-hover hover:bg-background-card"
+    >
+      <span
+        aria-hidden="true"
+        className={cn('absolute inset-y-0 left-0 w-1', tone === 'warning' ? 'bg-warning-500' : 'bg-forest-600')}
+      />
+      <span className="ml-1 flex shrink-0 items-center">
+        {checkinPhotos.slice(0, 3).map((p, i) => (
+          <span
+            key={p.id}
+            className="relative block h-10 w-10 overflow-hidden rounded-inner border-2 border-background-card"
+            style={{ marginLeft: i > 0 ? '-10px' : 0, zIndex: 3 - i }}
+          >
+            <Image src={p.url} alt="" fill sizes="40px" className="object-cover" />
+          </span>
+        ))}
+        {checkinPhotos.length > 3 && (
+          <span
+            className="relative flex h-10 w-10 items-center justify-center rounded-inner border-2 border-background-card bg-forest-800 text-xs font-semibold text-neutral-50"
+            style={{ marginLeft: '-10px', zIndex: 0 }}
+          >
+            +{checkinPhotos.length - 3}
+          </span>
+        )}
+      </span>
+      <span className="min-w-0 flex-1">
+        <span className="block font-display text-sm font-semibold leading-tight text-foreground">{title}</span>
+        <span className="mt-0.5 block text-xs text-foreground-muted">{subtitle}</span>
+      </span>
+      <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-pill border border-border bg-background-card text-foreground-muted">
+        <Images className="h-4 w-4" aria-hidden="true" />
+      </span>
+    </button>
+  );
 
   return (
     <>
-      <div className="bg-background-card border border-border/80 rounded-card overflow-hidden shadow-2xs space-y-0">
+      <div className="overflow-hidden rounded-card border border-border bg-background-card shadow-sm">
 
-        {/* Bande gradient */}
-        <div className={cn('h-1 w-full bg-gradient-to-r', headerConfig.gradient)} />
+        <div className="h-1 w-full bg-forest-600" />
 
-        {/* Header */}
         <div className="flex items-start gap-4 px-6 pt-5 pb-4">
-          <div className="w-10 h-10 rounded-inner bg-forest-950 text-lime-400 border border-lime-400/20 flex items-center justify-center shrink-0 mt-0.5 shadow-2xs">
-            <HeaderIcon className="w-4.5 h-4.5 text-lime-400" />
-          </div>
-          <div className="flex-1 min-w-0">
-            <div className="flex items-center gap-2 flex-wrap">
-              <p className="font-display text-base font-bold text-forest-950 leading-tight">{headerConfig.label}</p>
-              <span className="text-[10px] font-extrabold px-2.5 py-0.5 rounded-pill border bg-forest-50 text-forest-800 border-forest-100">
-                {headerConfig.badgeText}
+          <span className="mt-0.5 flex h-10 w-10 shrink-0 items-center justify-center rounded-inner border border-forest-100 bg-forest-50 text-forest-700">
+            <HeaderIcon className="h-4 w-4" aria-hidden="true" />
+          </span>
+
+          <div className="min-w-0 flex-1">
+            <div className="flex flex-wrap items-center gap-2">
+              <h2 className="font-display text-base font-semibold leading-tight text-foreground">
+                {header.label}
+              </h2>
+              <span className="rounded-pill border border-forest-100 bg-forest-50 px-2.5 py-0.5 text-xs font-semibold text-forest-700">
+                {header.chip}
               </span>
             </div>
-            <p className="text-xs text-foreground-muted mt-0.5">{headerConfig.subtitle}</p>
+            <p className="mt-0.5 text-xs text-foreground-muted">{header.subtitle}</p>
           </div>
+
           <button
+            type="button"
             onClick={onRefetch}
-            title="Actualiser"
-            className="w-8 h-8 rounded-inner bg-background-alt hover:bg-forest-50 border border-border flex items-center justify-center transition-colors shrink-0 mt-0.5"
+            aria-label="Actualiser"
+            className="mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-pill border border-border bg-background-alt text-forest-700 transition-colors hover:bg-forest-50"
           >
-            <RefreshCw className="w-3.5 h-3.5 text-forest-700" />
+            <RefreshCw className="h-3.5 w-3.5" aria-hidden="true" />
           </button>
         </div>
 
-        {/* Divider */}
-        <div className="h-px bg-border/60 mx-6" />
+        <div className="mx-6 h-px bg-border" />
 
-        <div className="p-6 space-y-4">
+        <div className="space-y-4 p-6">
 
-          {errorMsg && <Feedback message={errorMsg} />}
+          {errorMsg && <Feedback type="error" message={errorMsg} />}
+          {successMsg && <Feedback type="success" message={successMsg} />}
 
-          {/* Bouton permanent Livret d'Accueil Digital pour réservations confirmées / en cours */}
+          {/* ── Livret d'accueil ─────────────────────────────────────────── */}
+
           {res.logement && (
             <button
               type="button"
               onClick={() => setShowWelcomeGuide(true)}
-              className="w-full flex items-center justify-between p-4 rounded-inner border border-forest-600/30 bg-forest-950/5 hover:bg-forest-950/10 transition-all cursor-pointer text-left"
+              className="flex w-full items-center justify-between gap-3 rounded-card border border-border bg-background-alt p-4 text-left transition-colors hover:border-border-hover hover:bg-background-card"
             >
-              <div className="flex items-center gap-3">
-                <div className="grid h-10 w-10 shrink-0 place-items-center rounded-inner bg-forest-950 text-lime-400 border border-forest-800 shadow-xs">
-                  <Smartphone className="h-5 w-5 text-lime-400" />
-                </div>
-                <div>
-                  <p className="text-xs font-bold text-forest-900 flex items-center gap-2">
-                    Livret d&apos;Accueil Digital
-                    <span className="rounded-pill bg-lime-400/20 px-2 py-0.5 text-[0.6875rem] font-bold text-forest-800">
-                      Wi-Fi &amp; Clés
-                    </span>
-                  </p>
-                  <p className="text-[11px] text-foreground-muted font-medium mt-0.5">
-                    Accédez au mot de passe Wi-Fi, Digicode et itinéraire GPS.
-                  </p>
-                </div>
-              </div>
-              <ArrowRight className="h-4 w-4 text-forest-700 shrink-0 ml-2" />
+              <span className="flex min-w-0 items-center gap-3">
+                <span className="grid h-10 w-10 shrink-0 place-items-center rounded-inner border border-forest-100 bg-forest-50 text-forest-700">
+                  <Smartphone className="h-5 w-5" aria-hidden="true" />
+                </span>
+                <span className="min-w-0">
+                  <span className="block text-xs font-semibold text-foreground">
+                    Livret d’accueil
+                  </span>
+                  <span className="mt-0.5 block text-xs text-foreground-muted">
+                    Wi-Fi, digicode et itinéraire GPS
+                  </span>
+                </span>
+              </span>
+              <ArrowRight className="h-4 w-4 shrink-0 text-foreground-muted" aria-hidden="true" />
             </button>
           )}
 
-          {/* ══ SUBSTATES CHECK-IN (Tant que le locataire n'a pas encore validé le check-in) ══ */}
+          {/* ── OWNER-READY ──────────────────────────────────────────────── */}
+
           {!hasTenantCheckin && subState === 'owner-ready' && (
             <>
-              <div className="flex items-start gap-3 bg-forest-50 border border-forest-100 rounded-inner p-4">
-                <div className="w-8 h-8 rounded-inner bg-forest-100 border border-forest-200 flex items-center justify-center shrink-0">
-                  <CheckCircle2 className="w-4 h-4 text-forest-700" />
-                </div>
-                <div>
-                  <p className="text-xs font-bold text-forest-950">
-                    {checkinPhotos.length} photo{checkinPhotos.length > 1 ? 's' : ''} de check-in disponible{checkinPhotos.length > 1 ? 's' : ''}
-                  </p>
-                  <p className="text-xs text-forest-800 mt-0.5 leading-relaxed">
-                    L&apos;hôte a documenté l&apos;état du logement. Vérifiez les photos puis validez votre arrivée.
-                  </p>
-                </div>
-              </div>
-
-              {/* Bouton galerie */}
-              <button
-                type="button"
-                onClick={() => setShowGallery(true)}
-                className="w-full group flex items-center gap-4 p-4 rounded-inner border border-border/80 bg-background-alt hover:bg-background-card hover:border-forest-300 transition-all duration-200 text-left overflow-hidden relative"
+              <Notice
+                tone="forest"
+                icon={CheckCircle2}
+                title={`${checkinPhotos.length} photo${checkinPhotos.length > 1 ? 's' : ''} de check-in disponible${checkinPhotos.length > 1 ? 's' : ''}`}
               >
-                <div className="absolute left-0 top-0 bottom-0 w-1 rounded-l-inner bg-lime-400" />
-                <div className="flex items-center ml-1 shrink-0">
-                  {checkinPhotos.slice(0, 3).map((p, i) => (
-                    <div
-                      key={p.id}
-                      className="relative w-10 h-10 rounded-inner overflow-hidden border-2 border-background-card shadow-2xs"
-                      style={{ marginLeft: i > 0 ? '-10px' : 0, zIndex: 3 - i }}
-                    >
-                      <Image src={p.url} alt="" fill className="object-cover" />
-                    </div>
-                  ))}
-                  {checkinPhotos.length > 3 && (
-                    <div
-                      className="relative w-10 h-10 rounded-inner bg-forest-950 border-2 border-background-card flex items-center justify-center shadow-2xs"
-                      style={{ marginLeft: '-10px', zIndex: 0 }}
-                    >
-                      <span className="text-[9px] font-extrabold text-lime-400">+{checkinPhotos.length - 3}</span>
-                    </div>
-                  )}
-                </div>
-                <div className="flex-1 min-w-0">
-                  <p className="font-display text-sm font-bold text-forest-950 leading-tight">Voir l&apos;état des lieux</p>
-                  <p className="text-xs text-foreground-muted mt-0.5">Inspectez chaque pièce avant de confirmer</p>
-                </div>
-                <div className="w-8 h-8 rounded-inner bg-forest-950 text-lime-400 border border-lime-400/20 flex items-center justify-center transition-colors shrink-0">
-                  <Images className="w-4 h-4 text-lime-400" />
-                </div>
-              </button>
+                L’hôte a documenté l’état du logement. Vérifiez les photos avant de valider votre
+                arrivée : c’est cette validation qui libère les fonds.
+              </Notice>
 
-              {/* CTA confirmer */}
-              <button
+              {hasPhotos && galleryButton(
+                'Voir l’état des lieux',
+                'Inspectez chaque pièce avant de confirmer',
+              )}
+
+              <PrimaryButton
                 onClick={handleConfirmCheckin}
-                disabled={isSubmitting}
-                className="w-full flex items-center justify-center gap-2.5 py-3.5 text-sm font-extrabold text-forest-950 rounded-pill bg-lime-400 hover:bg-lime-300 disabled:opacity-60 shadow-md transition-all active:scale-95 cursor-pointer"
+                loading={isSubmitting}
+                loadingLabel="Validation…"
+                icon={Check}
               >
-                {isSubmitting
-                  ? <><Loader2 className="w-4 h-4 animate-spin" />Validation…</>
-                  : <><Check className="w-4 h-4 text-forest-950" />Valider le check-in &amp; récupérer les clés</>}
-              </button>
+                Valider le check-in
+              </PrimaryButton>
 
-              {/* Refus */}
-              <div className="pt-1 border-t border-neutral-100">
-                <p className="text-[10px] text-neutral-400 font-semibold mb-3 uppercase tracking-wide">Quelque chose ne va pas ?</p>
-                <button
-                  onClick={() => setShowRefuseModal(true)}
-                  disabled={isSubmitting}
-                  className="flex items-center gap-2 text-xs font-bold text-error-600 hover:text-error-700 hover:bg-error-50 border border-error-200 hover:border-error-300 px-4 py-2.5 rounded-xl transition-all"
-                >
-                  <AlertTriangle className="w-3.5 h-3.5" />
-                  Signaler un problème
-                </button>
-              </div>
+              {reportProblem('Quelque chose ne va pas ?', 'Signaler un problème')}
             </>
           )}
 
-          {/* ══ PHOTOS-PENDING : photos en DB mais proprio n'a pas encore confirmé ══ */}
+          {/* ── PHOTOS-PENDING ───────────────────────────────────────────── */}
+
           {!hasTenantCheckin && subState === 'photos-pending' && (
             <>
-              <div className="flex items-start gap-3 bg-amber-50 border border-amber-200 rounded-2xl p-4">
-                <div className="w-8 h-8 rounded-xl bg-amber-100 border border-amber-200 flex items-center justify-center shrink-0">
-                  <Clock className="w-4 h-4 text-amber-600 animate-pulse" />
-                </div>
-                <div>
-                  <p className="text-xs font-black text-amber-800">L&apos;hôte finalise l&apos;état des lieux</p>
-                  <p className="text-xs text-amber-700 mt-0.5 leading-relaxed">
-                    Des photos ont été uploadées mais la confirmation de l&apos;hôte est en cours. Actualisez dans quelques instants.
-                  </p>
-                </div>
-              </div>
+              <Notice tone="warning" icon={Clock} title="L’hôte finalise l’état des lieux">
+                Des photos ont été déposées mais l’hôte n’a pas encore confirmé. Vous pourrez
+                valider votre arrivée dès que ce sera fait.
+              </Notice>
 
-              {/* Galerie visible même en pending */}
-              {hasPhotos && (
-                <>
-                  <button
-                    type="button"
-                    onClick={() => setShowGallery(true)}
-                    className="w-full group flex items-center gap-4 p-4 rounded-2xl border border-neutral-200/80 bg-white hover:bg-neutral-50 hover:border-neutral-300 transition-all duration-200 text-left overflow-hidden relative"
-                  >
-                    <div className="absolute left-0 top-0 bottom-0 w-1 rounded-l-2xl bg-amber-400" />
-                    <div className="flex items-center ml-1 shrink-0">
-                      {checkinPhotos.slice(0, 3).map((p, i) => (
-                        <div
-                          key={p.id}
-                          className="relative w-10 h-10 rounded-xl overflow-hidden border-2 border-white shadow-sm"
-                          style={{ marginLeft: i > 0 ? '-10px' : 0, zIndex: 3 - i }}
-                      >
-                        <Image src={p.url} alt="" fill className="object-cover" />
-                      </div>
-                    ))}
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <p className="text-sm font-black text-neutral-900 leading-tight">Aperçu des photos</p>
-                    <p className="text-xs text-neutral-400 mt-0.5">Confirmation en attente — pas encore validable</p>
-                  </div>
-                  <div className="w-8 h-8 rounded-xl bg-neutral-100 border border-neutral-200 flex items-center justify-center shrink-0">
-                    <Images className="w-4 h-4 text-neutral-400" />
-                  </div>
-                </button>
-                </>
+              {galleryButton(
+                'Aperçu des photos',
+                'Confirmation de l’hôte en attente',
+                'warning',
               )}
 
-              {/* Bouton signaler un problème */}
-              <div className="pt-1 border-t border-neutral-100">
-                <p className="text-[10px] text-neutral-400 font-semibold mb-3 uppercase tracking-wide">Quelque chose ne va pas ?</p>
-                <button
-                  onClick={() => setShowRefuseModal(true)}
-                  disabled={isSubmitting}
-                  className="flex items-center gap-2 text-xs font-bold text-error-600 hover:text-error-700 hover:bg-error-50 border border-error-200 hover:border-error-300 px-4 py-2.5 rounded-xl transition-all"
-                >
-                  <AlertTriangle className="w-3.5 h-3.5" />
-                  Signaler un problème
-                </button>
-              </div>
+              {reportProblem('Quelque chose ne va pas ?', 'Signaler un problème')}
             </>
           )}
 
-          {/* ══ ABSENT-REPORTED : locataire a déjà signalé ══ */}
+          {/* ── ABSENT-REPORTED ──────────────────────────────────────────── */}
+
           {!hasTenantCheckin && subState === 'absent-reported' && (
-            <div className="bg-amber-50 border border-amber-200 rounded-2xl p-4 space-y-2.5">
-              <div className="flex items-center gap-3">
-                <div className="w-8 h-8 rounded-xl bg-amber-100 border border-amber-200 flex items-center justify-center shrink-0">
-                  <Clock className="w-4 h-4 text-amber-600 animate-pulse" />
-                </div>
-                <p className="text-xs font-black text-amber-800">Absence du propriétaire signalée</p>
-              </div>
-              <p className="text-xs text-amber-700 leading-relaxed">
+            <>
+              <Notice tone="warning" icon={Clock} title="Absence de l’hôte signalée">
                 Signalement envoyé le{' '}
-                <span className="font-bold">
-                  {new Date(absenceSignaleeLe!).toLocaleString('fr-FR', {
-                    day: 'numeric', month: 'long', hour: '2-digit', minute: '2-digit',
-                  })}
+                <span className="font-semibold">
+                  {absenceSignaleeLe &&
+                    new Date(absenceSignaleeLe).toLocaleString('fr-FR', {
+                      day: 'numeric', month: 'long', hour: '2-digit', minute: '2-digit',
+                    })}
                 </span>
-                . L&apos;hôte dispose du délai accordé pour effectuer l&apos;état des lieux. Passé ce délai, la réservation est annulée et vous êtes remboursé intégralement.
-              </p>
-              <button
-                type="button"
+                . Passé le délai accordé, la réservation est annulée et vous êtes remboursé
+                intégralement.
+              </Notice>
+
+              <GhostButton
                 onClick={handleExtendAbsentTimeout}
                 disabled={isSubmitting}
-                className="w-full flex items-center justify-center gap-2 py-2.5 px-4 rounded-xl text-xs font-bold bg-amber-600 hover:bg-amber-700 text-white transition-all shadow-sm"
+                className="w-full py-3 text-sm"
               >
-                {isSubmitting
-                  ? <Loader2 className="w-4 h-4 animate-spin" />
-                  : <Clock className="w-4 h-4" />}
-                Accorder +2h d&apos;attente supplémentaires à l&apos;hôte
-              </button>
-            </div>
+                <Clock className="h-4 w-4" aria-hidden="true" />
+                Accorder 2 h supplémentaires à l’hôte
+              </GhostButton>
+            </>
           )}
 
-          {/* ══ ABSENT-TIME : heure de check-in passée, proprio pas là, pas encore signalé ══ */}
+          {/* ── ABSENT-TIME ──────────────────────────────────────────────── */}
+
           {!hasTenantCheckin && subState === 'absent-time' && (
             <>
-              <div className="flex items-start gap-3 bg-amber-50 border border-amber-200 rounded-2xl p-4">
-                <div className="w-8 h-8 rounded-xl bg-amber-100 border border-amber-200 flex items-center justify-center shrink-0">
-                  <ShieldAlert className="w-4 h-4 text-amber-600" />
-                </div>
-                <div>
-                  <p className="text-xs font-black text-amber-800">L&apos;état des lieux n&apos;a pas encore démarré</p>
-                  <p className="text-xs text-amber-700 mt-0.5 leading-relaxed">
-                    Si votre hôte est injoignable ou absent, signalez-le. Il disposera de 2h pour réagir, sinon votre réservation sera annulée et remboursée.
-                  </p>
-                </div>
-              </div>
+              <Notice tone="warning" icon={ShieldAlert} title="L’état des lieux n’a pas démarré">
+                Si votre hôte est injoignable, signalez-le. Il disposera de 2 h pour réagir, faute
+                de quoi votre réservation sera annulée et intégralement remboursée.
+              </Notice>
 
-              <button
-                type="button"
-                onClick={() => { clearFeedback(); setShowAbsentModal(true); }}
+              <DangerButton
+                onClick={() => { setErrorMsg(null); setShowAbsentModal(true); }}
                 disabled={isSubmitting}
-                className="w-full group relative flex items-center gap-4 p-4 rounded-2xl border border-amber-200/80 bg-white hover:bg-amber-50/60 hover:border-amber-300/80 hover:shadow-md hover:shadow-amber-100/60 transition-all duration-200 disabled:opacity-40 overflow-hidden text-left"
+                icon={AlertTriangle}
+                className="w-full py-3 text-sm"
               >
-                <div className="absolute left-0 top-0 bottom-0 w-1 rounded-l-2xl bg-amber-500" />
-                <div className="w-11 h-11 rounded-2xl border bg-amber-50 border-amber-100 flex items-center justify-center shrink-0 ml-1">
-                  <AlertTriangle className="w-5 h-5 text-amber-600" />
-                </div>
-                <div className="flex-1 min-w-0">
-                  <p className="text-sm font-black text-neutral-900 leading-tight">Signaler le propriétaire absent</p>
-                  <p className="text-xs text-neutral-400 mt-0.5">Déclenche un délai de grâce de 2h avant annulation automatique</p>
-                </div>
-                {isSubmitting
-                  ? <Loader2 className="w-4 h-4 text-neutral-400 animate-spin shrink-0" />
-                  : <div className="w-8 h-8 rounded-xl bg-neutral-100 group-hover:bg-neutral-200 flex items-center justify-center transition-colors shrink-0">
-                      <ArrowRight className="w-4 h-4 text-neutral-400 group-hover:text-neutral-600 transition-colors" />
-                    </div>}
-              </button>
+                Signaler l’hôte absent
+              </DangerButton>
 
-              {/* Bouton signaler un problème avec le logement */}
-              <div className="pt-1 border-t border-neutral-100">
-                <p className="text-[10px] text-neutral-400 font-semibold mb-3 uppercase tracking-wide">Problème avec le logement ?</p>
-                <button
-                  onClick={() => setShowRefuseModal(true)}
-                  disabled={isSubmitting}
-                  className="flex items-center gap-2 text-xs font-bold text-error-600 hover:text-error-700 hover:bg-error-50 border border-error-200 hover:border-error-300 px-4 py-2.5 rounded-xl transition-all"
-                >
-                  <AlertTriangle className="w-3.5 h-3.5" />
-                  Signaler un autre problème
-                </button>
-              </div>
+              {reportProblem('Problème avec le logement ?', 'Signaler un autre problème')}
             </>
           )}
 
-          {/* ══ WAITING : avant le jour J ══ */}
+          {/* ── WAITING ──────────────────────────────────────────────────── */}
+
           {!hasTenantCheckin && subState === 'waiting' && (
-            <div className="flex items-start gap-3.5 bg-forest-950 text-white border border-forest-800 rounded-inner p-4.5 shadow-sm relative overflow-hidden">
-              <div className="w-9 h-9 rounded-inner bg-forest-900 border border-lime-400/20 flex items-center justify-center shrink-0 shadow-2xs mt-0.5">
-                <Clock className="w-4.5 h-4.5 text-lime-400 animate-pulse" />
-              </div>
-              <div className="space-y-1">
-                <h4 className="font-display text-sm font-bold text-white">
-                  En attente de l&apos;état des lieux par l&apos;hôte
-                </h4>
-                <p className="text-xs text-forest-200 leading-relaxed font-medium">
-                  Le propriétaire effectuera les photos d&apos;état des lieux le jour de votre arrivée (
-                  <span className="font-extrabold text-lime-300">
-                    {new Date(dateDebut).toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' })}
-                  </span>
-                  ). Vous pourrez les vérifier et les valider directement ici pour débloquer l&apos;accès.
-                </p>
+            <div className="section-inverse p-5">
+              <div className="flex items-start gap-3.5">
+                <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-inner border border-border-inverse bg-white/5">
+                  <Clock className="h-4 w-4 text-on-inverse-marker" aria-hidden="true" />
+                </span>
+                <div className="min-w-0 space-y-1">
+                  <h3 className="font-display text-sm font-semibold text-on-inverse-display">
+                    En attente de l’état des lieux
+                  </h3>
+                  <p className="text-xs leading-relaxed text-on-inverse-muted">
+                    L’hôte réalisera les photos le jour de votre arrivée, le{' '}
+                    <span className="font-semibold text-on-inverse">
+                      {new Date(dateDebut).toLocaleDateString('fr-FR', {
+                        day: 'numeric', month: 'long', year: 'numeric',
+                      })}
+                    </span>
+                    . Vous pourrez les vérifier et les valider ici pour débloquer l’accès.
+                  </p>
+                </div>
               </div>
             </div>
           )}
 
-          {/* ══ CHECKED_IN : séjour en cours (Une fois que le locataire A VALIDÉ son check-in) ══ */}
-          {hasTenantCheckin && statut === 'CHECKED_IN' && (
-            <>
-              <div className="flex items-start gap-3 bg-forest-50 border border-forest-100 rounded-inner p-4">
-                <div className="w-8 h-8 rounded-inner bg-forest-100 border border-forest-200 flex items-center justify-center shrink-0">
-                  <CheckCircle2 className="w-4 h-4 text-forest-700" />
-                </div>
-                <div>
-                  <p className="text-xs font-bold text-forest-950">Séjour actuellement en cours</p>
-                  <p className="text-xs text-forest-800 mt-0.5 leading-relaxed">
-                    Votre arrivée a été validée. Votre logement et votre séjour restent protégés par l&apos;assistance et la garantie Klef.
-                  </p>
-                </div>
-              </div>
+          {/* ── SÉJOUR EN COURS ──────────────────────────────────────────── */}
 
-              {/* Bouton voir l'état des lieux d'entrée */}
-              {checkinPhotos.length > 0 && (
-                <button
-                  type="button"
-                  onClick={() => setShowGallery(true)}
-                  className="w-full group flex items-center gap-4 p-4 rounded-inner border border-border/80 bg-background-alt hover:bg-background-card hover:border-forest-300 transition-all duration-200 text-left overflow-hidden relative"
-                >
-                  <div className="absolute left-0 top-0 bottom-0 w-1 rounded-l-inner bg-lime-400" />
-                  <div className="flex items-center ml-1 shrink-0">
-                    {checkinPhotos.slice(0, 3).map((p, i) => (
-                      <div
-                        key={p.id}
-                        className="relative w-10 h-10 rounded-inner overflow-hidden border-2 border-background-card shadow-2xs"
-                        style={{ marginLeft: i > 0 ? '-10px' : 0, zIndex: 3 - i }}
-                      >
-                        <Image src={p.url} alt="" fill className="object-cover" />
-                      </div>
-                    ))}
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <p className="font-display text-sm font-bold text-forest-950 leading-tight">Voir l&apos;état des lieux d&apos;entrée</p>
-                    <p className="text-xs text-foreground-muted mt-0.5">{checkinPhotos.length} photo{checkinPhotos.length > 1 ? 's' : ''} de check-in validées</p>
-                  </div>
-                  <div className="w-8 h-8 rounded-inner bg-forest-950 text-lime-400 border border-lime-400/20 flex items-center justify-center shrink-0">
-                    <Images className="w-4 h-4 text-lime-400" />
-                  </div>
-                </button>
+          {hasTenantCheckin && statut !== 'COMPLETED' && (
+            <>
+              <Notice tone="forest" icon={CheckCircle2} title="Séjour en cours">
+                Votre arrivée a été validée. Votre séjour reste couvert par l’assistance et la
+                garantie Klef.
+              </Notice>
+
+              {hasPhotos && galleryButton(
+                'Voir l’état des lieux d’entrée',
+                `${checkinPhotos.length} photo${checkinPhotos.length > 1 ? 's' : ''} validée${checkinPhotos.length > 1 ? 's' : ''}`,
               )}
 
-              {/* Signaler un problème / litige pendant le séjour */}
-              {!res.litige && (
-                <div className="pt-2 border-t border-border/60">
-                  <p className="text-[10px] text-foreground-muted font-bold mb-3 uppercase tracking-wide">Un problème pendant votre séjour ?</p>
-                  <button
-                    onClick={() => setShowRefuseModal(true)}
-                    disabled={isSubmitting}
-                    className="flex items-center gap-2 text-xs font-bold text-error-600 hover:text-error-700 hover:bg-error-50 border border-error-200 hover:border-error-300 px-4 py-2.5 rounded-pill transition-all"
-                  >
-                    <AlertTriangle className="w-3.5 h-3.5" />
-                    Déclarer un problème ou litige
-                  </button>
-                </div>
+              {!res.litige && reportProblem(
+                'Un problème pendant votre séjour ?',
+                'Déclarer un problème ou un litige',
               )}
             </>
           )}
 
-          {/* ══ COMPLETED : notation du propriétaire ══ */}
+          {/* ── COMPLETED ────────────────────────────────────────────────── */}
+
           {statut === 'COMPLETED' && (
             <>
-              <div className="flex items-start gap-3 bg-forest-50 border border-forest-100 rounded-inner p-4">
-                <div className="w-8 h-8 rounded-inner bg-forest-100 border border-forest-200 flex items-center justify-center shrink-0">
-                  <CheckCircle2 className="w-4 h-4 text-forest-700" />
-                </div>
-                <div>
-                  <p className="text-xs font-bold text-forest-950">Séjour terminé avec succès</p>
-                  <p className="text-xs text-forest-800 mt-0.5 leading-relaxed">
-                    Merci d&apos;avoir utilisé Klef ! Partagez votre expérience pour aider la communauté.
-                  </p>
-                </div>
-              </div>
+              <Notice tone="forest" icon={CheckCircle2} title="Séjour terminé">
+                Merci d’avoir utilisé Klef. Votre avis aide les prochains voyageurs à choisir.
+              </Notice>
 
-              {/* Notation du propriétaire */}
-              <div className="pt-2 border-t border-border/60 space-y-3">
-                <p className="text-[10px] text-foreground-muted font-semibold uppercase tracking-wide">Évaluer le propriétaire et le logement</p>
+              <div className="space-y-3 border-t border-border pt-4">
+                <p className="text-xs font-semibold uppercase tracking-wider text-foreground-muted">
+                  Évaluer l’hôte et le logement
+                </p>
 
-                {/* Étoiles interactives */}
-                <div className="flex items-center justify-center gap-2 py-4 bg-background-alt rounded-inner border border-border/80">
-                  {[1, 2, 3, 4, 5].map((star) => {
-                    const isActive = (hoverRating || rating) >= star;
-                    return (
-                      <button
-                        key={star}
-                        type="button"
-                        onClick={() => setRating(star)}
-                        onMouseEnter={() => setHoverRating(star)}
-                        onMouseLeave={() => setHoverRating(0)}
-                        className="transition-all duration-150 hover:scale-110 active:scale-95"
-                      >
-                        <Star
-                          className={cn(
-                            'w-8 h-8 transition-all duration-150',
-                            isActive ? 'text-amber-400 fill-amber-400' : 'text-neutral-300'
-                          )}
-                          strokeWidth={2}
-                        />
-                      </button>
-                    );
-                  })}
-                </div>
+                <StarRating
+                  value={rating}
+                  onChange={setRating}
+                  label="Note de l’hôte et du logement"
+                />
 
-                {/* Labels de satisfaction */}
-                {rating > 0 && (
-                  <p className="text-xs font-bold text-center text-forest-950">
-                    {rating === 1 && 'Très insatisfait'}
-                    {rating === 2 && 'Insatisfait'}
-                    {rating === 3 && 'Correct'}
-                    {rating === 4 && 'Satisfait'}
-                    {rating === 5 && 'Excellent !'}
-                  </p>
-                )}
-
-                {/* Commentaire optionnel */}
-                <div>
-                  <label className="block text-xs font-bold text-forest-950 mb-1.5">
-                    Commentaire <span className="text-foreground-muted font-normal">(optionnel)</span>
+                <div className="space-y-2">
+                  <label htmlFor="tenant-rating-comment" className="block text-xs font-semibold text-foreground">
+                    Commentaire{' '}
+                    <span className="font-normal text-foreground-muted">(optionnel)</span>
                   </label>
                   <textarea
+                    id="tenant-rating-comment"
                     rows={3}
-                    className="w-full text-xs bg-background-card border border-border text-forest-950 placeholder:text-foreground-faint rounded-inner px-4 py-3 focus:outline-none focus:ring-2 focus:ring-lime-400/40 focus:border-lime-400 resize-none transition-all"
-                    placeholder="Partagez votre expérience : propreté, conformité, accueil..."
                     value={ratingComment}
                     onChange={(e) => setRatingComment(e.target.value)}
+                    placeholder="Propreté, conformité à l’annonce, accueil…"
+                    className="w-full resize-none rounded-field border border-border bg-background px-4 py-3 text-foreground placeholder:text-foreground-faint focus:border-forest-500 focus:outline-none"
                   />
                 </div>
 
-                {/* Bouton soumettre */}
-                <button
+                <PrimaryButton
                   onClick={handleSubmitRating}
-                  disabled={isSubmitting || rating === 0}
-                  className="w-full flex items-center justify-center gap-2.5 py-3.5 text-sm font-extrabold text-forest-950 rounded-pill bg-lime-400 hover:bg-lime-300 disabled:opacity-60 shadow-md transition-all active:scale-95"
+                  disabled={rating === 0}
+                  loading={isSubmitting}
+                  loadingLabel="Publication…"
+                  icon={CheckCircle2}
                 >
-                  {isSubmitting
-                    ? <><Loader2 className="w-4 h-4 animate-spin" />Envoi en cours…</>
-                    : <><CheckCircle2 className="w-4 h-4 text-forest-950" />Publier mon évaluation</>}
-                </button>
+                  Publier mon évaluation
+                </PrimaryButton>
 
                 {rating === 0 && (
-                  <p className="text-[11px] text-center text-neutral-400 leading-relaxed">
+                  <p className="text-center text-xs text-foreground-muted">
                     Sélectionnez une note pour continuer
                   </p>
                 )}
@@ -708,52 +490,44 @@ export function TenantReservationActionPanel({ id, res, onRefetch }: Props) {
             </>
           )}
 
-          {/* Annulation — cachée dans les 24h précédant le check-in */}
-          {statut === 'CONFIRMED' && diffHoursToCheckin >= 24 && (
-            <div className="pt-2 border-t border-neutral-100">
-              <button
-                onClick={() => { clearFeedback(); setShowCancelModal(true); }}
-                className="flex items-center gap-2 text-xs font-bold text-rose-600 hover:text-rose-700 hover:bg-rose-50 border border-rose-200 hover:border-rose-300 px-4 py-2.5 rounded-xl transition-all"
-              >
-                <X className="w-3.5 h-3.5" />
+          {/* ── Annulation ───────────────────────────────────────────────── */}
+
+          {statut === 'CONFIRMED' && !hasTenantCheckin && (
+            <div className="border-t border-border pt-4">
+              <GhostButton onClick={() => { setErrorMsg(null); setShowCancelModal(true); }}>
+                <X className="h-3.5 w-3.5" aria-hidden="true" />
                 Annuler la réservation
-              </button>
+              </GhostButton>
             </div>
           )}
-
         </div>
 
-        {/* Footer — lien règles */}
-        <div className="px-6 py-4 bg-neutral-50/50 border-t border-neutral-100">
+        <div className="border-t border-border bg-background-alt px-6 py-4">
           <button
             type="button"
             onClick={() => setShowRulesModal(true)}
-            className="flex items-center gap-2 text-xs font-bold text-success-700 hover:text-success-800 transition-colors"
+            className="inline-flex items-center gap-2 text-xs font-semibold text-forest-700 transition-colors hover:text-forest-900"
           >
-            <HelpCircle className="w-4 h-4 text-success-600 shrink-0" />
-            Comprendre les règles (séquestre, auto-checkin, remboursement…)
+            <HelpCircle className="h-4 w-4 shrink-0" aria-hidden="true" />
+            Comprendre vos droits : séquestre, auto-check-in, remboursement
           </button>
         </div>
       </div>
 
-      {/* ══ GALERIE État des lieux ══ */}
+      {/* ═══ MODALES ═══════════════════════════════════════════════════════ */}
+
       {showGallery && (
-        <CheckinGalleryModal
-          photos={checkinPhotos}
-          onClose={() => setShowGallery(false)}
-        />
+        <CheckinGalleryModal photos={checkinPhotos} onClose={() => setShowGallery(false)} />
       )}
 
-      {/* ══ MODAL : Livret d'Accueil Digital ══ */}
       {res.logement && (
         <DigitalWelcomeGuideModal
           isOpen={showWelcomeGuide}
           onClose={() => setShowWelcomeGuide(false)}
-          listing={res.logement as any}
+          listing={res.logement}
         />
       )}
 
-      {/* ══ MODAL : Refuser le check-in ══ */}
       {showRefuseModal && (
         <RefuseCheckInModal
           reservationId={id}
@@ -762,190 +536,142 @@ export function TenantReservationActionPanel({ id, res, onRefetch }: Props) {
         />
       )}
 
-      {/* ══ MODAL : Confirmer signalement absence ══ */}
       {showAbsentModal && (
-        <Modal
-          title="Signaler le propriétaire absent"
-          onClose={() => setShowAbsentModal(false)}
-        >
-          <div className="p-6 space-y-4">
-            <div className="flex items-start gap-3 bg-amber-500/10 border border-amber-500/20 rounded-xl p-3.5">
-              <Clock className="w-4 h-4 text-amber-400 shrink-0 mt-0.5" />
-              <p className="text-xs text-amber-300 leading-relaxed font-medium">
-                Une fois signalé, le propriétaire dispose de <span className="font-black">2 heures</span> pour effectuer l&apos;état des lieux. Passé ce délai, votre réservation sera annulée et vous serez remboursé intégralement.
-              </p>
-            </div>
-            <p className="text-xs text-neutral-400 leading-relaxed">
-              Assurez-vous d&apos;avoir bien tenté de joindre votre hôte avant de continuer. Cette action est irréversible.
+        <Modal title="Signaler l’hôte absent" onClose={() => setShowAbsentModal(false)}>
+          <div className="space-y-4 p-6">
+            <Notice tone="warning" icon={Clock} title="Délai de 2 heures">
+              Une fois le signalement envoyé, l’hôte dispose de 2 h pour effectuer l’état des
+              lieux. Passé ce délai, la réservation est annulée et vous êtes remboursé
+              intégralement.
+            </Notice>
+
+            <p className="text-xs leading-relaxed text-foreground-muted">
+              Assurez-vous d’avoir tenté de joindre votre hôte avant de continuer. Cette action
+              est irréversible.
             </p>
+
+            {errorMsg && <Feedback type="error" message={errorMsg} />}
+
             <div className="flex gap-3 pt-1">
-              <button
+              <GhostButton
                 onClick={() => setShowAbsentModal(false)}
-                className="flex-1 py-2.5 text-xs font-bold text-neutral-400 bg-white/5 hover:bg-white/8 border border-white/8 rounded-xl transition-all"
+                className="flex-1 py-3 text-sm"
               >
-                Annuler
-              </button>
-              <button
+                Retour
+              </GhostButton>
+              <DangerButton
                 onClick={handleReportAbsent}
-                disabled={isSubmitting}
-                className="flex-1 py-2.5 text-xs font-bold text-white bg-amber-600 hover:bg-amber-700 disabled:bg-neutral-800 disabled:text-neutral-500 rounded-xl transition-all"
+                loading={isSubmitting}
+                loadingLabel="Envoi…"
+                className="flex-1 py-3 text-sm"
               >
-                {isSubmitting
-                  ? <span className="flex items-center justify-center gap-1.5"><Loader2 className="w-3.5 h-3.5 animate-spin" />Envoi…</span>
-                  : 'Confirmer le signalement'}
-              </button>
+                Confirmer le signalement
+              </DangerButton>
             </div>
           </div>
         </Modal>
       )}
-      {/* ══ MODAL : Annulation locataire ══ */}
+
       {showCancelModal && (
         <Modal
           title="Annuler la réservation"
-          onClose={() => { setShowCancelModal(false); setCancelReason(''); clearFeedback(); }}
+          onClose={() => { setShowCancelModal(false); setCancelReason(''); setErrorMsg(null); }}
         >
-          <div className="p-6 space-y-4">
-            {/* Grille politique remboursement */}
-            <div className="space-y-2.5">
-              <p className="text-xs font-bold text-neutral-300">Politique de remboursement</p>
-              <div className="grid grid-cols-3 gap-2">
-                <div className={cn(
-                  'rounded-xl p-3 text-center border',
-                  diffDaysToCheckin > 7
-                    ? 'bg-success-600/15 border-success-600/30'
-                    : 'bg-white/5 border-white/8 opacity-40',
-                )}>
-                  <p className="text-xs font-black text-success-400">100%</p>
-                  <p className="text-[10px] text-neutral-500 mt-0.5">{'> 7 jours'}</p>
-                </div>
-                <div className={cn(
-                  'rounded-xl p-3 text-center border',
-                  diffDaysToCheckin >= 3 && diffDaysToCheckin <= 7
-                    ? 'bg-amber-500/15 border-amber-500/30'
-                    : 'bg-white/5 border-white/8 opacity-40',
-                )}>
-                  <p className="text-xs font-black text-amber-400">50%</p>
-                  <p className="text-[10px] text-neutral-500 mt-0.5">3–7 jours</p>
-                </div>
-                <div className={cn(
-                  'rounded-xl p-3 text-center border',
-                  diffHoursToCheckin >= 24 && diffDaysToCheckin < 3
-                    ? 'bg-rose-500/15 border-rose-500/30'
-                    : 'bg-white/5 border-white/8 opacity-40',
-                )}>
-                  <p className="text-xs font-black text-rose-400">25%</p>
-                  <p className="text-[10px] text-neutral-500 mt-0.5">24h–3 jours</p>
-                </div>
-              </div>
-              <p className="text-[11px] text-neutral-500 leading-relaxed">
-                Vous serez remboursé à hauteur de{' '}
-                <span className="font-black text-white">{tenantRefundPct}%</span>{' '}
-                du montant payé selon votre date d&apos;annulation.
+          <div className="space-y-5 p-6">
+
+            <section className="rounded-card border border-border bg-background-alt p-5">
+              <p className="text-xs font-semibold uppercase tracking-wider text-foreground-muted">
+                Si vous annulez maintenant
               </p>
+              <p className="mt-2 font-display text-3xl font-semibold tabular-nums text-foreground">
+                {refundTier.short}
+              </p>
+              <p className="mt-1 text-sm font-semibold text-foreground">{refundTier.label}</p>
+              <p className="mt-1.5 text-xs leading-relaxed text-foreground-muted">
+                Estimation indicative sur le montant payé. Le montant définitif est arrêté par
+                Klef à la réception de votre demande.
+              </p>
+            </section>
+
+            <div>
+              <p className="mb-2.5 text-xs font-semibold uppercase tracking-wider text-foreground-muted">
+                Barème d’annulation
+              </p>
+              <RefundScale current={refundTier.id} />
             </div>
 
             <div>
-              <label className="block text-xs font-bold text-neutral-300 mb-1.5">
-                Motif <span className="text-rose-400">*</span>
+              <label htmlFor="tenant-cancel-reason" className="mb-1.5 block text-xs font-semibold text-foreground">
+                Motif <span className="text-error-600">*</span>
               </label>
               <textarea
+                id="tenant-cancel-reason"
                 rows={3}
-                className="w-full text-xs bg-white/5 border border-white/10 text-white placeholder:text-neutral-600 rounded-xl px-4 py-3 focus:outline-none focus:ring-1 focus:ring-rose-400/40 resize-none"
-                placeholder="Ex : Je ne pourrai finalement pas voyager à ces dates."
                 value={cancelReason}
                 onChange={(e) => setCancelReason(e.target.value)}
+                placeholder="Ex : je ne pourrai finalement pas voyager à ces dates."
+                className="w-full resize-none rounded-field border border-border bg-background px-4 py-3 text-foreground placeholder:text-foreground-faint focus:border-forest-500 focus:outline-none"
               />
+              <p className="mt-1.5 text-xs text-foreground-muted">
+                Minimum {MOTIF_MIN} caractères · {cancelReason.trim().length} saisis
+              </p>
             </div>
 
-            {errorMsg && <Feedback message={errorMsg} />}
+            {errorMsg && <Feedback type="error" message={errorMsg} />}
 
-            <div className="flex gap-3 pt-1">
-              <button
-                onClick={() => { setShowCancelModal(false); setCancelReason(''); clearFeedback(); }}
-                className="flex-1 py-2.5 text-xs font-bold text-neutral-400 bg-white/5 hover:bg-white/8 border border-white/8 rounded-xl transition-all"
+            <div className="flex gap-3">
+              <GhostButton
+                onClick={() => { setShowCancelModal(false); setCancelReason(''); setErrorMsg(null); }}
+                className="flex-1 py-3 text-sm"
               >
-                Retour
-              </button>
-              <button
+                Conserver ma réservation
+              </GhostButton>
+              <DangerButton
                 onClick={handleCancel}
-                disabled={!cancelReason.trim() || isSubmitting}
-                className="flex-1 py-2.5 text-xs font-bold text-white bg-rose-600 hover:bg-rose-700 disabled:bg-neutral-800 disabled:text-neutral-500 rounded-xl transition-all"
+                disabled={cancelReason.trim().length < MOTIF_MIN}
+                loading={isSubmitting}
+                className="flex-1 py-3 text-sm"
               >
-                {isSubmitting
-                  ? <span className="flex items-center justify-center gap-1.5"><Loader2 className="w-3.5 h-3.5 animate-spin" />En cours…</span>
-                  : 'Confirmer l\'annulation'}
-              </button>
+                Confirmer
+              </DangerButton>
             </div>
           </div>
         </Modal>
       )}
 
-      {/* ══ MODAL : Règles & Conditions locataire ══ */}
       {showRulesModal && (
-        <Modal title="Charte de Confiance & Vos Droits" onClose={() => setShowRulesModal(false)}>
-          <div className="p-6 space-y-4 max-h-[75vh] overflow-y-auto text-left">
-            <p className="text-xs text-neutral-400 leading-relaxed">
-              Klef protège votre séjour de bout en bout grâce à un système de séquestre sécurisé et une validation en double.
+        <Modal title="Vos droits sur Klef" onClose={() => setShowRulesModal(false)}>
+          <div className="space-y-4 p-6">
+            <p className="text-xs leading-relaxed text-foreground-muted">
+              Klef protège votre séjour par un séquestre sécurisé et une double validation.
             </p>
 
-            {/* 1. Séquestre */}
-            <div className="flex gap-3.5 items-start p-3.5 rounded-2xl bg-white/5 border border-white/5">
-              <div className="w-9 h-9 rounded-xl bg-success-600/10 border border-success-600/20 flex items-center justify-center shrink-0">
-                <Lock className="w-4 h-4 text-success-400" />
-              </div>
-              <div className="space-y-1">
-                <h4 className="text-xs font-bold text-white">1. Votre paiement est sécurisé</h4>
-                <p className="text-[11px] text-neutral-400 leading-relaxed">
-                  Les fonds sont conservés en <strong className="text-success-400 font-bold">séquestre sécurisé</strong> et ne sont reversés à l&apos;hôte qu&apos;après votre confirmation de check-in. Vous avez le contrôle.
-                </p>
-              </div>
-            </div>
+            {[
+              {
+                icon: Lock, tone: 'forest' as Tone, title: '1. Votre paiement est sécurisé',
+                body: 'Les fonds sont conservés en séquestre et ne sont reversés à l’hôte qu’après votre confirmation de check-in.',
+              },
+              {
+                icon: Shield, tone: 'forest' as Tone, title: '2. Vous avez le dernier mot',
+                body: 'L’hôte dépose les photos de l’état des lieux. Vous les inspectez et ne confirmez que si tout est conforme. En cas de non-conformité, refusez : les fonds restent bloqués.',
+              },
+              {
+                icon: RefreshCw, tone: 'warning' as Tone, title: '3. Auto-check-in (H+6)',
+                body: 'Si ni vous ni l’hôte n’avez agi 6 h après le début du séjour, le système effectue un check-in automatique. Le séjour commence et le reversement est programmé.',
+              },
+              {
+                icon: AlertTriangle, tone: 'error' as Tone, title: '4. Hôte absent : remboursement garanti',
+                body: 'Si votre hôte ne se présente pas, signalez son absence. Il dispose de 2 h pour réagir. Passé ce délai, la réservation est annulée et vous êtes remboursé intégralement.',
+              },
+            ].map(({ icon, tone, title, body }) => (
+              <Notice key={title} tone={tone} icon={icon} title={title}>
+                {body}
+              </Notice>
+            ))}
 
-            {/* 2. Double validation check-in */}
-            <div className="flex gap-3.5 items-start p-3.5 rounded-2xl bg-white/5 border border-white/5">
-              <div className="w-9 h-9 rounded-xl bg-success-600/10 border border-success-600/20 flex items-center justify-center shrink-0">
-                <Shield className="w-4 h-4 text-success-400" />
-              </div>
-              <div className="space-y-1">
-                <h4 className="text-xs font-bold text-white">2. Check-in : vous avez le dernier mot</h4>
-                <p className="text-[11px] text-neutral-400 leading-relaxed">
-                  L&apos;hôte uploade les photos de l&apos;état des lieux. Vous les inspectez ici et vous <strong className="text-success-400 font-bold">confirmez uniquement si tout est conforme</strong>. En cas de non-conformité, refusez et les fonds restent bloqués.
-                </p>
-              </div>
-            </div>
-
-            {/* 3. Auto-checkin */}
-            <div className="flex gap-3.5 items-start p-3.5 rounded-2xl bg-white/5 border border-white/5">
-              <div className="w-9 h-9 rounded-xl bg-amber-500/10 border border-amber-500/20 flex items-center justify-center shrink-0">
-                <RefreshCw className="w-4 h-4 text-amber-400" />
-              </div>
-              <div className="space-y-1">
-                <h4 className="text-xs font-bold text-white">3. Auto-Checkin (H+6)</h4>
-                <p className="text-[11px] text-neutral-400 leading-relaxed">
-                  Si ni vous ni l&apos;hôte n&apos;avez agi 6h après le début du séjour (arrivée autonome, pas de réseau…), le système effectue un <strong className="text-amber-400 font-bold">check-in automatique</strong>. Le séjour commence et le reversement est programmé.
-                </p>
-              </div>
-            </div>
-
-            {/* 4. Proprio absent */}
-            <div className="flex gap-3.5 items-start p-3.5 rounded-2xl bg-white/5 border border-white/5">
-              <div className="w-9 h-9 rounded-xl bg-rose-500/10 border border-rose-500/20 flex items-center justify-center shrink-0">
-                <AlertTriangle className="w-4 h-4 text-rose-400" />
-              </div>
-              <div className="space-y-1">
-                <h4 className="text-xs font-bold text-white">4. Propriétaire absent — remboursement garanti</h4>
-                <p className="text-[11px] text-neutral-400 leading-relaxed">
-                  Si votre hôte ne se présente pas le jour J, signalez son absence ici. Il dispose de <strong className="text-rose-400 font-bold">2 heures</strong> pour réagir. Passé ce délai, votre réservation est annulée et vous êtes <strong className="text-rose-400 font-bold">remboursé intégralement</strong>.
-                </p>
-              </div>
-            </div>
-
-            <button
-              onClick={() => setShowRulesModal(false)}
-              className="w-full mt-2 py-3 text-xs font-bold text-white bg-success-600 hover:bg-success-700 rounded-xl transition-all shadow-md shadow-success-600/10 cursor-pointer"
-            >
-              J&apos;ai compris mes droits
-            </button>
+            <PrimaryButton onClick={() => setShowRulesModal(false)}>
+              J’ai compris
+            </PrimaryButton>
           </div>
         </Modal>
       )}

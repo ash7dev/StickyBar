@@ -185,6 +185,9 @@ export class NotificationsService implements OnModuleInit {
           body: message,
           icon: '/icon.svg',
           badge: '/icon.svg',
+          sound: '/notification.mp3',
+          silent: false,
+          vibrate: [200, 100, 200, 100, 200, 100, 400],
           data: { url },
         });
 

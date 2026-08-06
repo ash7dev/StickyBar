@@ -1,119 +1,233 @@
 'use client';
 
 import Image from 'next/image';
-import { Moon, Users, CheckCircle2, Clock, AlertTriangle, ShieldCheck } from 'lucide-react';
+import {
+  Moon, Users, CheckCircle2, Clock, AlertTriangle, ShieldCheck,
+} from 'lucide-react';
 import { cn } from '@/lib/utils/cn';
 import { fcfa, dateLong } from '@/features/reservations/utils';
 import type { ReservationDetail } from '@/lib/nestjs/types';
 
-const STATUT_CFG: Record<string, {
+/* ═══════════════════════════════════════════════════════════════════════════
+   Statuts — classes complètes, jamais interpolées.
+
+   ⚠️ Corrigé : `warning-400`, `error-400` et `neutral-700/800` n'existent pas
+   dans la palette Klef (warning et error s'arrêtent à 50/500/600/700, et les
+   neutres du système sont verts, pas ceux de Tailwind). Les badges PENDING,
+   CANCELLED, DISPUTED, COMPLETED et EXPIRED rendaient donc sans couleur de
+   texte ni de pastille — c'est-à-dire cinq statuts sur huit.
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+type StatutStyle = {
   label: string;
   badge: string;
   dot: string;
   Icon: React.ComponentType<{ className?: string }>;
-}> = {
-  PENDING:    { label: 'En attente',      badge: 'bg-warning-50/20 text-warning-400 border-warning-400/30', dot: 'bg-warning-400', Icon: Clock },
-  PAID:       { label: 'Sous séquestre',  badge: 'bg-forest-900/90 text-lime-300 border-lime-400/30',       dot: 'bg-lime-400',    Icon: ShieldCheck },
-  CONFIRMED:  { label: 'Confirmée',       badge: 'bg-forest-900/90 text-lime-300 border-lime-400/30',       dot: 'bg-lime-400',    Icon: CheckCircle2 },
-  CHECKED_IN: { label: 'Séjour en cours', badge: 'bg-forest-900/90 text-lime-300 border-lime-400/30 ring-1 ring-lime-400/50', dot: 'bg-lime-400', Icon: CheckCircle2 },
-  COMPLETED:  { label: 'Terminée',        badge: 'bg-neutral-800/60 text-neutral-300 border-neutral-700/50', dot: 'bg-neutral-400', Icon: CheckCircle2 },
-  CANCELLED:  { label: 'Annulée',         badge: 'bg-error-500/20 text-error-400 border-error-500/30',       dot: 'bg-error-400',   Icon: AlertTriangle },
-  DISPUTED:   { label: 'Litige',          badge: 'bg-error-500/20 text-error-400 border-error-500/30',       dot: 'bg-error-400',   Icon: AlertTriangle },
-  EXPIRED:    { label: 'Expirée',         badge: 'bg-neutral-800/60 text-neutral-400 border-neutral-700/50', dot: 'bg-neutral-400', Icon: Clock },
+  /** Une pastille qui pulse signale « en cours ». Pas « terminé ». */
+  live?: boolean;
 };
+
+const STATUT_CFG: Record<string, StatutStyle> = {
+  PENDING: {
+    label: 'En attente',
+    badge: 'border-warning-500/30 bg-warning-500/12 text-warning-50',
+    dot: 'bg-warning-500',
+    Icon: Clock,
+    live: true,
+  },
+  PAID: {
+    label: 'Sous séquestre',
+    badge: 'border-border-inverse bg-white/8 text-on-inverse',
+    dot: 'bg-lime-300',
+    Icon: ShieldCheck,
+  },
+  CONFIRMED: {
+    label: 'Confirmée',
+    badge: 'border-border-inverse bg-white/8 text-on-inverse',
+    dot: 'bg-lime-300',
+    Icon: CheckCircle2,
+  },
+  CHECKED_IN: {
+    label: 'Séjour en cours',
+    badge: 'border-lime-400/40 bg-lime-400/12 text-on-inverse',
+    dot: 'bg-lime-300',
+    Icon: CheckCircle2,
+    live: true,
+  },
+  COMPLETED: {
+    label: 'Terminée',
+    badge: 'border-border-inverse bg-white/5 text-on-inverse-muted',
+    dot: 'bg-forest-300',
+    Icon: CheckCircle2,
+  },
+  CANCELLED: {
+    label: 'Annulée',
+    badge: 'border-error-500/35 bg-error-500/15 text-error-50',
+    dot: 'bg-error-500',
+    Icon: AlertTriangle,
+  },
+  DISPUTED: {
+    label: 'Litige',
+    badge: 'border-error-500/35 bg-error-500/15 text-error-50',
+    dot: 'bg-error-500',
+    Icon: AlertTriangle,
+    live: true,
+  },
+  EXPIRED: {
+    label: 'Expirée',
+    badge: 'border-border-inverse bg-white/5 text-on-inverse-muted',
+    dot: 'bg-forest-300',
+    Icon: Clock,
+  },
+};
+
+/* Même piège que dans CheckInTimeCard : `dateDebut` / `dateFin` arrivent
+   souvent en date seule. `new Date('2026-08-14')` est lu à minuit UTC, donc
+   `toLocaleTimeString()` affichait « 00:00 » depuis Dakar et « 02:00 » depuis
+   Paris — présenté comme l'heure d'arrivée confirmée par l'hôte.
+   On n'affiche une heure que si la chaîne en contient réellement une. */
+function timeOrNull(iso: string) {
+  if (!/\d{2}:\d{2}/.test(iso)) return null;
+  const d = new Date(iso);
+  if (Number.isNaN(d.getTime())) return null;
+  return d.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' });
+}
 
 export function TenantReservationHero({ res }: { res: ReservationDetail }) {
   const cfg = STATUT_CFG[res.statut] ?? STATUT_CFG.PENDING;
   const { Icon } = cfg;
-  const mainPhoto = res.logement.photos.find((p) => p.estPrincipale)?.url ?? res.logement.photos[0]?.url;
+
+  const mainPhoto =
+    res.logement?.photos.find((p) => p.estPrincipale)?.url ?? res.logement?.photos[0]?.url;
+
+  const heureArrivee = res.confirmeeLe ? timeOrNull(res.dateDebut) : null;
+  const heureDepart = res.confirmeeLe ? timeOrNull(res.dateFin) : null;
+
+  const lieu = [res.logement?.type, res.logement?.ville, res.logement?.quartier]
+    .filter(Boolean)
+    .join(' · ');
 
   return (
-    <div className="relative rounded-card border border-forest-800/90 bg-gradient-to-b from-forest-950 via-[#072A20] to-forest-950 p-6 md:p-8 shadow-2xl overflow-hidden text-white">
-      {/* Halos de fond */}
-      <div className="pointer-events-none absolute -top-24 -right-24 w-64 h-64 rounded-full bg-lime-400/10 blur-3xl" />
-      <div className="pointer-events-none absolute -bottom-24 -left-24 w-64 h-64 rounded-full bg-forest-600/20 blur-3xl" />
+    <section className="section-inverse relative overflow-hidden p-6 md:p-8">
+      {/* Un seul halo, dans le vert de la marque. Le lime n'est pas une
+          texture de fond : c'est le signal d'action. */}
+      <div
+        aria-hidden="true"
+        className="pointer-events-none absolute -top-24 -right-24 h-64 w-64 rounded-pill bg-forest-700/40 blur-3xl"
+      />
 
-      <div className="relative flex flex-col md:flex-row md:items-start gap-6">
+      <div className="relative flex flex-col gap-6 md:flex-row md:items-start">
 
-        {/* Colonne Gauche */}
-        <div className="flex-1 min-w-0 space-y-4">
-          <div className="flex items-center gap-3 flex-wrap">
-            <span className={cn(
-              'inline-flex items-center gap-1.5 px-3 py-1 rounded-pill border text-xs font-bold backdrop-blur-md',
-              cfg.badge,
-            )}>
-              <span className={cn('w-1.5 h-1.5 rounded-full animate-pulse', cfg.dot)} />
-              <Icon className="w-3.5 h-3.5" />
+        {/* ── Colonne gauche ───────────────────────────────────────────── */}
+
+        <div className="min-w-0 flex-1 space-y-4">
+
+          <div className="flex flex-wrap items-center gap-3">
+            <span
+              className={cn(
+                'inline-flex items-center gap-1.5 rounded-pill border px-3 py-1 text-xs font-semibold',
+                cfg.badge,
+              )}
+            >
+              <span
+                aria-hidden="true"
+                className={cn('h-1.5 w-1.5 rounded-pill', cfg.dot, cfg.live && 'animate-pulse')}
+              />
+              <Icon className="h-3.5 w-3.5" />
               {cfg.label}
             </span>
-            <span className="text-xs text-forest-300/80 font-medium">
+            <span className="text-xs text-on-inverse-muted">
               Créée le {dateLong(res.creeLe)}
             </span>
           </div>
 
           <div>
-            <p className="text-[10px] font-extrabold uppercase tracking-wider text-forest-300 mb-1">
-              {res.logement.type} · {res.logement.ville}
-              {res.logement.quartier ? ` · ${res.logement.quartier}` : ''}
-            </p>
-            <h1 className="font-display text-2xl md:text-3xl font-bold text-white leading-tight tracking-tight">
-              {res.logement.titre}
+            {lieu && (
+              <p className="mb-1 text-xs font-semibold uppercase tracking-wider text-on-inverse-muted">
+                {lieu}
+              </p>
+            )}
+            <h1 className="font-display text-2xl font-semibold leading-tight tracking-tight text-on-inverse-display md:text-3xl">
+              {res.logement?.titre ?? 'Votre réservation'}
             </h1>
           </div>
 
-          {/* Widget Dates Box */}
-          <div className="flex items-stretch bg-forest-900/60 border border-forest-800/80 rounded-inner overflow-hidden w-full max-w-sm backdrop-blur-md">
+          {/* ── Dates ──────────────────────────────────────────────────── */}
+
+          <div className="flex w-full max-w-sm items-stretch overflow-hidden rounded-inner border border-border-inverse bg-white/5">
             <div className="flex-1 px-4 py-3 text-center">
-              <p className="text-[9px] font-extrabold uppercase tracking-wider text-forest-300 mb-1">Arrivée</p>
-              <p className="text-sm font-bold text-white">{dateLong(res.dateDebut)}</p>
-              {res.confirmeeLe && (
-                <p className="text-[10px] font-semibold text-lime-300 mt-1 flex items-center justify-center gap-1">
-                  <Clock className="w-3 h-3 text-lime-400" />
-                  {new Date(res.dateDebut).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })}
+              <p className="mb-1 text-xs font-semibold uppercase tracking-wider text-on-inverse-muted">
+                Arrivée
+              </p>
+              <p className="text-sm font-semibold text-on-inverse">
+                <time dateTime={res.dateDebut.slice(0, 10)}>{dateLong(res.dateDebut)}</time>
+              </p>
+              {heureArrivee && (
+                <p className="mt-1 flex items-center justify-center gap-1 text-xs tabular-nums text-on-inverse-muted">
+                  <Clock className="h-3 w-3" aria-hidden="true" />
+                  {heureArrivee}
                 </p>
               )}
             </div>
 
-            <div className="flex flex-col items-center justify-center px-4 border-x border-forest-800/80 bg-forest-950/40">
-              <Moon className="w-4 h-4 text-lime-400" />
-              <span className="text-base font-extrabold text-white tabular-nums leading-none mt-0.5">{res.nbNuits}</span>
-              <span className="text-[8px] font-bold text-forest-300 uppercase">nuit{res.nbNuits > 1 ? 's' : ''}</span>
+            <div className="flex flex-col items-center justify-center border-x border-border-inverse bg-white/[0.04] px-4">
+              <Moon className="h-4 w-4 text-on-inverse-marker" aria-hidden="true" />
+              <span className="mt-0.5 text-base font-semibold leading-none tabular-nums text-on-inverse">
+                {res.nbNuits}
+              </span>
+              <span className="text-xs uppercase text-on-inverse-muted">
+                nuit{res.nbNuits > 1 ? 's' : ''}
+              </span>
             </div>
 
             <div className="flex-1 px-4 py-3 text-center">
-              <p className="text-[9px] font-extrabold uppercase tracking-wider text-forest-300 mb-1">Départ</p>
-              <p className="text-sm font-bold text-white">{dateLong(res.dateFin)}</p>
-              {res.confirmeeLe && (
-                <p className="text-[10px] font-semibold text-forest-300 mt-1 flex items-center justify-center gap-1">
-                  <Clock className="w-3 h-3" />
-                  {new Date(res.dateFin).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })}
+              <p className="mb-1 text-xs font-semibold uppercase tracking-wider text-on-inverse-muted">
+                Départ
+              </p>
+              <p className="text-sm font-semibold text-on-inverse">
+                <time dateTime={res.dateFin.slice(0, 10)}>{dateLong(res.dateFin)}</time>
+              </p>
+              {heureDepart && (
+                <p className="mt-1 flex items-center justify-center gap-1 text-xs tabular-nums text-on-inverse-muted">
+                  <Clock className="h-3 w-3" aria-hidden="true" />
+                  {heureDepart}
                 </p>
               )}
             </div>
           </div>
 
-          <div className="flex items-center gap-2 text-xs font-semibold text-forest-200">
-            <Users className="w-4 h-4 text-lime-400" />
-            <span>{res.nbPersonnes} voyageur{res.nbPersonnes > 1 ? 's' : ''}</span>
-          </div>
+          <p className="flex items-center gap-2 text-xs font-semibold text-on-inverse-muted">
+            <Users className="h-4 w-4" aria-hidden="true" />
+            {res.nbPersonnes} voyageur{res.nbPersonnes > 1 ? 's' : ''}
+          </p>
         </div>
 
-        {/* Colonne Droite : Photo & Total Réglé */}
-        <div className="flex flex-col gap-3 md:w-56 shrink-0">
+        {/* ── Colonne droite ───────────────────────────────────────────── */}
+
+        <div className="flex shrink-0 flex-col gap-3 md:w-56">
           {mainPhoto && (
-            <div className="relative w-full h-36 md:h-40 rounded-inner overflow-hidden border border-forest-800 bg-forest-950">
-              <Image src={mainPhoto} alt={res.logement.titre} fill className="object-cover" />
+            <div className="relative h-36 w-full overflow-hidden rounded-inner border border-border-inverse bg-white/5 md:h-40">
+              <Image
+                src={mainPhoto}
+                alt={res.logement?.titre ?? ''}
+                fill
+                sizes="(min-width: 768px) 224px, 100vw"
+                className="object-cover"
+              />
             </div>
           )}
 
-          <div className="rounded-inner bg-forest-900/80 border border-forest-800/80 p-4 text-center backdrop-blur-md space-y-1">
-            <p className="text-[9px] font-extrabold uppercase tracking-wider text-forest-200">Total Réglé (Séquestre)</p>
-            <p className="font-display text-2xl font-extrabold text-lime-400 leading-none">{fcfa(res.totalLocataire)}</p>
-            <p className="text-[10px] font-bold text-lime-200">FCFA</p>
+          <div className="space-y-1 rounded-inner border border-border-inverse bg-white/[0.07] p-4 text-center">
+            <p className="text-xs font-semibold uppercase tracking-wider text-on-inverse-muted">
+              Total réglé
+            </p>
+            <p className="font-display text-2xl font-semibold leading-none tabular-nums text-on-inverse">
+              {fcfa(res.totalLocataire)}
+            </p>
+            <p className="text-xs font-semibold text-on-inverse-muted">FCFA</p>
           </div>
         </div>
-
       </div>
-    </div>
+    </section>
   );
 }

@@ -9,7 +9,7 @@ import type { ListingDetail } from '@/lib/nestjs/types';
 interface Props {
   isOpen: boolean;
   onClose: () => void;
-  listing: ListingDetail;
+  listing: any;
 }
 
 export function DigitalWelcomeGuideModal({ isOpen, onClose, listing }: Props) {

@@ -1,133 +1,215 @@
 'use client';
 
-import { Clock, MapPin, Phone, Info } from 'lucide-react';
+import { Clock, MapPin, Phone, Info, LogIn, LogOut } from 'lucide-react';
 import type { ReservationDetail } from '@/lib/nestjs/types';
 
-function dateLong(s: string) {
-  return new Date(s).toLocaleDateString('fr-FR', {
-    weekday: 'long',
-    day: 'numeric',
-    month: 'long',
-    year: 'numeric',
+/* ═══════════════════════════════════════════════════════════════════════════
+   Affichage des horaires — le point délicat
+   ───────────────────────────────────────────────────────────────────────────
+   ⚠️ `dateDebut` / `dateFin` arrivent souvent au format date seule
+   ('2026-08-14'). `new Date('2026-08-14')` est interprété à MINUIT UTC, et
+   `toLocaleTimeString()` le rend dans le fuseau du navigateur. La version
+   précédente affichait donc « 00:00 » depuis Dakar et « 02:00 » depuis Paris,
+   comme heure d'arrivée — sur une carte dont c'est l'unique raison d'être.
+
+   Par ailleurs l'heure de check-in est saisie séparément par le propriétaire
+   (`heureDebut`, envoyée à l'endpoint CONFIRM). La lire sur `dateDebut`
+   suppose que le backend l'y a fusionnée. Tant que ce n'est pas garanti,
+   ce composant ne fabrique pas d'heure : il affiche « à confirmer ».
+
+   → À traiter côté API : renvoyer un horodatage complet, ou exposer
+     `heureDebut` / `heureFin` en clair. Ce composant accepte les deux.
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+/** Vrai si la chaîne ISO porte réellement une composante horaire. */
+function hasTimeComponent(value: string) {
+  return /\d{2}:\d{2}/.test(value);
+}
+
+/** 'HH:MM' si l'heure est connue, sinon null. Jamais de minuit inventé. */
+function resolveTime(iso: string, explicit?: string | null): string | null {
+  if (explicit && /^\d{2}:\d{2}/.test(explicit)) return explicit.slice(0, 5);
+  if (!hasTimeComponent(iso)) return null;
+  const d = new Date(iso);
+  if (Number.isNaN(d.getTime())) return null;
+  return d.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' });
+}
+
+function dateLong(iso: string) {
+  const d = new Date(iso);
+  if (Number.isNaN(d.getTime())) return '—';
+  return d.toLocaleDateString('fr-FR', {
+    weekday: 'long', day: 'numeric', month: 'long', year: 'numeric',
   });
 }
 
-export function CheckInTimeCard({ res }: { res: ReservationDetail }) {
-  // Afficher uniquement si la réservation est confirmée et qu'il y a une heure
-  if (!res.confirmeeLe) return null;
+interface Props {
+  res: ReservationDetail;
+  /** 'HH:MM' — si l'API expose l'heure séparément de la date. */
+  heureDebut?: string | null;
+  heureFin?: string | null;
+  /** Numéro du support, rendu cliquable. Sans lui, la mention est masquée. */
+  supportTel?: string;
+}
 
-  const checkInTime = new Date(res.dateDebut).toLocaleTimeString('fr-FR', {
-    hour: '2-digit',
-    minute: '2-digit',
-  });
+export function CheckInTimeCard({ res, heureDebut, heureFin, supportTel }: Props) {
+  /* `logement` est optionnel ailleurs dans le code : sans cette garde, la
+     lecture de `res.logement.adresse` plus bas fait planter la page. */
+  if (!res.confirmeeLe || !res.logement) return null;
 
-  const checkOutTime = new Date(res.dateFin).toLocaleTimeString('fr-FR', {
-    hour: '2-digit',
-    minute: '2-digit',
-  });
+  const checkIn = resolveTime(res.dateDebut, heureDebut);
+  const checkOut = resolveTime(res.dateFin, heureFin);
+
+  const adresse = [res.logement.adresse, res.logement.quartier, res.logement.ville]
+    .filter(Boolean)
+    .join(', ');
 
   return (
-    <div className="relative overflow-hidden bg-forest-950 text-white rounded-card border border-forest-800/90 shadow-xl p-6 space-y-5">
-      {/* Halos de fond */}
-      <div className="pointer-events-none absolute -top-20 -right-20 w-56 h-56 rounded-full bg-lime-400/10 blur-3xl" />
+    <section className="section-inverse relative overflow-hidden p-6">
 
-      {/* En-tête */}
-      <div className="flex items-start gap-4">
-        <div className="w-10 h-10 rounded-inner bg-forest-900 border border-lime-400/20 flex items-center justify-center shrink-0">
-          <Clock className="w-5 h-5 text-lime-400" />
-        </div>
-        <div className="flex-1 min-w-0">
-          <h3 className="font-display text-lg font-bold text-white leading-tight">
-            Horaires confirmés pour votre rendez-vous
-          </h3>
-          <p className="text-xs text-forest-300 mt-0.5 font-medium">
-            Votre propriétaire a validé votre créneau d&apos;arrivée
-          </p>
-        </div>
-      </div>
+      {/* Halo dans le vert de la marque : le lime est réservé à l'action,
+          en faire une texture de fond le vide de son sens. */}
+      <div
+        aria-hidden="true"
+        className="pointer-events-none absolute -top-24 -right-16 h-56 w-56 rounded-pill bg-forest-700/40 blur-3xl"
+      />
 
-      {/* Horaires Arrivée / Départ */}
-      <div className="grid sm:grid-cols-2 gap-3">
-        {/* Check-in */}
-        <div className="bg-forest-900/60 border border-forest-800/80 rounded-inner p-4 space-y-1">
-          <div className="flex items-center gap-2 mb-1">
-            <div className="w-6 h-6 rounded-inner bg-lime-400/20 flex items-center justify-center">
-              <Clock className="w-3.5 h-3.5 text-lime-400" />
-            </div>
-            <p className="text-[10px] font-extrabold uppercase tracking-wider text-lime-300">
-              Arrivée prévue
+      <div className="relative space-y-5">
+
+        {/* ── En-tête ──────────────────────────────────────────────────── */}
+
+        <header className="flex items-start gap-4">
+          <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-inner border border-border-inverse bg-white/5">
+            <Clock className="h-5 w-5 text-on-inverse-marker" aria-hidden="true" />
+          </span>
+          <div className="min-w-0 flex-1">
+            <h3 className="font-display text-lg font-semibold leading-tight text-on-inverse-display">
+              Horaires de votre séjour
+            </h3>
+            <p className="mt-0.5 text-xs text-on-inverse-muted">
+              Créneau validé par votre hôte
             </p>
           </div>
-          <p className="text-xs font-medium text-forest-200">
-            {dateLong(res.dateDebut)}
-          </p>
-          <p className="font-display text-2xl font-extrabold text-lime-400 tracking-tight">
-            {checkInTime}
-          </p>
+        </header>
+
+        {/* ── Arrivée / Départ ─────────────────────────────────────────── */}
+
+        <div className="grid gap-3 sm:grid-cols-2">
+          <TimeBlock
+            icon={LogIn}
+            label="Arrivée"
+            iso={res.dateDebut}
+            time={checkIn}
+            marker
+          />
+          <TimeBlock
+            icon={LogOut}
+            label="Départ"
+            iso={res.dateFin}
+            time={checkOut}
+          />
         </div>
 
-        {/* Check-out */}
-        <div className="bg-forest-900/60 border border-forest-800/80 rounded-inner p-4 space-y-1">
-          <div className="flex items-center gap-2 mb-1">
-            <div className="w-6 h-6 rounded-inner bg-forest-800 flex items-center justify-center">
-              <Clock className="w-3.5 h-3.5 text-forest-300" />
-            </div>
-            <p className="text-[10px] font-extrabold uppercase tracking-wider text-forest-300">
-              Départ prévu
+        {/* ── Adresse ──────────────────────────────────────────────────── */}
+
+        <div className="flex items-start gap-3 rounded-inner border border-border-inverse bg-white/5 p-3.5">
+          <MapPin className="mt-0.5 h-4 w-4 shrink-0 text-on-inverse-muted" aria-hidden="true" />
+          <div className="min-w-0 flex-1">
+            <p className="mb-0.5 text-xs font-semibold uppercase tracking-wider text-on-inverse-muted">
+              Adresse du rendez-vous
             </p>
+            <address className="text-xs not-italic leading-relaxed text-on-inverse">
+              {adresse || 'Adresse communiquée par votre hôte'}
+            </address>
           </div>
-          <p className="text-xs font-medium text-forest-200">
-            {dateLong(res.dateFin)}
-          </p>
-          <p className="font-display text-2xl font-extrabold text-white tracking-tight">
-            {checkOutTime}
-          </p>
         </div>
-      </div>
 
-      {/* Adresse du logement */}
-      <div className="flex items-start gap-3 bg-forest-900/40 border border-forest-800/60 rounded-inner p-3.5">
-        <MapPin className="w-4 h-4 text-lime-400 shrink-0 mt-0.5" />
-        <div className="flex-1 min-w-0">
-          <p className="text-[10px] font-extrabold uppercase tracking-wider text-forest-300 mb-0.5">
-            Adresse de rendez-vous
-          </p>
-          <p className="text-xs font-bold text-white leading-relaxed">
-            {res.logement.adresse}
-            {res.logement.quartier && `, ${res.logement.quartier}`}
-            {`, ${res.logement.ville}`}
-          </p>
+        {/* ── Conseils ─────────────────────────────────────────────────── */}
+
+        <div className="flex items-start gap-3 rounded-inner border border-warning-500/25 bg-warning-500/10 p-3.5">
+          <Info className="mt-0.5 h-4 w-4 shrink-0 text-warning-500" aria-hidden="true" />
+          <div className="min-w-0 flex-1">
+            <p className="mb-1.5 text-xs font-semibold text-warning-50">Conseils d’arrivée</p>
+            <ul className="space-y-1 text-xs leading-relaxed text-on-inverse-muted">
+              {[
+                'Votre hôte vous accueille sur place à l’heure indiquée.',
+                'En cas de retard, prévenez-le par téléphone avant l’heure prévue.',
+              ].map((tip) => (
+                <li key={tip} className="flex items-start gap-2">
+                  <span aria-hidden="true" className="mt-1.5 h-1 w-1 shrink-0 rounded-pill bg-warning-500" />
+                  <span>{tip}</span>
+                </li>
+              ))}
+            </ul>
+          </div>
         </div>
-      </div>
 
-      {/* Points importants */}
-      <div className="flex items-start gap-3 bg-warning-50/10 border border-warning-400/20 rounded-inner p-3.5">
-        <Info className="w-4 h-4 text-warning-400 shrink-0 mt-0.5" />
-        <div className="flex-1 min-w-0">
-          <p className="text-xs font-bold text-warning-300 mb-1.5">
-            Conseils d&apos;arrivée
+        {/* ── Support ──────────────────────────────────────────────────────
+            Rendu uniquement si un numéro est fourni. La version précédente
+            affichait « notre support reste joignable » avec une icône de
+            téléphone et aucun moyen d'appeler. */}
+
+        {supportTel && (
+          <p className="flex items-center gap-2.5 pt-1 text-xs text-on-inverse-muted">
+            <Phone className="h-3.5 w-3.5 shrink-0 text-on-inverse-marker" aria-hidden="true" />
+            <span>
+              <span className="font-semibold text-on-inverse">Besoin d’aide ? </span>
+              Le support Klef est joignable au{' '}
+              <a
+                href={`tel:${supportTel.replace(/\s/g, '')}`}
+                className="font-semibold text-on-inverse underline underline-offset-2"
+              >
+                {supportTel}
+              </a>
+              .
+            </span>
           </p>
-          <ul className="space-y-1 text-xs text-warning-200/90 leading-relaxed">
-            <li className="flex items-start gap-2">
-              <span className="w-1 h-1 rounded-full bg-warning-400 shrink-0 mt-1.5" />
-              <span>Le propriétaire vous accueillera sur place à l&apos;heure indiquée</span>
-            </li>
-            <li className="flex items-start gap-2">
-              <span className="w-1 h-1 rounded-full bg-warning-400 shrink-0 mt-1.5" />
-              <span>En cas de retard, prévenez votre hôte par téléphone</span>
-            </li>
-          </ul>
-        </div>
+        )}
       </div>
+    </section>
+  );
+}
 
-      {/* Support */}
-      <div className="flex items-center gap-2.5 text-xs text-forest-300 pt-1">
-        <Phone className="w-3.5 h-3.5 text-lime-400 shrink-0" />
-        <p>
-          <span className="font-bold text-white">Besoin d&apos;aide ?</span>
-          {' '}Notre support Klef reste joignable à tout moment.
+/* ─── Bloc horaire ───────────────────────────────────────────────────────── */
+
+function TimeBlock({
+  icon: Icon, label, iso, time, marker = false,
+}: {
+  icon: typeof LogIn;
+  label: string;
+  iso: string;
+  time: string | null;
+  marker?: boolean;
+}) {
+  return (
+    <div className="space-y-1 rounded-inner border border-border-inverse bg-white/5 p-4">
+      <div className="mb-1 flex items-center gap-2">
+        <span className="flex h-6 w-6 items-center justify-center rounded-inner bg-white/10">
+          <Icon
+            className={marker ? 'h-3.5 w-3.5 text-on-inverse-marker' : 'h-3.5 w-3.5 text-on-inverse-muted'}
+            aria-hidden="true"
+          />
+        </span>
+        <p className="text-xs font-semibold uppercase tracking-wider text-on-inverse-muted">
+          {label}
         </p>
       </div>
+
+      <p className="text-xs text-on-inverse-muted">
+        <time dateTime={iso.slice(0, 10)}>{dateLong(iso)}</time>
+      </p>
+
+      {/* Les deux heures sont traitées à l'identique. Afficher l'arrivée en
+          lime et le départ en blanc suggérait que l'une est une action. */}
+      {time ? (
+        <p className="font-display text-2xl font-semibold tracking-tight tabular-nums text-on-inverse">
+          {time}
+        </p>
+      ) : (
+        <p className="font-display text-lg font-semibold text-on-inverse-muted">
+          Heure à confirmer
+        </p>
+      )}
     </div>
   );
 }

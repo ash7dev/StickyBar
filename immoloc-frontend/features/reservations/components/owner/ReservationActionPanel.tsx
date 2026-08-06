@@ -1,11 +1,13 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
 'use client';
 
-import { useState } from 'react';
 import {
-  Shield, AlertTriangle, CheckCircle2, Camera,
-  X, Users, Gavel, ChevronDown, Loader2, Clock, RefreshCw,
-  LogIn, LogOut, ArrowRight, Banknote, Lock, HelpCircle, Star, UserX, XCircle,
+  useCallback, useEffect, useId, useMemo, useRef, useState,
+} from 'react';
+import Image from 'next/image';
+import {
+  Shield, AlertTriangle, CheckCircle2, Camera, X, Users, Gavel, ChevronDown,
+  Loader2, Clock, RefreshCw, LogIn, LogOut, ArrowRight, Banknote, Lock,
+  HelpCircle, Star, UserX, XCircle,
 } from 'lucide-react';
 import { cn } from '@/lib/utils/cn';
 import { nestFetch } from '@/lib/nestjs/api-client';
@@ -13,7 +15,543 @@ import { NEST_API } from '@/lib/nestjs/endpoints';
 import type { ReservationDetail } from '@/lib/nestjs/types';
 import { CheckinModal, CheckoutModal } from './EtatLieuxModal';
 
-/* ─── Types ───────────────────────────────────────────────────────────────── */
+/* ═══════════════════════════════════════════════════════════════════════════
+   CONSTANTES MÉTIER
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+const CHECKIN_GUARD_MS = 4 * 60 * 60 * 1000;   // fenêtre d'ouverture du check-in
+const NOSHOW_DELAY_MS = 2 * 60 * 60 * 1000;    // délai avant signalement d'absence
+const MOTIF_MIN = 15;
+const TOTAL_STEPS = 5;
+
+const PENALITES = { early: 5_000, mid: 10_000, late: 20_000 } as const;
+
+const MOTIFS_LITIGE = [
+  { value: 'LOGEMENT_NON_CONFORME', label: 'Logement non conforme à l’annonce' },
+  { value: 'DEGRADATION', label: 'Dégradation du logement' },
+  { value: 'NON_PAIEMENT', label: 'Non-paiement de frais supplémentaires' },
+  { value: 'DEPASSEMENT_PERSONNES', label: 'Dépassement du nombre de personnes' },
+  { value: 'NUISANCES', label: 'Nuisances ou comportement inapproprié' },
+  { value: 'AUTRE', label: 'Autre motif' },
+] as const;
+
+const labelMotif = (motif: string) =>
+  MOTIFS_LITIGE.find((m) => m.value === motif)?.label ?? motif.replace(/_/g, ' ');
+
+const formatDateTime = (value: string | number | Date) =>
+  new Date(value).toLocaleDateString('fr-FR', {
+    weekday: 'long', day: 'numeric', month: 'long', hour: '2-digit', minute: '2-digit',
+  });
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   TONALITÉS — classes complètes, jamais interpolées
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+type Tone = 'neutral' | 'forest' | 'success' | 'warning' | 'error';
+
+const TONE: Record<Tone, { box: string; icon: string; title: string; body: string }> = {
+  neutral: {
+    box: 'bg-background-alt border-border',
+    icon: 'bg-background-card border-border text-foreground-muted',
+    title: 'text-foreground',
+    body: 'text-foreground-muted',
+  },
+  forest: {
+    box: 'bg-forest-50 border-forest-100',
+    icon: 'bg-forest-100 border-forest-200 text-forest-700',
+    title: 'text-forest-900',
+    body: 'text-forest-800',
+  },
+  success: {
+    box: 'bg-success-50 border-success-500/25',
+    icon: 'bg-success-50 border-success-500/30 text-success-600',
+    title: 'text-success-700',
+    body: 'text-success-700',
+  },
+  warning: {
+    box: 'bg-warning-50 border-warning-500/25',
+    icon: 'bg-warning-50 border-warning-500/30 text-warning-600',
+    title: 'text-warning-700',
+    body: 'text-warning-700',
+  },
+  error: {
+    box: 'bg-error-50 border-error-500/20',
+    icon: 'bg-error-50 border-error-500/25 text-error-600',
+    title: 'text-error-700',
+    body: 'text-error-700',
+  },
+};
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   HORLOGE VIVANTE
+   ───────────────────────────────────────────────────────────────────────────
+   La version précédente figeait `Date.now()` au montage. Ce panneau reste
+   ouvert longtemps : le propriétaire qui attend l'ouverture de la fenêtre de
+   check-in (4 h avant l'arrivée) ne voyait jamais le bouton se débloquer, et
+   le signalement d'absence n'apparaissait jamais, sans rechargement manuel.
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+function useNow(intervalMs = 30_000) {
+  const [now, setNow] = useState(() => Date.now());
+  useEffect(() => {
+    const timer = setInterval(() => setNow(Date.now()), intervalMs);
+    return () => clearInterval(timer);
+  }, [intervalMs]);
+  return now;
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   MODALE ACCESSIBLE — Échap, piège à focus, verrou de scroll
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+function Modal({
+  title, children, onClose, dismissible = true,
+}: {
+  title: string;
+  children: React.ReactNode;
+  onClose: () => void;
+  dismissible?: boolean;
+}) {
+  const panelRef = useRef<HTMLDivElement>(null);
+  const closeRef = useRef<HTMLButtonElement>(null);
+  const previouslyFocused = useRef<HTMLElement | null>(null);
+  const titleId = useId();
+
+  useEffect(() => {
+    const previousOverflow = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+    previouslyFocused.current = document.activeElement as HTMLElement | null;
+    closeRef.current?.focus();
+
+    const onKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape' && dismissible) { onClose(); return; }
+      if (e.key !== 'Tab') return;
+      const items = panelRef.current?.querySelectorAll<HTMLElement>(
+        'button:not([disabled]), input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [href]',
+      );
+      if (!items?.length) return;
+      const first = items[0];
+      const last = items[items.length - 1];
+      if (e.shiftKey && document.activeElement === first) { e.preventDefault(); last.focus(); }
+      else if (!e.shiftKey && document.activeElement === last) { e.preventDefault(); first.focus(); }
+    };
+
+    window.addEventListener('keydown', onKeyDown);
+    return () => {
+      window.removeEventListener('keydown', onKeyDown);
+      document.body.style.overflow = previousOverflow;
+      previouslyFocused.current?.focus();
+    };
+  }, [onClose, dismissible]);
+
+  return (
+    <div
+      className="fixed inset-0 z-100 flex items-end justify-center bg-forest-950/70 backdrop-blur-sm sm:items-center sm:p-4"
+      onClick={() => dismissible && onClose()}
+    >
+      <div
+        ref={panelRef}
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby={titleId}
+        onClick={(e) => e.stopPropagation()}
+        className="flex max-h-[92vh] w-full flex-col overflow-hidden rounded-t-card border border-border bg-background-card shadow-xl sm:max-w-lg sm:rounded-card"
+      >
+        <header className="flex shrink-0 items-center justify-between gap-3 border-b border-border px-6 py-5">
+          <h2 id={titleId} className="font-display text-base font-semibold text-foreground">
+            {title}
+          </h2>
+          <button
+            ref={closeRef}
+            type="button"
+            onClick={onClose}
+            aria-label="Fermer"
+            className="flex h-9 w-9 shrink-0 items-center justify-center rounded-pill border border-border text-foreground-muted transition-colors hover:bg-background-alt hover:text-foreground"
+          >
+            <X className="h-4 w-4" />
+          </button>
+        </header>
+        <div className="flex-1 overflow-y-auto">{children}</div>
+      </div>
+    </div>
+  );
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   BRIQUES PARTAGÉES
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+function Feedback({ type, message }: { type: 'error' | 'success'; message: string }) {
+  const tone = TONE[type === 'error' ? 'error' : 'success'];
+  const Icon = type === 'error' ? AlertTriangle : CheckCircle2;
+  return (
+    <div role={type === 'error' ? 'alert' : 'status'} className={cn('flex items-start gap-2.5 rounded-inner border p-3.5', tone.box)}>
+      <Icon className={cn('mt-0.5 h-4 w-4 shrink-0', tone.title)} aria-hidden="true" />
+      <p className={cn('text-xs leading-relaxed', tone.body)}>{message}</p>
+    </div>
+  );
+}
+
+function Notice({
+  tone = 'neutral', icon: Icon, title, children,
+}: {
+  tone?: Tone;
+  icon: typeof Clock;
+  title: string;
+  children?: React.ReactNode;
+}) {
+  const t = TONE[tone];
+  return (
+    <div className={cn('flex items-start gap-3 rounded-inner border p-4', t.box)}>
+      <span className={cn('flex h-8 w-8 shrink-0 items-center justify-center rounded-inner border', t.icon)}>
+        <Icon className="h-4 w-4" aria-hidden="true" />
+      </span>
+      <div className="min-w-0">
+        <p className={cn('text-xs font-semibold', t.title)}>{title}</p>
+        {children && (
+          <div className={cn('mt-1 text-xs leading-relaxed', t.body)}>{children}</div>
+        )}
+      </div>
+    </div>
+  );
+}
+
+/** Grande carte d'action (démarrer un état des lieux). */
+function ActionCard({
+  icon: Icon, title, description, onClick, tone,
+}: {
+  icon: typeof Camera;
+  title: string;
+  description: string;
+  onClick: () => void;
+  tone: 'success' | 'warning';
+}) {
+  const accent = tone === 'success'
+    ? { bar: 'bg-success-600', box: 'bg-success-50 border-success-500/30 text-success-600', ring: 'hover:border-success-500/50' }
+    : { bar: 'bg-warning-600', box: 'bg-warning-50 border-warning-500/30 text-warning-600', ring: 'hover:border-warning-500/50' };
+
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      className={cn(
+        'group relative flex w-full items-center gap-4 overflow-hidden rounded-card border border-border bg-background-card p-4 text-left transition-[border-color,box-shadow] duration-200 hover:shadow-md',
+        accent.ring,
+      )}
+    >
+      <span aria-hidden="true" className={cn('absolute inset-y-0 left-0 w-1', accent.bar)} />
+      <span className={cn('ml-1 flex h-11 w-11 shrink-0 items-center justify-center rounded-inner border', accent.box)}>
+        <Icon className="h-5 w-5" aria-hidden="true" />
+      </span>
+      <span className="min-w-0 flex-1">
+        <span className="block text-sm font-semibold leading-tight text-foreground">{title}</span>
+        <span className="mt-0.5 block text-xs text-foreground-muted">{description}</span>
+      </span>
+      <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-pill bg-background-alt text-foreground-muted transition-colors group-hover:text-foreground">
+        <ArrowRight className="h-4 w-4" aria-hidden="true" />
+      </span>
+    </button>
+  );
+}
+
+/** Accordéon « dépassement voyageurs » — était copié à l'identique 3 fois. */
+function DepassementAccordion({
+  nbPersonnes, open, onToggle, onSignal,
+}: {
+  nbPersonnes: number;
+  open: boolean;
+  onToggle: () => void;
+  onSignal: () => void;
+}) {
+  return (
+    <div className="overflow-hidden rounded-card border border-warning-500/25 bg-warning-50/50">
+      <button
+        type="button"
+        onClick={onToggle}
+        aria-expanded={open}
+        className="flex w-full items-center justify-between gap-3 px-4 py-3.5 text-left transition-colors hover:bg-warning-50"
+      >
+        <span className="flex min-w-0 items-center gap-2.5">
+          <Users className="h-4 w-4 shrink-0 text-warning-600" aria-hidden="true" />
+          <span className="text-xs font-semibold text-warning-700">
+            Plus de voyageurs que prévu ?
+          </span>
+        </span>
+        <ChevronDown
+          className={cn('h-4 w-4 shrink-0 text-warning-600 transition-transform duration-200', open && 'rotate-180')}
+          aria-hidden="true"
+        />
+      </button>
+
+      {open && (
+        <div className="space-y-3 border-t border-warning-500/20 px-4 pt-3 pb-4">
+          <p className="text-xs leading-relaxed text-warning-700">
+            {nbPersonnes} voyageur{nbPersonnes > 1 ? 's' : ''} {nbPersonnes > 1 ? 'sont' : 'est'} déclaré
+            {nbPersonnes > 1 ? 's' : ''} sur cette réservation. Si le groupe est plus nombreux,
+            signalez-le maintenant pour régulariser la situation.
+          </p>
+          <button
+            type="button"
+            onClick={onSignal}
+            className="inline-flex items-center gap-2 rounded-pill border border-error-500/25 px-4 py-2.5 text-xs font-semibold text-error-600 transition-colors hover:bg-error-50"
+          >
+            <Gavel className="h-3.5 w-3.5" aria-hidden="true" />
+            Signaler le dépassement
+          </button>
+        </div>
+      )}
+    </div>
+  );
+}
+
+/** Signalement d'absence — était copié à l'identique 3 fois. */
+function NoShowCta({ onClick }: { onClick: () => void }) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      className="flex w-full items-center gap-3 rounded-card border border-error-500/20 bg-error-50/50 px-4 py-3.5 text-left transition-colors hover:bg-error-50"
+    >
+      <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-inner border border-error-500/25 bg-error-50 text-error-600">
+        <UserX className="h-4 w-4" aria-hidden="true" />
+      </span>
+      <span className="min-w-0 flex-1">
+        <span className="block text-xs font-semibold text-error-700">
+          Le locataire ne s’est pas présenté ?
+        </span>
+        <span className="mt-0.5 block text-xs text-error-600">
+          Signalez son absence pour déclencher une annulation automatique
+        </span>
+      </span>
+    </button>
+  );
+}
+
+/** Panneau litige — ~150 lignes qui existaient en double dans le fichier. */
+function LitigePanel({ litige }: { litige: NonNullable<ReservationDetail['litige']> }) {
+  const statutTone: Record<string, Tone> = {
+    EN_ATTENTE: 'warning',
+    FONDE: 'error',
+    NON_FONDE: 'success',
+  };
+  const tone = TONE[statutTone[litige.statut] ?? 'neutral'];
+
+  const StatutIcon =
+    litige.statut === 'EN_ATTENTE' ? Clock : litige.statut === 'FONDE' ? CheckCircle2 : XCircle;
+  const statutLabel =
+    litige.statut === 'EN_ATTENTE' ? 'En cours d’examen'
+      : litige.statut === 'FONDE' ? 'Litige fondé'
+        : 'Litige non fondé';
+
+  return (
+    <div className="space-y-3">
+      <Notice tone="error" icon={Gavel} title="Litige ouvert">
+        Les fonds restent gelés jusqu’à résolution par l’équipe support de Klef.
+      </Notice>
+
+      <div className="space-y-4 rounded-card border border-border bg-background-card p-4">
+        <Field label="Motif">
+          <p className="text-xs font-semibold text-foreground">{labelMotif(litige.motif)}</p>
+        </Field>
+
+        <Field label="Description">
+          <p className="rounded-inner border border-border bg-background-alt p-2.5 text-xs leading-relaxed text-foreground">
+            {litige.description}
+          </p>
+        </Field>
+
+        <Field label="Statut actuel">
+          <span className={cn('inline-flex items-center gap-1.5 rounded-pill border px-3 py-1.5 text-xs font-semibold', tone.box, tone.title)}>
+            <StatutIcon className="h-3 w-3" aria-hidden="true" />
+            {statutLabel}
+          </span>
+        </Field>
+
+        <Field label="Ouvert le">
+          <p className="text-xs text-foreground-muted">{formatDateTime(litige.creeLe)}</p>
+        </Field>
+
+        {litige.statut === 'EN_ATTENTE' && (
+          <>
+            <Notice tone="warning" icon={Clock} title="Délai de traitement : 48 à 72 h">
+              L’équipe support examine le dossier et vous contacte par e-mail ou téléphone.
+            </Notice>
+
+            <Field label="Issues possibles">
+              <ul className="space-y-1.5">
+                {[
+                  ['Litige fondé', 'pénalité appliquée au locataire, compensation versée'],
+                  ['Litige non fondé', 'fonds débloqués normalement, aucune pénalité'],
+                  ['Arrangement à l’amiable', 'médiation entre les parties'],
+                ].map(([titre, detail]) => (
+                  <li key={titre} className="flex items-start gap-2 text-xs text-foreground-muted">
+                    <span aria-hidden="true" className="mt-1.5 h-1 w-1 shrink-0 rounded-pill bg-border-hover" />
+                    <span className="leading-relaxed">
+                      <span className="font-semibold text-foreground">{titre}</span> : {detail}
+                    </span>
+                  </li>
+                ))}
+              </ul>
+            </Field>
+          </>
+        )}
+
+        {litige.statut === 'FONDE' && (
+          <Notice tone="error" icon={CheckCircle2} title="Litige fondé">
+            Une pénalité a été appliquée au locataire. Une compensation peut vous être versée
+            selon l’évaluation des dommages.
+          </Notice>
+        )}
+
+        {litige.statut === 'NON_FONDE' && (
+          <Notice tone="success" icon={XCircle} title="Litige non fondé">
+            Les fonds seront débloqués normalement après le check-out. Aucune pénalité n’est
+            appliquée.
+          </Notice>
+        )}
+      </div>
+    </div>
+  );
+}
+
+function Field({ label, children }: { label: string; children: React.ReactNode }) {
+  return (
+    <div>
+      <p className="mb-1.5 text-xs font-semibold uppercase tracking-wider text-foreground-muted">
+        {label}
+      </p>
+      {children}
+    </div>
+  );
+}
+
+function PrimaryButton({
+  onClick, disabled, loading, loadingLabel, icon: Icon, children,
+}: {
+  onClick: () => void;
+  disabled?: boolean;
+  loading?: boolean;
+  loadingLabel: string;
+  icon?: typeof CheckCircle2;
+  children: React.ReactNode;
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      disabled={disabled || loading}
+      className="flex w-full items-center justify-center gap-2.5 rounded-pill bg-action py-3.5 text-sm font-semibold text-on-action shadow-action transition-[background-color,box-shadow,transform] duration-200 hover:bg-action-hover hover:shadow-action-hover active:scale-[0.99] disabled:cursor-not-allowed disabled:bg-background-alt disabled:text-foreground-muted disabled:shadow-none"
+    >
+      {loading ? (
+        <><Loader2 className="h-4 w-4 animate-spin" aria-hidden="true" />{loadingLabel}</>
+      ) : (
+        <>{Icon && <Icon className="h-4 w-4" aria-hidden="true" />}{children}</>
+      )}
+    </button>
+  );
+}
+
+function GhostButton({
+  onClick, disabled, children, className,
+}: {
+  onClick: () => void;
+  disabled?: boolean;
+  children: React.ReactNode;
+  className?: string;
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      disabled={disabled}
+      className={cn(
+        'inline-flex items-center justify-center gap-2 rounded-pill border border-border bg-background-card px-4 py-2.5 text-xs font-semibold text-foreground transition-colors hover:border-border-hover hover:bg-background-alt disabled:opacity-50',
+        className,
+      )}
+    >
+      {children}
+    </button>
+  );
+}
+
+function DangerButton({
+  onClick, disabled, loading, loadingLabel, icon: Icon, children, className,
+}: {
+  onClick: () => void;
+  disabled?: boolean;
+  loading?: boolean;
+  loadingLabel?: string;
+  icon?: typeof X;
+  children: React.ReactNode;
+  className?: string;
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      disabled={disabled || loading}
+      className={cn(
+        'inline-flex items-center justify-center gap-2 rounded-pill bg-error-600 px-4 py-2.5 text-xs font-semibold text-neutral-0 transition-colors hover:bg-error-700 disabled:cursor-not-allowed disabled:bg-background-alt disabled:text-foreground-faint',
+        className,
+      )}
+    >
+      {loading ? (
+        <><Loader2 className="h-3.5 w-3.5 animate-spin" aria-hidden="true" />{loadingLabel ?? 'En cours…'}</>
+      ) : (
+        <>{Icon && <Icon className="h-3.5 w-3.5" aria-hidden="true" />}{children}</>
+      )}
+    </button>
+  );
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   CONFIGURATION PAR STATUT
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+const STEP_CONFIG = {
+  PENDING: {
+    step: 1, icon: Clock, accent: 'bg-border',
+    chip: 'bg-background-alt text-foreground-muted border-border',
+    iconBox: 'bg-background-alt border-border text-foreground-muted',
+    label: 'En attente', sub: 'En attente du paiement du locataire',
+  },
+  PAID: {
+    step: 2, icon: Shield, accent: 'bg-gold-400',
+    chip: 'bg-gold-50 text-gold-700 border-gold-200',
+    iconBox: 'bg-gold-50 border-gold-200 text-gold-700',
+    label: 'Décision requise', sub: 'Paiement reçu — acceptez ou refusez',
+  },
+  CONFIRMED: {
+    step: 3, icon: LogIn, accent: 'bg-forest-600',
+    chip: 'bg-forest-50 text-forest-700 border-forest-100',
+    iconBox: 'bg-forest-50 border-forest-100 text-forest-700',
+    label: 'Check-in', sub: 'État des lieux d’entrée',
+  },
+  CHECKED_IN: {
+    step: 4, icon: LogOut, accent: 'bg-warning-500',
+    chip: 'bg-warning-50 text-warning-700 border-warning-500/25',
+    iconBox: 'bg-warning-50 border-warning-500/25 text-warning-700',
+    label: 'Check-out', sub: 'Clôture du séjour',
+  },
+  COMPLETED: {
+    step: 5, icon: CheckCircle2, accent: 'bg-forest-600',
+    chip: 'bg-forest-50 text-forest-700 border-forest-100',
+    iconBox: 'bg-forest-50 border-forest-100 text-forest-700',
+    label: 'Terminée', sub: 'Séjour terminé',
+  },
+  DISPUTED: {
+    step: null, icon: AlertTriangle, accent: 'bg-error-500',
+    chip: 'bg-error-50 text-error-700 border-error-500/20',
+    iconBox: 'bg-error-50 border-error-500/20 text-error-600',
+    label: 'Litige en cours', sub: 'En attente de résolution',
+  },
+} as const;
+
+type Statut = keyof typeof STEP_CONFIG;
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   COMPOSANT PRINCIPAL
+   ═══════════════════════════════════════════════════════════════════════════ */
 
 interface Props {
   id: string;
@@ -21,1317 +559,742 @@ interface Props {
   onRefetch: () => void;
 }
 
-/* ─── Modal overlay ───────────────────────────────────────────────────────── */
-
-function Modal({
-  title, children, onClose,
-}: { title: string; children: React.ReactNode; onClose: () => void }) {
-  return (
-    <div
-      className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4 bg-black/70 backdrop-blur-sm"
-      onClick={onClose}
-    >
-      <div
-        onClick={(e) => e.stopPropagation()}
-        className="w-full sm:max-w-lg bg-forest-950 border border-forest-800/90 rounded-t-card sm:rounded-card shadow-2xl shadow-black/60"
-      >
-        <div className="flex items-center justify-between px-6 py-5 border-b border-white/8">
-          <h3 className="text-sm font-bold text-white">{title}</h3>
-          <button
-            onClick={onClose}
-            className="w-8 h-8 rounded-xl bg-white/8 hover:bg-white/12 flex items-center justify-center transition-colors"
-          >
-            <X className="w-4 h-4 text-neutral-400" />
-          </button>
-        </div>
-        {children}
-      </div>
-    </div>
-  );
-}
-
-/* ─── Feedback inline ─────────────────────────────────────────────────────── */
-
-function Feedback({ type, message }: { type: 'error' | 'success'; message: string }) {
-  const isError = type === 'error';
-  return (
-    <div className={cn(
-      'flex items-start gap-2.5 rounded-xl p-3.5 border',
-      isError ? 'bg-rose-50 border-rose-200 text-rose-700' : 'bg-success-50 border-success-500/30 text-success-700',
-    )}>
-      {isError
-        ? <AlertTriangle className="w-4 h-4 text-rose-500 shrink-0 mt-0.5" />
-        : <CheckCircle2 className="w-4 h-4 text-success-600 shrink-0 mt-0.5" />}
-      <p className="text-xs font-semibold leading-relaxed">{message}</p>
-    </div>
-  );
-}
-
-/* ─── Composant principal ─────────────────────────────────────────────────── */
-
 export function ReservationActionPanel({ id, res, onRefetch }: Props) {
   const { statut, dateDebut, nbPersonnes, photosEtatLieu } = res;
 
-  const [isSubmitting, setIsSubmitting]         = useState(false);
-  const [errorMsg, setErrorMsg]                 = useState<string | null>(null);
-  const [successMsg, setSuccessMsg]             = useState<string | null>(null);
+  const now = useNow();
 
-  const [showCancelModal, setShowCancelModal]   = useState(false);
-  const [cancelReason, setCancelReason]         = useState('');
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [errorMsg, setErrorMsg] = useState<string | null>(null);
+  const [successMsg, setSuccessMsg] = useState<string | null>(null);
 
-  const [showLitigeModal, setShowLitigeModal]         = useState(false);
-  const [litigeMotif, setLitigeMotif]                 = useState('');
-  const [litigeDescription, setLitigeDescription]     = useState('');
+  const [showCancelModal, setShowCancelModal] = useState(false);
+  const [cancelReason, setCancelReason] = useState('');
 
-  const [showDepassement, setShowDepassement]   = useState(false);
+  const [showLitigeModal, setShowLitigeModal] = useState(false);
+  const [litigeMotif, setLitigeMotif] = useState('');
+  const [litigeDescription, setLitigeDescription] = useState('');
 
-  const [showCheckinModal, setShowCheckinModal]   = useState(false);
+  const [showDepassement, setShowDepassement] = useState(false);
+  const [showCheckinModal, setShowCheckinModal] = useState(false);
   const [showCheckoutModal, setShowCheckoutModal] = useState(false);
-  const [showRulesModal, setShowRulesModal]       = useState(false);
-
-  /* Modal horaires — affiché avant la confirmation */
-  const [showTimeModal, setShowTimeModal]   = useState(false);
-  const [checkinHeure, setCheckinHeure]     = useState('14:00');
-
-  /* Notation locataire */
-  const [rating, setRating]                 = useState(0);
-  const [hoverRating, setHoverRating]       = useState(0);
-  const [ratingComment, setRatingComment]   = useState('');
-
-  /* Signal no-show locataire */
+  const [showRulesModal, setShowRulesModal] = useState(false);
+  const [showTimeModal, setShowTimeModal] = useState(false);
   const [showNoshowModal, setShowNoshowModal] = useState(false);
-  const [noshowComment, setNoshowComment]     = useState('');
 
-  // Capturé au montage pour éviter `Date.now()` dans le corps du rendu (react-hooks/purity).
-  const [now] = useState(() => Date.now());
+  const [checkinHeure, setCheckinHeure] = useState('14:00');
+  const [rating, setRating] = useState(0);
+  const [hoverRating, setHoverRating] = useState(0);
+  const [ratingComment, setRatingComment] = useState('');
+  const [noshowComment, setNoshowComment] = useState('');
 
-  /* ── Données dérivées ── */
-  const checkinPhotos   = photosEtatLieu.filter((p) => p.type === 'CHECKIN');
-  const checkoutPhotos  = photosEtatLieu.filter((p) => p.type === 'CHECKOUT');
-  const hasCheckinPhotos  = checkinPhotos.length > 0;
-  const hasCheckoutPhotos = checkoutPhotos.length > 0;
-  const ownerCheckinDone  = !!res.checkinProprioLe;
+  /* ── Données dérivées ─────────────────────────────────────────────────── */
+
+  const checkinPhotos = useMemo(
+    () => photosEtatLieu.filter((p) => p.type === 'CHECKIN'), [photosEtatLieu],
+  );
+  const checkoutPhotos = useMemo(
+    () => photosEtatLieu.filter((p) => p.type === 'CHECKOUT'), [photosEtatLieu],
+  );
+
+  const debutMs = new Date(dateDebut).getTime();
+  const checkinWindowStart = debutMs - CHECKIN_GUARD_MS;
+  const canStartCheckin = now >= checkinWindowStart;
+  const hoursUntilCheckin = Math.max(1, Math.ceil((checkinWindowStart - now) / 3_600_000));
+  const canSignalNoshow = now - debutMs >= NOSHOW_DELAY_MS;
+
+  const daysToCheckin = (debutMs - now) / 86_400_000;
+  const penaliteOwner =
+    daysToCheckin > 7 ? PENALITES.early : daysToCheckin >= 2 ? PENALITES.mid : PENALITES.late;
+
+  const ownerCheckinDone = !!res.checkinProprioLe;
   const ownerCheckoutDone = !!res.checkoutProprioLe;
 
-  /*
-   * Garde temporelle check-in : l'état des lieux d'entrée ne peut démarrer
-   * qu'à partir de 4h avant dateDebut pour éviter qu'un propriétaire documente
-   * le logement des semaines à l'avance et tente de déclencher le versement.
-   */
-  const CHECKIN_GUARD_MS    = 4 * 60 * 60 * 1000;
-  const checkinWindowStart  = new Date(dateDebut).getTime() - CHECKIN_GUARD_MS;
-  const canStartCheckin     = now >= checkinWindowStart;
-  const hoursUntilCheckin   = Math.max(1, Math.ceil((checkinWindowStart - now) / 3600000));
-
-  /* ── Sous-états CONFIRMED ── */
-  type ConfirmedSub = 'locked' | 'ready' | 'photos-uploaded' | 'waiting-tenant';
-  const confirmedSub: ConfirmedSub = ownerCheckinDone
+  const confirmedSub = ownerCheckinDone
     ? 'waiting-tenant'
-    : hasCheckinPhotos
+    : checkinPhotos.length > 0
       ? 'photos-uploaded'
       : canStartCheckin ? 'ready' : 'locked';
 
-  /* ── Sous-états CHECKED_IN ── */
-  type CheckedInSub = 'ready' | 'photos-uploaded' | 'awaiting-completion';
-  const checkedInSub: CheckedInSub = ownerCheckoutDone
+  const checkedInSub = ownerCheckoutDone
     ? 'awaiting-completion'
-    : hasCheckoutPhotos ? 'photos-uploaded' : 'ready';
+    : checkoutPhotos.length > 0 ? 'photos-uploaded' : 'ready';
 
-  /* Garde temporelle annulation : bouton masqué dans les 24h précédant le check-in */
-  const diffMsToCheckin    = new Date(dateDebut).getTime() - now;
-  const diffDaysToCheckin  = diffMsToCheckin / (1000 * 60 * 60 * 24);
-  const diffHoursToCheckin = diffMsToCheckin / 3_600_000;
-  const penaliteOwner      = diffDaysToCheckin > 7 ? 5_000 : diffDaysToCheckin >= 2 ? 10_000 : 20_000;
+  /* Heure de check-out : dérivée du check-in, avec garde sur saisie vide.
+     `<input type="time">` peut être vidé — le calcul produisait « NaN:NaN ». */
+  const checkoutHeure = useMemo(() => {
+    const [h, m] = checkinHeure.split(':').map(Number);
+    if (Number.isNaN(h) || Number.isNaN(m)) return null;
+    return `${String((h + 1) % 24).padStart(2, '0')}:${String(m).padStart(2, '0')}`;
+  }, [checkinHeure]);
 
-  /* Signal no-show : visible 2h après dateDebut */
-  const timeSinceStart = now - new Date(dateDebut).getTime();
-  const canSignalNoshow = timeSinceStart >= 2 * 60 * 60 * 1000; // 2 hours in ms
+  /* ── Helpers ──────────────────────────────────────────────────────────── */
 
-  if (!['PENDING', 'PAID', 'CONFIRMED', 'CHECKED_IN', 'COMPLETED', 'DISPUTED'].includes(statut)) return null;
+  const clearFeedback = useCallback(() => {
+    setErrorMsg(null);
+    setSuccessMsg(null);
+  }, []);
 
-  const clearFeedback = () => { setErrorMsg(null); setSuccessMsg(null); };
-  const onError       = (e: any) => setErrorMsg(e?.message ?? 'Une erreur est survenue.');
-  const onSuccess     = (msg: string) => { setSuccessMsg(msg); onRefetch(); };
-
-  /* ── Handlers ── */
-
-  const handleConfirm = async () => {
-    setShowTimeModal(false);
-    clearFeedback(); setIsSubmitting(true);
+  const run = useCallback(async (fn: () => Promise<void>, success: string) => {
+    clearFeedback();
+    setIsSubmitting(true);
     try {
+      await fn();
+      setSuccessMsg(success);
+      onRefetch();
+    } catch (e) {
+      setErrorMsg(e instanceof Error && e.message ? e.message : 'Une erreur est survenue.');
+    } finally {
+      setIsSubmitting(false);
+    }
+  }, [clearFeedback, onRefetch]);
+
+  /* Le message de succès disparaît seul : il restait affiché indéfiniment
+     et se retrouvait à côté d'une erreur ultérieure sans contexte. */
+  useEffect(() => {
+    if (!successMsg) return;
+    const timer = setTimeout(() => setSuccessMsg(null), 8_000);
+    return () => clearTimeout(timer);
+  }, [successMsg]);
+
+  /* ── Handlers ─────────────────────────────────────────────────────────── */
+
+  const handleConfirm = () => {
+    if (!/^\d{2}:\d{2}$/.test(checkinHeure)) {
+      setErrorMsg('Indiquez une heure de check-in valide.');
+      return;
+    }
+    setShowTimeModal(false);
+    run(async () => {
       await nestFetch(NEST_API.RESERVATIONS.CONFIRM(id), {
         method: 'PATCH',
         body: JSON.stringify({ heureDebut: checkinHeure }),
       });
-      onSuccess('Réservation confirmée avec succès.');
-    } catch (e) { onError(e); }
-    finally { setIsSubmitting(false); }
+    }, 'Réservation confirmée.');
   };
 
-  const handleCancel = async () => {
-    if (!cancelReason.trim()) { setErrorMsg('Veuillez indiquer un motif.'); return; }
-    clearFeedback(); setIsSubmitting(true);
-    try {
+  const handleCancel = () => {
+    if (cancelReason.trim().length < MOTIF_MIN) {
+      setErrorMsg(`Le motif doit contenir au moins ${MOTIF_MIN} caractères.`);
+      return;
+    }
+    run(async () => {
       await nestFetch(NEST_API.RESERVATIONS.CANCEL(id), {
         method: 'PATCH',
-        body: JSON.stringify({ raison: cancelReason }),
+        body: JSON.stringify({ raison: cancelReason.trim() }),
       });
-      setShowCancelModal(false); setCancelReason('');
-      onSuccess('Réservation annulée.');
-    } catch (e) { onError(e); }
-    finally { setIsSubmitting(false); }
+      setShowCancelModal(false);
+      setCancelReason('');
+    }, 'Réservation annulée.');
   };
 
-  const handleCheckinProprio = async () => {
-    clearFeedback(); setIsSubmitting(true);
-    try {
-      await nestFetch(NEST_API.RESERVATIONS.CHECKIN_PROPRIO(id), { method: 'POST' });
-      onSuccess('Check-in confirmé. Le locataire peut maintenant valider son arrivée.');
-    } catch (e) { onError(e); }
-    finally { setIsSubmitting(false); }
-  };
+  const handleCheckinProprio = () => run(async () => {
+    await nestFetch(NEST_API.RESERVATIONS.CHECKIN_PROPRIO(id), { method: 'POST' });
+  }, 'Check-in confirmé. Le locataire peut valider son arrivée.');
 
-  const handleCheckoutProprio = async () => {
-    clearFeedback(); setIsSubmitting(true);
-    try {
-      await nestFetch(NEST_API.RESERVATIONS.CHECKOUT_PROPRIO(id), { method: 'POST' });
-      onSuccess("État des lieux de sortie confirmé. Vous pouvez maintenant libérer les fonds.");
-    } catch (e) { onError(e); }
-    finally { setIsSubmitting(false); }
-  };
+  const handleCheckoutProprio = () => run(async () => {
+    await nestFetch(NEST_API.RESERVATIONS.CHECKOUT_PROPRIO(id), { method: 'POST' });
+  }, 'État des lieux de sortie confirmé. Vous pouvez libérer les fonds.');
 
-  const handleCompleteCheckout = async () => {
-    clearFeedback(); setIsSubmitting(true);
-    try {
-      await nestFetch(NEST_API.RESERVATIONS.COMPLETE_CHECKOUT(id), { method: 'PATCH' });
-      onSuccess('Check-out finalisé. Les fonds ont été débloqués.');
-    } catch (e) { onError(e); }
-    finally { setIsSubmitting(false); }
-  };
+  const handleCompleteCheckout = () => run(async () => {
+    await nestFetch(NEST_API.RESERVATIONS.COMPLETE_CHECKOUT(id), { method: 'PATCH' });
+  }, 'Check-out finalisé. Les fonds ont été débloqués.');
 
-  const handleOpenLitige = async () => {
-    if (!litigeMotif.trim() || !litigeDescription.trim()) {
-      setErrorMsg('Veuillez renseigner le motif et la description.');
+  const handleOpenLitige = () => {
+    if (!litigeMotif || litigeDescription.trim().length < MOTIF_MIN) {
+      setErrorMsg(`Sélectionnez un motif et décrivez le problème (${MOTIF_MIN} caractères minimum).`);
       return;
     }
-    clearFeedback(); setIsSubmitting(true);
-    try {
+    run(async () => {
       await nestFetch(NEST_API.DISPUTES.CREATE, {
         method: 'POST',
-        body: JSON.stringify({ reservationId: id, motif: litigeMotif, description: litigeDescription }),
+        body: JSON.stringify({
+          reservationId: id,
+          motif: litigeMotif,
+          description: litigeDescription.trim(),
+        }),
       });
-      setShowLitigeModal(false); setLitigeMotif(''); setLitigeDescription('');
-      onSuccess('Litige ouvert. Notre équipe vous contactera sous 48h.');
-    } catch (e) { onError(e); }
-    finally { setIsSubmitting(false); }
+      setShowLitigeModal(false);
+      setLitigeMotif('');
+      setLitigeDescription('');
+    }, 'Litige ouvert. L’équipe support vous contacte sous 48 h.');
   };
 
-  const handleSubmitRating = async () => {
+  const handleSubmitRating = () => {
     if (rating === 0) {
-      setErrorMsg('Veuillez sélectionner une note (1 à 5 étoiles).');
+      setErrorMsg('Sélectionnez une note de 1 à 5 étoiles.');
       return;
     }
-    clearFeedback(); setIsSubmitting(true);
-    try {
+    run(async () => {
       await nestFetch(NEST_API.RESERVATIONS.RATE_TENANT(id), {
         method: 'POST',
-        body: JSON.stringify({ note: rating, commentaire: ratingComment }),
+        body: JSON.stringify({ note: rating, commentaire: ratingComment.trim() || undefined }),
       });
-      onSuccess(`Merci ! Votre évaluation de ${rating}/5 a été publiée.`);
-      setRating(0); setRatingComment('');
-    } catch (e) { onError(e); }
-    finally { setIsSubmitting(false); }
+      setRating(0);
+      setRatingComment('');
+    }, 'Votre évaluation a été publiée.');
   };
 
-  const handleSignalNoshow = async () => {
-    clearFeedback(); setIsSubmitting(true);
-    try {
-      await nestFetch(NEST_API.RESERVATIONS.SIGNAL_NOSHOW(id), {
-        method: 'POST',
-        body: JSON.stringify({ commentaire: noshowComment.trim() || undefined }),
-      });
-      setShowNoshowModal(false);
-      setNoshowComment('');
-      onSuccess('Absence signalée. La réservation sera annulée automatiquement si le locataire ne se présente pas dans les 3 prochaines heures.');
-    } catch (e) { onError(e); }
-    finally { setIsSubmitting(false); }
+  const handleSignalNoshow = () => run(async () => {
+    await nestFetch(NEST_API.RESERVATIONS.SIGNAL_NOSHOW(id), {
+      method: 'POST',
+      body: JSON.stringify({ commentaire: noshowComment.trim() || undefined }),
+    });
+    setShowNoshowModal(false);
+    setNoshowComment('');
+  }, 'Absence signalée. La réservation sera annulée si le locataire ne se présente pas sous 3 h.');
+
+  const handleReopenLateCheckin = () => run(async () => {
+    await nestFetch(NEST_API.RESERVATIONS.REOPEN_LATE_CHECKIN(id), { method: 'POST' });
+  }, 'Réservation ré-ouverte pour un check-in tardif.');
+
+  const openLitigeDepassement = () => {
+    setShowDepassement(false);
+    clearFeedback();
+    setLitigeMotif('DEPASSEMENT_PERSONNES');
+    setShowLitigeModal(true);
   };
 
-  const handleReopenLateCheckin = async () => {
-    clearFeedback(); setIsSubmitting(true);
-    try {
-      await nestFetch(NEST_API.RESERVATIONS.REOPEN_LATE_CHECKIN(id), {
-        method: 'POST',
-      });
-      onSuccess('Réservation ré-ouverte ! Le locataire a été accueilli pour un check-in tardif.');
-    } catch (e) { onError(e); }
-    finally { setIsSubmitting(false); }
-  };
+  /* ── Rendu ────────────────────────────────────────────────────────────── */
 
-  /* ── Config par statut ── */
-  const stepConfig = {
-    PENDING: {
-      step: 1, icon: Clock,
-      gradient: 'from-neutral-400 to-neutral-500',
-      iconBg: 'bg-background-alt border-border', iconColor: 'text-foreground-muted',
-      badge: 'bg-background-alt text-foreground-muted border border-border',
-      label: 'En attente', sub: 'En attente du paiement du locataire',
-    },
-    PAID: {
-      step: 2, icon: Shield,
-      gradient: 'from-gold-400 to-gold-600',
-      iconBg: 'bg-gold-50 border-gold-200', iconColor: 'text-gold-800',
-      badge: 'bg-gold-50 text-gold-800 border border-gold-200',
-      label: 'Décision requise', sub: 'Paiement reçu — acceptez ou refusez',
-    },
-    CONFIRMED: {
-      step: 3, icon: LogIn,
-      gradient: 'from-forest-800 to-forest-950',
-      iconBg: 'bg-forest-50 border-forest-100', iconColor: 'text-forest-800',
-      badge: 'bg-forest-50 text-forest-800 border border-forest-100',
-      label: 'Check-in', sub: "État des lieux d'entrée",
-    },
-    CHECKED_IN: {
-      step: 4, icon: LogOut,
-      gradient: 'from-amber-500 to-rose-600',
-      iconBg: 'bg-amber-50 border-amber-200', iconColor: 'text-amber-700',
-      badge: 'bg-amber-50 text-amber-800 border border-amber-200',
-      label: 'Check-out', sub: 'Clôture du séjour',
-    },
-    COMPLETED: {
-      step: 5, icon: CheckCircle2,
-      gradient: 'from-forest-800 to-forest-950',
-      iconBg: 'bg-forest-50 border-forest-100', iconColor: 'text-forest-800',
-      badge: 'bg-forest-50 text-forest-800 border border-forest-100',
-      label: 'Terminée', sub: 'Séjour terminé avec succès',
-    },
-    DISPUTED: {
-      step: 0, icon: AlertTriangle,
-      gradient: 'from-error-500 to-red-700',
-      iconBg: 'bg-error-500/10 border-error-500/20', iconColor: 'text-error-500',
-      badge: 'bg-error-500/10 text-error-400 border border-error-500/20',
-      label: 'Litige en cours', sub: 'En attente de résolution',
-    },
-  } as const;
-
-  const step     = stepConfig[statut as keyof typeof stepConfig];
+  if (!(statut in STEP_CONFIG)) return null;
+  const step = STEP_CONFIG[statut as Statut];
   const StepIcon = step.icon;
 
-  /* ─────────────────────────────────────────────────── */
+  const sideActions = !res.litige && (
+    <>
+      <DepassementAccordion
+        nbPersonnes={nbPersonnes}
+        open={showDepassement}
+        onToggle={() => setShowDepassement((v) => !v)}
+        onSignal={openLitigeDepassement}
+      />
+      {canSignalNoshow && <NoShowCta onClick={() => { clearFeedback(); setShowNoshowModal(true); }} />}
+    </>
+  );
+
+  const tenantInitials =
+    `${res.locataire.prenom?.[0] ?? ''}${res.locataire.nom?.[0] ?? ''}`.toUpperCase() || '?';
+
   return (
     <>
-      <div className="bg-background-card border border-border/80 rounded-card overflow-hidden shadow-2xs">
+      <div className="overflow-hidden rounded-card border border-border bg-background-card shadow-sm">
 
-        {/* Gradient bar */}
-        <div className={cn('h-1 w-full bg-gradient-to-r', step.gradient)} />
+        <div className={cn('h-1 w-full', step.accent)} />
 
-        {/* Header */}
+        {/* ── En-tête ──────────────────────────────────────────────────── */}
+
         <div className="flex items-start gap-4 px-6 pt-5 pb-4">
-          <div className={cn('w-10 h-10 rounded-inner border flex items-center justify-center shrink-0 mt-0.5 shadow-2xs', step.iconBg)}>
-            <StepIcon className={cn('w-4.5 h-4.5', step.iconColor)} />
-          </div>
-          <div className="flex-1 min-w-0">
-            <div className="flex items-center gap-2 flex-wrap">
-              <p className="font-display text-base font-bold text-forest-950 leading-tight">{step.label}</p>
-              <span className={cn('text-[10px] font-extrabold px-2.5 py-0.5 rounded-pill', step.badge)}>
-                Étape {step.step}/4
-              </span>
+          <span className={cn('mt-0.5 flex h-10 w-10 shrink-0 items-center justify-center rounded-inner border', step.iconBox)}>
+            <StepIcon className="h-4 w-4" aria-hidden="true" />
+          </span>
+
+          <div className="min-w-0 flex-1">
+            <div className="flex flex-wrap items-center gap-2">
+              <h2 className="font-display text-base font-semibold leading-tight text-foreground">
+                {step.label}
+              </h2>
+              {/* Le badge affichait « Étape 5/4 » sur COMPLETED et « Étape 0/4 »
+                  sur DISPUTED : le total était figé à 4 pour 5 étapes, et le
+                  litige n'est pas une étape du parcours. */}
+              {step.step !== null && (
+                <span className={cn('rounded-pill border px-2.5 py-0.5 text-xs font-semibold', step.chip)}>
+                  Étape {step.step}/{TOTAL_STEPS}
+                </span>
+              )}
             </div>
-            <p className="text-xs text-foreground-muted mt-0.5">{step.sub}</p>
+            <p className="mt-0.5 text-xs text-foreground-muted">{step.sub}</p>
           </div>
+
           <button
+            type="button"
             onClick={onRefetch}
-            title="Actualiser"
-            className="w-8 h-8 rounded-inner bg-background-alt hover:bg-forest-50 border border-border flex items-center justify-center transition-colors shrink-0 mt-0.5"
+            aria-label="Actualiser"
+            className="mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-pill border border-border bg-background-alt text-forest-700 transition-colors hover:bg-forest-50"
           >
-            <RefreshCw className="w-3.5 h-3.5 text-forest-700" />
+            <RefreshCw className="h-3.5 w-3.5" aria-hidden="true" />
           </button>
         </div>
 
-        {/* Divider */}
-        <div className="h-px bg-border/60 mx-6" />
+        <div className="mx-6 h-px bg-border" />
 
-        <div className="p-6 space-y-4">
+        <div className="space-y-4 p-6">
 
-          {errorMsg   && <Feedback type="error"   message={errorMsg}   />}
+          {errorMsg && <Feedback type="error" message={errorMsg} />}
           {successMsg && <Feedback type="success" message={successMsg} />}
 
-          {/* ══ PENDING : attente paiement ══ */}
+          {/* ══ PENDING ══ */}
           {statut === 'PENDING' && (
             <>
-              <div className="flex items-start gap-3 bg-neutral-50 border border-neutral-200 rounded-2xl p-4">
-                <div className="w-8 h-8 rounded-xl bg-neutral-100 border border-neutral-200 flex items-center justify-center shrink-0">
-                  <Clock className="w-4 h-4 text-neutral-400 animate-pulse" />
-                </div>
-                <div>
-                  <p className="text-xs font-black text-neutral-700">En attente du paiement</p>
-                  <p className="text-xs text-neutral-500 mt-0.5 leading-relaxed">
-                    Le locataire n&apos;a pas encore finalisé le paiement. Vous serez notifié dès réception.
-                  </p>
-                </div>
-              </div>
-
-              <div className="pt-1 border-t border-neutral-100">
-                <button
-                  onClick={() => { clearFeedback(); setShowCancelModal(true); }}
-                  className="flex items-center gap-2 text-xs font-bold text-rose-600 hover:text-rose-700 hover:bg-rose-50 border border-rose-200 hover:border-rose-300 px-4 py-2.5 rounded-xl transition-all"
-                >
-                  <X className="w-3.5 h-3.5" />
+              <Notice tone="neutral" icon={Clock} title="En attente du paiement">
+                Le locataire n’a pas encore finalisé le paiement. Vous serez notifié dès
+                réception.
+              </Notice>
+              <div className="border-t border-border pt-4">
+                <GhostButton onClick={() => { clearFeedback(); setShowCancelModal(true); }}>
+                  <X className="h-3.5 w-3.5" aria-hidden="true" />
                   Annuler la demande
-                </button>
+                </GhostButton>
               </div>
             </>
           )}
 
-          {/* ══ PAID : décision proprio ══ */}
+          {/* ══ PAID ══ */}
           {statut === 'PAID' && (
             <>
-              {/* KYC locataire */}
-              {res.locataire.statutKyc !== 'VERIFIE' ? (
-                <div className="flex items-start gap-3 bg-amber-50 border border-amber-200 rounded-2xl p-4">
-                  <div className="w-8 h-8 rounded-xl bg-amber-100 border border-amber-200 flex items-center justify-center shrink-0">
-                    <AlertTriangle className="w-4 h-4 text-amber-500" />
-                  </div>
-                  <div>
-                    <p className="text-xs font-black text-amber-800">
-                      Identité non vérifiée{res.locataire.statutKyc === 'EN_ATTENTE' && ' — validation en cours'}
-                    </p>
-                    <p className="text-xs text-amber-700 mt-0.5 leading-relaxed">
-                      {res.locataire.statutKyc === 'EN_ATTENTE'
-                        ? 'Documents en cours de vérification par notre équipe.'
-                        : "Le locataire n'a pas encore soumis ses documents d'identité."}
-                    </p>
-                  </div>
-                </div>
+              {res.locataire.statutKyc === 'VERIFIE' ? (
+                <Notice tone="success" icon={CheckCircle2} title="Identité vérifiée">
+                  Vous pouvez confirmer la réservation en toute sécurité.
+                </Notice>
               ) : (
-                <div className="flex items-start gap-3 bg-success-50 border border-success-500/30 rounded-2xl p-4">
-                  <div className="w-8 h-8 rounded-xl bg-success-50 border border-success-500/30 flex items-center justify-center shrink-0">
-                    <CheckCircle2 className="w-4 h-4 text-success-600" />
-                  </div>
-                  <div>
-                    <p className="text-xs font-black text-success-700">Identité vérifiée</p>
-                    <p className="text-xs text-success-700 mt-0.5">Vous pouvez confirmer la réservation en toute sécurité.</p>
-                  </div>
-                </div>
+                <Notice
+                  tone="warning"
+                  icon={AlertTriangle}
+                  title={
+                    res.locataire.statutKyc === 'EN_ATTENTE'
+                      ? 'Identité en cours de validation'
+                      : 'Identité non vérifiée'
+                  }
+                >
+                  {res.locataire.statutKyc === 'EN_ATTENTE'
+                    ? 'Les documents sont en cours de vérification par l’équipe Klef.'
+                    : 'Le locataire n’a pas encore soumis ses documents d’identité.'}
+                </Notice>
               )}
 
-              {/* Délai de réponse */}
-              <div className="flex items-center gap-2.5 bg-neutral-50 border border-neutral-200 rounded-xl px-4 py-3">
-                <Clock className="w-3.5 h-3.5 text-neutral-400 shrink-0" />
-                <span className="text-xs text-neutral-500">
+              <div className="flex items-center gap-2.5 rounded-inner border border-border bg-background-alt px-4 py-3">
+                <Clock className="h-3.5 w-3.5 shrink-0 text-foreground-muted" aria-hidden="true" />
+                <p className="text-xs text-foreground-muted">
                   Répondez avant le{' '}
-                  <span className="font-bold text-neutral-700">
-                    {new Date(res.delaiConfirmation).toLocaleDateString('fr-FR', {
-                      weekday: 'long', day: 'numeric', month: 'long', hour: '2-digit', minute: '2-digit',
-                    })}
+                  <span className="font-semibold text-foreground">
+                    {formatDateTime(res.delaiConfirmation)}
                   </span>
-                </span>
-              </div>
-
-              {/* Avertissement pénalité */}
-              <div className="flex items-start gap-2.5 bg-amber-50/60 border border-amber-200/60 rounded-xl px-3.5 py-3">
-                <AlertTriangle className="w-3.5 h-3.5 text-amber-500 shrink-0 mt-0.5" />
-                <p className="text-[11px] text-amber-700 leading-relaxed">
-                  <span className="font-bold">Annulation après confirmation :</span> une pénalité sera déduite de votre wallet selon la politique en vigueur.
                 </p>
               </div>
 
-              {/* CTA confirmer / refuser */}
-              <div className="flex items-center gap-3 pt-1">
-                <button
+              <Notice tone="warning" icon={AlertTriangle} title="Annulation après confirmation">
+                Une pénalité sera déduite de votre wallet selon le délai restant avant l’arrivée.
+              </Notice>
+
+              <div className="flex flex-col gap-3 pt-1 sm:flex-row">
+                <GhostButton
                   onClick={() => { clearFeedback(); setShowCancelModal(true); }}
                   disabled={isSubmitting}
-                  className="flex-1 py-3 text-xs font-black text-rose-600 border border-rose-200 hover:bg-rose-50 hover:border-rose-300 rounded-2xl transition-all disabled:opacity-50"
+                  className="flex-1 py-3 text-sm"
                 >
                   Refuser
-                </button>
-                <button
-                  onClick={() => { clearFeedback(); setShowTimeModal(true); }}
-                  disabled={res.locataire.statutKyc !== 'VERIFIE' || isSubmitting}
-                  className={cn(
-                    'flex-1 py-3 text-xs font-black text-white rounded-2xl transition-all shadow-md',
-                    res.locataire.statutKyc === 'VERIFIE' && !isSubmitting
-                      ? 'bg-gradient-to-r from-success-500 to-success-700 hover:from-success-600 hover:to-success-700 shadow-[0_4px_12px_rgba(46,158,82,0.25)]'
-                      : 'bg-neutral-200 text-neutral-400 shadow-none',
-                  )}
-                >
-                  {isSubmitting
-                    ? <span className="flex items-center justify-center gap-1.5"><Loader2 className="w-3.5 h-3.5 animate-spin" />Confirmation…</span>
-                    : 'Confirmer la réservation'}
-                </button>
+                </GhostButton>
+                <div className="flex-1">
+                  <PrimaryButton
+                    onClick={() => { clearFeedback(); setShowTimeModal(true); }}
+                    disabled={res.locataire.statutKyc !== 'VERIFIE' || isSubmitting}
+                    loadingLabel="Confirmation…"
+                  >
+                    Confirmer la réservation
+                  </PrimaryButton>
+                </div>
               </div>
             </>
           )}
 
-          {/* ══ CONFIRMED : check-in ══ */}
+          {/* ══ CONFIRMED ══ */}
           {statut === 'CONFIRMED' && (
             <>
-              {/* LOCKED : trop tôt, fenêtre 4h pas encore ouverte */}
               {confirmedSub === 'locked' && (
-                <div className="flex items-start gap-3 bg-neutral-50 border border-neutral-200 rounded-2xl p-4">
-                  <div className="w-8 h-8 rounded-xl bg-neutral-100 border border-neutral-200 flex items-center justify-center shrink-0">
-                    <Lock className="w-4 h-4 text-neutral-400" />
-                  </div>
-                  <div>
-                    <p className="text-xs font-black text-neutral-700">
-                      État des lieux disponible dans {hoursUntilCheckin}h
-                    </p>
-                    <p className="text-xs text-neutral-500 mt-0.5 leading-relaxed">
-                      Pour garantir des photos fidèles à l&apos;arrivée du locataire, l&apos;état des lieux d&apos;entrée ne peut démarrer que{' '}
-                      <span className="font-bold text-neutral-700">4h avant l&apos;heure d&apos;arrivée</span>.
-                      Revenez le{' '}
-                      <span className="font-bold text-neutral-700">
-                        {new Date(checkinWindowStart).toLocaleDateString('fr-FR', {
-                          day: 'numeric', month: 'long', hour: '2-digit', minute: '2-digit',
-                        })}
-                      </span>.
-                    </p>
-                  </div>
-                </div>
+                <Notice
+                  tone="neutral"
+                  icon={Lock}
+                  title={`État des lieux disponible dans ${hoursUntilCheckin} h`}
+                >
+                  L’état des lieux d’entrée ne peut démarrer que{' '}
+                  <span className="font-semibold text-foreground">4 h avant l’arrivée</span>, pour
+                  garantir des photos fidèles. Revenez le{' '}
+                  <span className="font-semibold text-foreground">
+                    {formatDateTime(checkinWindowStart)}
+                  </span>.
+                </Notice>
               )}
 
-              {/* READY : fenêtre ouverte, pas encore de photos */}
               {confirmedSub === 'ready' && (
-                <>
-                  <button
-                    type="button"
-                    onClick={() => { clearFeedback(); setShowCheckinModal(true); }}
-                    className="w-full group relative flex items-center gap-4 p-4 rounded-2xl border border-success-500/30 bg-white hover:bg-success-50/40 hover:border-success-500/50 hover:shadow-md hover:shadow-success-50 transition-all duration-200 text-left overflow-hidden"
-                  >
-                    <div className="absolute left-0 top-0 bottom-0 w-1 rounded-l-2xl bg-success-600" />
-                    <div className="w-11 h-11 rounded-2xl border bg-success-50 border-success-500/30 flex items-center justify-center shrink-0 ml-1">
-                      <Camera className="w-5 h-5 text-success-600" />
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <p className="text-sm font-black text-neutral-900 leading-tight">Démarrer l&apos;état des lieux d&apos;entrée</p>
-                      <p className="text-xs text-neutral-400 mt-0.5">Photographiez chaque pièce avant l&apos;arrivée du locataire</p>
-                    </div>
-                    <div className="w-8 h-8 rounded-xl bg-neutral-100 group-hover:bg-success-50 flex items-center justify-center transition-colors shrink-0">
-                      <ArrowRight className="w-4 h-4 text-neutral-400 group-hover:text-success-600 transition-colors" />
-                    </div>
-                  </button>
-
-                  {/* Dépassement voyageurs */}
-                  {!res.litige && (
-                    <div className="border border-amber-200/80 rounded-2xl overflow-hidden bg-amber-50/30">
-                      <button
-                        onClick={() => setShowDepassement((v) => !v)}
-                        className="w-full flex items-center justify-between px-4 py-3.5 hover:bg-amber-50 transition-colors"
-                      >
-                        <div className="flex items-center gap-2.5">
-                          <Users className="w-4 h-4 text-amber-500 shrink-0" />
-                          <span className="text-xs font-semibold text-amber-800">Le locataire a plus de personnes que prévu ?</span>
-                        </div>
-                        <ChevronDown className={cn('w-4 h-4 text-amber-500 transition-transform duration-200', showDepassement && 'rotate-180')} />
-                      </button>
-                      {showDepassement && (
-                        <div className="px-4 pb-4 pt-1 border-t border-amber-100 space-y-3">
-                          <p className="text-xs text-amber-800 leading-relaxed">
-                            Si le locataire est arrivé avec plus de personnes que déclaré ({nbPersonnes} voyageur{nbPersonnes > 1 ? 's' : ''} prévu{nbPersonnes > 1 ? 's' : ''}), signalez-le immédiatement pour régulariser la situation.
-                          </p>
-                          <button
-                            onClick={() => {
-                              setShowDepassement(false);
-                              setLitigeMotif('DEPASSEMENT_PERSONNES');
-                              setShowLitigeModal(true);
-                            }}
-                            className="flex items-center gap-2 text-xs font-bold text-rose-600 hover:text-rose-700 hover:bg-rose-50 border border-rose-200 hover:border-rose-300 px-4 py-2.5 rounded-xl transition-all"
-                          >
-                            <Gavel className="w-3.5 h-3.5" />
-                            Signaler le dépassement
-                          </button>
-                        </div>
-                      )}
-                    </div>
-                  )}
-
-                  {/* Signal no-show locataire — visible 2h après dateDebut */}
-                  {canSignalNoshow && !res.litige && (
-                    <div className="border border-rose-200/80 rounded-2xl overflow-hidden bg-rose-50/30">
-                      <button
-                        onClick={() => setShowNoshowModal(true)}
-                        className="w-full flex items-center gap-3 px-4 py-3.5 hover:bg-rose-50 transition-colors"
-                      >
-                        <div className="w-8 h-8 rounded-xl bg-rose-100 border border-rose-200 flex items-center justify-center shrink-0">
-                          <UserX className="w-4 h-4 text-rose-600" />
-                        </div>
-                        <div className="flex-1 text-left">
-                          <p className="text-xs font-bold text-rose-800">Le locataire n&apos;est pas venu ?</p>
-                          <p className="text-[11px] text-rose-600 mt-0.5">Signalez son absence pour déclencher une annulation automatique</p>
-                        </div>
-                      </button>
-                    </div>
-                  )}
-                </>
+                <ActionCard
+                  icon={Camera}
+                  tone="success"
+                  title="Démarrer l’état des lieux d’entrée"
+                  description="Photographiez chaque pièce avant l’arrivée du locataire"
+                  onClick={() => { clearFeedback(); setShowCheckinModal(true); }}
+                />
               )}
 
-              {/* PHOTOS-UPLOADED : photos en DB mais checkinProprioLe absent */}
               {confirmedSub === 'photos-uploaded' && (
                 <>
-                  <div className="flex items-start gap-3 bg-amber-50 border border-amber-200 rounded-2xl p-4">
-                    <div className="w-8 h-8 rounded-xl bg-amber-100 border border-amber-200 flex items-center justify-center shrink-0">
-                      <Camera className="w-4 h-4 text-amber-600" />
-                    </div>
-                    <div>
-                      <p className="text-xs font-black text-amber-800">
-                        {checkinPhotos.length} photo{checkinPhotos.length > 1 ? 's' : ''} uploadée{checkinPhotos.length > 1 ? 's' : ''} — confirmation requise
-                      </p>
-                      <p className="text-xs text-amber-700 mt-0.5 leading-relaxed">
-                        Photos enregistrées. Confirmez ci-dessous pour notifier le locataire et démarrer officiellement le check-in.
-                      </p>
-                    </div>
-                  </div>
+                  <Notice
+                    tone="warning"
+                    icon={Camera}
+                    title={`${checkinPhotos.length} photo${checkinPhotos.length > 1 ? 's' : ''} enregistrée${checkinPhotos.length > 1 ? 's' : ''} — confirmation requise`}
+                  >
+                    Confirmez ci-dessous pour notifier le locataire et démarrer officiellement le
+                    check-in.
+                  </Notice>
 
-                  <button
+                  <PrimaryButton
                     onClick={handleCheckinProprio}
-                    disabled={isSubmitting}
-                    className="w-full flex items-center justify-center gap-2.5 py-3.5 text-sm font-extrabold text-forest-950 rounded-pill bg-lime-400 hover:bg-lime-300 disabled:opacity-60 shadow-md transition-all active:scale-95"
+                    loading={isSubmitting}
+                    loadingLabel="Confirmation…"
+                    icon={CheckCircle2}
                   >
-                    {isSubmitting
-                      ? <><Loader2 className="w-4 h-4 animate-spin" />Confirmation…</>
-                      : <><CheckCircle2 className="w-4 h-4 text-forest-950" />Confirmer l&apos;état des lieux d&apos;entrée</>}
-                  </button>
+                    Confirmer l’état des lieux d’entrée
+                  </PrimaryButton>
 
-                  <button
-                    type="button"
+                  <GhostButton
                     onClick={() => { clearFeedback(); setShowCheckinModal(true); }}
-                    className="w-full text-xs font-bold text-neutral-500 hover:text-neutral-700 hover:bg-neutral-100 border border-neutral-200 px-4 py-2.5 rounded-xl transition-all"
+                    className="w-full"
                   >
-                    Ajouter d&apos;autres photos
-                  </button>
-
-                  {/* Dépassement voyageurs */}
-                  {!res.litige && (
-                    <div className="border border-amber-200/80 rounded-2xl overflow-hidden bg-amber-50/30">
-                      <button
-                        onClick={() => setShowDepassement((v) => !v)}
-                        className="w-full flex items-center justify-between px-4 py-3.5 hover:bg-amber-50 transition-colors"
-                      >
-                        <div className="flex items-center gap-2.5">
-                          <Users className="w-4 h-4 text-amber-500 shrink-0" />
-                          <span className="text-xs font-semibold text-amber-800">Le locataire a plus de personnes que prévu ?</span>
-                        </div>
-                        <ChevronDown className={cn('w-4 h-4 text-amber-500 transition-transform duration-200', showDepassement && 'rotate-180')} />
-                      </button>
-                      {showDepassement && (
-                        <div className="px-4 pb-4 pt-1 border-t border-amber-100 space-y-3">
-                          <p className="text-xs text-amber-800 leading-relaxed">
-                            Si le locataire est arrivé avec plus de personnes que déclaré ({nbPersonnes} voyageur{nbPersonnes > 1 ? 's' : ''} prévu{nbPersonnes > 1 ? 's' : ''}), signalez-le immédiatement pour régulariser la situation.
-                          </p>
-                          <button
-                            onClick={() => {
-                              setShowDepassement(false);
-                              setLitigeMotif('DEPASSEMENT_PERSONNES');
-                              setShowLitigeModal(true);
-                            }}
-                            className="flex items-center gap-2 text-xs font-bold text-rose-600 hover:text-rose-700 hover:bg-rose-50 border border-rose-200 hover:border-rose-300 px-4 py-2.5 rounded-xl transition-all"
-                          >
-                            <Gavel className="w-3.5 h-3.5" />
-                            Signaler le dépassement
-                          </button>
-                        </div>
-                      )}
-                    </div>
-                  )}
-
-                  {/* Signal no-show locataire — visible 2h après dateDebut */}
-                  {canSignalNoshow && !res.litige && (
-                    <div className="border border-rose-200/80 rounded-2xl overflow-hidden bg-rose-50/30">
-                      <button
-                        onClick={() => setShowNoshowModal(true)}
-                        className="w-full flex items-center gap-3 px-4 py-3.5 hover:bg-rose-50 transition-colors"
-                      >
-                        <div className="w-8 h-8 rounded-xl bg-rose-100 border border-rose-200 flex items-center justify-center shrink-0">
-                          <UserX className="w-4 h-4 text-rose-600" />
-                        </div>
-                        <div className="flex-1 text-left">
-                          <p className="text-xs font-bold text-rose-800">Le locataire n&apos;est pas venu ?</p>
-                          <p className="text-[11px] text-rose-600 mt-0.5">Signalez son absence pour déclencher une annulation automatique</p>
-                        </div>
-                      </button>
-                    </div>
-                  )}
+                    Ajouter d’autres photos
+                  </GhostButton>
                 </>
               )}
 
-              {/* WAITING-TENANT : checkinProprioLe set, attente locataire */}
               {confirmedSub === 'waiting-tenant' && (
-                <>
-                  <div className="flex items-start gap-3 bg-forest-50 border border-forest-100 rounded-inner p-4">
-                    <div className="w-8 h-8 rounded-inner bg-forest-100 border border-forest-200 flex items-center justify-center shrink-0">
-                      <CheckCircle2 className="w-4 h-4 text-forest-700" />
-                    </div>
-                    <div>
-                      <p className="text-xs font-bold text-forest-950">
-                        {checkinPhotos.length} photo{checkinPhotos.length > 1 ? 's' : ''} de check-in confirmée{checkinPhotos.length > 1 ? 's' : ''}
-                      </p>
-                      <p className="text-xs text-forest-800 mt-0.5 leading-relaxed">
-                        Le locataire a été notifié. Il doit confirmer son check-in depuis son espace. Les fonds restent en séquestre jusqu&apos;à sa validation.
-                      </p>
-                    </div>
-                  </div>
-
-                  {/* Dépassement voyageurs — visible si locataire arrivé avec plus de personnes */}
-                  {!res.litige && (
-                    <div className="border border-amber-200/80 rounded-2xl overflow-hidden bg-amber-50/30">
-                      <button
-                        onClick={() => setShowDepassement((v) => !v)}
-                        className="w-full flex items-center justify-between px-4 py-3.5 hover:bg-amber-50 transition-colors"
-                      >
-                        <div className="flex items-center gap-2.5">
-                          <Users className="w-4 h-4 text-amber-500 shrink-0" />
-                          <span className="text-xs font-semibold text-amber-800">Le locataire a plus de personnes que prévu ?</span>
-                        </div>
-                        <ChevronDown className={cn('w-4 h-4 text-amber-500 transition-transform duration-200', showDepassement && 'rotate-180')} />
-                      </button>
-                      {showDepassement && (
-                        <div className="px-4 pb-4 pt-1 border-t border-amber-100 space-y-3">
-                          <p className="text-xs text-amber-800 leading-relaxed">
-                            Si le locataire est arrivé avec plus de personnes que déclaré ({nbPersonnes} voyageur{nbPersonnes > 1 ? 's' : ''} prévu{nbPersonnes > 1 ? 's' : ''}), signalez-le immédiatement pour régulariser la situation.
-                          </p>
-                          <button
-                            onClick={() => {
-                              setShowDepassement(false);
-                              setLitigeMotif('DEPASSEMENT_PERSONNES');
-                              setShowLitigeModal(true);
-                            }}
-                            className="flex items-center gap-2 text-xs font-bold text-rose-600 hover:text-rose-700 hover:bg-rose-50 border border-rose-200 hover:border-rose-300 px-4 py-2.5 rounded-xl transition-all"
-                          >
-                            <Gavel className="w-3.5 h-3.5" />
-                            Signaler le dépassement
-                          </button>
-                        </div>
-                      )}
-                    </div>
-                  )}
-
-                  {/* Signal no-show locataire — visible 2h après dateDebut */}
-                  {canSignalNoshow && !res.litige && (
-                    <div className="border border-rose-200/80 rounded-2xl overflow-hidden bg-rose-50/30">
-                      <button
-                        onClick={() => setShowNoshowModal(true)}
-                        className="w-full flex items-center gap-3 px-4 py-3.5 hover:bg-rose-50 transition-colors"
-                      >
-                        <div className="w-8 h-8 rounded-xl bg-rose-100 border border-rose-200 flex items-center justify-center shrink-0">
-                          <UserX className="w-4 h-4 text-rose-600" />
-                        </div>
-                        <div className="flex-1 text-left">
-                          <p className="text-xs font-bold text-rose-800">Le locataire n&apos;est pas venu ?</p>
-                          <p className="text-[11px] text-rose-600 mt-0.5">Signalez son absence pour déclencher une annulation automatique</p>
-                        </div>
-                      </button>
-                    </div>
-                  )}
-                </>
+                <Notice
+                  tone="forest"
+                  icon={CheckCircle2}
+                  title={`${checkinPhotos.length} photo${checkinPhotos.length > 1 ? 's' : ''} de check-in confirmée${checkinPhotos.length > 1 ? 's' : ''}`}
+                >
+                  Le locataire a été notifié. Il doit confirmer son check-in depuis son espace.
+                  Les fonds restent en séquestre jusqu’à sa validation.
+                </Notice>
               )}
 
+              {sideActions}
 
-              {/* Annulation — cachée dans les 24h précédant le check-in */}
-              {diffHoursToCheckin >= 24 && (
-                <div className="pt-2 border-t border-neutral-100">
-                  <button
-                    onClick={() => { clearFeedback(); setShowCancelModal(true); }}
-                    className="flex items-center gap-2 text-xs font-bold text-rose-600 hover:text-rose-700 hover:bg-rose-50 border border-rose-200 hover:border-rose-300 px-4 py-2.5 rounded-xl transition-all"
-                  >
-                    <X className="w-3.5 h-3.5" />
-                    Annuler la réservation
-                  </button>
-                </div>
-              )}
+              <div className="border-t border-border pt-4">
+                <GhostButton onClick={() => { clearFeedback(); setShowCancelModal(true); }}>
+                  <X className="h-3.5 w-3.5" aria-hidden="true" />
+                  Annuler la réservation
+                </GhostButton>
+              </div>
             </>
           )}
 
-          {/* ══ CHECKED_IN : check-out ══ */}
+          {/* ══ CHECKED_IN ══ */}
           {statut === 'CHECKED_IN' && (
             <>
-              {/* READY : pas encore de photos checkout */}
               {checkedInSub === 'ready' && (
-                <button
-                  type="button"
+                <ActionCard
+                  icon={Camera}
+                  tone="warning"
+                  title="Démarrer l’état des lieux de sortie"
+                  description="Documentez l’état du logement après le départ du locataire"
                   onClick={() => { clearFeedback(); setShowCheckoutModal(true); }}
-                  className="w-full group relative flex items-center gap-4 p-4 rounded-2xl border border-rose-200/80 bg-white hover:bg-rose-50/40 hover:border-rose-300/80 hover:shadow-md hover:shadow-rose-100/60 transition-all duration-200 text-left overflow-hidden"
-                >
-                  <div className="absolute left-0 top-0 bottom-0 w-1 rounded-l-2xl bg-rose-500" />
-                  <div className="w-11 h-11 rounded-2xl border bg-rose-50 border-rose-100 flex items-center justify-center shrink-0 ml-1">
-                    <Camera className="w-5 h-5 text-rose-600" />
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <p className="text-sm font-black text-neutral-900 leading-tight">Démarrer l&apos;état des lieux de sortie</p>
-                    <p className="text-xs text-neutral-400 mt-0.5">Documentez l&apos;état du logement après le départ du locataire</p>
-                  </div>
-                  <div className="w-8 h-8 rounded-xl bg-neutral-100 group-hover:bg-rose-100 flex items-center justify-center transition-colors shrink-0">
-                    <ArrowRight className="w-4 h-4 text-neutral-400 group-hover:text-rose-600 transition-colors" />
-                  </div>
-                </button>
+                />
               )}
 
-              {/* PHOTOS-UPLOADED : photos checkout mais pas checkoutProprioLe */}
               {checkedInSub === 'photos-uploaded' && (
                 <>
-                  <div className="flex items-start gap-3 bg-amber-50 border border-amber-200 rounded-2xl p-4">
-                    <div className="w-8 h-8 rounded-xl bg-amber-100 border border-amber-200 flex items-center justify-center shrink-0">
-                      <Camera className="w-4 h-4 text-amber-600" />
-                    </div>
-                    <div>
-                      <p className="text-xs font-black text-amber-800">
-                        {checkoutPhotos.length} photo{checkoutPhotos.length > 1 ? 's' : ''} de sortie — confirmation requise
-                      </p>
-                      <p className="text-xs text-amber-700 mt-0.5 leading-relaxed">
-                        Photos enregistrées. Confirmez l&apos;état des lieux de sortie pour pouvoir libérer les fonds.
-                      </p>
-                    </div>
-                  </div>
+                  <Notice
+                    tone="warning"
+                    icon={Camera}
+                    title={`${checkoutPhotos.length} photo${checkoutPhotos.length > 1 ? 's' : ''} de sortie — confirmation requise`}
+                  >
+                    Confirmez l’état des lieux de sortie pour pouvoir libérer les fonds.
+                  </Notice>
 
-                  <button
+                  <PrimaryButton
                     onClick={handleCheckoutProprio}
-                    disabled={isSubmitting}
-                    className="w-full flex items-center justify-center gap-2.5 py-3.5 text-sm font-black text-white rounded-2xl bg-gradient-to-r from-rose-500 to-rose-700 hover:from-rose-600 hover:to-rose-800 disabled:from-neutral-200 disabled:to-neutral-200 disabled:text-neutral-400 shadow-md shadow-rose-500/25 disabled:shadow-none transition-all"
+                    loading={isSubmitting}
+                    loadingLabel="Confirmation…"
+                    icon={CheckCircle2}
                   >
-                    {isSubmitting
-                      ? <><Loader2 className="w-4 h-4 animate-spin" />Confirmation…</>
-                      : <><CheckCircle2 className="w-4 h-4" />Confirmer l&apos;état des lieux de sortie</>}
-                  </button>
+                    Confirmer l’état des lieux de sortie
+                  </PrimaryButton>
 
-                  <button
-                    type="button"
+                  <GhostButton
                     onClick={() => { clearFeedback(); setShowCheckoutModal(true); }}
-                    className="w-full text-xs font-bold text-neutral-500 hover:text-neutral-700 hover:bg-neutral-100 border border-neutral-200 px-4 py-2.5 rounded-xl transition-all"
+                    className="w-full"
                   >
-                    Ajouter d&apos;autres photos
-                  </button>
+                    Ajouter d’autres photos
+                  </GhostButton>
                 </>
               )}
 
-              {/* AWAITING-COMPLETION : checkoutProprioLe set → libérer les fonds */}
               {checkedInSub === 'awaiting-completion' && (
                 <>
-                  <div className="flex items-start gap-3 bg-forest-50 border border-forest-100 rounded-inner p-4">
-                    <div className="w-8 h-8 rounded-inner bg-forest-100 border border-forest-200 flex items-center justify-center shrink-0">
-                      <CheckCircle2 className="w-4 h-4 text-forest-700" />
-                    </div>
-                    <div>
-                      <p className="text-xs font-bold text-forest-950">
-                        {checkoutPhotos.length} photo{checkoutPhotos.length > 1 ? 's' : ''} de check-out confirmée{checkoutPhotos.length > 1 ? 's' : ''}
-                      </p>
-                      <p className="text-xs text-forest-800 mt-0.5">État des lieux documenté. Clôturez le séjour pour libérer les fonds.</p>
-                    </div>
-                  </div>
-
-                  <button
-                    onClick={handleCompleteCheckout}
-                    disabled={isSubmitting}
-                    className="w-full flex items-center justify-center gap-2.5 py-3.5 text-sm font-extrabold text-forest-950 rounded-pill bg-lime-400 hover:bg-lime-300 disabled:opacity-60 shadow-md transition-all active:scale-95"
+                  <Notice
+                    tone="forest"
+                    icon={CheckCircle2}
+                    title={`${checkoutPhotos.length} photo${checkoutPhotos.length > 1 ? 's' : ''} de check-out confirmée${checkoutPhotos.length > 1 ? 's' : ''}`}
                   >
-                    {isSubmitting
-                      ? <><Loader2 className="w-4 h-4 animate-spin" />Clôture en cours…</>
-                      : <><Banknote className="w-4 h-4 text-forest-950" />Finaliser le check-out &amp; libérer les fonds</>}
-                  </button>
+                    État des lieux documenté. Clôturez le séjour pour libérer les fonds.
+                  </Notice>
+
+                  <PrimaryButton
+                    onClick={handleCompleteCheckout}
+                    loading={isSubmitting}
+                    loadingLabel="Clôture en cours…"
+                    icon={Banknote}
+                  >
+                    Finaliser et libérer les fonds
+                  </PrimaryButton>
                 </>
               )}
 
-              {/* Litige + Dépassement — toujours visibles en CHECKED_IN */}
-              <div className="pt-2 border-t border-neutral-100 space-y-3">
-                <p className="text-[10px] text-neutral-400 font-semibold uppercase tracking-wide">Problème pendant le séjour ?</p>
+              <div className="space-y-3 border-t border-border pt-4">
+                <p className="text-xs font-semibold uppercase tracking-wider text-foreground-muted">
+                  Problème pendant le séjour ?
+                </p>
 
-                {!res.litige ? (
-                  <div className="flex flex-wrap gap-2">
-                    <button
-                      onClick={() => { clearFeedback(); setShowLitigeModal(true); }}
-                      className="flex items-center gap-2 text-xs font-bold text-rose-600 hover:text-rose-700 hover:bg-rose-50 border border-rose-200 hover:border-rose-300 px-4 py-2.5 rounded-xl transition-all"
-                    >
-                      <Gavel className="w-3.5 h-3.5" />
-                      Ouvrir un litige
-                    </button>
-                    <button
-                      onClick={() => {
-                        clearFeedback();
-                        setLitigeMotif('DEPASSEMENT_PERSONNES');
-                        setShowLitigeModal(true);
-                      }}
-                      className="flex items-center gap-2 text-xs font-bold text-amber-600 hover:text-amber-700 hover:bg-amber-50 border border-amber-200 hover:border-amber-300 px-4 py-2.5 rounded-xl transition-all"
-                    >
-                      <Users className="w-3.5 h-3.5" />
-                      Dépassement voyageurs
-                    </button>
-                  </div>
+                {res.litige ? (
+                  <LitigePanel litige={res.litige} />
                 ) : (
-                  <div className="space-y-3">
-                    {/* En-tête litige */}
-                    <div className="flex items-start gap-3 bg-rose-50 border border-rose-200 rounded-2xl p-4">
-                      <div className="w-8 h-8 rounded-xl bg-rose-100 border border-rose-200 flex items-center justify-center shrink-0">
-                        <Gavel className="w-4 h-4 text-rose-500" />
-                      </div>
-                      <div className="flex-1 min-w-0">
-                        <p className="text-xs font-black text-rose-800">Litige ouvert par le propriétaire</p>
-                        <p className="text-xs text-rose-700 mt-0.5 leading-relaxed">
-                          Les fonds restent gelés jusqu&apos;à résolution par notre équipe support.
-                        </p>
-                      </div>
-                    </div>
-
-                    {/* Détails du litige */}
-                    <div className="bg-white border border-neutral-200 rounded-2xl p-4 space-y-3">
-                      {/* Motif */}
-                      <div>
-                        <p className="text-[10px] font-black text-neutral-400 uppercase tracking-wider mb-1">Motif du litige</p>
-                        <p className="text-xs font-bold text-neutral-900">
-                          {res.litige.motif === 'DEPASSEMENT_PERSONNES' && 'Dépassement du nombre de voyageurs'}
-                          {res.litige.motif === 'DEGRADATION' && 'Dégradation du logement'}
-                          {res.litige.motif === 'LOGEMENT_NON_CONFORME' && 'Logement non conforme'}
-                          {res.litige.motif === 'NON_PAIEMENT' && 'Non-paiement de frais supplémentaires'}
-                          {res.litige.motif === 'NUISANCES' && 'Nuisances ou comportement inapproprié'}
-                          {res.litige.motif === 'AUTRE' && 'Autre motif'}
-                          {!['DEPASSEMENT_PERSONNES', 'DEGRADATION', 'LOGEMENT_NON_CONFORME', 'NON_PAIEMENT', 'NUISANCES', 'AUTRE'].includes(res.litige.motif) && res.litige.motif.replace(/_/g, ' ')}
-                        </p>
-                      </div>
-
-                      {/* Description */}
-                      <div>
-                        <p className="text-[10px] font-black text-neutral-400 uppercase tracking-wider mb-1">Description</p>
-                        <p className="text-xs text-neutral-700 leading-relaxed bg-neutral-50 rounded-lg p-2.5 border border-neutral-100">
-                          {res.litige.description}
-                        </p>
-                      </div>
-
-                      {/* Statut */}
-                      <div>
-                        <p className="text-[10px] font-black text-neutral-400 uppercase tracking-wider mb-1.5">Statut actuel</p>
-                        <div className={cn(
-                          'inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border text-xs font-bold',
-                          res.litige.statut === 'EN_ATTENTE' && 'bg-amber-50 text-amber-700 border-amber-200',
-                          res.litige.statut === 'FONDE' && 'bg-rose-50 text-rose-700 border-rose-200',
-                          res.litige.statut === 'NON_FONDE' && 'bg-success-50 text-success-700 border-success-500/30',
-                        )}>
-                          {res.litige.statut === 'EN_ATTENTE' && <><Clock className="w-3 h-3" /> En cours d&apos;examen</>}
-                          {res.litige.statut === 'FONDE' && <><CheckCircle2 className="w-3 h-3" /> Litige fondé</>}
-                          {res.litige.statut === 'NON_FONDE' && <><XCircle className="w-3 h-3" /> Litige non fondé</>}
-                        </div>
-                      </div>
-
-                      {/* Date */}
-                      <div>
-                        <p className="text-[10px] font-black text-neutral-400 uppercase tracking-wider mb-1">Ouvert le</p>
-                        <p className="text-xs text-neutral-700">
-                          {new Date(res.litige.creeLe).toLocaleDateString('fr-FR', {
-                            weekday: 'long',
-                            day: 'numeric',
-                            month: 'long',
-                            year: 'numeric',
-                            hour: '2-digit',
-                            minute: '2-digit',
-                          })}
-                        </p>
-                      </div>
-
-                      {/* Délai de traitement */}
-                      {res.litige.statut === 'EN_ATTENTE' && (
-                        <div className="flex items-start gap-2.5 bg-amber-50/60 border border-amber-200/60 rounded-xl px-3.5 py-3">
-                          <Clock className="w-3.5 h-3.5 text-amber-500 shrink-0 mt-0.5" />
-                          <div>
-                            <p className="text-xs font-bold text-amber-800">Délai de traitement : 48-72h</p>
-                            <p className="text-[11px] text-amber-700 mt-0.5 leading-relaxed">
-                              Notre équipe support examine votre litige et vous contactera par email ou téléphone.
-                            </p>
-                          </div>
-                        </div>
-                      )}
-
-                      {/* Issues possibles */}
-                      {res.litige.statut === 'EN_ATTENTE' && (
-                        <div className="space-y-2">
-                          <p className="text-[10px] font-black text-neutral-400 uppercase tracking-wider">Issues possibles</p>
-                          <div className="space-y-1.5">
-                            <div className="flex items-start gap-2 text-xs text-neutral-600">
-                              <span className="w-1 h-1 rounded-full bg-neutral-400 shrink-0 mt-1.5" />
-                              <span className="leading-relaxed"><span className="font-bold">Litige fondé</span> : Pénalité appliquée au locataire, compensation versée</span>
-                            </div>
-                            <div className="flex items-start gap-2 text-xs text-neutral-600">
-                              <span className="w-1 h-1 rounded-full bg-neutral-400 shrink-0 mt-1.5" />
-                              <span className="leading-relaxed"><span className="font-bold">Litige non fondé</span> : Fonds débloqués normalement, aucune pénalité</span>
-                            </div>
-                            <div className="flex items-start gap-2 text-xs text-neutral-600">
-                              <span className="w-1 h-1 rounded-full bg-neutral-400 shrink-0 mt-1.5" />
-                              <span className="leading-relaxed"><span className="font-bold">Arrangement à l&apos;amiable</span> : Médiation entre les parties</span>
-                            </div>
-                          </div>
-                        </div>
-                      )}
-
-                      {/* Résultat si litige résolu */}
-                      {res.litige.statut === 'FONDE' && (
-                        <div className="flex items-start gap-2.5 bg-rose-50 border border-rose-200 rounded-xl px-3.5 py-3">
-                          <CheckCircle2 className="w-3.5 h-3.5 text-rose-500 shrink-0 mt-0.5" />
-                          <p className="text-xs text-rose-700 leading-relaxed">
-                            <span className="font-bold">Litige fondé.</span> Une pénalité a été appliquée au locataire et une compensation pourra vous être versée selon l&apos;évaluation des dommages.
-                          </p>
-                        </div>
-                      )}
-                      {res.litige.statut === 'NON_FONDE' && (
-                        <div className="flex items-start gap-2.5 bg-success-50 border border-success-500/30 rounded-xl px-3.5 py-3">
-                          <XCircle className="w-3.5 h-3.5 text-success-600 shrink-0 mt-0.5" />
-                          <p className="text-xs text-success-700 leading-relaxed">
-                            <span className="font-bold">Litige non fondé.</span> Les fonds seront débloqués normalement après le check-out. Aucune pénalité n&apos;est appliquée.
-                          </p>
-                        </div>
-                      )}
-                    </div>
+                  <div className="flex flex-wrap gap-2">
+                    <GhostButton onClick={() => { clearFeedback(); setShowLitigeModal(true); }}>
+                      <Gavel className="h-3.5 w-3.5" aria-hidden="true" />
+                      Ouvrir un litige
+                    </GhostButton>
+                    <GhostButton onClick={openLitigeDepassement}>
+                      <Users className="h-3.5 w-3.5" aria-hidden="true" />
+                      Dépassement voyageurs
+                    </GhostButton>
                   </div>
                 )}
               </div>
             </>
           )}
 
-          {/* ══ DISPUTED : affichage du litige ══ */}
-          {statut === 'DISPUTED' && res.litige && (
-            <div className="space-y-3">
-              {/* En-tête litige */}
-              <div className="flex items-start gap-3 bg-rose-50 border border-rose-200 rounded-2xl p-4">
-                <div className="w-8 h-8 rounded-xl bg-rose-100 border border-rose-200 flex items-center justify-center shrink-0">
-                  <Gavel className="w-4 h-4 text-rose-500" />
-                </div>
-                <div className="flex-1 min-w-0">
-                  <p className="text-xs font-black text-rose-800">Litige ouvert par le propriétaire</p>
-                  <p className="text-xs text-rose-700 mt-0.5 leading-relaxed">
-                    Les fonds restent gelés jusqu&apos;à résolution par notre équipe support.
-                  </p>
-                </div>
-              </div>
+          {/* ══ DISPUTED ══ */}
+          {statut === 'DISPUTED' && res.litige && <LitigePanel litige={res.litige} />}
 
-              {/* Détails du litige */}
-              <div className="bg-white border border-neutral-200 rounded-2xl p-4 space-y-3">
-                {/* Motif */}
-                <div>
-                  <p className="text-[10px] font-black text-neutral-400 uppercase tracking-wider mb-1">Motif du litige</p>
-                  <p className="text-xs font-bold text-neutral-900">
-                    {res.litige.motif === 'DEPASSEMENT_PERSONNES' && 'Dépassement du nombre de voyageurs'}
-                    {res.litige.motif === 'DEGRADATION' && 'Dégradation du logement'}
-                    {res.litige.motif === 'LOGEMENT_NON_CONFORME' && 'Logement non conforme'}
-                    {res.litige.motif === 'NON_PAIEMENT' && 'Non-paiement de frais supplémentaires'}
-                    {res.litige.motif === 'NUISANCES' && 'Nuisances ou comportement inapproprié'}
-                    {res.litige.motif === 'AUTRE' && 'Autre motif'}
-                    {!['DEPASSEMENT_PERSONNES', 'DEGRADATION', 'LOGEMENT_NON_CONFORME', 'NON_PAIEMENT', 'NUISANCES', 'AUTRE'].includes(res.litige.motif) && res.litige.motif.replace(/_/g, ' ')}
-                  </p>
-                </div>
-
-                {/* Description */}
-                <div>
-                  <p className="text-[10px] font-black text-neutral-400 uppercase tracking-wider mb-1">Description</p>
-                  <p className="text-xs text-neutral-700 leading-relaxed bg-neutral-50 rounded-lg p-2.5 border border-neutral-100">
-                    {res.litige.description}
-                  </p>
-                </div>
-
-                {/* Statut */}
-                <div>
-                  <p className="text-[10px] font-black text-neutral-400 uppercase tracking-wider mb-1.5">Statut actuel</p>
-                  <div className={cn(
-                    'inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border text-xs font-bold',
-                    res.litige.statut === 'EN_ATTENTE' && 'bg-amber-50 text-amber-700 border-amber-200',
-                    res.litige.statut === 'FONDE' && 'bg-rose-50 text-rose-700 border-rose-200',
-                    res.litige.statut === 'NON_FONDE' && 'bg-success-50 text-success-700 border-success-500/30',
-                  )}>
-                    {res.litige.statut === 'EN_ATTENTE' && <><Clock className="w-3 h-3" /> En cours d&apos;examen</>}
-                    {res.litige.statut === 'FONDE' && <><CheckCircle2 className="w-3 h-3" /> Litige fondé</>}
-                    {res.litige.statut === 'NON_FONDE' && <><X className="w-3 h-3" /> Litige non fondé</>}
-                  </div>
-                </div>
-
-                {/* Date */}
-                <div>
-                  <p className="text-[10px] font-black text-neutral-400 uppercase tracking-wider mb-1">Ouvert le</p>
-                  <p className="text-xs text-neutral-700">
-                    {new Date(res.litige.creeLe).toLocaleDateString('fr-FR', {
-                      weekday: 'long',
-                      day: 'numeric',
-                      month: 'long',
-                      year: 'numeric',
-                      hour: '2-digit',
-                      minute: '2-digit',
-                    })}
-                  </p>
-                </div>
-
-                {/* Délai de traitement */}
-                {res.litige.statut === 'EN_ATTENTE' && (
-                  <div className="flex items-start gap-2.5 bg-amber-50/60 border border-amber-200/60 rounded-xl px-3.5 py-3">
-                    <Clock className="w-3.5 h-3.5 text-amber-500 shrink-0 mt-0.5" />
-                    <div>
-                      <p className="text-xs font-bold text-amber-800">Délai de traitement : 48-72h</p>
-                      <p className="text-[11px] text-amber-700 mt-0.5 leading-relaxed">
-                        Notre équipe support examine votre litige et vous contactera par email ou téléphone.
-                      </p>
-                    </div>
-                  </div>
-                )}
-
-                {/* Issues possibles */}
-                {res.litige.statut === 'EN_ATTENTE' && (
-                  <div className="space-y-2">
-                    <p className="text-[10px] font-black text-neutral-400 uppercase tracking-wider">Issues possibles</p>
-                    <div className="space-y-1.5">
-                      <div className="flex items-start gap-2 text-xs text-neutral-600">
-                        <span className="w-1 h-1 rounded-full bg-neutral-400 shrink-0 mt-1.5" />
-                        <span className="leading-relaxed"><span className="font-bold">Litige fondé</span> : Pénalité appliquée au locataire, compensation versée</span>
-                      </div>
-                      <div className="flex items-start gap-2 text-xs text-neutral-600">
-                        <span className="w-1 h-1 rounded-full bg-neutral-400 shrink-0 mt-1.5" />
-                        <span className="leading-relaxed"><span className="font-bold">Litige non fondé</span> : Fonds débloqués normalement, aucune pénalité</span>
-                      </div>
-                      <div className="flex items-start gap-2 text-xs text-neutral-600">
-                        <span className="w-1 h-1 rounded-full bg-neutral-400 shrink-0 mt-1.5" />
-                        <span className="leading-relaxed"><span className="font-bold">Arrangement à l&apos;amiable</span> : Médiation entre les parties</span>
-                      </div>
-                    </div>
-                  </div>
-                )}
-
-                {/* Résultat si litige résolu */}
-                {res.litige.statut === 'FONDE' && (
-                  <div className="flex items-start gap-2.5 bg-rose-50 border border-rose-200 rounded-xl px-3.5 py-3">
-                    <CheckCircle2 className="w-3.5 h-3.5 text-rose-500 shrink-0 mt-0.5" />
-                    <p className="text-xs text-rose-700 leading-relaxed">
-                      <span className="font-bold">Litige fondé.</span> Une pénalité a été appliquée au locataire et une compensation pourra vous être versée selon l&apos;évaluation des dommages.
-                    </p>
-                  </div>
-                )}
-                {res.litige.statut === 'NON_FONDE' && (
-                  <div className="flex items-start gap-2.5 bg-success-50 border border-success-500/30 rounded-xl px-3.5 py-3">
-                    <X className="w-3.5 h-3.5 text-success-600 shrink-0 mt-0.5" />
-                    <p className="text-xs text-success-700 leading-relaxed">
-                      <span className="font-bold">Litige non fondé.</span> Les fonds seront débloqués normalement après le check-out. Aucune pénalité n&apos;est appliquée.
-                    </p>
-                  </div>
-                )}
-              </div>
-            </div>
-          )}
-
-          {/* ══ COMPLETED : notation du locataire ══ */}
+          {/* ══ COMPLETED ══ */}
           {statut === 'COMPLETED' && (
             <>
-              <div className="flex items-start gap-3 bg-forest-50 border border-forest-100 rounded-inner p-4">
-                <div className="w-8 h-8 rounded-inner bg-forest-100 border border-forest-200 flex items-center justify-center shrink-0">
-                  <CheckCircle2 className="w-4 h-4 text-forest-700" />
-                </div>
-                <div>
-                  <p className="text-xs font-bold text-forest-950">Séjour terminé avec succès</p>
-                  <p className="text-xs text-forest-800 mt-0.5 leading-relaxed">
-                    Les fonds ont été débloqués et transférés vers votre wallet. Merci d&apos;avoir utilisé Klef !
-                  </p>
-                </div>
-              </div>
+              <Notice tone="forest" icon={CheckCircle2} title="Séjour terminé">
+                Les fonds ont été débloqués et transférés vers votre wallet.
+              </Notice>
 
-              {/* Bouton de ré-ouverture tardive si No-Show */}
               {(res.politiqueAppliquee as string) === 'NO_SHOW_LOCATAIRE' && (
-                <div className="p-4 bg-amber-50/80 border border-amber-200 rounded-2xl space-y-2">
-                  <p className="text-xs font-bold text-amber-900">Le locataire est finalement arrivé avec du retard ?</p>
-                  <p className="text-xs text-amber-800">Vous pouvez ré-ouvrir la réservation pour lui remettre les clés tout en conservant vos fonds débloqués.</p>
+                <div className="space-y-2.5 rounded-card border border-warning-500/25 bg-warning-50 p-4">
+                  <p className="text-xs font-semibold text-warning-700">
+                    Le locataire est finalement arrivé avec du retard ?
+                  </p>
+                  <p className="text-xs leading-relaxed text-warning-700">
+                    Vous pouvez ré-ouvrir la réservation pour lui remettre les clés, tout en
+                    conservant vos fonds débloqués.
+                  </p>
                   <button
+                    type="button"
                     onClick={handleReopenLateCheckin}
                     disabled={isSubmitting}
-                    className="w-full flex items-center justify-center gap-2 py-2.5 px-4 rounded-xl text-xs font-bold bg-amber-600 hover:bg-amber-700 text-white transition-all shadow-sm"
+                    className="flex w-full items-center justify-center gap-2 rounded-pill bg-warning-700 px-4 py-2.5 text-xs font-semibold text-neutral-0 transition-colors hover:bg-warning-600 disabled:opacity-50"
                   >
-                    {isSubmitting ? <Loader2 className="w-4 h-4 animate-spin" /> : <RefreshCw className="w-4 h-4" />}
-                    Accueillir le voyageur quand même (Check-in Tardif)
+                    {isSubmitting
+                      ? <Loader2 className="h-4 w-4 animate-spin" aria-hidden="true" />
+                      : <RefreshCw className="h-4 w-4" aria-hidden="true" />}
+                    Accueillir le voyageur (check-in tardif)
                   </button>
                 </div>
               )}
 
-              {/* Notation du locataire */}
-              <div className="pt-2 border-t border-border/60 space-y-3">
-                <p className="text-[10px] text-foreground-muted font-semibold uppercase tracking-wide">Évaluer votre expérience</p>
+              {/* ── Évaluation du locataire ─────────────────────────────── */}
+              <div className="space-y-3 border-t border-border pt-4">
+                <p className="text-xs font-semibold uppercase tracking-wider text-foreground-muted">
+                  Évaluer votre expérience
+                </p>
 
-                <div className="bg-background-alt border border-border/80 rounded-inner p-5 space-y-4">
+                <div className="space-y-4 rounded-card border border-border bg-background-alt p-5">
                   <div className="flex items-start gap-3">
-                    <div className="w-10 h-10 rounded-inner bg-forest-950 flex items-center justify-center text-sm font-extrabold text-lime-400 shrink-0 overflow-hidden border border-lime-400/20">
-                      {res.locataire.avatarUrl
-                        ? <img src={res.locataire.avatarUrl} alt="" className="w-full h-full object-cover" />
-                        : `${res.locataire.prenom[0]}${res.locataire.nom[0]}`}
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <p className="text-sm font-bold text-forest-950">Noter {res.locataire.prenom} {res.locataire.nom}</p>
-                      <p className="text-xs text-foreground-muted mt-0.5">Comment s&apos;est passé le séjour avec ce locataire ?</p>
+                    <span className="relative flex h-10 w-10 shrink-0 items-center justify-center overflow-hidden rounded-inner bg-forest-800 text-xs font-semibold text-neutral-50">
+                      {res.locataire.avatarUrl ? (
+                        <Image
+                          src={res.locataire.avatarUrl}
+                          alt=""
+                          fill
+                          sizes="40px"
+                          className="object-cover"
+                        />
+                      ) : tenantInitials}
+                    </span>
+                    <div className="min-w-0 flex-1">
+                      <p className="text-sm font-semibold text-foreground">
+                        Noter {res.locataire.prenom} {res.locataire.nom}
+                      </p>
+                      <p className="mt-0.5 text-xs text-foreground-muted">
+                        Comment s’est passé le séjour avec ce locataire ?
+                      </p>
                     </div>
                   </div>
 
-                  {/* Étoiles interactives */}
-                  <div className="flex items-center justify-center gap-2 py-4 bg-background-card rounded-inner border border-border">
+                  <div
+                    role="radiogroup"
+                    aria-label="Note du locataire"
+                    className="flex items-center justify-center gap-2 rounded-inner border border-border bg-background-card py-4"
+                    onMouseLeave={() => setHoverRating(0)}
+                  >
                     {[1, 2, 3, 4, 5].map((star) => {
-                      const isActive = (hoverRating || rating) >= star;
+                      const active = (hoverRating || rating) >= star;
                       return (
                         <button
                           key={star}
                           type="button"
+                          role="radio"
+                          aria-checked={rating === star}
+                          aria-label={`${star} étoile${star > 1 ? 's' : ''}`}
                           onClick={() => setRating(star)}
                           onMouseEnter={() => setHoverRating(star)}
-                          onMouseLeave={() => setHoverRating(0)}
-                          className="transition-all duration-150 hover:scale-110 active:scale-95"
+                          onFocus={() => setHoverRating(star)}
+                          onBlur={() => setHoverRating(0)}
+                          className="rounded-pill transition-transform duration-150 hover:scale-110 active:scale-95"
                         >
                           <Star
                             className={cn(
-                              'w-8 h-8 transition-all duration-150',
-                              isActive
-                                ? 'text-amber-400 fill-amber-400'
-                                : 'text-neutral-300'
+                              'h-8 w-8 transition-colors duration-150',
+                              active ? 'fill-gold-400 text-gold-400' : 'text-border-hover',
                             )}
+                            aria-hidden="true"
                           />
                         </button>
                       );
                     })}
                   </div>
+
                   {rating > 0 && (
-                    <p className="text-xs font-bold text-center text-forest-950">
-                      {rating === 1 && 'Très insatisfait'}
-                      {rating === 2 && 'Insatisfait'}
-                      {rating === 3 && 'Moyen'}
-                      {rating === 4 && 'Satisfait'}
-                      {rating === 5 && 'Excellent !'}
+                    <p className="text-center text-xs font-semibold text-foreground" aria-live="polite">
+                      {['Très insatisfait', 'Insatisfait', 'Moyen', 'Satisfait', 'Excellent'][rating - 1]}
                     </p>
                   )}
 
                   <div className="space-y-2">
-                    <label className="block text-xs font-bold text-forest-950">
-                      Commentaire <span className="text-foreground-muted font-normal">(optionnel)</span>
+                    <label htmlFor="rating-comment" className="block text-xs font-semibold text-foreground">
+                      Commentaire{' '}
+                      <span className="font-normal text-foreground-muted">(optionnel)</span>
                     </label>
                     <textarea
+                      id="rating-comment"
                       rows={3}
                       value={ratingComment}
                       onChange={(e) => setRatingComment(e.target.value)}
-                      className="w-full text-xs bg-background-card border border-border text-forest-950 placeholder:text-foreground-faint rounded-inner px-4 py-3 focus:outline-none focus:ring-2 focus:ring-lime-400/40 focus:border-lime-400 resize-none"
-                      placeholder="Partagez votre expérience avec ce locataire..."
+                      placeholder="Partagez votre expérience avec ce locataire."
+                      className="w-full resize-none rounded-field border border-border bg-background-card px-4 py-3 text-foreground placeholder:text-foreground-faint focus:border-forest-500 focus:outline-none"
                     />
                   </div>
 
-                  <button
+                  <PrimaryButton
                     onClick={handleSubmitRating}
-                    disabled={isSubmitting || rating === 0}
-                    className="w-full flex items-center justify-center gap-2 py-3 text-sm font-extrabold text-forest-950 rounded-pill bg-lime-400 hover:bg-lime-300 disabled:opacity-60 shadow-md transition-all active:scale-95"
+                    disabled={rating === 0}
+                    loading={isSubmitting}
+                    loadingLabel="Publication…"
+                    icon={Star}
                   >
-                    {isSubmitting ? (
-                      <><Loader2 className="w-4 h-4 animate-spin" />Publication...</>
-                    ) : (
-                      <><Star className="w-4 h-4 text-forest-950" />Publier mon évaluation</>
-                    )}
-                  </button>
+                    Publier mon évaluation
+                  </PrimaryButton>
 
-                  <p className="text-[11px] text-foreground-muted text-center leading-relaxed">
-                    Votre évaluation aidera les autres propriétaires à mieux connaître ce locataire
+                  <p className="text-center text-xs leading-relaxed text-foreground-muted">
+                    Votre évaluation aide les autres propriétaires à mieux connaître ce locataire.
                   </p>
                 </div>
               </div>
             </>
           )}
-
         </div>
 
-        {/* Footer règles */}
-        <div className="px-6 py-4 bg-background-alt border-t border-border/80">
+        {/* ── Pied : règles ────────────────────────────────────────────── */}
+
+        <div className="border-t border-border bg-background-alt px-6 py-4">
           <button
             type="button"
             onClick={() => setShowRulesModal(true)}
-            className="flex items-center gap-2 text-xs font-bold text-forest-800 hover:text-forest-950 transition-colors cursor-pointer"
+            className="inline-flex items-center gap-2 text-xs font-semibold text-forest-700 transition-colors hover:text-forest-900"
           >
-            <HelpCircle className="w-4 h-4 text-forest-700 shrink-0" />
-            Comprendre les règles &amp; conditions (séquestre, auto-checkin…)
+            <HelpCircle className="h-4 w-4 shrink-0" aria-hidden="true" />
+            Comprendre les règles : séquestre, fenêtre de check-in, pénalités
           </button>
         </div>
       </div>
 
-      {/* ══ MODAL : Horaires du séjour ══ */}
-      {showTimeModal && (() => {
-        const [h, m] = checkinHeure.split(':').map(Number);
-        const checkoutH = (h + 1) % 24;
-        const checkoutHeure = `${String(checkoutH).padStart(2, '0')}:${String(m).padStart(2, '0')}`;
-        return (
-          <Modal
-            title="Horaires du séjour"
-            onClose={() => setShowTimeModal(false)}
-          >
-            <div className="p-6 space-y-5">
-              {/* Contexte dates */}
-              <div className="flex items-stretch bg-white/6 border border-white/10 rounded-2xl overflow-hidden text-center">
-                <div className="flex-1 px-4 py-3">
-                  <p className="text-[9px] font-black uppercase tracking-[0.18em] text-neutral-500 mb-1">Arrivée</p>
-                  <p className="text-xs font-bold text-white">
-                    {new Date(res.dateDebut).toLocaleDateString('fr-FR', { day: 'numeric', month: 'short', year: 'numeric' })}
-                  </p>
-                </div>
-                <div className="flex items-center justify-center px-3 border-x border-white/10">
-                  <span className="text-[10px] font-black text-neutral-500">{res.nbNuits}n</span>
-                </div>
-                <div className="flex-1 px-4 py-3">
-                  <p className="text-[9px] font-black uppercase tracking-[0.18em] text-neutral-500 mb-1">Départ</p>
-                  <p className="text-xs font-bold text-white">
-                    {new Date(res.dateFin).toLocaleDateString('fr-FR', { day: 'numeric', month: 'short', year: 'numeric' })}
-                  </p>
-                </div>
-              </div>
+      {/* ═══ MODALES ═══════════════════════════════════════════════════════ */}
 
-              {/* Saisie heure check-in */}
-              <div className="space-y-2">
-                <label className="block text-xs font-bold text-neutral-300">
-                  Heure de check-in
-                </label>
-                <div className="relative">
-                  <Clock className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-neutral-500 pointer-events-none" />
-                  <input
-                    type="time"
-                    value={checkinHeure}
-                    onChange={(e) => setCheckinHeure(e.target.value)}
-                    className="w-full text-sm font-bold text-white bg-white/8 border border-white/15 rounded-xl pl-11 pr-4 py-3 focus:outline-none focus:ring-1 focus:ring-success-500/50 focus:border-success-500/50 transition-all [color-scheme:dark]"
-                  />
-                </div>
-                <p className="text-[11px] text-neutral-500 leading-relaxed">
-                  À partir de cette heure, le logement sera disponible pour le locataire.
+      {showTimeModal && (
+        <Modal title="Horaires du séjour" onClose={() => setShowTimeModal(false)}>
+          <div className="space-y-5 p-6">
+            <div className="flex items-stretch overflow-hidden rounded-inner border border-border text-center">
+              <div className="flex-1 px-4 py-3">
+                <p className="mb-1 text-xs font-semibold uppercase tracking-wider text-foreground-muted">
+                  Arrivée
+                </p>
+                <p className="text-xs font-semibold text-foreground">
+                  {new Date(res.dateDebut).toLocaleDateString('fr-FR', { day: 'numeric', month: 'short', year: 'numeric' })}
                 </p>
               </div>
-
-              {/* Check-out auto */}
-              <div className="flex items-center gap-3 bg-white/5 border border-white/8 rounded-xl px-4 py-3">
-                <Clock className="w-3.5 h-3.5 text-neutral-500 shrink-0" />
-                <div className="flex-1 min-w-0">
-                  <p className="text-[10px] font-bold text-neutral-400 uppercase tracking-wide">Check-out calculé automatiquement</p>
-                  <p className="text-xs text-neutral-300 mt-0.5">
-                    Le locataire devra quitter le logement avant{' '}
-                    <span className="font-black text-white">{checkoutHeure}</span>
-                    {' '}le jour du départ.
-                  </p>
-                </div>
+              <div className="flex items-center justify-center border-x border-border px-3">
+                <span className="text-xs font-semibold tabular-nums text-foreground-muted">
+                  {res.nbNuits} n
+                </span>
               </div>
-
-              {/* Info séquestre */}
-              <div className="flex items-start gap-2.5 bg-emerald-500/8 border border-emerald-400/15 rounded-xl px-3.5 py-3">
-                <Lock className="w-3.5 h-3.5 text-emerald-400 shrink-0 mt-0.5" />
-                <p className="text-[11px] text-emerald-300 leading-relaxed font-medium">
-                  Après confirmation, le locataire sera notifié et les fonds resteront en séquestre jusqu&apos;au check-in validé des deux côtés.
+              <div className="flex-1 px-4 py-3">
+                <p className="mb-1 text-xs font-semibold uppercase tracking-wider text-foreground-muted">
+                  Départ
                 </p>
-              </div>
-
-              {errorMsg && <Feedback type="error" message={errorMsg} />}
-
-              <div className="flex gap-3 pt-1">
-                <button
-                  onClick={() => setShowTimeModal(false)}
-                  className="flex-1 py-3 text-xs font-bold text-neutral-400 bg-white/5 hover:bg-white/8 border border-white/8 rounded-xl transition-all"
-                >
-                  Annuler
-                </button>
-                <button
-                  onClick={handleConfirm}
-                  disabled={isSubmitting}
-                  className="flex-1 py-3 text-xs font-black text-white bg-gradient-to-r from-emerald-500 to-emerald-700 hover:from-emerald-600 hover:to-emerald-800 disabled:from-neutral-700 disabled:to-neutral-700 disabled:text-neutral-500 rounded-xl transition-all shadow-md shadow-emerald-500/20"
-                >
-                  {isSubmitting
-                    ? <span className="flex items-center justify-center gap-1.5"><Loader2 className="w-3.5 h-3.5 animate-spin" />Confirmation…</span>
-                    : 'Confirmer la réservation'}
-                </button>
+                <p className="text-xs font-semibold text-foreground">
+                  {new Date(res.dateFin).toLocaleDateString('fr-FR', { day: 'numeric', month: 'short', year: 'numeric' })}
+                </p>
               </div>
             </div>
-          </Modal>
-        );
-      })()}
 
-      {/* ══ CheckinModal ══ */}
+            <div className="space-y-2">
+              <label htmlFor="checkin-heure" className="block text-xs font-semibold text-foreground">
+                Heure de check-in
+              </label>
+              <div className="relative">
+                <Clock className="pointer-events-none absolute top-1/2 left-4 h-4 w-4 -translate-y-1/2 text-foreground-muted" aria-hidden="true" />
+                <input
+                  id="checkin-heure"
+                  type="time"
+                  required
+                  value={checkinHeure}
+                  onChange={(e) => setCheckinHeure(e.target.value)}
+                  className="w-full rounded-field border border-border bg-background py-3 pr-4 pl-11 font-semibold text-foreground focus:border-forest-500 focus:outline-none"
+                />
+              </div>
+              <p className="text-xs leading-relaxed text-foreground-muted">
+                À partir de cette heure, le logement est disponible pour le locataire.
+              </p>
+            </div>
+
+            <div className="flex items-center gap-3 rounded-inner border border-border bg-background-alt px-4 py-3">
+              <Clock className="h-3.5 w-3.5 shrink-0 text-foreground-muted" aria-hidden="true" />
+              <p className="min-w-0 text-xs text-foreground-muted">
+                <span className="font-semibold text-foreground">Check-out automatique : </span>
+                {checkoutHeure
+                  ? <>le locataire devra quitter le logement avant <span className="font-semibold text-foreground tabular-nums">{checkoutHeure}</span> le jour du départ.</>
+                  : 'renseignez une heure de check-in valide.'}
+              </p>
+            </div>
+
+            <Notice tone="forest" icon={Lock} title="Fonds en séquestre">
+              Après confirmation, le locataire est notifié. Les fonds restent bloqués jusqu’au
+              check-in validé des deux côtés.
+            </Notice>
+
+            {errorMsg && <Feedback type="error" message={errorMsg} />}
+
+            <div className="flex gap-3 pt-1">
+              <GhostButton onClick={() => setShowTimeModal(false)} className="flex-1 py-3 text-sm">
+                Retour
+              </GhostButton>
+              <div className="flex-1">
+                <PrimaryButton
+                  onClick={handleConfirm}
+                  loading={isSubmitting}
+                  disabled={!checkoutHeure}
+                  loadingLabel="Confirmation…"
+                >
+                  Confirmer
+                </PrimaryButton>
+              </div>
+            </div>
+          </div>
+        </Modal>
+      )}
+
       {showCheckinModal && (
         <CheckinModal
           reservationId={id}
@@ -1340,7 +1303,6 @@ export function ReservationActionPanel({ id, res, onRefetch }: Props) {
         />
       )}
 
-      {/* ══ CheckoutModal ══ */}
       {showCheckoutModal && (
         <CheckoutModal
           reservationId={id}
@@ -1349,280 +1311,243 @@ export function ReservationActionPanel({ id, res, onRefetch }: Props) {
         />
       )}
 
-      {/* ══ MODAL : Refus / Annulation ══ */}
       {showCancelModal && (
         <Modal
-          title={statut === 'PENDING' ? 'Annuler la demande' : statut === 'CONFIRMED' ? 'Annuler la réservation confirmée' : 'Refuser la réservation'}
+          title={
+            statut === 'PENDING' ? 'Annuler la demande'
+              : statut === 'CONFIRMED' ? 'Annuler une réservation confirmée'
+                : 'Refuser la réservation'
+          }
           onClose={() => { setShowCancelModal(false); setCancelReason(''); clearFeedback(); }}
         >
-          <div className="p-6 space-y-4">
+          <div className="space-y-4 p-6">
             {statut === 'PAID' && (
-              <div className="flex items-start gap-3 bg-rose-500/10 border border-rose-500/20 rounded-xl p-3.5">
-                <AlertTriangle className="w-4 h-4 text-rose-400 shrink-0 mt-0.5" />
-                <p className="text-xs text-rose-300 leading-relaxed font-medium">
-                  Le locataire sera intégralement remboursé. Une pénalité peut s&apos;appliquer sur votre wallet selon le délai.
-                </p>
-              </div>
+              <Notice tone="error" icon={AlertTriangle} title="Remboursement intégral du locataire">
+                Une pénalité peut s’appliquer sur votre wallet selon le délai.
+              </Notice>
             )}
+
             {statut === 'CONFIRMED' && (
-              <div className="space-y-2.5">
-                <div className="flex items-start gap-3 bg-rose-500/10 border border-rose-500/20 rounded-xl p-3.5">
-                  <AlertTriangle className="w-4 h-4 text-rose-400 shrink-0 mt-0.5" />
-                  <div className="space-y-1">
-                    <p className="text-xs font-black text-rose-300">
-                      Pénalité appliquée : {penaliteOwner.toLocaleString('fr-FR')} FCFA
-                    </p>
-                    <p className="text-xs text-rose-300/80 leading-relaxed">
-                      Le locataire sera remboursé intégralement. Cette pénalité est déduite de votre wallet.
-                    </p>
-                  </div>
-                </div>
-                <div className="flex items-start gap-2 bg-amber-500/8 border border-amber-500/15 rounded-xl px-3 py-2.5">
-                  <AlertTriangle className="w-3 h-3 text-amber-400 shrink-0 mt-0.5" />
-                  <p className="text-[11px] text-amber-400 leading-relaxed">
-                    3 annulations après confirmation entraînent la <span className="font-bold">suspension automatique</span> de toutes vos annonces.
-                  </p>
-                </div>
-              </div>
+              <>
+                <Notice
+                  tone="error"
+                  icon={AlertTriangle}
+                  title={`Pénalité : ${penaliteOwner.toLocaleString('fr-FR')} FCFA`}
+                >
+                  Le locataire sera remboursé intégralement. Cette pénalité est déduite de votre
+                  wallet.
+                </Notice>
+                <Notice tone="warning" icon={AlertTriangle} title="Suspension automatique">
+                  Trois annulations après confirmation entraînent la suspension de toutes vos
+                  annonces.
+                </Notice>
+              </>
             )}
+
             <div>
-              <label className="block text-xs font-bold text-neutral-300 mb-1.5">
-                Motif <span className="text-rose-400">*</span>
+              <label htmlFor="cancel-reason" className="mb-1.5 block text-xs font-semibold text-foreground">
+                Motif <span className="text-error-600">*</span>
               </label>
               <textarea
+                id="cancel-reason"
                 rows={3}
-                className="w-full text-xs bg-white/5 border border-white/10 text-white placeholder:text-neutral-600 rounded-xl px-4 py-3 focus:outline-none focus:ring-1 focus:ring-rose-400/40 resize-none"
-                placeholder="Ex : Le logement n'est plus disponible aux dates indiquées."
                 value={cancelReason}
                 onChange={(e) => setCancelReason(e.target.value)}
+                placeholder="Ex : le logement n’est plus disponible à ces dates."
+                className="w-full resize-none rounded-field border border-border bg-background px-4 py-3 text-foreground placeholder:text-foreground-faint focus:border-forest-500 focus:outline-none"
               />
+              <p className="mt-1.5 text-xs text-foreground-muted">
+                Minimum {MOTIF_MIN} caractères · {cancelReason.trim().length} saisis
+              </p>
             </div>
+
             {errorMsg && <Feedback type="error" message={errorMsg} />}
+
             <div className="flex gap-3 pt-1">
-              <button
+              <GhostButton
                 onClick={() => { setShowCancelModal(false); setCancelReason(''); clearFeedback(); }}
-                className="flex-1 py-2.5 text-xs font-bold text-neutral-400 bg-white/5 hover:bg-white/8 border border-white/8 rounded-xl transition-all"
+                className="flex-1 py-3 text-sm"
               >
-                Annuler
-              </button>
-              <button
+                Retour
+              </GhostButton>
+              <DangerButton
                 onClick={handleCancel}
-                disabled={!cancelReason.trim() || isSubmitting}
-                className="flex-1 py-2.5 text-xs font-bold text-white bg-rose-600 hover:bg-rose-700 disabled:bg-neutral-800 disabled:text-neutral-500 rounded-xl transition-all"
+                disabled={cancelReason.trim().length < MOTIF_MIN}
+                loading={isSubmitting}
+                className="flex-1 py-3 text-sm"
               >
-                {isSubmitting
-                  ? <span className="flex items-center justify-center gap-1.5"><Loader2 className="w-3.5 h-3.5 animate-spin" />En cours…</span>
-                  : 'Confirmer'}
-              </button>
+                Confirmer
+              </DangerButton>
             </div>
           </div>
         </Modal>
       )}
 
-      {/* ══ MODAL : Litige ══ */}
       {showLitigeModal && (
         <Modal
           title="Ouvrir un litige"
           onClose={() => { setShowLitigeModal(false); setLitigeMotif(''); setLitigeDescription(''); clearFeedback(); }}
         >
-          <div className="p-6 space-y-4">
-            <div className="flex items-start gap-3 bg-rose-500/10 border border-rose-500/20 rounded-xl p-3.5">
-              <Lock className="w-4 h-4 text-rose-400 shrink-0 mt-0.5" />
-              <p className="text-xs text-rose-300 leading-relaxed font-medium">
-                Un litige gèle les fonds en séquestre jusqu&apos;à résolution. Notre équipe vous contactera sous 48h.
-              </p>
-            </div>
+          <div className="space-y-4 p-6">
+            <Notice tone="error" icon={Lock} title="Les fonds seront gelés">
+              Un litige bloque le séquestre jusqu’à résolution. L’équipe support vous contacte
+              sous 48 h.
+            </Notice>
+
             <div>
-              <label className="block text-xs font-bold text-neutral-300 mb-1.5">
-                Motif <span className="text-rose-400">*</span>
+              <label htmlFor="litige-motif" className="mb-1.5 block text-xs font-semibold text-foreground">
+                Motif <span className="text-error-600">*</span>
               </label>
               <select
+                id="litige-motif"
                 value={litigeMotif}
                 onChange={(e) => setLitigeMotif(e.target.value)}
-                className="w-full text-xs bg-white/5 border border-white/10 text-white rounded-xl px-4 py-3 focus:outline-none focus:ring-1 focus:ring-rose-400/40"
+                className="w-full rounded-field border border-border bg-background px-4 py-3 text-foreground focus:border-forest-500 focus:outline-none"
               >
-                <option value="" disabled className="bg-neutral-900">Sélectionnez un motif</option>
-                <option value="LOGEMENT_NON_CONFORME"  className="bg-neutral-900">Logement non conforme à l&apos;annonce</option>
-                <option value="DEGRADATION"             className="bg-neutral-900">Dégradation du logement</option>
-                <option value="NON_PAIEMENT"            className="bg-neutral-900">Non-paiement de frais supplémentaires</option>
-                <option value="DEPASSEMENT_PERSONNES"   className="bg-neutral-900">Dépassement du nombre de personnes</option>
-                <option value="NUISANCES"               className="bg-neutral-900">Nuisances ou comportement inapproprié</option>
-                <option value="AUTRE"                   className="bg-neutral-900">Autre motif</option>
+                <option value="" disabled>Sélectionnez un motif</option>
+                {MOTIFS_LITIGE.map((m) => (
+                  <option key={m.value} value={m.value}>{m.label}</option>
+                ))}
               </select>
             </div>
+
             <div>
-              <label className="block text-xs font-bold text-neutral-300 mb-1.5">
-                Description <span className="text-rose-400">*</span>
+              <label htmlFor="litige-description" className="mb-1.5 block text-xs font-semibold text-foreground">
+                Description <span className="text-error-600">*</span>
               </label>
               <textarea
+                id="litige-description"
                 rows={4}
-                className="w-full text-xs bg-white/5 border border-white/10 text-white placeholder:text-neutral-600 rounded-xl px-4 py-3 focus:outline-none focus:ring-1 focus:ring-rose-400/40 resize-none"
-                placeholder="Décrivez précisément le problème, avec les dates et faits…"
                 value={litigeDescription}
                 onChange={(e) => setLitigeDescription(e.target.value)}
+                placeholder="Décrivez précisément le problème, avec les dates et les faits."
+                className="w-full resize-none rounded-field border border-border bg-background px-4 py-3 text-foreground placeholder:text-foreground-faint focus:border-forest-500 focus:outline-none"
               />
+              <p className="mt-1.5 text-xs text-foreground-muted">
+                Minimum {MOTIF_MIN} caractères · {litigeDescription.trim().length} saisis
+              </p>
             </div>
+
             {errorMsg && <Feedback type="error" message={errorMsg} />}
+
             <div className="flex gap-3 pt-1">
-              <button
+              <GhostButton
                 onClick={() => { setShowLitigeModal(false); setLitigeMotif(''); setLitigeDescription(''); clearFeedback(); }}
-                className="flex-1 py-2.5 text-xs font-bold text-neutral-400 bg-white/5 hover:bg-white/8 border border-white/8 rounded-xl transition-all"
+                className="flex-1 py-3 text-sm"
               >
-                Annuler
-              </button>
-              <button
+                Retour
+              </GhostButton>
+              <DangerButton
                 onClick={handleOpenLitige}
-                disabled={!litigeMotif || !litigeDescription.trim() || isSubmitting}
-                className="flex-1 py-2.5 text-xs font-bold text-white bg-rose-600 hover:bg-rose-700 disabled:bg-neutral-800 disabled:text-neutral-500 rounded-xl transition-all"
+                disabled={!litigeMotif || litigeDescription.trim().length < MOTIF_MIN}
+                loading={isSubmitting}
+                loadingLabel="Ouverture…"
+                className="flex-1 py-3 text-sm"
               >
-                {isSubmitting
-                  ? <span className="flex items-center justify-center gap-1.5"><Loader2 className="w-3.5 h-3.5 animate-spin" />Ouverture…</span>
-                  : 'Ouvrir le litige'}
-              </button>
+                Ouvrir le litige
+              </DangerButton>
             </div>
           </div>
         </Modal>
       )}
 
-      {/* ══ MODAL : Règles & Conditions ══ */}
-      {showRulesModal && (
-        <Modal title="Charte de Confiance & Règles de Séjour" onClose={() => setShowRulesModal(false)}>
-          <div className="p-6 space-y-5 max-h-[75vh] overflow-y-auto text-left">
-            <p className="text-xs text-neutral-400 leading-relaxed">
-              Klef applique un système hybride de double validation et de séquestre sécurisé pour protéger les deux parties.
-            </p>
-
-            <div className="flex gap-3.5 items-start p-3.5 rounded-2xl bg-white/5 border border-white/5">
-              <div className="w-9 h-9 rounded-xl bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center shrink-0">
-                <Clock className="w-4 h-4 text-emerald-400" />
-              </div>
-              <div className="space-y-1">
-                <h4 className="text-xs font-bold text-white">1. Délai de confirmation</h4>
-                <p className="text-[11px] text-neutral-400 leading-relaxed">
-                  Vous disposez d&apos;un délai affiché pour valider la réservation. Si ce délai expire sans action, la réservation est annulée automatiquement et le locataire est intégralement remboursé.
-                </p>
-              </div>
-            </div>
-
-            <div className="flex gap-3.5 items-start p-3.5 rounded-2xl bg-white/5 border border-white/5">
-              <div className="w-9 h-9 rounded-xl bg-amber-500/10 border border-amber-500/20 flex items-center justify-center shrink-0">
-                <Lock className="w-4 h-4 text-amber-400" />
-              </div>
-              <div className="space-y-1">
-                <h4 className="text-xs font-bold text-white">2. Fenêtre de check-in (J-4h)</h4>
-                <p className="text-[11px] text-neutral-400 leading-relaxed">
-                  L&apos;état des lieux d&apos;entrée ne peut être démarré que <strong className="text-amber-400 font-bold">4 heures avant l&apos;arrivée du locataire</strong>. Cela garantit que les photos reflètent fidèlement l&apos;état du logement au moment de l&apos;entrée et empêche tout déclenchement prématuré du versement.
-                </p>
-              </div>
-            </div>
-
-            <div className="flex gap-3.5 items-start p-3.5 rounded-2xl bg-white/5 border border-white/5">
-              <div className="w-9 h-9 rounded-xl bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center shrink-0">
-                <Shield className="w-4 h-4 text-emerald-400" />
-              </div>
-              <div className="space-y-1">
-                <h4 className="text-xs font-bold text-white">3. Double validation check-in</h4>
-                <p className="text-[11px] text-neutral-400 leading-relaxed">
-                  Le séjour démarre officiellement lorsque vous avez importé les photos ET que le locataire a confirmé son installation. Les fonds restent en séquestre jusqu&apos;à cette double validation.
-                </p>
-              </div>
-            </div>
-
-            <div className="flex gap-3.5 items-start p-3.5 rounded-2xl bg-white/5 border border-white/5">
-              <div className="w-9 h-9 rounded-xl bg-rose-500/10 border border-rose-500/20 flex items-center justify-center shrink-0">
-                <AlertTriangle className="w-4 h-4 text-rose-400" />
-              </div>
-              <div className="space-y-1">
-                <h4 className="text-xs font-bold text-white">4. Pénalités d&apos;annulation</h4>
-                <p className="text-[11px] text-neutral-400 leading-relaxed">
-                  Toute annulation après confirmation génère une pénalité : <strong className="text-rose-400">5 000 F</strong> (J-7+), <strong className="text-rose-400">10 000 F</strong> (J-2 à J-7), <strong className="text-rose-400">20 000 F</strong> (moins de 48h). 3 annulations = suspension automatique.
-                </p>
-              </div>
-            </div>
-
-            <button
-              onClick={() => setShowRulesModal(false)}
-              className="w-full mt-2 py-3 text-xs font-bold text-white bg-emerald-600 hover:bg-emerald-700 rounded-xl transition-all shadow-md shadow-emerald-500/10 cursor-pointer"
-            >
-              J&apos;ai compris les règles
-            </button>
-          </div>
-        </Modal>
-      )}
-
-      {/* ══ MODAL : Signal no-show locataire ══ */}
       {showNoshowModal && (
-        <Modal title="Signaler l'absence du locataire" onClose={() => { if (!isSubmitting) setShowNoshowModal(false); }}>
-          <div className="p-6 space-y-4">
-            {/* Warning banner */}
-            <div className="flex items-start gap-3 bg-rose-500/10 border border-rose-500/20 rounded-xl p-3.5">
-              <AlertTriangle className="w-4 h-4 text-rose-400 shrink-0 mt-0.5" />
-              <div className="space-y-1">
-                <p className="text-xs font-bold text-rose-300">
-                  Signalement d&apos;absence
-                </p>
-                <p className="text-[11px] text-rose-300/80 leading-relaxed">
-                  En signalant l&apos;absence du locataire, vous déclenchez un compte à rebours de <strong>3 heures</strong>.
-                  Si le locataire ne se présente pas dans ce délai, la réservation sera annulée automatiquement.
-                </p>
-              </div>
-            </div>
+        <Modal
+          title="Signaler l’absence du locataire"
+          onClose={() => { if (!isSubmitting) { setShowNoshowModal(false); setNoshowComment(''); clearFeedback(); } }}
+        >
+          <div className="space-y-4 p-6">
+            <Notice tone="error" icon={AlertTriangle} title="Compte à rebours de 3 heures">
+              Si le locataire ne se présente pas dans ce délai, la réservation sera annulée
+              automatiquement.
+            </Notice>
 
-            {/* Optional comment */}
             <div>
-              <label className="block text-xs font-bold text-neutral-300 mb-1.5">
-                Commentaire (optionnel)
+              <label htmlFor="noshow-comment" className="mb-1.5 block text-xs font-semibold text-foreground">
+                Commentaire <span className="font-normal text-foreground-muted">(optionnel)</span>
               </label>
               <textarea
+                id="noshow-comment"
                 rows={3}
-                className="w-full text-xs bg-white/5 border border-white/10 text-white placeholder:text-neutral-600 rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-rose-400/40 resize-none disabled:opacity-40"
-                placeholder="Ex : Aucune réponse aux appels, SMS non lus depuis 2h..."
+                maxLength={500}
                 value={noshowComment}
                 onChange={(e) => setNoshowComment(e.target.value)}
                 disabled={isSubmitting}
-                maxLength={500}
+                placeholder="Ex : aucune réponse aux appels ni aux SMS depuis deux heures."
+                className="w-full resize-none rounded-field border border-border bg-background px-4 py-3 text-foreground placeholder:text-foreground-faint focus:border-forest-500 focus:outline-none disabled:opacity-50"
               />
-              <p className="text-[10px] text-neutral-600 mt-1">Maximum 500 caractères</p>
+              <p className="mt-1.5 text-right text-xs tabular-nums text-foreground-muted">
+                {noshowComment.length} / 500
+              </p>
             </div>
 
-            {/* Info */}
-            <div className="bg-white/5 border border-white/8 rounded-xl p-3.5">
-              <p className="text-[11px] text-neutral-400 leading-relaxed">
-                <span className="font-bold text-neutral-300">Ce qui se passe ensuite :</span> Le locataire dispose de 3h
-                pour se présenter et confirmer son check-in. Passé ce délai, la réservation sera annulée avec remboursement partiel
-                (30% pour le locataire, 50% de compensation pour vous).
+            <div className="rounded-inner border border-border bg-background-alt p-3.5">
+              <p className="text-xs leading-relaxed text-foreground-muted">
+                <span className="font-semibold text-foreground">Ce qui se passe ensuite : </span>
+                le locataire dispose de 3 h pour se présenter et confirmer son check-in. Passé ce
+                délai, la réservation est annulée avec remboursement partiel (30 % pour le
+                locataire, 50 % de compensation pour vous).
               </p>
             </div>
 
             {errorMsg && <Feedback type="error" message={errorMsg} />}
 
-            {/* Actions */}
             <div className="flex gap-3 pt-1">
-              <button
+              <GhostButton
                 onClick={() => { setShowNoshowModal(false); setNoshowComment(''); clearFeedback(); }}
                 disabled={isSubmitting}
-                className="flex-1 py-2.5 text-xs font-bold text-neutral-400 bg-white/5 hover:bg-white/8 border border-white/8 rounded-xl transition-all disabled:opacity-40"
+                className="flex-1 py-3 text-sm"
               >
-                Annuler
-              </button>
-              <button
+                Retour
+              </GhostButton>
+              <DangerButton
                 onClick={handleSignalNoshow}
-                disabled={isSubmitting}
-                className="flex-1 flex items-center justify-center gap-2 py-2.5 text-xs font-bold text-white bg-rose-600 hover:bg-rose-700 disabled:bg-neutral-800 disabled:text-neutral-500 rounded-xl transition-all shadow-md shadow-rose-600/20 disabled:shadow-none"
+                loading={isSubmitting}
+                loadingLabel="Envoi…"
+                icon={UserX}
+                className="flex-1 py-3 text-sm"
               >
-                {isSubmitting ? (
-                  <>
-                    <Loader2 className="w-4 h-4 animate-spin" />
-                    Envoi en cours...
-                  </>
-                ) : (
-                  <>
-                    <UserX className="w-4 h-4" />
-                    Confirmer le signalement
-                  </>
-                )}
-              </button>
+                Confirmer le signalement
+              </DangerButton>
             </div>
+          </div>
+        </Modal>
+      )}
+
+      {showRulesModal && (
+        <Modal title="Règles de séjour et séquestre" onClose={() => setShowRulesModal(false)}>
+          <div className="space-y-4 p-6">
+            <p className="text-xs leading-relaxed text-foreground-muted">
+              Klef applique une double validation et un séquestre sécurisé pour protéger les deux
+              parties.
+            </p>
+
+            {[
+              {
+                icon: Clock, tone: 'forest' as Tone, title: '1. Délai de confirmation',
+                body: 'Vous disposez du délai affiché pour valider la réservation. Passé ce délai sans action, la réservation est annulée et le locataire intégralement remboursé.',
+              },
+              {
+                icon: Lock, tone: 'warning' as Tone, title: '2. Fenêtre de check-in (J−4 h)',
+                body: 'L’état des lieux d’entrée ne peut démarrer que 4 heures avant l’arrivée. Cela garantit des photos fidèles et empêche tout déclenchement prématuré du versement.',
+              },
+              {
+                icon: Shield, tone: 'forest' as Tone, title: '3. Double validation du check-in',
+                body: 'Le séjour démarre lorsque vous avez importé les photos ET que le locataire a confirmé son installation. Les fonds restent en séquestre jusque-là.',
+              },
+              {
+                icon: AlertTriangle, tone: 'error' as Tone, title: '4. Pénalités d’annulation',
+                body: `Après confirmation : ${PENALITES.early.toLocaleString('fr-FR')} FCFA au-delà de 7 jours, ${PENALITES.mid.toLocaleString('fr-FR')} FCFA entre 2 et 7 jours, ${PENALITES.late.toLocaleString('fr-FR')} FCFA à moins de 48 h. Trois annulations entraînent une suspension automatique.`,
+              },
+            ].map(({ icon, tone, title, body }) => (
+              <Notice key={title} tone={tone} icon={icon} title={title}>
+                {body}
+              </Notice>
+            ))}
+
+            <PrimaryButton onClick={() => setShowRulesModal(false)} loadingLabel="">
+              J’ai compris
+            </PrimaryButton>
           </div>
         </Modal>
       )}
