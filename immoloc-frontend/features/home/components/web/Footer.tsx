@@ -214,6 +214,16 @@ export function Footer() {
               >
                 Gestion des cookies
               </button>
+              <button
+                onClick={() => {
+                  if (typeof window !== 'undefined') {
+                    window.dispatchEvent(new Event('open-klef-install-modal'));
+                  }
+                }}
+                className="text-sm text-neutral-500 hover:text-lime-400 transition-colors duration-200"
+              >
+                Installer l'application
+              </button>
             </div>
           </div>
         </div>

@@ -7,6 +7,7 @@ import { NestSessionSync } from '@/providers/nest-session-sync';
 import { QueryProvider } from '@/providers/query-provider';
 import { PWARegister } from '@/components/pwa-register';
 import { CookieConsentModal } from '@/components/cookies/CookieConsentModal';
+import { InstallAppModal } from '@/components/pwa/InstallAppModal';
 import './globals.css';
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -139,6 +140,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
             />
 
             <CookieConsentModal />
+            <InstallAppModal />
           </QueryProvider>
         </ThemeProvider>
       </body>
