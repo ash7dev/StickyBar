@@ -1,3 +1,4 @@
+/* eslint-disable prefer-const */
 import { createServerClient, type CookieOptions } from '@supabase/ssr';
 import { NextResponse, type NextRequest } from 'next/server';
 import { buildApiUrl } from '@/lib/config/api';

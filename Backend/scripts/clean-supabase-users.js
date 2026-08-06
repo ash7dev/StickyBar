@@ -30,32 +30,13 @@ async function main() {
 
   for (const user of users) {
     const meta = user.user_metadata || {};
-    const metaStr = JSON.stringify(meta);
-    const metaSize = Buffer.byteLength(metaStr, 'utf8');
+    const cleaned = {
+      email: user.email || meta.email,
+      email_verified: true,
+    };
 
     console.log(`👤 ${user.email || user.id}`);
-    console.log(`   Current metadata size: ${metaSize} bytes`);
-
-    // Check if metadata contains large data
-    let hasLargeData = metaSize > 500; // Anything over 500 bytes is suspicious
-
-    if (!hasLargeData) {
-      // Also check for base64 data URLs
-      hasLargeData = metaStr.includes('data:image') || metaStr.includes('base64');
-    }
-
-    if (!hasLargeData) {
-      console.log(`   ✅ Clean (${metaSize} bytes)\n`);
-      continue;
-    }
-
-    // Build cleaned metadata: only keep email and email_verified
-    const cleaned = {};
-    if (meta.email) cleaned.email = meta.email;
-    if (meta.email_verified !== undefined) cleaned.email_verified = meta.email_verified;
-
-    const cleanedSize = Buffer.byteLength(JSON.stringify(cleaned), 'utf8');
-    console.log(`   🧹 Cleaning: ${metaSize} → ${cleanedSize} bytes`);
+    console.log(`   Nettoyage metadata -> { email: "${cleaned.email}", email_verified: true }`);
 
     const { error: updateError } = await supabase.auth.admin.updateUserById(user.id, {
       user_metadata: cleaned,

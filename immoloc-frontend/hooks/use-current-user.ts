@@ -31,8 +31,11 @@ export function useCurrentUser() {
       try {
         // Essayer l'API NestJS d'abord
         if (nestToken) {
-          const apiUser = await nestFetch<User>(NEST_API.USERS.ME);
-          return apiUser;
+          const apiUser = await nestFetch<any>(NEST_API.USERS.ME);
+          return {
+            ...apiUser,
+            photoUrl: apiUser.avatarUrl || apiUser.photoUrl,
+          };
         }
       } catch (e) {
         console.error('Erreur API users/me:', e);
