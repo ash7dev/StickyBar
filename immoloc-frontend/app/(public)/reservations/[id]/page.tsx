@@ -20,6 +20,7 @@ import { ReservationPaymentCard }     from '@/features/reservations/components/s
 import { ReservationPhotos }          from '@/features/reservations/components/shared/ReservationPhotos';
 import { ReservationLitige }          from '@/features/reservations/components/shared/ReservationLitige';
 import { ReservationTimeline }        from '@/features/reservations/components/shared/ReservationTimeline';
+import { AskAssistantButton }         from '@/components/assistant/AskAssistantButton';
 
 function TenantReservationDetailContent({ id }: { id: string }) {
   const queryClient = useQueryClient();
@@ -125,6 +126,21 @@ function TenantReservationDetailContent({ id }: { id: string }) {
 
       {/* Litige */}
       <ReservationLitige litige={res.litige} />
+
+      {/* Assistance Klef */}
+      <div className="rounded-card border border-forest-800/20 bg-background-card p-5 shadow-xs flex flex-wrap items-center justify-between gap-4">
+        <div>
+          <h4 className="font-display text-sm font-bold text-foreground">Une question ou besoin d&apos;assistance sur ce séjour ?</h4>
+          <p className="text-xs text-foreground-muted">L&apos;assistant Klef et nos équipes vous accompagnent en direct 24h/24 et 7j/7.</p>
+        </div>
+        <AskAssistantButton
+          label="Demander à l'assistant"
+          subject={`Assistance sur la réservation #${res.id.slice(0, 8).toUpperCase()}`}
+          category="RESERVATION"
+          reservationId={res.id}
+          variant="lime"
+        />
+      </div>
 
       {/* Chronologie */}
       <ReservationTimeline historique={res.historique} />

@@ -104,6 +104,18 @@ export const NEST_API = {
     RECENT_ACTIVITY:  `${BASE}/dashboard/owner/recent-activity`,
     UPCOMING_EVENTS:  `${BASE}/dashboard/owner/upcoming-events`,
   },
+  SUPPORT: {
+    CREATE_TICKET: `${BASE}/support/tickets`,
+    MY_TICKETS: `${BASE}/support/tickets`,
+    TICKET_DETAILS: (id: string) => `${BASE}/support/tickets/${id}`,
+    ADD_MESSAGE: (id: string) => `${BASE}/support/tickets/${id}/messages`,
+  },
+  ADMIN: {
+    TICKETS_LIST: `${BASE}/admin/support/tickets`,
+    TICKET_DETAILS: (id: string) => `${BASE}/admin/support/tickets/${id}`,
+    TICKET_REPLY: (id: string) => `${BASE}/admin/support/tickets/${id}/messages`,
+    TICKET_STATUS: (id: string) => `${BASE}/admin/support/tickets/${id}/status`,
+  },
   PUSH_NOTIFICATIONS: {
     VAPID_PUBLIC_KEY: `${BASE}/notifications/vapid-public-key`,
     SUBSCRIBE:        `${BASE}/notifications/subscribe`,

@@ -8,6 +8,7 @@ import { QueryProvider } from '@/providers/query-provider';
 import { PWARegister } from '@/components/pwa-register';
 import { CookieConsentModal } from '@/components/cookies/CookieConsentModal';
 import { InstallAppModal } from '@/components/pwa/InstallAppModal';
+import { KlefAssistantWidget } from '@/components/assistant/KlefAssistantWidget';
 import './globals.css';
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -141,6 +142,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
 
             <CookieConsentModal />
             <InstallAppModal />
+            <KlefAssistantWidget />
           </QueryProvider>
         </ThemeProvider>
       </body>

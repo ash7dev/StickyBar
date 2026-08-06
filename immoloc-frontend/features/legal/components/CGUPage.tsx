@@ -152,7 +152,6 @@ export function CGUPage() {
 
   return (
     <div className="bg-background min-h-screen text-foreground font-sans">
-      <Navbar />
 
       {/* ══ Hero ═══════════════════════════════════════════════════════════════ */}
       <div className="relative overflow-hidden bg-forest-950 text-white">
@@ -419,9 +418,7 @@ export function CGUPage() {
             </Para>
             <Ul items={[
               'Wave (portefeuille mobile)',
-              'Orange Money',
-              'PayDunya',
-              'Carte bancaire (via Stripe — Visa, Mastercard)',
+              'Orange Money (portefeuille mobile)',
             ]} />
 
             <div className="my-6 p-6 bg-gradient-to-br from-forest-900 via-forest-950 to-forest-900 rounded-2xl border border-forest-800 text-white shadow-lg">
@@ -461,27 +458,25 @@ export function CGUPage() {
             <Divider />
 
             {/* ── Article 7 ── Commission ───────────────────────────────── */}
-            <ArticleHeading id="commission" number="7" title="Commission et frais de service" icon={CreditCard} />
+            <ArticleHeading id="commission" number="7" title="Frais de service et rémunération" icon={CreditCard} />
             <Para>
-              {BRAND.name} perçoit une commission sur chaque réservation confirmée, répartie comme suit :
+              {BRAND.name} applique un modèle tarifaire transparent et avantageux pour les propriétaires :
             </Para>
             <div className="grid sm:grid-cols-2 gap-3 my-5">
               <RateCard
-                label="Frais Locataire"
-                rate="8 %"
-                desc="Ajoutés au prix affiché lors du paiement"
+                label="Frais de Service Locataire"
+                rate="7 %"
+                desc="Ajoutés au prix de base du logement et réglés par le voyageur lors de la réservation"
               />
               <RateCard
                 label="Commission Propriétaire"
-                rate="5 %"
-                desc="Déduits du montant reversé au Propriétaire"
+                rate="0 %"
+                desc="Le propriétaire perçoit 100 % de son prix de base fixé. Aucune déduction sur son net."
               />
             </div>
 
             <InfoBox type="info">
-              Le montant affiché sur l&apos;annonce est le prix <strong>hors frais de service</strong>.
-              Le détail complet (prix base + frais locataire + total) est présenté avant toute
-              confirmation de paiement. Aucun frais caché.
+              <strong>Zéro frais caché pour le propriétaire :</strong> Lorsque vous fixez une nuitée à 50 000 FCFA, vous recevez exactement <strong>50 000 FCFA</strong> sur votre portefeuille Klef dès la confirmation du check-in.
             </InfoBox>
 
             <Para>
@@ -493,32 +488,42 @@ export function CGUPage() {
             <Divider />
 
             {/* ── Article 8 ── Annulations ──────────────────────────────── */}
-            <ArticleHeading id="annulations" number="8" title="Politique d'annulation" icon={XCircle} />
+            <ArticleHeading id="annulations" number="8" title="Politique d'annulation et pénalités" icon={XCircle} />
             <Para>
-              La politique d&apos;annulation applicable est celle choisie par le Propriétaire lors de
-              la création de l&apos;annonce. Trois niveaux sont disponibles :
+              Toute annulation s&apos;effectue directement depuis l&apos;application. Le barème de remboursement et les pénalités sont calculés automatiquement selon le délai restant avant le début du séjour :
             </Para>
-            <div className="space-y-3 my-5">
+            
+            <p className="font-bold text-sm text-foreground mt-4 mb-2">1. Annulation par le Locataire :</p>
+            <div className="space-y-3 my-3">
               {[
-                { name: 'Flexible',   color: 'bg-forest-50/80 border-forest-200/80', dot: 'bg-forest-500', rule: 'Remboursement intégral si annulation ≥ 24h avant le check-in.' },
-                { name: 'Modérée',    color: 'bg-warning-50/80 border-warning-500/30', dot: 'bg-warning-500', rule: 'Remboursement intégral si annulation ≥ 5 jours avant. 50 % si annulation entre 1 et 5 jours avant.' },
-                { name: 'Stricte',    color: 'bg-error-50/80 border-error-500/30',     dot: 'bg-error-500',   rule: 'Remboursement intégral si annulation dans les 48h suivant la réservation (et ≥ 14 jours avant check-in). Aucun remboursement au-delà.' },
+                { name: 'Plus de 7 jours avant le séjour', color: 'bg-forest-50/80 border-forest-200/80', dot: 'bg-forest-500', rule: 'Remboursement à 100 % du montant total.' },
+                { name: 'Entre 3 et 7 jours avant le séjour', color: 'bg-warning-50/80 border-warning-500/30', dot: 'bg-warning-500', rule: 'Remboursement à 50 % du montant total.' },
+                { name: 'Entre 24h et 3 jours avant le séjour', color: 'bg-warning-50/80 border-warning-500/30', dot: 'bg-warning-600', rule: 'Remboursement à 25 % du montant total.' },
+                { name: 'Moins de 24h avant le séjour', color: 'bg-error-50/80 border-error-500/30', dot: 'bg-error-500', rule: 'Aucun remboursement (0 %). Le montant reste acquis au propriétaire.' },
               ].map(({ name, color, dot, rule }) => (
-                <div key={name} className={cn('flex gap-3 p-4 rounded-2xl border shadow-xs', color)}>
+                <div key={name} className={cn('flex gap-3 p-3.5 rounded-xl border shadow-xs', color)}>
                   <div className={cn('w-2 h-2 rounded-full shrink-0 mt-2', dot)} />
                   <div>
-                    <p className="font-bold text-sm text-foreground mb-0.5">{name}</p>
-                    <p className="text-sm text-foreground-muted">{rule}</p>
+                    <p className="font-bold text-xs sm:text-sm text-foreground mb-0.5">{name}</p>
+                    <p className="text-xs text-foreground-muted">{rule}</p>
                   </div>
                 </div>
               ))}
             </div>
 
+            <p className="font-bold text-sm text-foreground mt-6 mb-2">2. Annulation par le Propriétaire & Pénalités :</p>
+            <Para>
+              En cas d&apos;annulation par le Propriétaire d&apos;une réservation déjà confirmée, le Locataire est <strong>intégralement remboursé à 100 %</strong>. Des pénalités financières et administratives s&apos;appliquent à l&apos;hôte :
+            </Para>
+            <Ul items={[
+              'Annulation à plus de 7 jours avant le séjour : Pénalité de 5 000 FCFA déduite du portefeuille de l\'hôte.',
+              'Annulation entre 2 et 7 jours avant le séjour : Pénalité de 10 000 FCFA.',
+              'Annulation à moins de 48h avant le séjour : Pénalité de 20 000 FCFA.',
+              'Suspension automatique : À compter de 3 annulations confirmées, l\'ensemble des annonces du propriétaire est suspendu de la plateforme.',
+            ]} />
+
             <InfoBox type="warning">
-              En cas d&apos;annulation par le <strong>Propriétaire</strong>, le Locataire est intégralement
-              remboursé (y compris les frais de service) et le Propriétaire peut se voir appliquer
-              une pénalité de <strong>10 % du montant de la réservation</strong>, prélevée sur son
-              portefeuille {BRAND.name}.
+              Les pénalités de l&apos;hôte sont prélevées directement sur son solde disponible ou inscrites en dette de portefeuille déduite de ses versements ultérieurs.
             </InfoBox>
 
             <Divider />
@@ -670,8 +675,6 @@ export function CGUPage() {
           <ArrowUp className="w-5 h-5" />
         </button>
       )}
-
-      <Footer />
     </div>
   );
 }

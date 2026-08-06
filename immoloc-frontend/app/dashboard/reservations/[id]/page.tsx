@@ -20,6 +20,7 @@ import { PhotosEtatLieuSection } from '@/features/reservations/components/owner/
 import { ReservationPaymentCard } from '@/features/reservations/components/shared/ReservationPaymentCard';
 import { ReservationTimeline } from '@/features/reservations/components/shared/ReservationTimeline';
 import { canSeeCoordonnees } from '@/features/reservations/utils';
+import { AskAssistantButton } from '@/components/assistant/AskAssistantButton';
 
 /* ═══════════════════════════════════════════════════════════════════════════
    DIRECTION VISUELLE ASSUMÉE
@@ -769,6 +770,27 @@ export default function ReservationDetailPage({ params }: { params: Promise<{ id
             </p>
           </section>
         )}
+
+        {/* ══ ASSISTANCE KLEF ════════════════════════════════════════════ */}
+
+        <section className="rounded-card border border-border bg-background-card p-5 shadow-sm flex flex-wrap items-center justify-between gap-4">
+          <div>
+            <h3 className="font-display text-sm font-semibold text-foreground">
+              Besoin d&apos;aide concernant cette réservation hôte ?
+            </h3>
+            <p className="text-xs text-foreground-muted">
+              Posez votre question à l&apos;assistant Klef ou ouvrez un ticket prioritaire avec notre support.
+            </p>
+          </div>
+          <AskAssistantButton
+            label="Demander à l'assistant"
+            subject={`Question hôte — Réservation #${res.id.slice(0, 8).toUpperCase()}`}
+            category="RESERVATION"
+            reservationId={res.id}
+            logementId={res.logement?.id}
+            variant="outline"
+          />
+        </section>
 
         {/* ══ CHRONOLOGIE ════════════════════════════════════════════════ */}
 

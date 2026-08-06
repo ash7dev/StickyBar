@@ -4,6 +4,7 @@ import { ConfigService } from '@nestjs/config';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import helmet from 'helmet';
 import { AppModule } from './app.module';
+import { HttpExceptionFilter } from './common/filters/http-exception.filter';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
@@ -27,6 +28,9 @@ async function bootstrap() {
     allowedHeaders: ['Content-Type', 'Authorization', 'X-Active-Role'],
     credentials: true,
   });
+
+  // Filter global d'exceptions en français et sécurisé
+  app.useGlobalFilters(new HttpExceptionFilter());
 
   // Validation globale — whitelist élimine les champs non déclarés dans les DTOs
   app.useGlobalPipes(

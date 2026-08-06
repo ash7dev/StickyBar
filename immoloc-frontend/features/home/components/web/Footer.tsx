@@ -1,4 +1,5 @@
 import Link from 'next/link';
+import { AskAssistantButton } from '@/components/assistant/AskAssistantButton';
 
 const EXPLORER_LINKS = [
   { label: 'Dakar', href: '/explorer?ville=Dakar' },
@@ -224,6 +225,7 @@ export function Footer() {
               >
                 Installer l'application
               </button>
+              <AskAssistantButton variant="ghost" size="sm" className="text-neutral-400 hover:text-lime-400 p-0 border-0 shadow-none hover:scale-100" />
             </div>
           </div>
         </div>

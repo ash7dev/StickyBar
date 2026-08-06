@@ -6,6 +6,7 @@ import { WalletBalanceCard, WalletBalanceCardSkeleton } from '@/features/wallet/
 import { DebtWarningBanner } from '@/features/wallet/components/DebtWarningBanner';
 import { WalletHistoryCard } from '@/features/wallet/components/WalletHistoryCard';
 import { WalletWithdrawalCard } from '@/features/wallet/components/WalletWithdrawalCard';
+import { AskAssistantButton } from '@/components/assistant/AskAssistantButton';
 
 export default function WalletPage() {
   const { data, isLoading } = useWallet();
@@ -38,11 +39,25 @@ export default function WalletPage() {
           <WalletHistoryCard transactions={data?.transactions} isLoading={isLoading} />
         </div>
 
-        <div className="order-1 lg:order-2 min-w-0">
+        <div className="order-1 lg:order-2 min-w-0 space-y-4">
           <WalletWithdrawalCard
             soldeDisponible={data ? Number(data.soldeDisponible) : 0}
             isLoading={isLoading}
           />
+
+          <div className="rounded-card border border-border bg-background-card p-4 space-y-2 text-center">
+            <p className="text-xs text-foreground-muted">
+              Une question sur les retraits Wave / Orange Money ou un virement ?
+            </p>
+            <AskAssistantButton
+              label="Question sur mon portefeuille"
+              subject="Question sur les retraits & paiements mobile"
+              category="PAIEMENT"
+              variant="outline"
+              size="sm"
+              className="w-full"
+            />
+          </div>
         </div>
       </div>
     </div>

@@ -8,6 +8,7 @@ import { createClient } from '@/lib/supabase/client';
 import { useRoleStore } from '@/stores/role.store';
 import { nestFetch } from '@/lib/nestjs/api-client';
 import { NEST_API } from '@/lib/nestjs/endpoints';
+import { translateApiError } from '@/lib/errors/translate';
 
 const CONFIRMATION = 'SUPPRIMER';
 
@@ -105,11 +106,8 @@ export function OwnerActionsCard({
       /* `catch {}` avalait le message serveur : un refus légitime du type
          « suppression impossible, un séjour est en cours » devenait un
          message générique, sans indiquer quoi faire. */
-      setDeleteError(
-        err instanceof Error && err.message
-          ? err.message
-          : 'La suppression n’a pas pu aboutir. Réessayez dans un instant.',
-      );
+      const translated = translateApiError(err);
+      setDeleteError(translated.message);
       setIsDeleting(false);
     }
   }, [canDelete, clearSession, supabase, router]);

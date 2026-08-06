@@ -161,8 +161,6 @@ export function PrivacyPage() {
 
   return (
     <div className="bg-background min-h-screen text-foreground font-sans">
-      <Navbar />
-
       {/* ══ Hero ══════════════════════════════════════════════════════════════ */}
       <div className="relative overflow-hidden bg-forest-950 text-white">
         <div className="absolute inset-0 pointer-events-none">
@@ -347,9 +345,8 @@ export function PrivacyPage() {
             </div>
 
             <InfoBox type="warning">
-              Nous ne collectons jamais vos numéros de carte bancaire complets — ceux-ci sont
-              traités directement par nos prestataires de paiement certifiés PCI-DSS
-              (Stripe, PayDunya). {BRAND.name} ne stocke que des tokens de référence.
+              Toutes les transactions de paiement sont sécurisées et exécutées via nos partenaires
+              de paiement mobile agréés (Wave, Orange Money). {BRAND.name} ne conserve aucun code PIN ni identifiant bancaire.
             </InfoBox>
 
             <Divider />
@@ -420,7 +417,7 @@ export function PrivacyPage() {
             </Para>
             <div className="grid sm:grid-cols-2 gap-3 my-5">
               {[
-                { label: 'Prestataires de paiement', desc: 'Wave, Orange Money, PayDunya, Stripe — pour traiter vos transactions de manière sécurisée.' },
+                { label: 'Prestataires de paiement', desc: 'Wave, Orange Money — pour traiter vos transactions financières de manière 100% sécurisée.' },
                 { label: 'Hébergement & cloud',       desc: 'Supabase (PostgreSQL), Cloudinary (médias) — hébergés en Europe ou en Afrique.' },
                 { label: 'Service client',             desc: 'Notre équipe support accède à vos données uniquement pour résoudre vos demandes.' },
                 { label: 'Autorités légales',          desc: 'Uniquement sur réquisition judiciaire ou obligation légale dûment établie.' },
@@ -627,8 +624,6 @@ export function PrivacyPage() {
           <ArrowUp className="w-5 h-5" />
         </button>
       )}
-
-      <Footer />
     </div>
   );
 }

@@ -102,6 +102,8 @@ model Utilisateur {
   pushSubscriptions        PushSubscription[]
   compteursFautes          CompteurFaute[]
   notificationLogs         NotificationLog[]
+  ticketsSupport           TicketSupport[]
+  messagesTicket           TicketMessage[]
 
   @@index([userId])
   @@index([statutKyc])
@@ -925,3 +927,75 @@ enum StatutNotification {
   ENVOYE
   ECHOUE
 }
+
+// =============================================================================
+// SUPPORT & TICKETS (Assistant Virtuel Klef & Admin)
+// =============================================================================
+
+model TicketSupport {
+  id            String          @id @default(uuid())
+  code          String          @unique // ex: TCK-83921
+  utilisateurId String
+  reservationId String?
+  logementId    String?
+
+  sujet         String
+  categorie     CategorieTicket @default(AUTRE)
+  priorite      PrioriteTicket  @default(MOYENNE)
+  statut        StatutTicket    @default(OUVERT)
+
+  creeLe        DateTime        @default(now())
+  misAJourLe    DateTime        @updatedAt
+  resoluLe      DateTime?
+
+  utilisateur   Utilisateur     @relation(fields: [utilisateurId], references: [id], onDelete: Cascade)
+  messages      TicketMessage[]
+
+  @@index([utilisateurId])
+  @@index([statut])
+  @@index([categorie])
+  @@index([priorite])
+  @@index([creeLe(sort: Desc)])
+  @@map("tickets_support")
+}
+
+model TicketMessage {
+  id        String        @id @default(uuid())
+  ticketId  String
+  auteurId  String
+  estAdmin  Boolean       @default(false)
+  message   String
+  creeLe    DateTime      @default(now())
+
+  ticket    TicketSupport @relation(fields: [ticketId], references: [id], onDelete: Cascade)
+  auteur    Utilisateur   @relation(fields: [auteurId], references: [id], onDelete: Cascade)
+
+  @@index([ticketId])
+  @@index([auteurId])
+  @@map("ticket_messages")
+}
+
+enum StatutTicket {
+  OUVERT
+  EN_COURS
+  EN_ATTENTE_UTILISATEUR
+  RESOLU
+  FERME
+}
+
+enum PrioriteTicket {
+  BASSE
+  MOYENNE
+  HAUTE
+  URGENTE
+}
+
+enum CategorieTicket {
+  RESERVATION
+  PAIEMENT
+  KYC
+  LOGEMENT
+  LITIGE
+  AUTRE
+}
+
