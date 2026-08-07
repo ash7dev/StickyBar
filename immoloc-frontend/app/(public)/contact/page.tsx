@@ -112,7 +112,7 @@ export default function ContactPage() {
       <section className="-mt-20 bg-[radial-gradient(70%_60%_at_50%_0%,#0F503D_0%,rgba(15,80,61,0)_70%),linear-gradient(180deg,#072A20_0%,#041912_100%)] pb-16 pt-32 text-white sm:pt-36">
         <div className="mx-auto max-w-[1120px] px-6 text-center">
           <h1 className="mx-auto max-w-3xl font-display text-[clamp(2rem,5vw,3.25rem)] font-semibold leading-[1.06] tracking-[-0.03em] text-neutral-50">
-            Nous joindre<span className="text-lime-400">.</span>
+            Nous joindre<span className="text-on-inverse-marker">.</span>
           </h1>
           <p className="mx-auto mt-4 max-w-2xl text-base leading-relaxed text-forest-200 sm:text-lg">
             WhatsApp est le plus rapide. Pour un problème pendant un séjour,
@@ -165,9 +165,9 @@ export default function ContactPage() {
             href={`https://wa.me/${CONTACT.whatsapp}`}
             target="_blank"
             rel="noopener noreferrer"
-            className="group flex flex-col rounded-card border border-lime-400/40 bg-lime-50 p-6 transition-transform duration-200 hover:-translate-y-0.5 motion-reduce:transform-none"
+            className="group flex flex-col rounded-card border border-action/40 bg-lime-50 p-6 transition-transform duration-200 hover:-translate-y-0.5 motion-reduce:transform-none"
           >
-            <span className="mb-4 grid h-11 w-11 place-items-center rounded-inner bg-lime-400/25 text-forest-800">
+            <span className="mb-4 grid h-11 w-11 place-items-center rounded-inner bg-marker-bg text-forest-800">
               <MessageCircle className="h-5 w-5" aria-hidden="true" />
             </span>
             <h2 className="font-display text-lg font-semibold tracking-[-0.015em] text-forest-900">

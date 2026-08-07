@@ -152,7 +152,7 @@ export function ListingDetailSpec({ listing }: ListingDetailSpecProps) {
         </p>
 
         <div className="mt-3 flex items-start gap-3.5 rounded-card border border-forest-200/70 bg-forest-50/80 p-4 shadow-xs">
-          <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-inner bg-forest-700 text-lime-300 shadow-xs">
+          <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-inner bg-forest-700 text-on-inverse-marker shadow-xs">
             <ShieldCheck className="h-5 w-5" aria-hidden="true" />
           </div>
           <div className="text-xs leading-relaxed text-forest-950">
@@ -256,7 +256,7 @@ export function ListingDetailSpec({ listing }: ListingDetailSpecProps) {
                           <strong className="font-bold tabular-nums text-forest-950">
                             {pxReduit.toLocaleString('fr-FR')} FCFA
                           </strong>{' '}
-                          <span className="inline-flex items-center gap-0.5 rounded-pill bg-lime-400 text-forest-950 px-1.5 py-0.2 text-[9px] font-black uppercase">
+                          <span className="inline-flex items-center gap-0.5 rounded-pill bg-action text-on-action px-1.5 py-0.2 text-[9px] font-black uppercase">
                             ⚡ -15%
                           </span>
                         </>
@@ -428,7 +428,7 @@ export function ListingDetailSpec({ listing }: ListingDetailSpecProps) {
                   <Image src={proprietaire.avatarUrl} alt="" fill sizes="56px" className="object-cover" />
                 </div>
               ) : (
-                <span className="grid h-14 w-14 shrink-0 place-items-center rounded-pill bg-forest-100 text-lg font-semibold text-forest-700 group-hover/host:bg-forest-900 group-hover/host:text-lime-300 transition-colors">
+                <span className="grid h-14 w-14 shrink-0 place-items-center rounded-pill bg-forest-100 text-lg font-semibold text-forest-700 group-hover/host:bg-forest-900 group-hover/host:text-on-inverse-marker transition-colors">
                   {hostInitials}
                 </span>
               )}

@@ -162,7 +162,7 @@ function Lightbox({
       {/* Compteur + catégorie */}
       <div className="absolute top-4 left-1/2 -translate-x-1/2 z-10 flex items-center gap-2">
         <span className="flex items-center gap-1.5 px-3 py-1.5 rounded-inner bg-forest-900 border border-forest-800 text-xs font-bold text-white backdrop-blur-sm">
-          <span className="text-lime-400">{cfg.icon}</span>
+          <span className="text-on-inverse-marker">{cfg.icon}</span>
           {cfg.label}
         </span>
         <span className="px-3 py-1.5 rounded-inner bg-forest-900 border border-forest-800 text-xs font-bold text-forest-300 backdrop-blur-sm tabular-nums">
@@ -211,7 +211,7 @@ function Lightbox({
               onClick={(e) => { e.stopPropagation(); setCurrent(i); }}
               className={cn(
                 'relative shrink-0 w-10 h-10 rounded-inner overflow-hidden border-2 transition-all duration-150',
-                i === current ? 'border-lime-400 scale-110 shadow-md' : 'border-transparent opacity-50 hover:opacity-80',
+                i === current ? 'border-action scale-110 shadow-md' : 'border-transparent opacity-50 hover:opacity-80',
               )}
             >
               <Image src={p.url} alt="" fill className="object-cover" />
@@ -267,8 +267,8 @@ export function CheckinGalleryModal({ photos, onClose }: Props) {
           <div className="shrink-0 px-6 pt-6 pb-5 border-b border-forest-800/80">
             <div className="flex items-start justify-between gap-4">
               <div className="flex items-center gap-3.5">
-                <div className="w-11 h-11 rounded-inner bg-forest-900 border border-lime-400/20 flex items-center justify-center shrink-0">
-                  <Eye className="w-5 h-5 text-lime-400" />
+                <div className="w-11 h-11 rounded-inner bg-forest-900 border border-action-edge flex items-center justify-center shrink-0">
+                  <Eye className="w-5 h-5 text-on-inverse-marker" />
                 </div>
                 <div>
                   <h2 className="font-display text-base font-bold text-white leading-tight">
@@ -288,13 +288,13 @@ export function CheckinGalleryModal({ photos, onClose }: Props) {
             </div>
 
             {/* Bandeau de vérification */}
-            <div className="mt-4 flex items-start gap-3 bg-lime-400/10 border border-lime-400/20 rounded-inner px-4 py-3.5">
-              <ShieldCheck className="w-4 h-4 text-lime-400 shrink-0 mt-0.5" />
+            <div className="mt-4 flex items-start gap-3 bg-marker-bg border border-action-edge rounded-inner px-4 py-3.5">
+              <ShieldCheck className="w-4 h-4 text-on-inverse-marker shrink-0 mt-0.5" />
               <div>
                 <p className="text-xs font-bold text-lime-200 leading-snug">
                   Vérifiez chaque pièce attentivement
                 </p>
-                <p className="text-[11px] text-lime-300/80 mt-0.5 leading-relaxed">
+                <p className="text-[11px] text-on-inverse-marker/80 mt-0.5 leading-relaxed">
                   Ces photos font foi en cas de litige. Si vous constatez une non-conformité,
                   refusez le check-in depuis l&apos;écran précédent.
                 </p>
@@ -310,7 +310,7 @@ export function CheckinGalleryModal({ photos, onClose }: Props) {
                 <div key={categorie}>
                   {/* Titre section */}
                   <div className="flex items-center gap-2 mb-3">
-                    <span className="flex items-center justify-center w-6 h-6 rounded-inner bg-forest-900 border border-forest-800 text-lime-400">
+                    <span className="flex items-center justify-center w-6 h-6 rounded-inner bg-forest-900 border border-forest-800 text-on-inverse-marker">
                       {cfg.icon}
                     </span>
                     <span className="font-display text-xs font-bold text-white">{cfg.label}</span>
@@ -333,7 +333,7 @@ export function CheckinGalleryModal({ photos, onClose }: Props) {
                         onClick={() => setLightboxIndex(globalIndex(categorie, localIdx))}
                         className={cn(
                           'group relative overflow-hidden rounded-inner bg-forest-900 border border-forest-800',
-                          'hover:border-lime-400 hover:shadow-lg transition-all duration-200',
+                          'hover:border-action hover:shadow-lg transition-all duration-200',
                           catPhotos.length === 1 ? 'aspect-video' : 'aspect-square',
                         )}
                       >
@@ -346,8 +346,8 @@ export function CheckinGalleryModal({ photos, onClose }: Props) {
                         />
                         {/* Overlay hover */}
                         <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-all duration-200 flex items-center justify-center">
-                          <div className="w-9 h-9 rounded-inner bg-forest-950/80 backdrop-blur-sm border border-lime-400/30 flex items-center justify-center">
-                            <ZoomIn className="w-4 h-4 text-lime-400" />
+                          <div className="w-9 h-9 rounded-inner bg-forest-950/80 backdrop-blur-sm border border-action-edge flex items-center justify-center">
+                            <ZoomIn className="w-4 h-4 text-on-inverse-marker" />
                           </div>
                         </div>
                       </button>
@@ -361,7 +361,7 @@ export function CheckinGalleryModal({ photos, onClose }: Props) {
           {/* ── Pied de page ── */}
           <div className="shrink-0 px-6 pb-6 pt-4 border-t border-forest-800/80">
             <div className="flex items-center gap-2.5 bg-forest-900/60 border border-forest-800/80 rounded-inner px-4 py-3">
-              <Camera className="w-4 h-4 text-lime-400 shrink-0" />
+              <Camera className="w-4 h-4 text-on-inverse-marker shrink-0" />
               <p className="text-[11px] text-forest-300 leading-relaxed">
                 Appuyez sur une photo pour l&apos;agrandir · Naviguez avec les flèches ← →
               </p>

@@ -290,14 +290,14 @@ export function KlefAssistantWidget() {
           {/* Header de l'assistant */}
           <div className="flex items-center justify-between border-b border-border bg-forest-950 px-4 py-3.5 text-neutral-0">
             <div className="flex items-center gap-2.5">
-              <div className="flex h-9 w-9 items-center justify-center rounded-pill bg-lime-400 text-forest-950 font-bold shadow-sm">
+              <div className="flex h-9 w-9 items-center justify-center rounded-pill bg-action text-on-action font-bold shadow-sm">
                 <Sparkles className="h-5 w-5" />
               </div>
               <div>
                 <h3 className="font-display text-sm font-semibold leading-none text-neutral-0">
                   Assistant Klef
                 </h3>
-                <p className="mt-1 text-[11px] text-lime-300">
+                <p className="mt-1 text-[11px] text-on-inverse-marker">
                   {activeRole === 'PROPRIETAIRE' ? 'Hôte Privilégié · Support 24/7' : 'Voyageur · Aide Instantanée'}
                 </p>
               </div>
@@ -443,7 +443,7 @@ export function KlefAssistantWidget() {
                       </>
                     ) : (
                       <>
-                        <Send className="h-3.5 w-3.5 text-lime-400" /> Transmettre à l&apos;équipe Klef
+                        <Send className="h-3.5 w-3.5 text-on-inverse-marker" /> Transmettre à l&apos;équipe Klef
                       </>
                     )}
                   </button>
@@ -472,7 +472,7 @@ export function KlefAssistantWidget() {
                         <Link
                           href={selectedFAQ.actionUrl}
                           onClick={() => store.closeAssistant()}
-                          className="inline-flex items-center gap-1.5 rounded-pill bg-forest-950 px-4 py-2 text-xs font-semibold text-lime-400 transition-colors hover:bg-forest-900"
+                          className="inline-flex items-center gap-1.5 rounded-pill bg-forest-950 px-4 py-2 text-xs font-semibold text-on-inverse-marker transition-colors hover:bg-forest-900"
                         >
                           <span>{selectedFAQ.actionLabel}</span>
                           <ExternalLink className="h-3.5 w-3.5" />
@@ -481,7 +481,7 @@ export function KlefAssistantWidget() {
                     )}
                   </div>
 
-                  <div className="rounded-card border border-lime-400/30 bg-lime-400/10 p-3.5 text-center space-y-2">
+                  <div className="rounded-card border border-action-edge bg-marker-bg p-3.5 text-center space-y-2">
                     <p className="text-xs text-foreground font-medium">
                       Cette réponse ne résout pas totalement votre problème ?
                     </p>
@@ -490,7 +490,7 @@ export function KlefAssistantWidget() {
                       onClick={() => setShowCreateForm(true)}
                       className="inline-flex items-center gap-1.5 rounded-pill bg-forest-950 px-4 py-2 text-xs font-semibold text-neutral-0 transition-colors hover:bg-forest-900"
                     >
-                      <PlusCircle className="h-3.5 w-3.5 text-lime-400" /> Transmettre un ticket de support
+                      <PlusCircle className="h-3.5 w-3.5 text-on-inverse-marker" /> Transmettre un ticket de support
                     </button>
                   </div>
                 </div>
@@ -516,7 +516,7 @@ export function KlefAssistantWidget() {
                       className={cn(
                         'rounded-pill px-2.5 py-1 text-[11px] font-semibold transition-all',
                         selectedCategory === 'ALL'
-                          ? 'bg-forest-950 text-lime-400'
+                          ? 'bg-forest-950 text-on-inverse-marker'
                           : 'bg-background-alt text-foreground-muted hover:bg-border',
                       )}
                     >
@@ -528,7 +528,7 @@ export function KlefAssistantWidget() {
                       className={cn(
                         'inline-flex items-center gap-1 rounded-pill px-2.5 py-1 text-[11px] font-semibold transition-all',
                         selectedCategory === 'PAIEMENT'
-                          ? 'bg-forest-950 text-lime-400'
+                          ? 'bg-forest-950 text-on-inverse-marker'
                           : 'bg-background-alt text-foreground-muted hover:bg-border',
                       )}
                     >
@@ -540,7 +540,7 @@ export function KlefAssistantWidget() {
                       className={cn(
                         'inline-flex items-center gap-1 rounded-pill px-2.5 py-1 text-[11px] font-semibold transition-all',
                         selectedCategory === 'HOTE'
-                          ? 'bg-forest-950 text-lime-400'
+                          ? 'bg-forest-950 text-on-inverse-marker'
                           : 'bg-background-alt text-foreground-muted hover:bg-border',
                       )}
                     >
@@ -552,7 +552,7 @@ export function KlefAssistantWidget() {
                       className={cn(
                         'inline-flex items-center gap-1 rounded-pill px-2.5 py-1 text-[11px] font-semibold transition-all',
                         selectedCategory === 'KYC'
-                          ? 'bg-forest-950 text-lime-400'
+                          ? 'bg-forest-950 text-on-inverse-marker'
                           : 'bg-background-alt text-foreground-muted hover:bg-border',
                       )}
                     >
@@ -623,7 +623,7 @@ export function KlefAssistantWidget() {
                       <span className="font-mono text-xs font-bold text-forest-700">
                         {selectedTicket.code}
                       </span>
-                      <span className="rounded-pill bg-forest-950 px-2 py-0.5 text-[10px] font-semibold text-lime-400">
+                      <span className="rounded-pill bg-forest-950 px-2 py-0.5 text-[10px] font-semibold text-on-inverse-marker">
                         {selectedTicket.statut}
                       </span>
                     </div>
@@ -666,7 +666,7 @@ export function KlefAssistantWidget() {
                       disabled={isSendingReply || !replyMessage.trim()}
                       className="flex h-9 w-9 items-center justify-center rounded-pill bg-forest-950 text-neutral-0 disabled:opacity-40"
                     >
-                      {isSendingReply ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4 text-lime-400" />}
+                      {isSendingReply ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4 text-on-inverse-marker" />}
                     </button>
                   </form>
                 </div>
@@ -691,7 +691,7 @@ export function KlefAssistantWidget() {
                         }}
                         className="inline-flex items-center gap-1.5 rounded-pill bg-forest-950 px-4 py-2 text-xs font-semibold text-neutral-0"
                       >
-                        <PlusCircle className="h-3.5 w-3.5 text-lime-400" /> Créer un ticket
+                        <PlusCircle className="h-3.5 w-3.5 text-on-inverse-marker" /> Créer un ticket
                       </button>
                     </div>
                   ) : (
@@ -739,8 +739,8 @@ export function KlefAssistantWidget() {
         <div className="relative">
           <MessageSquare className="h-6 w-6 text-neutral-0 transition-transform group-hover:rotate-6" />
           <span className="absolute -top-1 -right-1 flex h-3 w-3">
-            <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-lime-400 opacity-75" />
-            <span className="relative inline-flex h-3 w-3 rounded-full bg-lime-400" />
+            <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-action opacity-75" />
+            <span className="relative inline-flex h-3 w-3 rounded-full bg-action" />
           </span>
         </div>
       </button>

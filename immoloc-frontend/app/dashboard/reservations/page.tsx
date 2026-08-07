@@ -149,7 +149,7 @@ function ReservationsContent() {
             className={cn(
               'flex items-center gap-2 px-3 py-1.5 rounded-pill text-xs font-extrabold transition-all',
               viewMode === 'list'
-                ? 'bg-forest-950 text-lime-400 shadow-md'
+                ? 'bg-forest-950 text-on-inverse-marker shadow-md'
                 : 'text-foreground-muted hover:text-forest-950',
             )}
           >
@@ -164,7 +164,7 @@ function ReservationsContent() {
             className={cn(
               'flex items-center gap-2 px-3 py-1.5 rounded-pill text-xs font-extrabold transition-all',
               viewMode === 'grid'
-                ? 'bg-forest-950 text-lime-400 shadow-md'
+                ? 'bg-forest-950 text-on-inverse-marker shadow-md'
                 : 'text-foreground-muted hover:text-forest-950',
             )}
           >
@@ -192,7 +192,7 @@ function ReservationsContent() {
               className={cn(
                 'inline-flex items-center gap-2 px-4 py-2 rounded-pill text-xs font-extrabold shrink-0 transition-all border shadow-2xs cursor-pointer',
                 isActive
-                  ? 'bg-forest-950 text-lime-400 border-forest-950 shadow-md'
+                  ? 'bg-forest-950 text-on-inverse-marker border-forest-950 shadow-md'
                   : 'bg-background-card hover:bg-background-alt text-forest-950 border-border/80',
               )}
             >
@@ -202,7 +202,7 @@ function ReservationsContent() {
                 className={cn(
                   'px-2 py-0.5 rounded-pill text-[10px] font-black',
                   isActive
-                    ? 'bg-lime-400 text-forest-950'
+                    ? 'bg-action text-on-action'
                     : 'bg-background-alt text-forest-950 border border-border/60',
                 )}
               >

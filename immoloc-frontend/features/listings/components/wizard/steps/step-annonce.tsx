@@ -151,7 +151,7 @@ export function StepAnnonce({ onNext, submitRef }: Props) {
                     aria-describedby={errors.prixBase ? `${ids.prix}-error` : undefined}
                     className="w-full bg-transparent font-display text-3xl font-semibold tabular-nums text-neutral-50 outline-none placeholder:text-forest-300"
                   />
-                  <span className="shrink-0 rounded-pill bg-lime-400/15 px-3 py-1.5 text-xs font-semibold text-lime-400">
+                  <span className="shrink-0 rounded-pill bg-marker-bg px-3 py-1.5 text-xs font-semibold text-on-inverse-marker">
                     FCFA / nuit
                   </span>
                 </div>
@@ -233,7 +233,7 @@ export function StepAnnonce({ onNext, submitRef }: Props) {
                     className={cn(
                       'rounded-pill border py-2.5 text-xs font-medium transition-colors duration-150',
                       v === n
-                        // Etait bg-forest-600 text-lime-300 : accent sur du
+                        // Etait bg-forest-600 text-on-inverse-marker : accent sur du
                         // texte, sur six pastilles.
                         ? 'border-forest-600 bg-forest-100 text-forest-800'
                         : 'border-border bg-background-card text-foreground-muted hover:border-border-hover hover:text-foreground',
@@ -258,10 +258,10 @@ export function StepAnnonce({ onNext, submitRef }: Props) {
           name="isInstantBooking"
           control={control}
           render={({ field }) => (
-            <div className="flex items-center justify-between rounded-inner border border-forest-500/20 bg-lime-400/[0.04] p-4">
+            <div className="flex items-center justify-between rounded-inner border border-forest-500/20 bg-action/[0.04] p-4">
               <div className="space-y-1">
                 <div className="flex items-center gap-2">
-                  <span className="inline-flex items-center gap-1 rounded-pill bg-lime-400/20 px-2.5 py-0.5 text-[0.6875rem] font-bold text-forest-900">
+                  <span className="inline-flex items-center gap-1 rounded-pill bg-marker-bg px-2.5 py-0.5 text-[0.6875rem] font-bold text-forest-900">
                     ⚡ Fast Booking
                   </span>
                   <p className="text-sm font-semibold text-forest-900">Activer la réservation instantanée</p>

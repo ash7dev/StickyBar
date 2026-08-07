@@ -75,10 +75,27 @@ export function ListingLocationMap({
 
       const L = (await import('leaflet')).default;
 
+      // Correctif défensif contre l'erreur Leaflet `_leaflet_pos` lors des transitions de zoom pendant un unmount
+      if (L?.DomUtil && typeof L.DomUtil.getPosition === 'function') {
+        const origGetPosition = L.DomUtil.getPosition;
+        L.DomUtil.getPosition = function (el: any) {
+          if (!el) return new L.Point(0, 0);
+          try {
+            return origGetPosition.call(L.DomUtil, el);
+          } catch {
+            return new L.Point(0, 0);
+          }
+        };
+      }
+
       if (!isMounted || !mapRef.current) return;
 
       if (leafletMapRef.current) {
-        leafletMapRef.current.remove();
+        try {
+          leafletMapRef.current.off();
+          leafletMapRef.current.remove();
+        } catch {}
+        leafletMapRef.current = null;
       }
 
       // Initialiser la carte centrée sur la position
@@ -134,7 +151,10 @@ export function ListingLocationMap({
     return () => {
       isMounted = false;
       if (leafletMapRef.current) {
-        leafletMapRef.current.remove();
+        try {
+          leafletMapRef.current.off();
+          leafletMapRef.current.remove();
+        } catch {}
         leafletMapRef.current = null;
       }
     };
@@ -152,7 +172,7 @@ export function ListingLocationMap({
             Où se situe le logement
           </h2>
           <p className="mt-1 text-sm font-medium text-foreground-muted flex items-center gap-1.5">
-            <MapPin className="w-4 h-4 text-forest-600 dark:text-lime-400 shrink-0" />
+            <MapPin className="w-4 h-4 text-forest-600 dark:text-on-inverse-marker shrink-0" />
             <span>{locationTitle}</span>
           </p>
         </div>
@@ -164,7 +184,7 @@ export function ListingLocationMap({
           rel="noopener noreferrer"
           className="inline-flex items-center gap-2 px-4 py-2 rounded-pill border border-border bg-background-card hover:bg-background-alt text-xs font-semibold text-foreground transition-all shadow-xs shrink-0 self-start sm:self-auto"
         >
-          <Navigation className="w-3.5 h-3.5 text-forest-600 dark:text-lime-400" />
+          <Navigation className="w-3.5 h-3.5 text-forest-600 dark:text-on-inverse-marker" />
           <span>Ouvrir dans Google Maps</span>
           <ExternalLink className="w-3 h-3 text-foreground-faint" />
         </a>
@@ -183,7 +203,7 @@ export function ListingLocationMap({
 
       {/* Note de confidentialité style Airbnb */}
       <div className="flex items-start gap-3 p-3.5 rounded-inner bg-background-alt border border-border text-xs text-foreground-muted">
-        <ShieldCheck className="w-4 h-4 text-forest-600 dark:text-lime-400 shrink-0 mt-0.5" />
+        <ShieldCheck className="w-4 h-4 text-forest-600 dark:text-on-inverse-marker shrink-0 mt-0.5" />
         <p className="leading-relaxed">
           <strong className="font-semibold text-foreground">Confidentialité & Sécurité :</strong> L'emplacement exact dans la zone vous sera automatiquement communiqué avec les instructions d'accès dès la confirmation de votre réservation.
         </p>

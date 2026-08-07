@@ -97,7 +97,7 @@ export function QuickActionsSidebar({ activeListings = 0, supportWhatsapp }: Pro
               <span className="flex min-w-0 items-center gap-3">
                 <span className={cn(
                   'grid h-9 w-9 shrink-0 place-items-center rounded-inner',
-                  primary ? 'bg-lime-400/25 text-forest-800' : 'bg-neutral-100 text-forest-700',
+                  primary ? 'bg-marker-bg text-forest-800' : 'bg-neutral-100 text-forest-700',
                 )}>
                   <Icon className="h-4 w-4" aria-hidden="true" />
                 </span>
@@ -119,7 +119,7 @@ export function QuickActionsSidebar({ activeListings = 0, supportWhatsapp }: Pro
             primary
               // Une seule action est mise en avant, et seulement quand elle
               // est la bonne : publier, quand il n'y a encore aucun bien.
-              ? 'border-lime-400/40 bg-lime-50 hover:bg-lime-100'
+              ? 'border-action/40 bg-lime-50 hover:bg-lime-100'
               : 'border-border bg-background-alt hover:bg-background-card',
           );
 

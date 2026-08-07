@@ -125,9 +125,9 @@ export function MobileKpiGrid({ stats, revenuePeriod = 'Cumul' }: MobileKpiGridP
                 'grid h-9 w-9 shrink-0 place-items-center rounded-inner transition-colors',
                 kpi.alert
                   ? 'bg-amber-500/10 text-amber-600 border border-amber-500/20'
-                  : 'bg-forest-950 text-lime-400 border border-forest-800 group-hover:bg-forest-900',
+                  : 'bg-forest-950 text-on-inverse-marker border border-forest-800 group-hover:bg-forest-900',
               )}>
-                <kpi.icon className={cn("h-4.5 w-4.5 stroke-[2.25px]", kpi.alert ? "text-amber-600" : "text-lime-400")} aria-hidden="true" />
+                <kpi.icon className={cn("h-4.5 w-4.5 stroke-[2.25px]", kpi.alert ? "text-amber-600" : "text-on-inverse-marker")} aria-hidden="true" />
               </span>
               <ArrowUpRight
                 className="h-4 w-4 text-foreground-faint transition-colors group-hover:text-forest-600"

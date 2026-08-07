@@ -100,7 +100,7 @@ export function ListingCard({
           {/* Badges sur la photo */}
           <div className="absolute left-3 top-3 z-20 flex flex-col gap-1.5 items-start">
             {isInstantBooking && (
-              <span className="inline-flex items-center gap-1 rounded-pill bg-lime-400 px-2.5 py-0.5 text-[0.6875rem] font-extrabold text-forest-950 shadow-sm">
+              <span className="inline-flex items-center gap-1 rounded-pill bg-action px-2.5 py-0.5 text-[0.6875rem] font-extrabold text-on-action shadow-sm">
                 <Zap className="h-3 w-3 fill-forest-950" aria-hidden="true" />
                 Instantané
               </span>
@@ -121,7 +121,7 @@ export function ListingCard({
                 }}
                 className="inline-flex items-center gap-1.5 rounded-pill bg-black/70 px-2.5 py-1 text-[0.6875rem] font-bold text-white backdrop-blur-md hover:bg-black/90 transition-colors z-30 shadow-md"
               >
-                <Video className="h-3.5 w-3.5 text-lime-400" aria-hidden="true" />
+                <Video className="h-3.5 w-3.5 text-on-inverse-marker" aria-hidden="true" />
                 Visite 360°
               </button>
             )}

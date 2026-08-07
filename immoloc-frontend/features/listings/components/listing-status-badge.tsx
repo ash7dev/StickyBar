@@ -27,7 +27,7 @@ const STATUT_CONFIG: Record<
   PUBLISHED: {
     label: 'Publiée',
     className:
-      'bg-lime-400 text-forest-950 border-lime-500/40 font-black shadow-sm tracking-wide',
+      'bg-action text-on-action border-action-edge font-black shadow-sm tracking-wide',
     dotClass: 'bg-forest-950 animate-pulse',
   },
   PAUSED: {

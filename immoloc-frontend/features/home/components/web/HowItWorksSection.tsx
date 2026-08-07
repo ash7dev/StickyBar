@@ -90,7 +90,7 @@ export function HowItWorksSection() {
                 <span className={cn(
                   'grid h-10 w-10 shrink-0 place-items-center rounded-inner',
                   isKey
-                    ? 'border border-lime-400/20 bg-lime-400/15 text-lime-400'
+                    ? 'border border-action-edge bg-marker-bg text-on-inverse-marker'
                     : 'bg-forest-100 text-forest-800',
                 )}>
                   <Icon className="h-[1.125rem] w-[1.125rem]" aria-hidden="true" />
@@ -128,7 +128,7 @@ export function HowItWorksSection() {
               de la page. */}
           <Link
             href="/explorer"
-            className="inline-flex items-center gap-2 rounded-pill border border-[rgba(122,158,26,0.30)] bg-lime-400 px-7 py-3.5 text-base font-semibold text-forest-800 shadow-[0_6px_20px_rgba(155,194,44,0.30)] transition-colors duration-150 hover:bg-lime-300"
+            className="inline-flex items-center gap-2 rounded-pill border border-action-edge bg-action px-7 py-3.5 text-base font-semibold text-on-action shadow-action transition-colors duration-150 hover:bg-action-hover"
           >
             Voir les logements vérifiés
             <ArrowRight className="h-4 w-4" aria-hidden="true" />

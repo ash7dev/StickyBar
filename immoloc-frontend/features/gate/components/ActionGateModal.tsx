@@ -144,8 +144,8 @@ export function ActionGateModal({ steps, block, onComplete, onCancel }: Props) {
 
               {/* Icon + texte */}
               <div className="flex flex-col items-center gap-3.5 text-center pt-1">
-                <div className="w-14 h-14 rounded-inner bg-forest-950 border border-forest-800 text-lime-400 flex items-center justify-center shrink-0 shadow-xs">
-                  <Icon className="w-7 h-7 text-lime-400" />
+                <div className="w-14 h-14 rounded-inner bg-forest-950 border border-forest-800 text-on-inverse-marker flex items-center justify-center shrink-0 shadow-xs">
+                  <Icon className="w-7 h-7 text-on-inverse-marker" />
                 </div>
                 <div>
                   <h2 className="font-display text-xl font-bold text-foreground">{meta.title}</h2>

@@ -50,7 +50,7 @@ function NavLink({ item, onClose }: { item: NavItem; onClose: () => void }) {
       className={cn(
         'group relative flex items-center gap-3 rounded-inner px-4 py-3 text-sm transition-colors duration-150',
         active
-          /* L'etat actif etait un aplat bg-lime-400 plein. Comme un element
+          /* L'etat actif etait un aplat bg-action plein. Comme un element
              est toujours actif, la barre laterale affichait en permanence un
              gros bloc lime, en plus du badge « Hote » et du bouton de
              bascule, tous deux en forest-950 a texte lime.

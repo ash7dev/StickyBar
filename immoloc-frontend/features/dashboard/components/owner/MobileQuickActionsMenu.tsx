@@ -86,8 +86,8 @@ export function MobileQuickActionsMenu() {
                 className={cn(
                   'w-10 h-10 rounded-full flex items-center justify-center shrink-0 transition-transform duration-200 group-hover:scale-105',
                   action.isPrimary
-                    ? 'bg-lime-400 text-forest-950 font-black'
-                    : 'bg-forest-950 text-lime-400 border border-forest-800'
+                    ? 'bg-action text-on-action font-black'
+                    : 'bg-forest-950 text-on-inverse-marker border border-forest-800'
                 )}
               >
                 <action.icon className="w-5 h-5" />

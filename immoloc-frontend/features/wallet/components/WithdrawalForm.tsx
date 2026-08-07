@@ -107,7 +107,7 @@ export function WithdrawalForm({ soldeDisponible }: Props) {
           {METHODES.map((m) => (
             <label key={m.value} className="cursor-pointer">
               <input type="radio" value={m.value} {...register('methode')} className="sr-only peer" />
-              <span className="flex items-center justify-center gap-2 px-3 py-2.5 rounded-pill border border-border text-xs font-semibold text-foreground-muted peer-checked:bg-forest-950 peer-checked:border-forest-900 peer-checked:text-lime-300 dark:peer-checked:bg-lime-400 dark:peer-checked:text-forest-950 hover:bg-background-alt transition-all">
+              <span className="flex items-center justify-center gap-2 px-3 py-2.5 rounded-pill border border-border text-xs font-semibold text-foreground-muted peer-checked:bg-forest-950 peer-checked:border-forest-900 peer-checked:text-on-inverse-marker dark:peer-checked:bg-action dark:peer-checked:text-on-action hover:bg-background-alt transition-all">
                 <Smartphone className="w-3.5 h-3.5 opacity-70" />
                 {m.label}
               </span>

@@ -182,8 +182,8 @@ export function FilterBar({ filters }: FilterBarProps) {
           
           {/* 0. BOUTON GPS AUTOUR DE MOI */}
           {filters.lat !== undefined && filters.lng !== undefined ? (
-            <span className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full bg-forest-950 text-lime-300 text-xs font-bold shadow-xs shrink-0 animate-in fade-in">
-              <Compass className="w-3.5 h-3.5 text-lime-300 animate-spin" style={{ animationDuration: '4s' }} />
+            <span className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full bg-forest-950 text-on-inverse-marker text-xs font-bold shadow-xs shrink-0 animate-in fade-in">
+              <Compass className="w-3.5 h-3.5 text-on-inverse-marker animate-spin" style={{ animationDuration: '4s' }} />
               <span>Autour de vous (GPS)</span>
               <button
                 onClick={() => updateFilters({ lat: null, lng: null, rayon: null })}
@@ -214,8 +214,8 @@ export function FilterBar({ filters }: FilterBarProps) {
             className={cn(
               'inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full text-xs transition-all shadow-xs shrink-0 active:scale-95',
               filters.derniereMinute
-                ? 'bg-lime-400 text-forest-950 border border-lime-400 font-black shadow-sm'
-                : 'border border-lime-500/40 bg-lime-50/60 hover:bg-lime-100 text-forest-950 font-bold'
+                ? 'bg-action text-on-action border border-action font-black shadow-sm'
+                : 'border border-action-edge bg-lime-50/60 hover:bg-lime-100 text-forest-950 font-bold'
             )}
           >
             <Zap className={cn('w-3.5 h-3.5', filters.derniereMinute ? 'text-forest-950 fill-forest-950' : 'text-forest-900')} />
@@ -227,8 +227,8 @@ export function FilterBar({ filters }: FilterBarProps) {
 
           {/* 1. PASTILLE VILLE (Si active : Saly ✕) */}
           {filters.ville ? (
-            <span className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full bg-forest-950 text-lime-300 text-xs font-bold shadow-xs shrink-0 animate-in fade-in">
-              <MapPin className="w-3.5 h-3.5 text-lime-300" />
+            <span className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full bg-forest-950 text-on-inverse-marker text-xs font-bold shadow-xs shrink-0 animate-in fade-in">
+              <MapPin className="w-3.5 h-3.5 text-on-inverse-marker" />
               {filters.ville}
               <button
                 onClick={() => removeFilter('ville')}
@@ -254,8 +254,8 @@ export function FilterBar({ filters }: FilterBarProps) {
 
           {/* 2. PASTILLE DATES (Si actives : 12-15 août ✕) */}
           {filters.arrivee && filters.depart ? (
-            <span className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full bg-forest-950 text-lime-300 text-xs font-bold shadow-xs shrink-0 animate-in fade-in">
-              <CalendarDays className="w-3.5 h-3.5 text-lime-300" />
+            <span className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full bg-forest-950 text-on-inverse-marker text-xs font-bold shadow-xs shrink-0 animate-in fade-in">
+              <CalendarDays className="w-3.5 h-3.5 text-on-inverse-marker" />
               {new Date(filters.arrivee).toLocaleDateString('fr-FR', { day: 'numeric', month: 'short' })} – {new Date(filters.depart).toLocaleDateString('fr-FR', { day: 'numeric', month: 'short' })}
               <button
                 onClick={() => removeFilter('dates')}
@@ -281,8 +281,8 @@ export function FilterBar({ filters }: FilterBarProps) {
 
           {/* 3. PASTILLE VOYAGEURS (Si > 1 : 4 voyageurs ✕) */}
           {filters.voyageurs && filters.voyageurs > 1 ? (
-            <span className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full bg-forest-950 text-lime-300 text-xs font-bold shadow-xs shrink-0 animate-in fade-in">
-              <Users className="w-3.5 h-3.5 text-lime-300" />
+            <span className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full bg-forest-950 text-on-inverse-marker text-xs font-bold shadow-xs shrink-0 animate-in fade-in">
+              <Users className="w-3.5 h-3.5 text-on-inverse-marker" />
               {filters.voyageurs} voyageurs
               <button
                 onClick={() => removeFilter('voyageurs')}
@@ -308,8 +308,8 @@ export function FilterBar({ filters }: FilterBarProps) {
 
           {/* 4. PASTILLE PRIX (Si actif : ≤ 50 000 F ✕) */}
           {filters.max !== undefined || filters.min !== undefined ? (
-            <span className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full bg-forest-950 text-lime-300 text-xs font-bold shadow-xs shrink-0 animate-in fade-in">
-              <Banknote className="w-3.5 h-3.5 text-lime-300" />
+            <span className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full bg-forest-950 text-on-inverse-marker text-xs font-bold shadow-xs shrink-0 animate-in fade-in">
+              <Banknote className="w-3.5 h-3.5 text-on-inverse-marker" />
               {filters.min !== undefined && filters.max !== undefined
                 ? `${filters.min.toLocaleString('fr-FR')} – ${filters.max.toLocaleString('fr-FR')} F`
                 : filters.max !== undefined
@@ -339,8 +339,8 @@ export function FilterBar({ filters }: FilterBarProps) {
 
           {/* 5. PASTILLE TYPE (Si actif : Villa, Appart ✕) */}
           {filters.type && filters.type.length > 0 ? (
-            <span className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full bg-forest-950 text-lime-300 text-xs font-bold shadow-xs shrink-0 animate-in fade-in">
-              <Building2 className="w-3.5 h-3.5 text-lime-300" />
+            <span className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full bg-forest-950 text-on-inverse-marker text-xs font-bold shadow-xs shrink-0 animate-in fade-in">
+              <Building2 className="w-3.5 h-3.5 text-on-inverse-marker" />
               {filters.type.map((t) => t.charAt(0).toUpperCase() + t.slice(1)).join(', ')}
               <button
                 onClick={() => removeFilter('type')}
@@ -366,8 +366,8 @@ export function FilterBar({ filters }: FilterBarProps) {
 
           {/* 5.5. PASTILLE SOUS-TYPE (Si actif : Villa avec piscine ✕) */}
           {filters.sousType && (
-            <span className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full bg-forest-950 text-lime-300 text-xs font-bold shadow-xs shrink-0 animate-in fade-in">
-              <Building2 className="w-3.5 h-3.5 text-lime-300" />
+            <span className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full bg-forest-950 text-on-inverse-marker text-xs font-bold shadow-xs shrink-0 animate-in fade-in">
+              <Building2 className="w-3.5 h-3.5 text-on-inverse-marker" />
               {filters.sousType}
               <button
                 onClick={() => removeFilter('sousType')}
@@ -398,14 +398,14 @@ export function FilterBar({ filters }: FilterBarProps) {
           className={cn(
             'inline-flex items-center gap-2 px-4 py-2 rounded-full text-xs font-bold transition-all shadow-xs active:scale-95 shrink-0',
             activeCount > 0
-              ? 'bg-forest-950 text-lime-300 hover:bg-forest-900 shadow-md'
+              ? 'bg-forest-950 text-on-inverse-marker hover:bg-forest-900 shadow-md'
               : 'bg-background-card border border-border text-foreground hover:border-forest-400'
           )}
         >
           <SlidersHorizontal className="w-4 h-4" />
           <span>Filtres</span>
           {activeCount > 0 && (
-            <span className="w-5 h-5 rounded-full bg-lime-400 text-forest-950 text-[10px] font-black flex items-center justify-center">
+            <span className="w-5 h-5 rounded-full bg-action text-on-action text-[10px] font-black flex items-center justify-center">
               {activeCount}
             </span>
           )}
@@ -476,7 +476,7 @@ export function FilterBar({ filters }: FilterBarProps) {
           </div>
           <button
             onClick={() => setActivePopover(null)}
-            className="w-full py-2 bg-forest-900 text-lime-300 font-bold text-xs rounded-xl shadow-xs"
+            className="w-full py-2 bg-forest-900 text-on-inverse-marker font-bold text-xs rounded-xl shadow-xs"
           >
             Appliquer
           </button>
@@ -621,8 +621,8 @@ export function FilterBar({ filters }: FilterBarProps) {
               {/* 0. GPS Autour de moi */}
               <div className="bg-forest-50/70 border border-forest-100 p-3.5 rounded-2xl flex items-center justify-between gap-3">
                 <div className="flex items-center gap-2.5">
-                  <div className="w-8 h-8 rounded-xl bg-forest-900 text-lime-300 flex items-center justify-center shrink-0">
-                    <Compass className="w-4 h-4 text-lime-300" />
+                  <div className="w-8 h-8 rounded-xl bg-forest-900 text-on-inverse-marker flex items-center justify-center shrink-0">
+                    <Compass className="w-4 h-4 text-on-inverse-marker" />
                   </div>
                   <div>
                     <p className="text-xs font-bold text-forest-950">Autour de vous (GPS)</p>
@@ -634,7 +634,7 @@ export function FilterBar({ filters }: FilterBarProps) {
                   type="button"
                   onClick={handleGpsLocation}
                   disabled={gpsLoading}
-                  className="px-3.5 py-2 bg-forest-900 text-lime-300 text-xs font-extrabold rounded-xl shadow-xs active:scale-95 transition-all flex items-center gap-1.5 shrink-0"
+                  className="px-3.5 py-2 bg-forest-900 text-on-inverse-marker text-xs font-extrabold rounded-xl shadow-xs active:scale-95 transition-all flex items-center gap-1.5 shrink-0"
                 >
                   {gpsLoading ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : 'Activer GPS'}
                 </button>
@@ -654,7 +654,7 @@ export function FilterBar({ filters }: FilterBarProps) {
                       className={cn(
                         'py-2.5 px-3 rounded-xl text-xs font-semibold border transition-all text-center truncate active:scale-95',
                         filters.ville === v
-                          ? 'bg-forest-900 text-lime-300 border-forest-900 font-bold shadow-xs'
+                          ? 'bg-forest-900 text-on-inverse-marker border-forest-900 font-bold shadow-xs'
                           : 'bg-neutral-50 border-border text-foreground hover:bg-neutral-100'
                       )}
                     >
@@ -680,7 +680,7 @@ export function FilterBar({ filters }: FilterBarProps) {
                         className={cn(
                           'py-1.5 px-3 rounded-full text-xs font-semibold border transition-all active:scale-95',
                           isSelected
-                            ? 'bg-forest-950 text-lime-300 border-forest-950 font-bold'
+                            ? 'bg-forest-950 text-on-inverse-marker border-forest-950 font-bold'
                             : 'bg-background-alt border-border text-foreground hover:bg-neutral-100'
                         )}
                       >
@@ -773,7 +773,7 @@ export function FilterBar({ filters }: FilterBarProps) {
                         className={cn(
                           'py-2.5 px-3 rounded-xl text-xs font-semibold border transition-all text-center capitalize active:scale-95',
                           isSelected
-                            ? 'bg-forest-900 text-lime-300 border-forest-900 font-bold shadow-xs'
+                            ? 'bg-forest-900 text-on-inverse-marker border-forest-900 font-bold shadow-xs'
                             : 'bg-neutral-50 border-border text-foreground hover:bg-neutral-100'
                         )}
                       >
@@ -798,7 +798,7 @@ export function FilterBar({ filters }: FilterBarProps) {
                       className={cn(
                         'py-2.5 px-3 rounded-xl text-xs font-semibold border transition-all text-center active:scale-95',
                         filters.max === p.max
-                          ? 'bg-forest-900 text-lime-300 border-forest-900 font-bold shadow-xs'
+                          ? 'bg-forest-900 text-on-inverse-marker border-forest-900 font-bold shadow-xs'
                           : 'bg-neutral-50 border-border text-foreground hover:bg-neutral-100'
                       )}
                     >
@@ -822,7 +822,7 @@ export function FilterBar({ filters }: FilterBarProps) {
               <button
                 type="button"
                 onClick={() => setActivePopover(null)}
-                className="px-6 py-3 bg-forest-900 hover:bg-forest-800 text-lime-300 font-bold text-xs rounded-xl shadow-md transition-all active:scale-95"
+                className="px-6 py-3 bg-forest-900 hover:bg-forest-800 text-on-inverse-marker font-bold text-xs rounded-xl shadow-md transition-all active:scale-95"
               >
                 Afficher les résultats
               </button>

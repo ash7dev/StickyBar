@@ -356,7 +356,7 @@ export function ListingHeader({ listing }: ListingHeaderProps) {
                   className={`relative h-10 w-14 shrink-0 overflow-hidden rounded-inner border-2 transition-all duration-150 ${i === index
                       // L'ambre codé en dur devient lime-400 : la couleur de
                       // marqueur du système sur fond sombre.
-                      ? 'border-lime-400 opacity-100'
+                      ? 'border-action opacity-100'
                       : 'border-transparent opacity-50 hover:opacity-100'
                     }`}
                 >

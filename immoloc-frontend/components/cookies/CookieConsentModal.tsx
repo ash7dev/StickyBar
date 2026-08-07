@@ -88,7 +88,7 @@ export function CookieConsentModal() {
           
           {/* Halo d'ambiance discret */}
           <div className="absolute -top-20 -right-20 w-44 h-44 rounded-full bg-forest-500/10 blur-3xl pointer-events-none" />
-          <div className="absolute -bottom-20 -left-20 w-40 h-40 rounded-full bg-lime-400/10 blur-3xl pointer-events-none" />
+          <div className="absolute -bottom-20 -left-20 w-40 h-40 rounded-full bg-marker-bg blur-3xl pointer-events-none" />
 
           {!showPreferences ? (
             /* ── Vue Principale ── */
@@ -97,7 +97,7 @@ export function CookieConsentModal() {
               {/* Header avec Icône & Titre */}
               <div className="flex items-start justify-between gap-3">
                 <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 sm:w-11 sm:h-11 rounded-inner bg-forest-950 text-lime-400 border border-forest-800 flex items-center justify-center shrink-0 shadow-xs">
+                  <div className="w-10 h-10 sm:w-11 sm:h-11 rounded-inner bg-forest-950 text-on-inverse-marker border border-forest-800 flex items-center justify-center shrink-0 shadow-xs">
                     <Cookie className="w-5 h-5 sm:w-6 sm:h-6" />
                   </div>
                   <div>
@@ -107,7 +107,7 @@ export function CookieConsentModal() {
                     >
                       Respect de votre vie privée
                     </h2>
-                    <span className="inline-flex items-center gap-1 text-[11px] font-semibold text-forest-700 dark:text-lime-400 mt-0.5">
+                    <span className="inline-flex items-center gap-1 text-[11px] font-semibold text-forest-700 dark:text-on-inverse-marker mt-0.5">
                       <ShieldCheck className="w-3.5 h-3.5" />
                       Confidentialité & Transparence
                     </span>
@@ -132,7 +132,7 @@ export function CookieConsentModal() {
                 Nous utilisons des cookies pour personnaliser notre contenu, assurer la sécurité de vos réservations et mesurer l'audience de la plateforme. En poursuivant, vous acceptez notre{' '}
                 <Link
                   href="/confidentialite"
-                  className="font-semibold text-foreground underline decoration-foreground/40 dark:decoration-lime-400/50 underline-offset-4 hover:decoration-foreground dark:hover:decoration-lime-400 transition-all"
+                  className="font-semibold text-foreground underline decoration-foreground/40 dark:decoration-action/50 underline-offset-4 hover:decoration-foreground dark:hover:decoration-action transition-all"
                 >
                   Politique de confidentialité & cookies
                 </Link>
@@ -145,7 +145,7 @@ export function CookieConsentModal() {
                   onClick={() => setShowPreferences(true)}
                   className="inline-flex items-center justify-center gap-2.5 px-4 py-2 rounded-pill text-xs font-semibold text-foreground bg-background-alt hover:bg-border/60 border border-border transition-all order-3 sm:order-1 active:scale-[0.98]"
                 >
-                  <span className="w-6 h-6 rounded-full bg-forest-950 text-lime-400 border border-forest-800 flex items-center justify-center shrink-0 shadow-sm">
+                  <span className="w-6 h-6 rounded-full bg-forest-950 text-on-inverse-marker border border-forest-800 flex items-center justify-center shrink-0 shadow-sm">
                     <SlidersHorizontal className="w-3.5 h-3.5" />
                   </span>
                   <span>Gérer les préférences</span>
@@ -176,7 +176,7 @@ export function CookieConsentModal() {
               {/* Header Préférences */}
               <div className="flex items-center justify-between border-b border-border pb-3">
                 <div className="flex items-center gap-2.5">
-                  <div className="w-8 h-8 rounded-inner bg-forest-950 text-lime-400 flex items-center justify-center">
+                  <div className="w-8 h-8 rounded-inner bg-forest-950 text-on-inverse-marker flex items-center justify-center">
                     <SlidersHorizontal className="w-4 h-4" />
                   </div>
                   <div>
@@ -199,9 +199,9 @@ export function CookieConsentModal() {
                 <div className="p-3.5 rounded-inner bg-background-alt border border-border flex items-start justify-between gap-3">
                   <div className="space-y-0.5 pr-2">
                     <div className="flex items-center gap-2 flex-wrap">
-                      <Lock className="w-3.5 h-3.5 text-forest-600 dark:text-lime-400 shrink-0" />
+                      <Lock className="w-3.5 h-3.5 text-forest-600 dark:text-on-inverse-marker shrink-0" />
                       <span className="text-xs font-semibold text-foreground">Strictement nécessaires</span>
-                      <span className="px-2 py-0.5 rounded-pill bg-forest-100 dark:bg-forest-900 text-forest-800 dark:text-lime-300 text-[10px] font-bold uppercase tracking-wider">
+                      <span className="px-2 py-0.5 rounded-pill bg-forest-100 dark:bg-forest-900 text-forest-800 dark:text-on-inverse-marker text-[10px] font-bold uppercase tracking-wider">
                         Requis
                       </span>
                     </div>
@@ -232,7 +232,7 @@ export function CookieConsentModal() {
                     onClick={() => setPreferences((p) => ({ ...p, analytics: !p.analytics }))}
                     className={cn(
                       'relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-pill border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none',
-                      preferences.analytics ? 'bg-forest-900 dark:bg-lime-400' : 'bg-neutral-300 dark:bg-neutral-700'
+                      preferences.analytics ? 'bg-forest-900 dark:bg-action' : 'bg-neutral-300 dark:bg-neutral-700'
                     )}
                   >
                     <span
@@ -262,7 +262,7 @@ export function CookieConsentModal() {
                     onClick={() => setPreferences((p) => ({ ...p, marketing: !p.marketing }))}
                     className={cn(
                       'relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-pill border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none',
-                      preferences.marketing ? 'bg-forest-900 dark:bg-lime-400' : 'bg-neutral-300 dark:bg-neutral-700'
+                      preferences.marketing ? 'bg-forest-900 dark:bg-action' : 'bg-neutral-300 dark:bg-neutral-700'
                     )}
                   >
                     <span

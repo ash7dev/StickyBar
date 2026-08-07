@@ -59,18 +59,18 @@ export function StepSelfie({ onDone }: Props) {
       {/* Mode simulation - Zone d'affichage signature sombre */}
       <div className="section-inverse p-6 sm:p-7 space-y-4 relative overflow-hidden border border-forest-800">
         <div className="flex items-center gap-2.5 justify-center">
-          <Sparkles className="w-4 h-4 text-lime-400" />
-          <p className="eyebrow text-lime-300">
+          <Sparkles className="w-4 h-4 text-on-inverse-marker" />
+          <p className="eyebrow text-on-inverse-marker">
             Biométrie Visage Klef
           </p>
         </div>
 
         {/* Cadre photo simulation */}
-        <div className="relative aspect-[3/4] max-w-[220px] mx-auto bg-forest-950 rounded-inner border-2 border-lime-400/30 overflow-hidden shadow-lg flex flex-col items-center justify-center p-4 text-center">
-          <div className="w-20 h-20 rounded-full border-2 border-dashed border-lime-400/40 mb-3 flex items-center justify-center bg-forest-900/60">
-            <Camera className="w-8 h-8 text-lime-400/70" />
+        <div className="relative aspect-[3/4] max-w-[220px] mx-auto bg-forest-950 rounded-inner border-2 border-action-edge overflow-hidden shadow-lg flex flex-col items-center justify-center p-4 text-center">
+          <div className="w-20 h-20 rounded-full border-2 border-dashed border-action/40 mb-3 flex items-center justify-center bg-forest-900/60">
+            <Camera className="w-8 h-8 text-on-inverse-marker/70" />
           </div>
-          <p className="text-lime-300 text-xs font-bold mb-1">
+          <p className="text-on-inverse-marker text-xs font-bold mb-1">
             Détection automatique
           </p>
           <p className="text-on-inverse-muted text-[10px] leading-relaxed">
@@ -80,8 +80,8 @@ export function StepSelfie({ onDone }: Props) {
           {simulating && (
             <div className="absolute inset-0 bg-forest-950/80 backdrop-blur-xs flex items-center justify-center">
               <div className="text-center space-y-2">
-                <Loader2 className="w-8 h-8 text-lime-400 animate-spin mx-auto" />
-                <p className="text-lime-300 text-xs font-bold">
+                <Loader2 className="w-8 h-8 text-on-inverse-marker animate-spin mx-auto" />
+                <p className="text-on-inverse-marker text-xs font-bold">
                   Analyse biométrique…
                 </p>
               </div>
@@ -91,17 +91,17 @@ export function StepSelfie({ onDone }: Props) {
 
         {/* Instructions */}
         <div className="bg-forest-900/80 border border-forest-800 rounded-inner p-3.5 space-y-2">
-          <p className="text-[10px] font-bold text-lime-300 uppercase tracking-wider flex items-center gap-1.5">
-            <CheckCircle2 className="w-3.5 h-3.5 text-lime-400" />
+          <p className="text-[10px] font-bold text-on-inverse-marker uppercase tracking-wider flex items-center gap-1.5">
+            <CheckCircle2 className="w-3.5 h-3.5 text-on-inverse-marker" />
             Consignes de capture
           </p>
           <ul className="text-[11px] text-on-inverse-muted space-y-1 leading-relaxed">
             <li className="flex items-center gap-1.5">
-              <span className="w-1 h-1 rounded-full bg-lime-400 shrink-0" />
+              <span className="w-1 h-1 rounded-full bg-action shrink-0" />
               <span>Visage bien éclairé de face</span>
             </li>
             <li className="flex items-center gap-1.5">
-              <span className="w-1 h-1 rounded-full bg-lime-400 shrink-0" />
+              <span className="w-1 h-1 rounded-full bg-action shrink-0" />
               <span>Retirez lunettes de soleil et accessoires</span>
             </li>
           </ul>

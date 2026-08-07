@@ -5,8 +5,8 @@ import { Calendar, Search } from 'lucide-react';
 export function OwnerReservationsEmptyState({ hasFilter = false }: { hasFilter?: boolean }) {
   return (
     <div className="flex flex-col items-center justify-center py-20 px-4 text-center bg-background-card rounded-card border border-border/80 shadow-2xs space-y-4">
-      <div className="w-16 h-16 rounded-inner bg-forest-950 text-lime-400 border border-lime-400/30 flex items-center justify-center shadow-md">
-        {hasFilter ? <Search className="w-8 h-8 text-lime-400" /> : <Calendar className="w-8 h-8 text-lime-400" />}
+      <div className="w-16 h-16 rounded-inner bg-forest-950 text-on-inverse-marker border border-action-edge flex items-center justify-center shadow-md">
+        {hasFilter ? <Search className="w-8 h-8 text-on-inverse-marker" /> : <Calendar className="w-8 h-8 text-on-inverse-marker" />}
       </div>
 
       <div className="space-y-1.5 max-w-sm">

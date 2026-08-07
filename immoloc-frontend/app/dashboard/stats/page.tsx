@@ -54,8 +54,8 @@ export default function StatsPage() {
             <span>Tableau de bord</span>
           </Link>
           <div className="flex items-center gap-2.5">
-            <div className="w-8 h-8 sm:w-9 sm:h-9 rounded-inner bg-forest-950 text-lime-400 border border-forest-800 flex items-center justify-center shrink-0 shadow-2xs">
-              <BarChart3 className="w-4 h-4 sm:w-4.5 sm:h-4.5 text-lime-400" />
+            <div className="w-8 h-8 sm:w-9 sm:h-9 rounded-inner bg-forest-950 text-on-inverse-marker border border-forest-800 flex items-center justify-center shrink-0 shadow-2xs">
+              <BarChart3 className="w-4 h-4 sm:w-4.5 sm:h-4.5 text-on-inverse-marker" />
             </div>
             <h1 className="font-display text-xl sm:text-2xl font-extrabold text-foreground tracking-tight">
               Statistiques & Performance

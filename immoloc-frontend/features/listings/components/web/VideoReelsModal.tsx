@@ -204,8 +204,8 @@ export function VideoReelsModal({ listing, isOpen, onClose, posterUrl }: Props) 
                 Le lime marque, il ne remplit pas — un seul aplat lime par
                 écran, et c'est le CTA en bas.                              */}
             {listing.isInstantBooking && (
-              <span className="inline-flex items-center gap-1.5 rounded-pill border border-lime-400/25 bg-lime-400/12 px-2.5 py-1 text-xs font-semibold text-neutral-50 backdrop-blur-md">
-                <Zap className="h-3 w-3 fill-lime-300 text-lime-300" />
+              <span className="inline-flex items-center gap-1.5 rounded-pill border border-action/25 bg-marker-bg px-2.5 py-1 text-xs font-semibold text-neutral-50 backdrop-blur-md">
+                <Zap className="h-3 w-3 fill-lime-300 text-on-inverse-marker" />
                 Instantané
               </span>
             )}
@@ -257,7 +257,7 @@ export function VideoReelsModal({ listing, isOpen, onClose, posterUrl }: Props) 
           <Link
             href={`/logements/${listing.id}`}
             onClick={onClose}
-            className="pointer-events-auto inline-flex w-full items-center justify-center gap-2 rounded-pill bg-lime-400 py-3.5 text-sm font-semibold text-on-action shadow-action transition-[background-color,transform] duration-150 hover:bg-lime-300 active:scale-[0.98]"
+            className="pointer-events-auto inline-flex w-full items-center justify-center gap-2 rounded-pill bg-action py-3.5 text-sm font-semibold text-on-action shadow-action transition-[background-color,transform] duration-150 hover:bg-action-hover active:scale-[0.98]"
           >
             <Zap className="h-4 w-4 fill-forest-800 text-forest-800" />
             Réserver ce bien

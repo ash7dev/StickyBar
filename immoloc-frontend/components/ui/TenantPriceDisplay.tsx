@@ -103,7 +103,7 @@ export function TenantPriceDisplay({
           {showBadge && (
             <span
               className={cn(
-                'inline-flex items-center gap-0.5 rounded-pill bg-lime-400 text-forest-950 uppercase tracking-wider shadow-2xs',
+                'inline-flex items-center gap-0.5 rounded-pill bg-action text-on-action uppercase tracking-wider shadow-2xs',
                 sizeStyles.badge,
               )}
             >

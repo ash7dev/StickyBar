@@ -4,8 +4,8 @@ import Link from 'next/link';
 export function OwnerListingsEmptyState() {
   return (
     <div className="bg-background-card rounded-card border border-border/80 p-8 sm:p-12 text-center shadow-2xs space-y-4 max-w-xl mx-auto my-6">
-      <div className="w-14 h-14 rounded-inner bg-forest-950 text-lime-400 border border-lime-400/20 flex items-center justify-center mx-auto shadow-2xs">
-        <Building2 className="w-7 h-7 text-lime-400" />
+      <div className="w-14 h-14 rounded-inner bg-forest-950 text-on-inverse-marker border border-action-edge flex items-center justify-center mx-auto shadow-2xs">
+        <Building2 className="w-7 h-7 text-on-inverse-marker" />
       </div>
 
       <div className="space-y-1.5">
@@ -20,7 +20,7 @@ export function OwnerListingsEmptyState() {
       <div className="pt-2">
         <Link
           href="/dashboard/annonces/nouvelle"
-          className="inline-flex items-center justify-center gap-2 h-11 px-6 rounded-pill bg-lime-400 hover:bg-lime-300 text-forest-950 font-extrabold text-xs shadow-md transition-all active:scale-95"
+          className="inline-flex items-center justify-center gap-2 h-11 px-6 rounded-pill bg-action hover:bg-action-hover text-on-action font-extrabold text-xs shadow-md transition-all active:scale-95"
         >
           <Plus className="w-4 h-4 text-forest-950" />
           <span>Publier un nouveau bien</span>

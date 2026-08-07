@@ -89,7 +89,7 @@ export function BirthdatePicker({ value, onChange, error }: Props) {
       >
         <div className={cn(
           'w-8 h-8 rounded-inner flex items-center justify-center shrink-0 transition-colors',
-          selected ? 'bg-forest-950 text-lime-400 border border-lime-400/20' : 'bg-background-card text-foreground-muted border border-border',
+          selected ? 'bg-forest-950 text-on-inverse-marker border border-action-edge' : 'bg-background-card text-foreground-muted border border-border',
         )}>
           <CalendarDays className="w-4 h-4" />
         </div>
@@ -123,7 +123,7 @@ export function BirthdatePicker({ value, onChange, error }: Props) {
               <select
                 value={monthIdx}
                 onChange={e => setCurrentMonth(new Date(year, Number(e.target.value)))}
-                className="appearance-none bg-transparent text-lime-300 font-display font-bold text-sm cursor-pointer outline-none border-0 pr-5 py-0 leading-tight"
+                className="appearance-none bg-transparent text-on-inverse-marker font-display font-bold text-sm cursor-pointer outline-none border-0 pr-5 py-0 leading-tight"
               >
                 {MOIS_FR.map((m, i) => (
                   <option key={i} value={i} className="bg-forest-950 text-white font-normal text-sm">
@@ -131,7 +131,7 @@ export function BirthdatePicker({ value, onChange, error }: Props) {
                   </option>
                 ))}
               </select>
-              <ChevronDown className="absolute right-0 w-3.5 h-3.5 text-lime-400/60 pointer-events-none" />
+              <ChevronDown className="absolute right-0 w-3.5 h-3.5 text-on-inverse-marker/60 pointer-events-none" />
             </div>
 
             {/* Year select */}
@@ -156,7 +156,7 @@ export function BirthdatePicker({ value, onChange, error }: Props) {
                 type="button"
                 onClick={prevMonth}
                 disabled={!canGoPrev}
-                className="w-7 h-7 rounded-inner flex items-center justify-center text-on-inverse-muted hover:text-lime-300 hover:bg-forest-800 disabled:opacity-20 disabled:cursor-not-allowed transition-colors"
+                className="w-7 h-7 rounded-inner flex items-center justify-center text-on-inverse-muted hover:text-on-inverse-marker hover:bg-forest-800 disabled:opacity-20 disabled:cursor-not-allowed transition-colors"
               >
                 <ChevronLeft className="w-4 h-4" />
               </button>
@@ -164,7 +164,7 @@ export function BirthdatePicker({ value, onChange, error }: Props) {
                 type="button"
                 onClick={nextMonth}
                 disabled={!canGoNext}
-                className="w-7 h-7 rounded-inner flex items-center justify-center text-on-inverse-muted hover:text-lime-300 hover:bg-forest-800 disabled:opacity-20 disabled:cursor-not-allowed transition-colors"
+                className="w-7 h-7 rounded-inner flex items-center justify-center text-on-inverse-muted hover:text-on-inverse-marker hover:bg-forest-800 disabled:opacity-20 disabled:cursor-not-allowed transition-colors"
               >
                 <ChevronRight className="w-4 h-4" />
               </button>
@@ -209,7 +209,7 @@ export function BirthdatePicker({ value, onChange, error }: Props) {
                     'w-full h-8 rounded-inner text-xs font-semibold transition-all cursor-pointer',
                     'focus:outline-none focus-visible:ring-2 focus-visible:ring-forest-500',
                     modifiers.selected
-                      ? 'bg-forest-600 text-lime-300 font-bold shadow-xs scale-105'
+                      ? 'bg-forest-600 text-on-inverse-marker font-bold shadow-xs scale-105'
                       : modifiers.disabled
                       ? 'text-foreground-faint/40 cursor-not-allowed'
                       : modifiers.outside

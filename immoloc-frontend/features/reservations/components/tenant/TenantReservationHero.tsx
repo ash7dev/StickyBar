@@ -49,7 +49,7 @@ const STATUT_CFG: Record<string, StatutStyle> = {
   },
   CHECKED_IN: {
     label: 'Séjour en cours',
-    badge: 'border-lime-400/40 bg-lime-400/12 text-on-inverse',
+    badge: 'border-action/40 bg-marker-bg text-on-inverse',
     dot: 'bg-lime-300',
     Icon: CheckCircle2,
     live: true,

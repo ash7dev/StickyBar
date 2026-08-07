@@ -517,7 +517,7 @@ export default function OwnerPublicProfilePage({
                             <Users className="h-3.5 w-3.5" aria-hidden="true" />
                             Jusqu’à {logement.capaciteMax} personnes
                           </span>
-                          <span className="inline-flex items-center gap-1 px-3 py-1 rounded-pill bg-lime-400 hover:bg-lime-300 text-forest-900 text-xs font-semibold shadow-2xs transition-all duration-200 group-hover:scale-105">
+                          <span className="inline-flex items-center gap-1 px-3 py-1 rounded-pill bg-action hover:bg-action-hover text-forest-900 text-xs font-semibold shadow-2xs transition-all duration-200 group-hover:scale-105">
                             Voir
                             <ChevronRight className="h-3.5 w-3.5 transition-transform duration-200 group-hover:translate-x-0.5" />
                           </span>

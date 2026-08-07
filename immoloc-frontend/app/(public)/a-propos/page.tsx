@@ -91,7 +91,7 @@ export default function AProposPage() {
       <section className="-mt-20 bg-[radial-gradient(70%_60%_at_50%_0%,#0F503D_0%,rgba(15,80,61,0)_70%),linear-gradient(180deg,#072A20_0%,#041912_100%)] pb-16 pt-32 text-white sm:pt-36">
         <div className="mx-auto max-w-[1120px] px-6 text-center">
           <h1 className="mx-auto max-w-3xl font-display text-[clamp(2rem,5vw,3.25rem)] font-semibold leading-[1.06] tracking-[-0.03em] text-neutral-50">
-            À propos de Klef<span className="text-lime-400">.</span>
+            À propos de Klef<span className="text-on-inverse-marker">.</span>
           </h1>
           <p className="mx-auto mt-4 max-w-2xl text-base leading-relaxed text-forest-200 sm:text-lg">
             Une plateforme de location de logements au Sénégal, construite autour
@@ -183,13 +183,13 @@ export default function AProposPage() {
                   i === 1
                     // Le sequestre est la valeur dont les trois autres
                     // decoulent : elle est mise en avant.
-                    ? 'flex flex-col rounded-card border border-lime-400/40 bg-lime-50 p-6'
+                    ? 'flex flex-col rounded-card border border-action/40 bg-lime-50 p-6'
                     : 'flex flex-col rounded-card border border-border bg-background-card p-6 shadow-sm'
                 }
               >
                 <span className={
                   i === 1
-                    ? 'mb-4 grid h-11 w-11 place-items-center rounded-inner bg-lime-400/25 text-forest-800'
+                    ? 'mb-4 grid h-11 w-11 place-items-center rounded-inner bg-marker-bg text-forest-800'
                     : 'mb-4 grid h-11 w-11 place-items-center rounded-inner bg-neutral-100 text-forest-700'
                 }>
                   <Icon className="h-5 w-5" aria-hidden="true" />
@@ -223,7 +223,7 @@ export default function AProposPage() {
           <div className="mt-8 flex flex-col items-center justify-center gap-3 sm:flex-row">
             <Link
               href="/explorer"
-              className="inline-flex items-center gap-2 rounded-pill bg-lime-400 px-7 py-3.5 text-base font-semibold text-forest-800 transition-colors duration-150 hover:bg-lime-300"
+              className="inline-flex items-center gap-2 rounded-pill bg-action px-7 py-3.5 text-base font-semibold text-on-action transition-colors duration-150 hover:bg-action-hover"
             >
               Voir les logements
               <ArrowRight className="h-4 w-4" aria-hidden="true" />
@@ -238,7 +238,7 @@ export default function AProposPage() {
 
           <p className="mt-6 text-xs text-forest-200/70">
             Une question directe&nbsp;?{' '}
-            <Link href="/contact" className="underline underline-offset-2 hover:text-lime-400">
+            <Link href="/contact" className="underline underline-offset-2 hover:text-on-inverse-marker">
               Écrivez-nous
             </Link>.
           </p>

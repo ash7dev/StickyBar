@@ -63,8 +63,8 @@ export function ReservationPaymentCard({ paiement: directPaiement, reservation }
 
       <header className="flex flex-wrap items-center justify-between gap-3 border-b border-border pb-3">
         <div className="flex min-w-0 items-center gap-2.5">
-          <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-inner border border-lime-400/20 bg-forest-950 text-lime-400 shadow-2xs">
-            <CreditCard className="h-4 w-4 text-lime-400" aria-hidden="true" />
+          <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-inner border border-action-edge bg-forest-950 text-on-inverse-marker shadow-2xs">
+            <CreditCard className="h-4 w-4 text-on-inverse-marker" aria-hidden="true" />
           </span>
           <div className="min-w-0">
             <h3 className="font-display text-base font-semibold text-foreground">

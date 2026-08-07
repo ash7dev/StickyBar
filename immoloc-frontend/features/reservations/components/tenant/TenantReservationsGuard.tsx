@@ -53,20 +53,20 @@ export function TenantReservationsGuard({ children }: TenantReservationsGuardPro
       <div className="max-w-2xl mx-auto px-4 py-12">
         <div className="relative rounded-[28px] border border-forest-800/80 bg-forest-950 p-8 sm:p-12 shadow-2xl text-center overflow-hidden">
           {/* Halos de lumière en fond */}
-          <div className="pointer-events-none absolute -top-24 -right-24 w-64 h-64 rounded-full bg-lime-400/10 blur-3xl" />
+          <div className="pointer-events-none absolute -top-24 -right-24 w-64 h-64 rounded-full bg-marker-bg blur-3xl" />
           <div className="pointer-events-none absolute -bottom-24 -left-24 w-64 h-64 rounded-full bg-forest-600/20 blur-3xl" />
 
           <div className="relative space-y-6">
             {/* Badge haut */}
-            <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-pill bg-forest-900/90 border border-forest-700/60 text-lime-300 text-xs font-bold tracking-wide shadow-xs backdrop-blur-md">
-              <KeyRound className="w-3.5 h-3.5 text-lime-400" />
+            <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-pill bg-forest-900/90 border border-forest-700/60 text-on-inverse-marker text-xs font-bold tracking-wide shadow-xs backdrop-blur-md">
+              <KeyRound className="w-3.5 h-3.5 text-on-inverse-marker" />
               <span>Accès Réservé</span>
             </div>
 
             {/* Icône principale avec halo */}
             <div className="relative w-13 h-13 mx-auto">
-              <div className="absolute inset-0 rounded-inner bg-lime-400/20 blur-lg animate-pulse" />
-              <div className="relative w-full h-full rounded-inner bg-gradient-to-br from-forest-800 to-forest-900 border border-forest-700/80 flex items-center justify-center text-lime-400 shadow-md ring-1 ring-lime-400/20">
+              <div className="absolute inset-0 rounded-inner bg-marker-bg blur-lg animate-pulse" />
+              <div className="relative w-full h-full rounded-inner bg-gradient-to-br from-forest-800 to-forest-900 border border-forest-700/80 flex items-center justify-center text-on-inverse-marker shadow-md ring-1 ring-ring/20">
                 <Lock className="w-5.5 h-5.5" strokeWidth={2} />
               </div>
             </div>
@@ -85,7 +85,7 @@ export function TenantReservationsGuard({ children }: TenantReservationsGuardPro
             <div className="flex flex-row flex-wrap sm:flex-nowrap items-center justify-center gap-3.5 pt-3">
               <Link
                 href={loginUrl}
-                className="group shrink-0 inline-flex items-center justify-center gap-2.5 px-6 sm:px-8 py-3.5 rounded-pill bg-lime-400 hover:bg-lime-300 text-forest-950 font-extrabold text-sm shadow-xl shadow-lime-400/15 hover:shadow-lime-400/25 transition-all duration-200 active:scale-95 whitespace-nowrap"
+                className="group shrink-0 inline-flex items-center justify-center gap-2.5 px-6 sm:px-8 py-3.5 rounded-pill bg-action hover:bg-action-hover text-on-action font-extrabold text-sm shadow-xl shadow-action hover:shadow-action-hover transition-all duration-200 active:scale-95 whitespace-nowrap"
               >
                 <LogIn className="w-4 h-4 transition-transform group-hover:-translate-x-0.5" />
                 <span className="whitespace-nowrap">Se connecter</span>
@@ -103,7 +103,7 @@ export function TenantReservationsGuard({ children }: TenantReservationsGuardPro
 
             {/* Rassurance */}
             <div className="pt-4 border-t border-forest-900/80 text-xs text-forest-300/80 flex items-center justify-center gap-2">
-              <ShieldCheck className="w-4 h-4 text-lime-400 shrink-0" />
+              <ShieldCheck className="w-4 h-4 text-on-inverse-marker shrink-0" />
               <span>Garantie Séquestre Klef · Réservation 100% sécurisée</span>
             </div>
           </div>
@@ -118,7 +118,7 @@ export function TenantReservationsGuard({ children }: TenantReservationsGuardPro
       <div className="max-w-2xl mx-auto px-4 py-12">
         <div className="relative rounded-[28px] border border-forest-800/90 bg-gradient-to-b from-forest-950 via-[#072A20] to-forest-950 p-8 sm:p-12 shadow-2xl text-center overflow-hidden">
           {/* Halos de lumière décoratifs */}
-          <div className="pointer-events-none absolute -top-28 -left-28 w-72 h-72 rounded-full bg-lime-400/10 blur-3xl" />
+          <div className="pointer-events-none absolute -top-28 -left-28 w-72 h-72 rounded-full bg-marker-bg blur-3xl" />
           <div className="pointer-events-none absolute -bottom-28 -right-28 w-72 h-72 rounded-full bg-gold-400/10 blur-3xl" />
 
           <div className="relative space-y-6">
@@ -130,8 +130,8 @@ export function TenantReservationsGuard({ children }: TenantReservationsGuardPro
 
             {/* Icône principale avec double anneau lumineux */}
             <div className="relative w-13 h-13 mx-auto">
-              <div className="absolute inset-0 rounded-inner bg-lime-400/20 blur-lg animate-pulse" />
-              <div className="relative w-full h-full rounded-inner bg-gradient-to-br from-forest-800 via-forest-900 to-forest-950 border border-forest-700/80 flex items-center justify-center text-lime-400 shadow-md ring-1 ring-lime-400/30">
+              <div className="absolute inset-0 rounded-inner bg-marker-bg blur-lg animate-pulse" />
+              <div className="relative w-full h-full rounded-inner bg-gradient-to-br from-forest-800 via-forest-900 to-forest-950 border border-forest-700/80 flex items-center justify-center text-on-inverse-marker shadow-md ring-1 ring-ring/30">
                 <ArrowLeftRight className="w-5.5 h-5.5" strokeWidth={2} />
               </div>
             </div>
@@ -142,7 +142,7 @@ export function TenantReservationsGuard({ children }: TenantReservationsGuardPro
                 Vous êtes en Mode Propriétaire
               </h2>
               <p className="text-sm text-forest-200/85 leading-relaxed font-sans">
-                Pour consulter vos voyages et vos séjours personnels en tant que locataire, basculez en un clic vers le <strong className="text-lime-300 font-semibold">Mode Locataire</strong>.
+                Pour consulter vos voyages et vos séjours personnels en tant que locataire, basculez en un clic vers le <strong className="text-on-inverse-marker font-semibold">Mode Locataire</strong>.
               </p>
             </div>
 
@@ -152,7 +152,7 @@ export function TenantReservationsGuard({ children }: TenantReservationsGuardPro
                 type="button"
                 onClick={() => switchRole('LOCATAIRE', { redirectTo: null })}
                 disabled={isSwitching}
-                className="group shrink-0 inline-flex items-center justify-center gap-2.5 px-6 sm:px-8 py-3.5 rounded-pill bg-lime-400 hover:bg-lime-300 text-forest-950 font-extrabold text-sm shadow-xl shadow-lime-400/15 hover:shadow-lime-400/25 transition-all duration-200 active:scale-95 disabled:opacity-50 disabled:active:scale-100 whitespace-nowrap"
+                className="group shrink-0 inline-flex items-center justify-center gap-2.5 px-6 sm:px-8 py-3.5 rounded-pill bg-action hover:bg-action-hover text-on-action font-extrabold text-sm shadow-xl shadow-action hover:shadow-action-hover transition-all duration-200 active:scale-95 disabled:opacity-50 disabled:active:scale-100 whitespace-nowrap"
               >
                 {isSwitching ? (
                   <><Loader2 className="w-4 h-4 animate-spin" /> <span className="whitespace-nowrap">Changement en cours…</span></>

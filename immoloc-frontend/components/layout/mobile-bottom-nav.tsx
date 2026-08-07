@@ -101,12 +101,12 @@ export function MobileBottomNav() {
             >
               {explorerView === 'list' ? (
                 <>
-                  <Map className="h-4 w-4 text-lime-300 shrink-0" aria-hidden="true" />
+                  <Map className="h-4 w-4 text-on-inverse-marker shrink-0" aria-hidden="true" />
                   <span className="whitespace-nowrap">Carte</span>
                 </>
               ) : (
                 <>
-                  <List className="h-4 w-4 text-lime-300 shrink-0" aria-hidden="true" />
+                  <List className="h-4 w-4 text-on-inverse-marker shrink-0" aria-hidden="true" />
                   <span className="whitespace-nowrap">Liste</span>
                 </>
               )}
@@ -121,8 +121,8 @@ export function MobileBottomNav() {
             className={cn(
               'inline-flex h-11 items-center gap-2 rounded-pill px-4 text-sm font-semibold transition-all duration-150 disabled:opacity-60 shrink-0',
               isOwner
-                ? 'bg-forest-900 text-lime-400 border border-forest-700 shadow-lg hover:bg-forest-950'
-                : 'bg-lime-400 text-forest-800 shadow-[0_6px_20px_rgba(155,194,44,0.30)] hover:bg-lime-300'
+                ? 'bg-forest-900 text-on-inverse-marker border border-forest-700 shadow-lg hover:bg-forest-950'
+                : 'bg-action text-on-action shadow-action hover:bg-action-hover'
             )}
           >
             {isSwitching ? (
@@ -168,7 +168,7 @@ export function MobileBottomNav() {
                       'flex min-h-12 flex-col items-center justify-center gap-1 rounded-inner px-1 py-1.5',
                       'transition-colors duration-150',
                       active
-                        ? 'text-forest-800 dark:text-lime-400'
+                        ? 'text-forest-800 dark:text-on-inverse-marker'
                         : 'text-foreground-muted hover:text-forest-700 dark:text-forest-200',
                     )}
                   >
@@ -178,7 +178,7 @@ export function MobileBottomNav() {
                     <span
                       className={cn(
                         'grid h-6 w-11 place-items-center rounded-pill transition-colors duration-150',
-                        active && 'bg-lime-400/25 dark:bg-lime-400/15',
+                        active && 'bg-marker-bg dark:bg-action/15',
                       )}
                     >
                       {/* h-4.5 w-4.5 n'existe pas dans l'echelle Tailwind

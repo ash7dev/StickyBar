@@ -80,7 +80,7 @@ export default function AnnoncesPage() {
           {/* Bouton Publier un bien aligné à DROITE */}
           <Link
             href="/dashboard/annonces/nouvelle"
-            className="inline-flex items-center justify-center gap-1.5 px-3.5 sm:px-4 py-2.5 rounded-pill bg-lime-400 hover:bg-lime-300 text-forest-950 font-black text-xs transition-all shadow-md active:scale-95 shrink-0"
+            className="inline-flex items-center justify-center gap-1.5 px-3.5 sm:px-4 py-2.5 rounded-pill bg-action hover:bg-action-hover text-on-action font-black text-xs transition-all shadow-md active:scale-95 shrink-0"
           >
             <Plus className="w-4 h-4 text-forest-950 stroke-[3px]" />
             <span className="whitespace-nowrap">Publier un bien</span>
@@ -105,19 +105,19 @@ export default function AnnoncesPage() {
                 onClick={() => setActiveFilter(filter.id)}
                 className={`inline-flex items-center gap-2 px-3.5 py-2 rounded-pill text-xs transition-all shrink-0 font-extrabold ${
                   isActive
-                    ? 'bg-forest-950 text-lime-400 shadow-md'
+                    ? 'bg-forest-950 text-on-inverse-marker shadow-md'
                     : 'bg-background-card border border-border/80 text-foreground-muted hover:bg-background-alt hover:text-forest-950'
                 }`}
               >
                 <span>{filter.label}</span>
                 <span
                   className={`px-2 py-0.5 rounded-pill text-[10px] font-black ${
-                    isActive ? 'bg-lime-400 text-forest-950' : 'bg-background-alt text-foreground-muted'
+                    isActive ? 'bg-action text-on-action' : 'bg-background-alt text-foreground-muted'
                   }`}
                 >
                   {filter.count}
                 </span>
-                {isActive && <Check className="w-3.5 h-3.5 text-lime-400" />}
+                {isActive && <Check className="w-3.5 h-3.5 text-on-inverse-marker" />}
               </button>
             );
           })}
@@ -129,7 +129,7 @@ export default function AnnoncesPage() {
             onClick={() => setViewMode('list')}
             className={`p-2 rounded-pill text-xs font-bold transition-all flex items-center gap-1.5 ${
               viewMode === 'list'
-                ? 'bg-forest-950 text-lime-400 shadow-2xs'
+                ? 'bg-forest-950 text-on-inverse-marker shadow-2xs'
                 : 'text-foreground-muted hover:text-forest-950'
             }`}
             title="Vue Liste Horizontale"
@@ -142,7 +142,7 @@ export default function AnnoncesPage() {
             onClick={() => setViewMode('grid')}
             className={`p-2 rounded-pill text-xs font-bold transition-all flex items-center gap-1.5 ${
               viewMode === 'grid'
-                ? 'bg-forest-950 text-lime-400 shadow-2xs'
+                ? 'bg-forest-950 text-on-inverse-marker shadow-2xs'
                 : 'text-foreground-muted hover:text-forest-950'
             }`}
             title="Vue Grille"

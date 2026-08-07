@@ -96,7 +96,7 @@ export function StepBien({ onNext, submitRef }: Props) {
                       'flex cursor-pointer flex-col items-center gap-2.5 rounded-inner border px-3 py-4 text-center transition-colors duration-150',
                       'has-[:focus-visible]:outline-2 has-[:focus-visible]:outline-offset-2 has-[:focus-visible]:outline-ring',
                       active
-                        // L'etat actif etait bg-forest-950 text-lime-300 avec
+                        // L'etat actif etait bg-forest-950 text-on-inverse-marker avec
                         // une pastille lime flottante en coin : sur quatre
                         // cartes, la selection produisait un bloc noir et un
                         // badge fluo pour dire « coche ».

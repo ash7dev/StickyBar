@@ -146,14 +146,14 @@ export function PerformanceCard({ bookings, activeListings, isLoading = false, l
                     // Le premier était en bg-forest-950 plein : un bloc noir
                     // dans une carte claire, pour une ligne de classement.
                     // La teinte lime suffit à distinguer la tête.
-                    first ? 'border-lime-400/40 bg-lime-50' : 'border-border bg-background-alt',
+                    first ? 'border-action/40 bg-lime-50' : 'border-border bg-background-alt',
                   )}
                 >
                   <div className="mb-2 flex items-center justify-between gap-3">
                     <span className="flex min-w-0 items-center gap-2.5">
                       <span className={cn(
                         'grid h-6 w-6 shrink-0 place-items-center rounded-pill font-mono text-xs tabular-nums',
-                        first ? 'bg-lime-400 text-forest-800' : 'bg-background-card text-foreground-muted',
+                        first ? 'bg-action text-on-action' : 'bg-background-card text-foreground-muted',
                       )}>
                         {i + 1}
                       </span>

@@ -313,7 +313,7 @@ function EtatLieuxModal({ reservationId, type, onSuccess, onCancel }: Props) {
       >
         <header className="flex shrink-0 items-start justify-between gap-4 border-b border-white/10 px-6 py-5">
           <div className="flex items-center gap-3.5">
-            <span className="grid h-11 w-11 shrink-0 place-items-center rounded-inner bg-lime-400/15 text-lime-400">
+            <span className="grid h-11 w-11 shrink-0 place-items-center rounded-inner bg-marker-bg text-on-inverse-marker">
               <Icon className="h-5 w-5" aria-hidden="true" />
             </span>
             <div>
@@ -336,8 +336,8 @@ function EtatLieuxModal({ reservationId, type, onSuccess, onCancel }: Props) {
         </header>
 
         <div className="flex-1 space-y-5 overflow-y-auto px-6 py-5">
-          <div className="flex items-start gap-3 rounded-inner border border-lime-400/25 bg-lime-400/[0.08] p-3.5">
-            <Camera className="mt-0.5 h-4 w-4 shrink-0 text-lime-400" aria-hidden="true" />
+          <div className="flex items-start gap-3 rounded-inner border border-action/25 bg-action/[0.08] p-3.5">
+            <Camera className="mt-0.5 h-4 w-4 shrink-0 text-on-inverse-marker" aria-hidden="true" />
             <p className="text-xs leading-relaxed text-forest-200">
               {/* « Optionnel » sous-vendait l'enjeu : sans photo, aucune preuve
                   n'existe si le voyageur conteste l'etat du logement. */}
@@ -350,7 +350,7 @@ function EtatLieuxModal({ reservationId, type, onSuccess, onCancel }: Props) {
             <button
               type="button"
               onClick={() => fileRef.current?.click()}
-              className="flex w-full flex-col items-center gap-3 rounded-card border-2 border-dashed border-white/15 py-10 transition-colors hover:border-lime-400/40 hover:bg-white/[0.04]"
+              className="flex w-full flex-col items-center gap-3 rounded-card border-2 border-dashed border-white/15 py-10 transition-colors hover:border-action/40 hover:bg-white/[0.04]"
             >
               <span className="grid h-12 w-12 place-items-center rounded-inner bg-white/[0.07] text-forest-200">
                 <ImageIcon className="h-5 w-5" aria-hidden="true" />
@@ -386,7 +386,7 @@ function EtatLieuxModal({ reservationId, type, onSuccess, onCancel }: Props) {
 
                       {entry.state === 'uploading' && (
                         <span className="absolute inset-0 grid place-items-center bg-forest-950/60">
-                          <Loader2 className="h-5 w-5 animate-spin text-lime-400" aria-hidden="true" />
+                          <Loader2 className="h-5 w-5 animate-spin text-on-inverse-marker" aria-hidden="true" />
                         </span>
                       )}
                       {entry.state === 'done' && (
@@ -414,7 +414,7 @@ function EtatLieuxModal({ reservationId, type, onSuccess, onCancel }: Props) {
                       onChange={(e) => setCategorie(entry.localId, e.target.value as PhotoCategorie)}
                       disabled={loading}
                       aria-label="Catégorie de la photo"
-                      className="w-full rounded-inner border border-white/10 bg-white/[0.06] px-2 py-1.5 text-[0.6875rem] text-forest-200 outline-none focus:border-lime-400/50 disabled:opacity-50"
+                      className="w-full rounded-inner border border-white/10 bg-white/[0.06] px-2 py-1.5 text-[0.6875rem] text-forest-200 outline-none focus:border-action/50 disabled:opacity-50"
                     >
                       {CATEGORIES.map((c) => (
                         <option key={c.value} value={c.value} className="bg-forest-950 text-white">
@@ -430,7 +430,7 @@ function EtatLieuxModal({ reservationId, type, onSuccess, onCancel }: Props) {
                     <button
                       type="button"
                       onClick={() => fileRef.current?.click()}
-                      className="flex aspect-square w-full flex-col items-center justify-center gap-1.5 rounded-inner border-2 border-dashed border-white/15 transition-colors hover:border-lime-400/40"
+                      className="flex aspect-square w-full flex-col items-center justify-center gap-1.5 rounded-inner border-2 border-dashed border-white/15 transition-colors hover:border-action/40"
                     >
                       <Plus className="h-4 w-4 text-forest-200" aria-hidden="true" />
                       <span className="text-[0.6875rem] text-forest-200">Ajouter</span>
@@ -463,16 +463,16 @@ function EtatLieuxModal({ reservationId, type, onSuccess, onCancel }: Props) {
             <div className="space-y-2.5 rounded-inner border border-white/10 bg-white/[0.04] p-4">
               <div className="flex items-center justify-between">
                 <p className="flex items-center gap-2 text-xs text-neutral-50">
-                  <Loader2 className="h-3.5 w-3.5 animate-spin text-lime-400" aria-hidden="true" />
+                  <Loader2 className="h-3.5 w-3.5 animate-spin text-on-inverse-marker" aria-hidden="true" />
                   {/* Le compteur derivait d'une progression fixe : il affichait
                       « 3 / 10 » quel que soit l'avancement reel. */}
                   {step === 'confirm' ? 'Confirmation…' : `Envoi ${uploadedCount} / ${photos.length}`}
                 </p>
-                <p className="text-xs font-semibold tabular-nums text-lime-400">{progress}%</p>
+                <p className="text-xs font-semibold tabular-nums text-on-inverse-marker">{progress}%</p>
               </div>
               <div className="h-1.5 overflow-hidden rounded-pill bg-white/10">
                 <div
-                  className="h-full rounded-pill bg-lime-400"
+                  className="h-full rounded-pill bg-action"
                   style={{ width: `${progress}%`, transition: 'width 320ms cubic-bezier(0.22,1,0.36,1)' }}
                 />
               </div>
@@ -504,7 +504,7 @@ function EtatLieuxModal({ reservationId, type, onSuccess, onCancel }: Props) {
             type="button"
             onClick={handleSubmit}
             disabled={loading}
-            className="flex w-full items-center justify-center gap-2.5 rounded-pill bg-lime-400 py-3.5 text-sm font-semibold text-forest-800 transition-colors duration-150 hover:bg-lime-300 disabled:opacity-60"
+            className="flex w-full items-center justify-center gap-2.5 rounded-pill bg-action py-3.5 text-sm font-semibold text-on-action transition-colors duration-150 hover:bg-action-hover disabled:opacity-60"
           >
             {loading
               ? <><Loader2 className="h-4 w-4 animate-spin" aria-hidden="true" />En cours…</>

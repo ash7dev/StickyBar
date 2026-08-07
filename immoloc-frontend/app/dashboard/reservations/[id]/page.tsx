@@ -470,11 +470,11 @@ export default function ReservationDetailPage({ params }: { params: Promise<{ id
               )}
 
               {/* ★ Emphase 1/2 : le revenu net. Seul aplat lime du hero. */}
-              <div className="space-y-1 rounded-inner border border-lime-400/35 bg-lime-400/12 p-4 text-center">
+              <div className="space-y-1 rounded-inner border border-action/35 bg-marker-bg p-4 text-center">
                 <p className="text-xs font-semibold uppercase tracking-wider text-on-inverse-muted">
                   {isOwner ? 'Votre revenu net' : 'Total réglé'}
                 </p>
-                <p className="font-display text-3xl font-semibold leading-none tabular-nums text-lime-300">
+                <p className="font-display text-3xl font-semibold leading-none tabular-nums text-on-inverse-marker">
                   {fcfa(isOwner ? res.netProprietaire : res.totalLocataire)}
                 </p>
                 <p className="text-xs font-semibold text-on-inverse-muted">FCFA</p>
@@ -666,7 +666,7 @@ export default function ReservationDetailPage({ params }: { params: Promise<{ id
                     row.kind === 'net'
                       /* ★ Le revenu net, à nouveau en lime : c'est le chiffre
                          que le propriétaire vient chercher. */
-                      ? 'rounded-pill border border-lime-400/30 bg-lime-400/12 px-3 py-1 font-display text-xl text-lime-300'
+                      ? 'rounded-pill border border-action-edge bg-marker-bg px-3 py-1 font-display text-xl text-on-inverse-marker'
                       /* ★ La commission : seule ligne rouge de la page. */
                       : row.kind === 'deduction'
                         ? 'text-error-500'
@@ -689,7 +689,7 @@ export default function ReservationDetailPage({ params }: { params: Promise<{ id
                 className="h-2 overflow-hidden rounded-pill bg-white/10"
               >
                 <div
-                  className="h-full rounded-pill bg-lime-400 transition-[width] duration-700"
+                  className="h-full rounded-pill bg-action transition-[width] duration-700"
                   style={{ width: `${ownPct}%` }}
                 />
               </div>

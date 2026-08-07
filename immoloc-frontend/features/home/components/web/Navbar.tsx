@@ -225,11 +225,11 @@ export function Navbar() {
                   aria-label="Menu utilisateur"
                   className={`flex items-center gap-1.5 p-1 rounded-full border transition-all duration-200 ${
                     dropdownOpen
-                      ? 'bg-lime-50 border-forest-300 ring-2 ring-lime-400/20 shadow-sm'
+                      ? 'bg-lime-50 border-forest-300 ring-2 ring-ring/20 shadow-sm'
                       : 'bg-white/80 border-forest-100 hover:bg-lime-50/60 hover:border-forest-200'
                   }`}
                 >
-                  <div className="w-8 h-8 rounded-full bg-forest-800 text-lime-400 flex items-center justify-center font-bold text-xs shadow-sm shrink-0">
+                  <div className="w-8 h-8 rounded-full bg-forest-800 text-on-inverse-marker flex items-center justify-center font-bold text-xs shadow-sm shrink-0">
                     {initials || <User className="w-4 h-4" />}
                   </div>
                   <ChevronDown

@@ -85,8 +85,8 @@ function TenantReservationDetailContent({ id }: { id: string }) {
       {/* Contrat de Location Klef */}
       <div className="bg-forest-950 text-white rounded-card p-5 border border-forest-800/80 shadow-xs flex flex-wrap items-center justify-between gap-4">
         <div className="flex items-center gap-3.5">
-          <div className="w-11 h-11 rounded-inner bg-forest-900 border border-forest-800 flex items-center justify-center text-lime-400 shrink-0">
-            <FileText className="w-5 h-5 text-lime-400" />
+          <div className="w-11 h-11 rounded-inner bg-forest-900 border border-forest-800 flex items-center justify-center text-on-inverse-marker shrink-0">
+            <FileText className="w-5 h-5 text-on-inverse-marker" />
           </div>
           <div>
             <p className="font-display text-base font-bold text-white">Contrat de location vérifié</p>
@@ -96,7 +96,7 @@ function TenantReservationDetailContent({ id }: { id: string }) {
 
         <Link
           href={`/reservations/${id}/contrat`}
-          className="inline-flex items-center gap-2 px-5 py-2.5 rounded-pill bg-lime-400 hover:bg-lime-300 text-forest-950 font-extrabold text-xs shadow-md transition-all active:scale-95"
+          className="inline-flex items-center gap-2 px-5 py-2.5 rounded-pill bg-action hover:bg-action-hover text-on-action font-extrabold text-xs shadow-md transition-all active:scale-95"
         >
           <ExternalLink className="w-4 h-4 text-forest-950" />
           <span>Consulter le Contrat PDF</span>

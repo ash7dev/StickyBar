@@ -11,7 +11,7 @@ export function WalletHistoryCard({ transactions, isLoading }: Props) {
   return (
     <div className="card p-5 sm:p-7 relative overflow-hidden transition-all w-full">
       <div className="flex items-center gap-3 mb-6 min-w-0">
-        <div className="w-10 h-10 rounded-inner bg-forest-950 border border-forest-800 text-lime-400 flex items-center justify-center shrink-0 shadow-sm">
+        <div className="w-10 h-10 rounded-inner bg-forest-950 border border-forest-800 text-on-inverse-marker flex items-center justify-center shrink-0 shadow-sm">
           <History className="w-5 h-5" />
         </div>
         <div>

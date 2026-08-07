@@ -214,12 +214,12 @@ export function SelectField({
                         className={cn(
                             'flex cursor-pointer items-center justify-between gap-3 px-4 py-3 text-sm transition-colors',
                             isSelected
-                                ? 'bg-forest-950 text-lime-400 font-extrabold shadow-2xs'
+                                ? 'bg-forest-950 text-on-inverse-marker font-extrabold shadow-2xs'
                                 : 'text-foreground hover:bg-forest-900/10 hover:text-forest-950 font-medium',
                         )}
                     >
                         <span className="truncate">{opt}</span>
-                        {isSelected && <Check className="h-4 w-4 shrink-0 text-lime-400 stroke-[3px]" aria-hidden="true" />}
+                        {isSelected && <Check className="h-4 w-4 shrink-0 text-on-inverse-marker stroke-[3px]" aria-hidden="true" />}
                     </li>
                 );
             })}
@@ -250,7 +250,7 @@ export function SelectField({
                 className={cn(
                     'flex w-full items-center justify-between gap-3 rounded-field border bg-background-card px-4 py-3 text-left text-[0.9375rem]',
                     'transition-all duration-200 disabled:opacity-50',
-                    open ? 'border-forest-950 ring-2 ring-lime-400/50 shadow-md'
+                    open ? 'border-forest-950 ring-2 ring-ring shadow-md'
                         : error ? 'border-error-500'
                             : 'border-border hover:border-border-hover',
                     value ? 'text-foreground font-semibold' : 'text-foreground-faint',

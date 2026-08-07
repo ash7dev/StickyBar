@@ -378,7 +378,7 @@ function SectionPresentation({ listing, report }: { listing: ListingDetail; repo
                 placeholder="25 000"
                 className="w-full bg-transparent font-display text-3xl font-semibold tabular-nums text-neutral-50 outline-none placeholder:text-forest-300"
               />
-              <span className="shrink-0 rounded-pill bg-lime-400/15 px-3 py-1.5 text-xs font-semibold text-lime-400">
+              <span className="shrink-0 rounded-pill bg-marker-bg px-3 py-1.5 text-xs font-semibold text-on-inverse-marker">
                 FCFA / nuit
               </span>
             </div>
@@ -634,7 +634,7 @@ function SectionTarification({ listing, report }: { listing: ListingDetail; repo
                 className={cn(
                   'flex-1 py-2 px-3 rounded-pill text-xs font-bold transition-all border cursor-pointer',
                   acomptePct === pct
-                    ? 'border-forest-600 bg-forest-950 text-lime-300 shadow-xs'
+                    ? 'border-forest-600 bg-forest-950 text-on-inverse-marker shadow-xs'
                     : 'border-border bg-background-card text-foreground-muted hover:border-neutral-300'
                 )}
               >
@@ -832,7 +832,7 @@ function SectionPhotos({ listing }: { listing: ListingDetail }) {
 
               {photo.uploading && (
                 <span className="absolute inset-0 z-20 grid place-items-center bg-forest-950/50">
-                  <Loader2 className="h-6 w-6 animate-spin text-lime-400" aria-hidden="true" />
+                  <Loader2 className="h-6 w-6 animate-spin text-on-inverse-marker" aria-hidden="true" />
                 </span>
               )}
 

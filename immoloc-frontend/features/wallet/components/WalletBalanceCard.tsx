@@ -15,13 +15,13 @@ export function WalletBalanceCard({ soldeDisponible, dettePenalites }: Props) {
     <div className="section-inverse relative overflow-hidden p-6 sm:p-8 shadow-xl transition-all duration-300">
       {/* Halo radial de fond (Signature visuelle Klef) */}
       <div className="absolute -top-16 -right-16 w-56 h-56 bg-forest-700/30 rounded-full blur-[70px] pointer-events-none" />
-      <div className="absolute -bottom-10 -left-10 w-40 h-40 bg-lime-400/10 rounded-full blur-[60px] pointer-events-none" />
+      <div className="absolute -bottom-10 -left-10 w-40 h-40 bg-marker-bg rounded-full blur-[60px] pointer-events-none" />
 
       <div className="relative z-10 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-6">
         <div>
           <div className="flex items-center gap-3 mb-3">
             <div className="w-10 h-10 rounded-inner bg-forest-800/80 border border-border-inverse flex items-center justify-center shrink-0">
-              <Wallet className="w-5 h-5 text-lime-300" />
+              <Wallet className="w-5 h-5 text-on-inverse-marker" />
             </div>
             <span className="eyebrow text-on-inverse-muted">
               Solde disponible
@@ -43,8 +43,8 @@ export function WalletBalanceCard({ soldeDisponible, dettePenalites }: Props) {
         </div>
 
         <div className="flex items-center gap-2 self-start sm:self-center">
-          <div className="flex items-center gap-2 px-4 py-2 rounded-pill bg-forest-800/60 border border-border-inverse text-xs font-semibold text-lime-300 shadow-2xs">
-            <TrendingUp className="w-4 h-4 text-lime-400" />
+          <div className="flex items-center gap-2 px-4 py-2 rounded-pill bg-forest-800/60 border border-border-inverse text-xs font-semibold text-on-inverse-marker shadow-2xs">
+            <TrendingUp className="w-4 h-4 text-on-inverse-marker" />
             <span>Portefeuille Actif</span>
           </div>
         </div>

@@ -459,7 +459,7 @@ export default function ReserverPage({ searchParams }: Props) {
             className={cn(
               'w-full flex items-center justify-center gap-2 py-4 px-6 font-bold rounded-pill text-base shadow-md transition-all active:scale-98',
               cguAccepted && dateDebut && dateFin && nights > 0
-                ? 'bg-lime-400 hover:bg-lime-300 text-forest-950'
+                ? 'bg-action hover:bg-action-hover text-forest-950'
                 : 'bg-background-alt text-foreground-muted cursor-not-allowed',
             )}
           >
@@ -522,20 +522,20 @@ export default function ReserverPage({ searchParams }: Props) {
             <div className="bg-forest-900 text-white rounded-card p-6 shadow-md space-y-3">
               <div className="flex items-center justify-between text-xs text-forest-200">
                 <span>{typePaiement === 'DEPOSIT' && (listing?.acomptePourcentage ?? 30) < 100 ? `Acompte à débiter aujourd'hui (${listing?.acomptePourcentage ?? 30}%)` : 'Montant Total à débiter'}</span>
-                <span className="px-2.5 py-0.5 rounded-pill bg-forest-800 text-lime-300 font-semibold">
+                <span className="px-2.5 py-0.5 rounded-pill bg-forest-800 text-on-inverse-marker font-semibold">
                   {nights} nuit{nights > 1 ? 's' : ''} · {nbPersonnes} pers.
                 </span>
               </div>
-              <div className="font-display text-3xl font-extrabold text-lime-400">
+              <div className="font-display text-3xl font-extrabold text-on-inverse-marker">
                 {fmt(typePaiement === 'DEPOSIT' && (listing?.acomptePourcentage ?? 30) < 100 ? Math.round(estimatedTotal * ((listing?.acomptePourcentage ?? 30) / 100)) : estimatedTotal)} FCFA
               </div>
               {typePaiement === 'DEPOSIT' && (listing?.acomptePourcentage ?? 30) < 100 && (
-                <p className="text-xs font-semibold text-lime-300">
+                <p className="text-xs font-semibold text-on-inverse-marker">
                   + Solde de {fmt(Math.round(estimatedTotal * ((100 - (listing?.acomptePourcentage ?? 30)) / 100)))} FCFA à régler à l&apos;arrivée (Total : {fmt(estimatedTotal)} FCFA)
                 </p>
               )}
               <p className="text-xs text-forest-200 flex items-center gap-1.5 pt-1 border-t border-forest-800">
-                <ShieldCheck className="w-4 h-4 text-lime-400 shrink-0" />
+                <ShieldCheck className="w-4 h-4 text-on-inverse-marker shrink-0" />
                 <span>Bloqué par séquestre Klef jusqu&apos;à la remise des clés</span>
               </p>
             </div>
@@ -562,7 +562,7 @@ export default function ReserverPage({ searchParams }: Props) {
                     )}
                   >
                     <div>
-                      <span className="text-[10px] font-extrabold uppercase tracking-wider text-lime-400 block mb-1">
+                      <span className="text-[10px] font-extrabold uppercase tracking-wider text-on-inverse-marker block mb-1">
                         RECOMMANDÉ
                       </span>
                       <p className="text-sm font-bold">Payer {listing?.acomptePourcentage ?? 30}% d&apos;acompte</p>
@@ -570,7 +570,7 @@ export default function ReserverPage({ searchParams }: Props) {
                         {fmt(Math.round(estimatedTotal * ((listing?.acomptePourcentage ?? 30) / 100)))} FCFA maintenant
                       </p>
                     </div>
-                    <p className={cn('text-[11px] mt-3 font-semibold', typePaiement === 'DEPOSIT' ? 'text-lime-300' : 'text-forest-700')}>
+                    <p className={cn('text-[11px] mt-3 font-semibold', typePaiement === 'DEPOSIT' ? 'text-on-inverse-marker' : 'text-forest-700')}>
                       Solde de {fmt(Math.round(estimatedTotal * ((100 - (listing?.acomptePourcentage ?? 30)) / 100)))} FCFA à l&apos;arrivée
                     </p>
                   </button>
@@ -594,7 +594,7 @@ export default function ReserverPage({ searchParams }: Props) {
                         {fmt(estimatedTotal)} FCFA maintenant
                       </p>
                     </div>
-                    <p className={cn('text-[11px] mt-3 font-semibold', typePaiement === 'FULL' ? 'text-lime-300' : 'text-foreground-muted')}>
+                    <p className={cn('text-[11px] mt-3 font-semibold', typePaiement === 'FULL' ? 'text-on-inverse-marker' : 'text-foreground-muted')}>
                       Rien à régler sur place
                     </p>
                   </button>
@@ -724,7 +724,7 @@ export default function ReserverPage({ searchParams }: Props) {
                 className={cn(
                   'w-full flex items-center justify-center gap-2 py-4 px-6 font-bold rounded-pill text-base shadow-md transition-all active:scale-98',
                   cguAccepted && !loading
-                    ? 'bg-lime-400 hover:bg-lime-300 text-forest-950 shadow-forest-900/10'
+                    ? 'bg-action hover:bg-action-hover text-forest-950 shadow-forest-900/10'
                     : 'bg-background-alt text-foreground-muted cursor-not-allowed',
                 )}
               >

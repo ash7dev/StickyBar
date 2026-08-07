@@ -23,7 +23,7 @@ export function RecentlyViewedSection() {
         {/* En-tête de section */}
         <div className="flex items-center justify-between gap-4 mb-6 sm:mb-8">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-2xl bg-forest-900 text-lime-300 flex items-center justify-center shrink-0 shadow-sm">
+            <div className="w-10 h-10 rounded-2xl bg-forest-900 text-on-inverse-marker flex items-center justify-center shrink-0 shadow-sm">
               <History className="w-5 h-5" />
             </div>
             <div>

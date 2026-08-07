@@ -89,7 +89,7 @@ function KpiCard({ kpi, delay }: { kpi: Kpi; delay: string }) {
             CLAIRES : trois blocs sombres dans une rangee de quatre. */}
         <span className={cn(
           'grid h-9 w-9 shrink-0 place-items-center rounded-inner',
-          hero ? 'bg-lime-400/15 text-lime-400'
+          hero ? 'bg-marker-bg text-on-inverse-marker'
             : alert ? 'bg-error-500/15 text-error-600'
               : 'bg-neutral-100 text-forest-700',
         )}>
@@ -124,7 +124,7 @@ function KpiCard({ kpi, delay }: { kpi: Kpi; delay: string }) {
           {trend ? (
             <p className={cn(
               'mt-1.5 flex items-center gap-1 text-xs',
-              trend.dir === 'up' ? (hero ? 'text-lime-400' : 'text-success-700')
+              trend.dir === 'up' ? (hero ? 'text-on-inverse-marker' : 'text-success-700')
                 : trend.dir === 'down' ? 'text-error-600'
                   : hero ? 'text-forest-200' : 'text-foreground-muted',
             )}>

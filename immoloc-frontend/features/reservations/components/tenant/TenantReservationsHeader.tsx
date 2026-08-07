@@ -91,8 +91,8 @@ export function TenantReservationsHeader({
             <span className="text-xs font-extrabold uppercase tracking-wider text-foreground-muted">
               Total Séjours
             </span>
-            <div className="w-8.5 h-8.5 rounded-inner bg-forest-950 flex items-center justify-center text-lime-400 shadow-2xs border border-lime-400/20">
-              <CalendarDays className="w-4 h-4 text-lime-400" />
+            <div className="w-8.5 h-8.5 rounded-inner bg-forest-950 flex items-center justify-center text-on-inverse-marker shadow-2xs border border-action-edge">
+              <CalendarDays className="w-4 h-4 text-on-inverse-marker" />
             </div>
           </div>
           <div className="font-display text-2xl font-bold text-forest-950">
@@ -106,8 +106,8 @@ export function TenantReservationsHeader({
             <span className="text-xs font-extrabold uppercase tracking-wider text-foreground-muted">
               Statut Séjour
             </span>
-            <div className="w-8.5 h-8.5 rounded-inner bg-forest-950 flex items-center justify-center text-lime-400 shadow-2xs border border-lime-400/20">
-              <Sparkles className="w-4 h-4 text-lime-400" />
+            <div className="w-8.5 h-8.5 rounded-inner bg-forest-950 flex items-center justify-center text-on-inverse-marker shadow-2xs border border-action-edge">
+              <Sparkles className="w-4 h-4 text-on-inverse-marker" />
             </div>
           </div>
           <div className="font-display text-2xl font-bold text-forest-950 truncate">
@@ -134,8 +134,8 @@ export function TenantReservationsHeader({
             <span className="text-xs font-extrabold uppercase tracking-wider text-foreground-muted">
               Paiement & Contrats
             </span>
-            <div className="w-8.5 h-8.5 rounded-inner bg-forest-950 flex items-center justify-center text-lime-400 shadow-2xs border border-lime-400/20">
-              <CheckCircle2 className="w-4 h-4 text-lime-400" />
+            <div className="w-8.5 h-8.5 rounded-inner bg-forest-950 flex items-center justify-center text-on-inverse-marker shadow-2xs border border-action-edge">
+              <CheckCircle2 className="w-4 h-4 text-on-inverse-marker" />
             </div>
           </div>
           <div className="font-display text-lg font-bold text-forest-950 flex items-center gap-1">
@@ -158,7 +158,7 @@ export function TenantReservationsHeader({
               className={cn(
                 'flex items-center gap-2 px-5 py-2.5 rounded-pill text-xs font-bold transition-all duration-200 whitespace-nowrap shrink-0 cursor-pointer',
                 isActive
-                  ? 'bg-forest-900 text-lime-300 shadow-md'
+                  ? 'bg-forest-900 text-on-inverse-marker shadow-md'
                   : 'text-foreground-muted hover:text-forest-900 hover:bg-background-card/80',
               )}
             >
@@ -169,7 +169,7 @@ export function TenantReservationsHeader({
                   className={cn(
                     'px-2 py-0.5 rounded-pill text-[10px] font-extrabold tabular-nums',
                     isActive
-                      ? 'bg-forest-800 text-lime-300'
+                      ? 'bg-forest-800 text-on-inverse-marker'
                       : 'bg-background-card border border-border text-foreground-muted',
                   )}
                 >

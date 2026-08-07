@@ -107,7 +107,7 @@ export function HowItWorksPage() {
         <div className="mx-auto max-w-[1120px] px-6 text-center">
           <span className="inline-flex items-center gap-2 rounded-pill border border-white/10 bg-white/[0.06] px-4 py-1.5">
             {/* Le point clignotait en boucle a cote du libelle. */}
-            <ShieldCheck className="h-3.5 w-3.5 text-lime-400" aria-hidden="true" />
+            <ShieldCheck className="h-3.5 w-3.5 text-on-inverse-marker" aria-hidden="true" />
             <span className="text-[0.6875rem] font-semibold uppercase tracking-[0.14em] text-forest-200">
               Guide complet
             </span>
@@ -116,7 +116,7 @@ export function HowItWorksPage() {
           {/* font-extrabold vaut 800 : au-dela de 600, Fraunces ferme ses
               contreformes et perd sa lisibilite. */}
           <h1 className="mt-6 font-display text-[clamp(2rem,5vw,3.5rem)] font-semibold leading-[1.06] tracking-[-0.03em] text-neutral-50">
-            Comment ça marche<span className="text-lime-400">.</span>
+            Comment ça marche<span className="text-on-inverse-marker">.</span>
           </h1>
 
           <p className="mx-auto mt-4 max-w-2xl text-base leading-relaxed text-forest-200 sm:text-lg">
@@ -184,7 +184,7 @@ export function HowItWorksPage() {
                 recherche. Le reste du produit utilise /explorer. */}
             <Link
               href="/explorer"
-              className="inline-flex items-center gap-2 rounded-pill border border-[rgba(122,158,26,0.30)] bg-lime-400 px-7 py-3.5 text-base font-semibold text-forest-800 shadow-[0_6px_20px_rgba(155,194,44,0.30)] transition-colors duration-150 hover:bg-lime-300"
+              className="inline-flex items-center gap-2 rounded-pill border border-action-edge bg-action px-7 py-3.5 text-base font-semibold text-on-action shadow-action transition-colors duration-150 hover:bg-action-hover"
             >
               Parcourir les logements
               <ArrowRight className="h-4 w-4" aria-hidden="true" />
@@ -240,7 +240,7 @@ export function HowItWorksPage() {
           <div className="text-center">
             <Link
               href="/devenir-hote"
-              className="inline-flex items-center gap-2 rounded-pill bg-lime-400 px-7 py-3.5 text-base font-semibold text-forest-800 transition-colors duration-150 hover:bg-lime-300"
+              className="inline-flex items-center gap-2 rounded-pill bg-action px-7 py-3.5 text-base font-semibold text-on-action transition-colors duration-150 hover:bg-action-hover"
             >
               Devenir hôte
               <ArrowRight className="h-4 w-4" aria-hidden="true" />
@@ -268,13 +268,13 @@ export function HowItWorksPage() {
                   // Une seule garantie est mise en avant : le sequestre, qui
                   // est le mecanisme dont tout le reste decoule.
                   i === 0
-                    ? 'border-lime-400/40 bg-lime-50'
+                    ? 'border-action/40 bg-lime-50'
                     : 'border-border bg-background-card shadow-sm hover:shadow-md',
                 )}
               >
                 <span className={cn(
                   'grid h-10 w-10 shrink-0 place-items-center rounded-inner',
-                  i === 0 ? 'bg-lime-400/25 text-forest-800' : 'bg-neutral-100 text-forest-700',
+                  i === 0 ? 'bg-marker-bg text-forest-800' : 'bg-neutral-100 text-forest-700',
                 )}>
                   <Icon className="h-[1.125rem] w-[1.125rem]" aria-hidden="true" />
                 </span>

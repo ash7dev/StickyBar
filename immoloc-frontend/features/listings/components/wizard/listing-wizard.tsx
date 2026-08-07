@@ -463,7 +463,7 @@ export function ListingWizard({ editMode = false }: Props) {
                 className="h-2.5 w-full overflow-hidden rounded-pill bg-white/10"
               >
                 <div
-                  className="h-full rounded-pill bg-lime-400 transition-[width] duration-300 ease-out"
+                  className="h-full rounded-pill bg-action transition-[width] duration-300 ease-out"
                   style={{ width: `${progress.percent}%` }}
                 />
               </div>

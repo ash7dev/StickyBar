@@ -75,10 +75,27 @@ export function ExplorerMap({ listings }: ExplorerMapProps) {
 
       const L = (await import('leaflet')).default;
 
+      // Correctif défensif contre l'erreur Leaflet `_leaflet_pos` lors des transitions de zoom pendant un unmount
+      if (L?.DomUtil && typeof L.DomUtil.getPosition === 'function') {
+        const origGetPosition = L.DomUtil.getPosition;
+        L.DomUtil.getPosition = function (el: any) {
+          if (!el) return new L.Point(0, 0);
+          try {
+            return origGetPosition.call(L.DomUtil, el);
+          } catch {
+            return new L.Point(0, 0);
+          }
+        };
+      }
+
       if (!isMounted || !mapRef.current) return;
 
       if (leafletMapRef.current) {
-        leafletMapRef.current.remove();
+        try {
+          leafletMapRef.current.off();
+          leafletMapRef.current.remove();
+        } catch {}
+        leafletMapRef.current = null;
       }
 
       const initialCenter: [number, number] =
@@ -187,7 +204,10 @@ export function ExplorerMap({ listings }: ExplorerMapProps) {
     return () => {
       isMounted = false;
       if (leafletMapRef.current) {
-        leafletMapRef.current.remove();
+        try {
+          leafletMapRef.current.off();
+          leafletMapRef.current.remove();
+        } catch {}
         leafletMapRef.current = null;
       }
     };
@@ -204,7 +224,7 @@ export function ExplorerMap({ listings }: ExplorerMapProps) {
           <button
             onClick={handleSearchCurrentArea}
             disabled={isSearchingHere}
-            className="inline-flex items-center gap-2 px-4 py-2.5 rounded-full bg-forest-950 text-lime-300 hover:bg-forest-900 font-extrabold text-xs shadow-xl backdrop-blur-md transition-all active:scale-95 border border-lime-400/30"
+            className="inline-flex items-center gap-2 px-4 py-2.5 rounded-full bg-forest-950 text-on-inverse-marker hover:bg-forest-900 font-extrabold text-xs shadow-xl backdrop-blur-md transition-all active:scale-95 border border-action-edge"
           >
             <RefreshCw className={isSearchingHere ? 'w-3.5 h-3.5 animate-spin text-lime-400' : 'w-3.5 h-3.5 text-lime-400'} />
             <span>Rechercher dans cette zone</span>

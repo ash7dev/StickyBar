@@ -140,7 +140,7 @@ export function MobileHeader({ onMenuToggle }: MobileHeaderProps = {}) {
               aria-haspopup="menu"
               className="flex h-9 items-center gap-1.5 rounded-pill border border-white/10 bg-white/10 pl-1 pr-2.5 transition-colors duration-150 hover:bg-white/15"
             >
-              <span className="grid h-7 w-7 place-items-center rounded-pill bg-lime-400 text-xs font-semibold text-forest-800">
+              <span className="grid h-7 w-7 place-items-center rounded-pill bg-action text-xs font-semibold text-on-action">
                 {initials}
               </span>
               <ChevronDown
@@ -193,7 +193,7 @@ export function MobileHeader({ onMenuToggle }: MobileHeaderProps = {}) {
         <div className="flex items-center justify-between gap-3">
           <span className="flex items-center gap-2.5">
             {/* Premiere touche de lime : le marqueur du chiffre principal. */}
-            <span className="grid h-8 w-8 shrink-0 place-items-center rounded-inner border border-lime-400/20 bg-lime-400/15 text-lime-400">
+            <span className="grid h-8 w-8 shrink-0 place-items-center rounded-inner border border-action-edge bg-marker-bg text-on-inverse-marker">
               <TrendingUp className="h-4 w-4" aria-hidden="true" />
             </span>
             <span className="text-[0.6875rem] uppercase tracking-[0.14em] text-forest-200">
@@ -248,7 +248,7 @@ export function MobileHeader({ onMenuToggle }: MobileHeaderProps = {}) {
           {canWithdraw ? (
             <Link
               href="/dashboard/wallet"
-              className="inline-flex shrink-0 items-center gap-1.5 rounded-pill border border-[rgba(122,158,26,0.35)] bg-lime-400 px-4 py-2.5 text-sm font-semibold text-forest-800 transition-colors duration-150 hover:bg-lime-300"
+              className="inline-flex shrink-0 items-center gap-1.5 rounded-pill border border-action-edge bg-action px-4 py-2.5 text-sm font-semibold text-on-action transition-colors duration-150 hover:bg-action-hover"
             >
               Retirer
               <ArrowRight className="h-4 w-4" aria-hidden="true" />

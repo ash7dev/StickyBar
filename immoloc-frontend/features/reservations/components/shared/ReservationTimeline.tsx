@@ -29,9 +29,9 @@ type Tone = 'wait' | 'money' | 'ok' | 'key' | 'end' | 'error' | 'muted';
 
 const TONES: Record<Tone, { light: string; dark: string }> = {
   wait: { light: 'bg-warning-50 text-warning-700', dark: 'bg-warning-500/20 text-warning-500' },
-  money: { light: 'bg-lime-100 text-forest-800', dark: 'bg-lime-400/15 text-lime-400' },
+  money: { light: 'bg-lime-100 text-forest-800', dark: 'bg-marker-bg text-on-inverse-marker' },
   ok: { light: 'bg-forest-100 text-forest-700', dark: 'bg-white/[0.08] text-forest-200' },
-  key: { light: 'bg-lime-100 text-forest-800', dark: 'bg-lime-400/15 text-lime-400' },
+  key: { light: 'bg-lime-100 text-forest-800', dark: 'bg-marker-bg text-on-inverse-marker' },
   end: { light: 'bg-success-50 text-success-700', dark: 'bg-success-500/20 text-success-500' },
   error: { light: 'bg-error-50 text-error-700', dark: 'bg-error-500/20 text-error-500' },
   muted: { light: 'bg-neutral-100 text-foreground-muted', dark: 'bg-white/[0.06] text-forest-200' },

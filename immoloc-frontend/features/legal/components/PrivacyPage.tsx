@@ -165,7 +165,7 @@ export function PrivacyPage() {
       <div className="relative overflow-hidden bg-forest-950 text-white">
         <div className="absolute inset-0 pointer-events-none">
           <div className="absolute top-0 left-[15%] w-[500px] h-[400px] rounded-full bg-forest-600/25 blur-[130px]" />
-          <div className="absolute bottom-0 right-[5%] w-[350px] h-[300px] rounded-full bg-lime-400/15 blur-[100px]" />
+          <div className="absolute bottom-0 right-[5%] w-[350px] h-[300px] rounded-full bg-marker-bg blur-[100px]" />
           <div className="absolute inset-0 bg-[url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNDAiIGhlaWdodD0iNDAiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+PGNpcmNsZSBjeD0iMSIgY3k9IjEiIHI9IjEiIGZpbGw9InJnYmEoMjU1LDI1NSwyNTUsMC4wMykiLz48L3N2Zz4=')] opacity-50" />
         </div>
 
@@ -176,12 +176,12 @@ export function PrivacyPage() {
             <ChevronRight className="w-3 h-3 text-neutral-500" />
             <Link href="/cgu" className="hover:text-white transition-colors">Légal</Link>
             <ChevronRight className="w-3 h-3 text-neutral-500" />
-            <span className="text-lime-300">Politique de confidentialité</span>
+            <span className="text-on-inverse-marker">Politique de confidentialité</span>
           </div>
 
           <div className="max-w-3xl">
-            <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-forest-900/80 border border-forest-700/60 text-lime-300 text-[11px] font-bold uppercase tracking-widest mb-6 shadow-sm">
-              <Lock className="w-3.5 h-3.5 text-lime-400" />
+            <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-forest-900/80 border border-forest-700/60 text-on-inverse-marker text-[11px] font-bold uppercase tracking-widest mb-6 shadow-sm">
+              <Lock className="w-3.5 h-3.5 text-on-inverse-marker" />
               Protection des données
             </div>
 
@@ -204,7 +204,7 @@ export function PrivacyPage() {
                 { icon: Shield,    label: 'Cadre juridique',    value: 'Loi sén. 2008-12 · RGPD' },
               ].map(({ icon: Icon, label, value }) => (
                 <div key={label} className="flex items-center gap-2.5 px-4 py-2.5 bg-forest-900/60 border border-forest-800/80 rounded-xl shadow-xs">
-                  <Icon className="w-4 h-4 text-lime-400" />
+                  <Icon className="w-4 h-4 text-on-inverse-marker" />
                   <div>
                     <p className="text-[10px] text-forest-300 font-bold uppercase tracking-wide">{label}</p>
                     <p className="text-[13px] font-bold text-white">{value}</p>

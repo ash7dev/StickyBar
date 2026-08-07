@@ -16,7 +16,7 @@ function Skeleton() {
     <div className="min-h-screen bg-background-alt flex items-center justify-center p-6">
       <div className="flex flex-col items-center gap-4 text-center">
         <div className="w-14 h-14 rounded-inner bg-forest-950 border border-forest-800 flex items-center justify-center shadow-lg">
-          <Loader2 className="w-7 h-7 text-lime-400 animate-spin" />
+          <Loader2 className="w-7 h-7 text-on-inverse-marker animate-spin" />
         </div>
         <div>
           <h3 className="font-display text-lg font-bold text-foreground">Chargement de votre annonce…</h3>

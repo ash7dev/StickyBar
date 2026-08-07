@@ -140,12 +140,12 @@ function Lightbox({
           <div className="flex items-center gap-3 flex-wrap">
             {/* Category */}
             <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-inner bg-forest-900 border border-forest-800 text-xs font-bold text-white backdrop-blur-sm">
-              <Camera className="w-3.5 h-3.5 text-lime-400" />
+              <Camera className="w-3.5 h-3.5 text-on-inverse-marker" />
               {CATEGORIE_LABEL[photo.categorie] ?? photo.categorie}
             </span>
             {/* Uploader */}
             <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-inner bg-forest-900 border border-forest-800 text-xs font-bold text-white backdrop-blur-sm">
-              <UploaderIcon className="w-3.5 h-3.5 text-lime-400" />
+              <UploaderIcon className="w-3.5 h-3.5 text-on-inverse-marker" />
               {uploaderCfg.label}
             </span>
           </div>
@@ -168,7 +168,7 @@ function Lightbox({
               className={cn(
                 'relative shrink-0 w-12 h-12 rounded-inner overflow-hidden border-2 transition-all duration-200',
                 i === idx
-                  ? 'border-lime-400 shadow-md scale-110'
+                  ? 'border-action shadow-md scale-110'
                   : 'border-transparent opacity-50 hover:opacity-80',
               )}
             >
@@ -202,7 +202,7 @@ function PhotoGridItem({
       className={cn(
         'group relative rounded-inner overflow-hidden bg-background-alt border border-border/80',
         'transition-all duration-300 hover:shadow-md hover:border-forest-300',
-        'focus-visible:ring-2 focus-visible:ring-lime-400 focus-visible:ring-offset-2',
+        'focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2',
         isLarge ? 'col-span-2 row-span-2' : '',
       )}
     >
@@ -220,8 +220,8 @@ function PhotoGridItem({
 
         {/* Zoom icon (hover) */}
         <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all duration-300">
-          <div className="w-10 h-10 rounded-pill bg-forest-950/80 backdrop-blur-sm border border-lime-400/30 flex items-center justify-center transform scale-75 group-hover:scale-100 transition-transform duration-300">
-            <ZoomIn className="w-4 h-4 text-lime-400" />
+          <div className="w-10 h-10 rounded-pill bg-forest-950/80 backdrop-blur-sm border border-action-edge flex items-center justify-center transform scale-75 group-hover:scale-100 transition-transform duration-300">
+            <ZoomIn className="w-4 h-4 text-on-inverse-marker" />
           </div>
         </div>
 
@@ -246,7 +246,7 @@ function PhotoGridItem({
         {/* Date (hover) */}
         <div className="absolute bottom-2.5 right-2.5 opacity-0 group-hover:opacity-100 transition-all duration-300 translate-y-1 group-hover:translate-y-0">
           <span className="inline-flex items-center gap-1 px-2 py-1 rounded-pill bg-forest-950/80 backdrop-blur-sm border border-forest-800 text-[9px] font-bold text-forest-200">
-            <Clock className="w-2.5 h-2.5 text-lime-400" />
+            <Clock className="w-2.5 h-2.5 text-on-inverse-marker" />
             {dateTimeFull(photo.creeLe)}
           </span>
         </div>
@@ -303,8 +303,8 @@ export function PhotosEtatLieuSection({ checkinPhotos, checkoutPhotos }: Props) 
         {/* ── Header ── */}
         <div className="flex items-center justify-between px-6 py-5 border-b border-border/60">
           <div className="flex items-center gap-3">
-            <div className="w-9 h-9 rounded-inner bg-forest-950 text-lime-400 border border-lime-400/20 flex items-center justify-center shrink-0 shadow-2xs">
-              <Camera className="w-4 h-4 text-lime-400" />
+            <div className="w-9 h-9 rounded-inner bg-forest-950 text-on-inverse-marker border border-action-edge flex items-center justify-center shrink-0 shadow-2xs">
+              <Camera className="w-4 h-4 text-on-inverse-marker" />
             </div>
             <div>
               <span className="font-display text-base font-bold text-forest-950">Photos état des lieux</span>
@@ -347,7 +347,7 @@ export function PhotosEtatLieuSection({ checkinPhotos, checkoutPhotos }: Props) 
                     <span className={cn(
                       'inline-flex items-center justify-center min-w-[20px] h-5 px-1.5 rounded-pill text-[10px] font-extrabold transition-all duration-300',
                       isActive
-                        ? `bg-forest-950 text-lime-400 shadow-2xs`
+                        ? `bg-forest-950 text-on-inverse-marker shadow-2xs`
                         : 'bg-background-alt text-foreground-muted',
                     )}>
                       {cfg.count}

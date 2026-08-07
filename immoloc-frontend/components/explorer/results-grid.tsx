@@ -56,7 +56,7 @@ function EmptyState() {
           href="/explorer"
           className="inline-flex items-center gap-2 rounded-pill bg-forest-950 px-5 py-2.5 text-sm font-semibold text-white transition-all hover:bg-forest-900 active:scale-95 shadow-sm"
         >
-          <RotateCcw className="h-4 w-4 text-lime-400" aria-hidden="true" />
+          <RotateCcw className="h-4 w-4 text-on-inverse-marker" aria-hidden="true" />
           Réinitialiser tous les filtres
         </Link>
       </div>

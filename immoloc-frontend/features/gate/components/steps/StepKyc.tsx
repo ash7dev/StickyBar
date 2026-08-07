@@ -139,7 +139,7 @@ function UploadSlot({
         >
           {hasFile ? (
             <>
-              <CheckCircle2 className="w-6 h-6 text-forest-600 dark:text-lime-400 shrink-0" />
+              <CheckCircle2 className="w-6 h-6 text-forest-600 dark:text-on-inverse-marker shrink-0" />
               <span className="text-[11px] font-bold text-foreground text-center leading-tight break-all line-clamp-2">
                 {file.name}
               </span>

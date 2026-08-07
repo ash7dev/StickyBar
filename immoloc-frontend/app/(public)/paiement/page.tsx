@@ -115,14 +115,14 @@ export default function SequestrePage() {
       <section className="-mt-20 bg-[radial-gradient(70%_60%_at_50%_0%,#0F503D_0%,rgba(15,80,61,0)_70%),linear-gradient(180deg,#072A20_0%,#041912_100%)] pb-16 pt-32 text-white sm:pt-36">
         <div className="mx-auto max-w-[1120px] px-6 text-center">
           <span className="inline-flex items-center gap-2 rounded-pill border border-white/10 bg-white/[0.06] px-4 py-1.5">
-            <ShieldCheck className="h-3.5 w-3.5 text-lime-400" aria-hidden="true" />
+            <ShieldCheck className="h-3.5 w-3.5 text-on-inverse-marker" aria-hidden="true" />
             <span className="text-[0.6875rem] font-semibold uppercase tracking-[0.14em] text-forest-200">
               Séquestre Klef
             </span>
           </span>
 
           <h1 className="mx-auto mt-6 max-w-3xl font-display text-[clamp(2rem,5vw,3.25rem)] font-semibold leading-[1.06] tracking-[-0.03em] text-neutral-50">
-            Comment votre argent est protégé<span className="text-lime-400">.</span>
+            Comment votre argent est protégé<span className="text-on-inverse-marker">.</span>
           </h1>
 
           <p className="mx-auto mt-4 max-w-2xl text-base leading-relaxed text-forest-200 sm:text-lg">
@@ -162,7 +162,7 @@ export default function SequestrePage() {
                 <div className="mb-4 flex items-center justify-between gap-3">
                   <span className={cn(
                     'grid h-10 w-10 shrink-0 place-items-center rounded-inner',
-                    isKey ? 'bg-lime-400/15 text-lime-400' : 'bg-neutral-100 text-forest-700',
+                    isKey ? 'bg-marker-bg text-on-inverse-marker' : 'bg-neutral-100 text-forest-700',
                   )}>
                     <Icon className="h-[1.125rem] w-[1.125rem]" aria-hidden="true" />
                   </span>
@@ -185,7 +185,7 @@ export default function SequestrePage() {
                     information que le lecteur vient chercher. */}
                 <p className={cn(
                   'mt-2 text-sm font-medium',
-                  isKey ? 'text-lime-400' : 'text-forest-700',
+                  isKey ? 'text-on-inverse-marker' : 'text-forest-700',
                 )}>
                   {money}
                 </p>
@@ -206,7 +206,7 @@ export default function SequestrePage() {
             reponse approximative sur ce point est pire que pas de reponse. */}
         <section className="rounded-card border border-border bg-background-card p-6 shadow-sm sm:p-8">
           <div className="flex items-start gap-4">
-            <span className="grid h-11 w-11 shrink-0 place-items-center rounded-inner bg-lime-400/25 text-forest-800">
+            <span className="grid h-11 w-11 shrink-0 place-items-center rounded-inner bg-marker-bg text-forest-800">
               <Building2 className="h-5 w-5" aria-hidden="true" />
             </span>
             <div className="min-w-0">
@@ -316,7 +316,7 @@ export default function SequestrePage() {
           </p>
           <Link
             href="/explorer"
-            className="mt-8 inline-flex items-center gap-2 rounded-pill bg-lime-400 px-7 py-3.5 text-base font-semibold text-forest-800 transition-colors duration-150 hover:bg-lime-300"
+            className="mt-8 inline-flex items-center gap-2 rounded-pill bg-action px-7 py-3.5 text-base font-semibold text-on-action transition-colors duration-150 hover:bg-action-hover"
           >
             Voir les logements vérifiés
             <ArrowRight className="h-4 w-4" aria-hidden="true" />

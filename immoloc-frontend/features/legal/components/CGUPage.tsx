@@ -158,7 +158,7 @@ export function CGUPage() {
         {/* Background layers */}
         <div className="absolute inset-0 pointer-events-none">
           <div className="absolute top-0 left-[20%] w-[500px] h-[500px] rounded-full bg-forest-600/20 blur-[120px]" />
-          <div className="absolute bottom-0 right-[10%] w-[400px] h-[300px] rounded-full bg-lime-400/10 blur-[100px]" />
+          <div className="absolute bottom-0 right-[10%] w-[400px] h-[300px] rounded-full bg-marker-bg blur-[100px]" />
           <div className="absolute inset-0 bg-[url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNDAiIGhlaWdodD0iNDAiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+PGNpcmNsZSBjeD0iMSIgY3k9IjEiIHI9IjEiIGZpbGw9InJnYmEoMjU1LDI1NSwyNTUsMC4wNCkiLz48L3N2Zz4=')] opacity-40" />
         </div>
 
@@ -167,13 +167,13 @@ export function CGUPage() {
           <div className="flex items-center gap-2 text-xs font-semibold text-neutral-400 mb-8">
             <Link href="/" className="hover:text-white transition-colors">{BRAND.name}</Link>
             <ChevronRight className="w-3 h-3 text-neutral-500" />
-            <span className="text-lime-300">Conditions Générales d&apos;Utilisation</span>
+            <span className="text-on-inverse-marker">Conditions Générales d&apos;Utilisation</span>
           </div>
 
           <div className="max-w-3xl">
             {/* Badge */}
-            <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-forest-900/80 border border-forest-700/60 text-lime-300 text-[11px] font-bold uppercase tracking-widest mb-6 shadow-sm">
-              <FileText className="w-3.5 h-3.5 text-lime-400" />
+            <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-forest-900/80 border border-forest-700/60 text-on-inverse-marker text-[11px] font-bold uppercase tracking-widest mb-6 shadow-sm">
+              <FileText className="w-3.5 h-3.5 text-on-inverse-marker" />
               Document légal
             </div>
 
@@ -198,7 +198,7 @@ export function CGUPage() {
                 { icon: Building2, label: 'Droit applicable', value: 'République du Sénégal' },
               ].map(({ icon: Icon, label, value }) => (
                 <div key={label} className="flex items-center gap-2.5 px-4 py-2.5 bg-forest-900/60 border border-forest-800/80 rounded-xl shadow-xs">
-                  <Icon className="w-4 h-4 text-lime-400" />
+                  <Icon className="w-4 h-4 text-on-inverse-marker" />
                   <div>
                     <p className="text-[10px] text-forest-300 font-bold uppercase tracking-wide">{label}</p>
                     <p className="text-[13px] font-bold text-white">{value}</p>
@@ -423,17 +423,17 @@ export function CGUPage() {
 
             <div className="my-6 p-6 bg-gradient-to-br from-forest-900 via-forest-950 to-forest-900 rounded-2xl border border-forest-800 text-white shadow-lg">
               <div className="flex items-center gap-3 mb-4">
-                <div className="w-10 h-10 rounded-xl bg-lime-400/10 border border-lime-400/20 flex items-center justify-center">
-                  <Shield className="w-5 h-5 text-lime-300" />
+                <div className="w-10 h-10 rounded-xl bg-marker-bg border border-action-edge flex items-center justify-center">
+                  <Shield className="w-5 h-5 text-on-inverse-marker" />
                 </div>
                 <div>
                   <p className="font-display font-bold text-base text-white">Système de Séquestre {BRAND.name}</p>
-                  <p className="text-xs text-lime-300 font-semibold">Protection maximale pour les deux parties</p>
+                  <p className="text-xs text-on-inverse-marker font-semibold">Protection maximale pour les deux parties</p>
                 </div>
               </div>
               <div className="space-y-3 text-sm text-forest-100/90 leading-relaxed font-sans">
                 <p>
-                  À la réservation, le montant total est <strong className="text-lime-300 font-semibold">bloqué</strong> sur
+                  À la réservation, le montant total est <strong className="text-on-inverse-marker font-semibold">bloqué</strong> sur
                   le compte de séquestre {BRAND.name}. Le Propriétaire ne reçoit son paiement qu&apos;après
                   validation du check-in par les deux parties.
                 </p>

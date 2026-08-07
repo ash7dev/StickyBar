@@ -17,7 +17,7 @@ export function ParametresSkeleton() {
       <div className="relative rounded-card border border-forest-900/40 bg-forest-950/90 p-6 sm:p-8 space-y-4">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-6">
           <div className="flex items-center gap-5">
-            <div className="w-20 h-20 rounded-inner bg-forest-900 border border-lime-400/10 shrink-0" />
+            <div className="w-20 h-20 rounded-inner bg-forest-900 border border-action/10 shrink-0" />
             <div className="space-y-2.5 flex-1">
               <div className="h-7 w-48 rounded-pill bg-forest-900" />
               <div className="h-3.5 w-64 rounded-pill bg-forest-900/60" />
@@ -27,7 +27,7 @@ export function ParametresSkeleton() {
               </div>
             </div>
           </div>
-          <div className="h-11 w-44 rounded-pill bg-lime-400/20 shrink-0" />
+          <div className="h-11 w-44 rounded-pill bg-marker-bg shrink-0" />
         </div>
       </div>
 

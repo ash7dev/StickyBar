@@ -103,13 +103,13 @@ export function InstallAppModal() {
         <div className="relative rounded-card bg-background-card/95 backdrop-blur-xl border border-border shadow-float p-5 overflow-hidden animate-in slide-in-from-bottom-8 fade-in duration-300">
           
           {/* Lueurs décoratives */}
-          <div className="absolute -top-16 -right-16 w-36 h-36 rounded-full bg-lime-400/10 blur-2xl pointer-events-none" />
+          <div className="absolute -top-16 -right-16 w-36 h-36 rounded-full bg-marker-bg blur-2xl pointer-events-none" />
           <div className="absolute -bottom-16 -left-16 w-36 h-36 rounded-full bg-forest-500/10 blur-2xl pointer-events-none" />
 
           {/* En-tête avec bouton de fermeture */}
           <div className="flex items-start justify-between gap-3">
             <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-inner bg-forest-950 text-lime-400 border border-forest-800 flex items-center justify-center shrink-0 shadow-xs">
+              <div className="w-10 h-10 rounded-inner bg-forest-950 text-on-inverse-marker border border-forest-800 flex items-center justify-center shrink-0 shadow-xs">
                 <Smartphone className="w-5 h-5" />
               </div>
               <div>
@@ -142,17 +142,17 @@ export function InstallAppModal() {
             {isIOS ? (
               <div className="p-3.5 rounded-inner bg-background-alt border border-border space-y-2 text-xs">
                 <p className="font-semibold text-foreground flex items-center gap-1.5">
-                  <Share className="w-3.5 h-3.5 text-forest-600 dark:text-lime-400" />
+                  <Share className="w-3.5 h-3.5 text-forest-600 dark:text-on-inverse-marker" />
                   <span>Comment l'installer sur iPhone / iPad :</span>
                 </p>
                 <ol className="space-y-1.5 text-foreground-muted pl-1">
                   <li className="flex items-center gap-2">
-                    <span className="w-4 h-4 rounded-full bg-forest-100 dark:bg-forest-900 text-forest-800 dark:text-lime-300 text-[10px] font-bold flex items-center justify-center shrink-0">1</span>
-                    <span>Appuyez sur le bouton <strong>Partager</strong> <Share className="inline w-3.5 h-3.5 text-forest-600 dark:text-lime-400 mx-0.5" /> en bas de Safari</span>
+                    <span className="w-4 h-4 rounded-full bg-forest-100 dark:bg-forest-900 text-forest-800 dark:text-on-inverse-marker text-[10px] font-bold flex items-center justify-center shrink-0">1</span>
+                    <span>Appuyez sur le bouton <strong>Partager</strong> <Share className="inline w-3.5 h-3.5 text-forest-600 dark:text-on-inverse-marker mx-0.5" /> en bas de Safari</span>
                   </li>
                   <li className="flex items-center gap-2">
-                    <span className="w-4 h-4 rounded-full bg-forest-100 dark:bg-forest-900 text-forest-800 dark:text-lime-300 text-[10px] font-bold flex items-center justify-center shrink-0">2</span>
-                    <span>Défilez vers le bas et touchez <strong>Sur l'écran d'accueil</strong> <PlusSquare className="inline w-3.5 h-3.5 text-forest-600 dark:text-lime-400 mx-0.5" /></span>
+                    <span className="w-4 h-4 rounded-full bg-forest-100 dark:bg-forest-900 text-forest-800 dark:text-on-inverse-marker text-[10px] font-bold flex items-center justify-center shrink-0">2</span>
+                    <span>Défilez vers le bas et touchez <strong>Sur l'écran d'accueil</strong> <PlusSquare className="inline w-3.5 h-3.5 text-forest-600 dark:text-on-inverse-marker mx-0.5" /></span>
                   </li>
                 </ol>
               </div>
@@ -160,16 +160,16 @@ export function InstallAppModal() {
               /* Guide pour Mac Safari Desktop */
               <div className="p-3.5 rounded-inner bg-background-alt border border-border space-y-2 text-xs">
                 <p className="font-semibold text-foreground flex items-center gap-1.5">
-                  <Smartphone className="w-3.5 h-3.5 text-forest-600 dark:text-lime-400" />
+                  <Smartphone className="w-3.5 h-3.5 text-forest-600 dark:text-on-inverse-marker" />
                   <span>Comment l'installer sur Mac (Safari Desktop) :</span>
                 </p>
                 <ol className="space-y-1.5 text-foreground-muted pl-1">
                   <li className="flex items-center gap-2">
-                    <span className="w-4 h-4 rounded-full bg-forest-100 dark:bg-forest-900 text-forest-800 dark:text-lime-300 text-[10px] font-bold flex items-center justify-center shrink-0">1</span>
+                    <span className="w-4 h-4 rounded-full bg-forest-100 dark:bg-forest-900 text-forest-800 dark:text-on-inverse-marker text-[10px] font-bold flex items-center justify-center shrink-0">1</span>
                     <span>Dans le menu Safari, cliquez sur <strong>Fichier</strong> en haut de l'écran</span>
                   </li>
                   <li className="flex items-center gap-2">
-                    <span className="w-4 h-4 rounded-full bg-forest-100 dark:bg-forest-900 text-forest-800 dark:text-lime-300 text-[10px] font-bold flex items-center justify-center shrink-0">2</span>
+                    <span className="w-4 h-4 rounded-full bg-forest-100 dark:bg-forest-900 text-forest-800 dark:text-on-inverse-marker text-[10px] font-bold flex items-center justify-center shrink-0">2</span>
                     <span>Sélectionnez <strong>« Ajouter au Dock »</strong> pour ouvrir Klef comme une App Mac !</span>
                   </li>
                 </ol>
@@ -182,7 +182,7 @@ export function InstallAppModal() {
                   <span>Lancement instantané</span>
                 </div>
                 <div className="flex items-center gap-1.5 p-2 rounded-inner bg-background-alt border border-border">
-                  <ShieldCheck className="w-3.5 h-3.5 text-forest-600 dark:text-lime-400 shrink-0" />
+                  <ShieldCheck className="w-3.5 h-3.5 text-forest-600 dark:text-on-inverse-marker shrink-0" />
                   <span>100% Sécurisé (0 Mo)</span>
                 </div>
               </div>

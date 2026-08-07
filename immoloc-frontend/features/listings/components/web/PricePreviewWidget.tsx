@@ -317,7 +317,7 @@ export function PricePreviewWidget({
                   </span>
                 )}
                 {derniereMinuteActive && (
-                  <span className="inline-flex items-center gap-1 rounded-pill border border-lime-500/30 bg-lime-500/10 px-2.5 py-0.5 text-xs font-bold text-forest-900">
+                  <span className="inline-flex items-center gap-1 rounded-pill border border-action-edge bg-lime-500/10 px-2.5 py-0.5 text-xs font-bold text-forest-900">
                     <Zap className="h-3 w-3 fill-lime-600 text-lime-600" />
                     −15 % dernière minute
                   </span>

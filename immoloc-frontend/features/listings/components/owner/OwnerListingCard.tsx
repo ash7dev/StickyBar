@@ -123,7 +123,7 @@ export function OwnerListingCard({ listing, viewMode = 'grid', onToggleStatus, o
           <div className="relative z-20 flex items-center gap-2">
             <Link
               href={editHref}
-              className="inline-flex items-center gap-1.5 rounded-pill bg-lime-400 hover:bg-lime-300 text-forest-950 px-3.5 py-2 text-xs font-semibold transition-all shadow-xs active:scale-95 border-none"
+              className="inline-flex items-center gap-1.5 rounded-pill bg-action hover:bg-action-hover text-on-action px-3.5 py-2 text-xs font-semibold transition-all shadow-xs active:scale-95 border-none"
             >
               <Edit3 className="h-3.5 w-3.5 text-forest-950 stroke-[2px]" aria-hidden="true" />
               Modifier

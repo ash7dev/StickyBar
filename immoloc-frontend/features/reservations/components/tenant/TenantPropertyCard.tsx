@@ -12,8 +12,8 @@ export function TenantPropertyCard({ logement }: { logement: Logement }) {
   return (
     <div className="bg-background-card rounded-card border border-border/80 p-5 space-y-4 shadow-2xs">
       <div className="flex items-center gap-2.5 pb-3 border-b border-border/60">
-        <div className="w-8 h-8 rounded-inner bg-forest-950 text-lime-400 border border-lime-400/20 flex items-center justify-center shrink-0">
-          <Home className="w-4 h-4 text-lime-400" />
+        <div className="w-8 h-8 rounded-inner bg-forest-950 text-on-inverse-marker border border-action-edge flex items-center justify-center shrink-0">
+          <Home className="w-4 h-4 text-on-inverse-marker" />
         </div>
         <div>
           <h4 className="font-display text-base font-bold text-forest-950">Logement loué</h4>

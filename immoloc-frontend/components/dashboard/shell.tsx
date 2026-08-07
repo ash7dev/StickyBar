@@ -64,7 +64,7 @@ function BottomNav() {
                   // de 44px recommande pour une cible tactile.
                   'flex min-h-[3.25rem] flex-col items-center justify-center gap-1 rounded-inner px-1 py-1.5',
                   'transition-colors duration-150',
-                  active ? 'text-lime-400' : 'text-forest-200 hover:text-neutral-50',
+                  active ? 'text-on-inverse-marker' : 'text-forest-200 hover:text-neutral-50',
                 )}
               >
                 <span
@@ -73,7 +73,7 @@ function BottomNav() {
                     // L'etat actif etait une pastille lime PLEINE avec halo
                     // colore. Ici l'indicateur est une teinte : le lime reste
                     // present sans devenir le bloc le plus lourd de l'ecran.
-                    active && 'bg-lime-400/15',
+                    active && 'bg-marker-bg',
                   )}
                 >
                   <Icon className="h-5 w-5" strokeWidth={active ? 2.25 : 1.9} />

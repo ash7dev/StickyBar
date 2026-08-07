@@ -93,7 +93,7 @@ export function WalletSnapshot({ available, pending, processing, isLoading = fal
 
         {/* « Retirable immédiatement » s'affichait sous un solde de 0 FCFA,
             avec un écusson vert. */}
-        <p className={cn('mt-2 text-xs', canWithdraw ? 'text-lime-400' : 'text-forest-200')}>
+        <p className={cn('mt-2 text-xs', canWithdraw ? 'text-on-inverse-marker' : 'text-forest-200')}>
           {canWithdraw
             ? 'Retirable immédiatement'
             : pe > 0
@@ -183,7 +183,7 @@ export function WalletSnapshot({ available, pending, processing, isLoading = fal
       {canWithdraw ? (
         <Link
           href="/dashboard/wallet"
-          className="inline-flex w-full items-center justify-center gap-2 rounded-pill bg-lime-400 py-3 text-sm font-semibold text-forest-800 transition-colors duration-150 hover:bg-lime-300"
+          className="inline-flex w-full items-center justify-center gap-2 rounded-pill bg-action py-3 text-sm font-semibold text-on-action transition-colors duration-150 hover:bg-action-hover"
         >
           Retirer {money(av)} FCFA
           <ArrowRight className="h-4 w-4" aria-hidden="true" />

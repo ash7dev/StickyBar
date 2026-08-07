@@ -102,8 +102,8 @@ export default function ProfilPage() {
           <ArrowLeft className="w-4 h-4 text-foreground-muted" />
         </button>
 
-        <div className="w-10 h-10 rounded-xl bg-forest-950 text-lime-400 border border-lime-400/20 flex items-center justify-center shadow-sm shrink-0">
-          <User className="w-[18px] h-[18px] text-lime-400" />
+        <div className="w-10 h-10 rounded-xl bg-forest-950 text-on-inverse-marker border border-action-edge flex items-center justify-center shadow-sm shrink-0">
+          <User className="w-[18px] h-[18px] text-on-inverse-marker" />
         </div>
         <div className="flex-1 min-w-0">
           <h1 className="text-xl font-bold text-neutral-900">Mon profil</h1>

@@ -75,7 +75,7 @@ export function HostWelcomeBanner({
 
       <div className="max-w-2xl space-y-2.5">
         <span className="inline-flex items-center gap-2 rounded-pill border border-white/10 bg-white/[0.06] px-3 py-1">
-          <ShieldCheck className="h-3.5 w-3.5 text-lime-400" aria-hidden="true" />
+          <ShieldCheck className="h-3.5 w-3.5 text-on-inverse-marker" aria-hidden="true" />
           <span className="text-[0.6875rem] font-semibold uppercase tracking-[0.14em] text-forest-200">
             Espace propriétaire
           </span>
@@ -92,7 +92,7 @@ export function HostWelcomeBanner({
           </h2>
         )}
 
-        {/* Les chiffres étaient en <strong className="text-lime-400"> :
+        {/* Les chiffres étaient en <strong className="text-on-inverse-marker"> :
             l'accent portait du texte au milieu d'une phrase, deux fois. */}
         <p className="text-sm leading-relaxed text-forest-200">
           {COPY.body}
@@ -119,7 +119,7 @@ export function HostWelcomeBanner({
             répondre, ou retirer. C'est l'action qui compte à cet instant. */}
         <Link
           href={COPY.cta.href}
-          className="inline-flex h-11 flex-1 items-center justify-center gap-2 rounded-pill bg-lime-400 px-5 text-sm font-semibold text-forest-800 transition-colors duration-150 hover:bg-lime-300 md:flex-initial"
+          className="inline-flex h-11 flex-1 items-center justify-center gap-2 rounded-pill bg-action px-5 text-sm font-semibold text-on-action transition-colors duration-150 hover:bg-action-hover md:flex-initial"
         >
           <CtaIcon className="h-4 w-4" aria-hidden="true" />
           {COPY.cta.label}

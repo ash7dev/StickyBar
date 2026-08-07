@@ -66,7 +66,7 @@ export function HeroSection({ listings = [] }: Props) {
       {/* Formes géométriques décoratives en arrière-plan (desktop uniquement) */}
       <div className="absolute inset-0 pointer-events-none hidden lg:block overflow-hidden" aria-hidden="true">
         {/* Cercle lime en haut à droite */}
-        <div className="absolute top-20 right-[10%] w-64 h-64 rounded-full bg-lime-400/10 blur-3xl" />
+        <div className="absolute top-20 right-[10%] w-64 h-64 rounded-full bg-marker-bg blur-3xl" />
 
         {/* Carré forest tournant en bas à gauche */}
         <div className="absolute bottom-32 left-[8%] w-32 h-32 bg-forest-900/5 rotate-12 rounded-2xl" />

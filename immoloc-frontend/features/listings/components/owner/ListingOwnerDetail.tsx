@@ -112,7 +112,7 @@ function RevenueCard({ revenue, reservations }: { revenue: number; reservations:
                       <div
                         className={cn(
                           'w-full rounded-inner',
-                          b.isCurrent ? 'bg-lime-400' : 'bg-white/12',
+                          b.isCurrent ? 'bg-action' : 'bg-white/12',
                         )}
                         style={{
                           height: visible ? `${Math.max((b.value / maxBar) * 100, 4)}%` : '0%',
@@ -120,7 +120,7 @@ function RevenueCard({ revenue, reservations }: { revenue: number; reservations:
                         }}
                       />
                     </div>
-                    <span className={cn('text-[0.6875rem]', b.isCurrent ? 'text-lime-400' : 'text-forest-200')}>
+                    <span className={cn('text-[0.6875rem]', b.isCurrent ? 'text-on-inverse-marker' : 'text-forest-200')}>
                       {b.label}
                     </span>
                   </div>
@@ -134,7 +134,7 @@ function RevenueCard({ revenue, reservations }: { revenue: number; reservations:
                   <span className={cn(
                     'inline-flex items-center gap-1 rounded-pill px-2.5 py-1 text-xs font-semibold',
                     trend >= 0
-                      ? 'bg-lime-400/10 text-lime-400'
+                      ? 'bg-marker-bg text-on-inverse-marker'
                       : 'bg-error-500/15 text-error-500',
                   )}>
                     {trend >= 0
@@ -990,7 +990,7 @@ export function ListingOwnerDetail({ listing }: { listing: ListingDetail }) {
             </div>
             <Link
               href={`/dashboard/reservations?logementId=${listing.id}`}
-              className="inline-flex items-center gap-1 text-xs font-semibold text-lime-400 transition-colors hover:text-lime-300"
+              className="inline-flex items-center gap-1 text-xs font-semibold text-on-inverse-marker transition-colors hover:text-on-inverse-marker"
             >
               Tout voir
               <ChevronRight className="h-3.5 w-3.5" aria-hidden="true" />
@@ -1021,7 +1021,7 @@ export function ListingOwnerDetail({ listing }: { listing: ListingDetail }) {
                   className="group flex items-center justify-between gap-3 rounded-inner bg-white/[0.04] p-3.5 transition-colors hover:bg-white/[0.08]"
                 >
                   <div className="flex min-w-0 flex-1 items-center gap-3">
-                    <span className="grid h-9 w-9 shrink-0 place-items-center rounded-pill bg-white/10 text-xs font-semibold text-lime-400">
+                    <span className="grid h-9 w-9 shrink-0 place-items-center rounded-pill bg-white/10 text-xs font-semibold text-on-inverse-marker">
                       {initials}
                     </span>
                     <div className="min-w-0">
@@ -1153,7 +1153,7 @@ export function ListingOwnerDetail({ listing }: { listing: ListingDetail }) {
 
               <Link
                 href={`/dashboard/annonces/${listing.id}/modifier`}
-                className="flex h-11 w-full items-center justify-center gap-2 rounded-pill bg-lime-400 hover:bg-lime-300 text-forest-950 font-bold text-sm shadow-md transition-all active:scale-95 cursor-pointer"
+                className="flex h-11 w-full items-center justify-center gap-2 rounded-pill bg-action hover:bg-action-hover text-on-action font-bold text-sm shadow-md transition-all active:scale-95 cursor-pointer"
               >
                 <Pencil className="h-4 w-4 text-forest-950" aria-hidden="true" />
                 <span>Modifier le bien</span>

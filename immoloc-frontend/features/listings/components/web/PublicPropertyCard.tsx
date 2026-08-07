@@ -57,7 +57,7 @@ export function PublicPropertyCard({ listing }: Props) {
             </span>
           )}
           {listing.isInstantBooking && (
-            <span className="px-3 py-1 bg-lime-400 text-forest-950 backdrop-blur-sm rounded-full text-[10px] font-black uppercase tracking-wider shadow-lg flex items-center gap-1">
+            <span className="px-3 py-1 bg-action text-on-action backdrop-blur-sm rounded-full text-[10px] font-black uppercase tracking-wider shadow-lg flex items-center gap-1">
               ⚡ Instantané
             </span>
           )}
