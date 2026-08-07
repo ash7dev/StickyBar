@@ -171,11 +171,7 @@ export function ListingCard({
               size="md"
             />
 
-            {derniereMinuteActive ? (
-              <span className="shrink-0 rounded-pill bg-amber-400 text-slate-950 px-2 py-0.5 text-[0.6875rem] font-black uppercase tracking-wider shadow-xs">
-                ⚡ -15%
-              </span>
-            ) : sponsorise ? (
+            {sponsorise && !derniereMinuteActive ? (
               <span className="shrink-0 rounded-pill bg-neutral-100 px-2 py-0.5 text-[0.6875rem] font-medium text-foreground-faint">
                 Mis en avant
               </span>
