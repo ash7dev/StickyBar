@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { MapPin, Navigation, ExternalLink, ShieldCheck, Compass, Info } from 'lucide-react';
 import { cn } from '@/lib/utils/cn';
+import { colors } from '@/lib/theme/colors';
 
 interface ListingLocationMapProps {
   ville: string;
@@ -117,8 +118,8 @@ export function ListingLocationMap({
       // ── Zone d'Emplacement Airbnb (Cercle translucide de quartier + Pin central) ──
       const radius = 350; // 350 mètres de zone
       L.circle([lat, lng], {
-        color: '#15803d',
-        fillColor: '#a3e635',
+        color: colors.forest[600],
+        fillColor: colors.lime[400],
         fillOpacity: 0.35,
         weight: 2,
       }).addTo(map);
@@ -126,8 +127,8 @@ export function ListingLocationMap({
       const pinIcon = L.divIcon({
         className: 'custom-location-pin',
         html: `<div style="position: relative; width: 42px; height: 42px; display: flex; align-items: center; justify-content: center;">
-                <div style="position: absolute; inset: 0; border-radius: 9999px; background-color: #0f2d22; opacity: 0.25; animation: ping 2.5s cubic-bezier(0, 0, 0.2, 1) infinite;"></div>
-                <div style="width: 38px; height: 38px; border-radius: 9999px; background-color: #0f2d22; border: 3px solid #ffffff; box-shadow: 0 10px 25px rgba(0,0,0,0.3); display: flex; align-items: center; justify-content: center; color: #a3e635;">
+                <div style="position: absolute; inset: 0; border-radius: 9999px; background-color: ${colors.forest[950]}; opacity: 0.25; animation: ping 2.5s cubic-bezier(0, 0, 0.2, 1) infinite;"></div>
+                <div style="width: 38px; height: 38px; border-radius: 9999px; background-color: ${colors.forest[950]}; border: 3px solid #ffffff; box-shadow: 0 10px 25px rgba(0,0,0,0.3); display: flex; align-items: center; justify-content: center; color: ${colors.lime[300]};">
                   <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
                 </div>
               </div>`,
@@ -138,7 +139,7 @@ export function ListingLocationMap({
       const marker = L.marker([lat, lng], { icon: pinIcon }).addTo(map);
       marker.bindPopup(
         `<div style="font-family: system-ui, sans-serif; padding: 4px; text-align: center;">
-          <strong style="font-size: 13px; color: #0f2d22; display: block; margin-bottom: 2px;">${locationTitle}</strong>
+          <strong style="font-size: 13px; color: ${colors.forest[950]}; display: block; margin-bottom: 2px;">${locationTitle}</strong>
           <span style="font-size: 11px; color: #666;">Emplacement exact du logement</span>
         </div>`
       );
