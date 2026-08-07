@@ -202,9 +202,8 @@
      la page, pas par section. C'est lui qui donne la matière au glass.      */
 
   --bg-gradient:
-    radial-gradient(115% 85% at 0% 0%, #E8F6C9 0%, rgba(232, 246, 201, 0) 58%),
-    radial-gradient(90% 70% at 100% 0%, #EDF7E4 0%, rgba(237, 247, 228, 0) 50%),
-    linear-gradient(165deg, #F4FAEA 0%, #FAFCF6 60%, #FFFFFF 100%);
+    radial-gradient(115% 85% at 0% 0%, #F4F8E9 0%, rgba(244, 248, 233, 0) 45%),
+    linear-gradient(165deg, #FBFCF7 0%, #FFFFFF 55%);
 
   /* Halo de la section sombre — il fait le raccord de luminosité avec le
      canvas clair et évite l'arête franche.                                 */

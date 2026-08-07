@@ -65,7 +65,7 @@ export function CategoriesSection() {
                   flex-shrink-0 px-6 py-2.5 rounded-[var(--radius-pill)] font-semibold text-sm
                   transition-all duration-200 border whitespace-nowrap
                   ${isActive
-                    ? 'bg-lime-400 text-forest-800 border-lime-400 shadow-sm'
+                    ? 'bg-forest-950 text-white border-forest-950 shadow-sm'
                     : 'bg-background-card text-foreground border-border hover:border-forest-300 hover:bg-forest-50'
                   }
                 `}

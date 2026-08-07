@@ -93,9 +93,8 @@ export function WeekendListingsSection() {
         <div className="relative mb-6 flex flex-col justify-between gap-4 sm:flex-row sm:items-center">
           <div className="min-w-0 space-y-1.5">
             <div className="flex flex-wrap items-center gap-2">
-              {/* ★ L'urgence, en lime plein — c'est le message du bloc. */}
-              <span className="inline-flex items-center gap-1 rounded-pill bg-action px-3 py-1 text-xs font-semibold uppercase tracking-wider text-on-action">
-                <Zap className="h-3.5 w-3.5 fill-current" aria-hidden="true" />
+              <span className="inline-flex items-center gap-1 rounded-pill bg-amber-400/20 text-amber-300 border border-amber-400/30 px-3 py-1 text-xs font-semibold uppercase tracking-wider">
+                <Zap className="h-3.5 w-3.5 fill-current text-amber-300" aria-hidden="true" />
                 Dernières dispos
               </span>
 

@@ -61,16 +61,12 @@ export function HowItWorksSection() {
 
         <header className="mx-auto mb-12 max-w-2xl text-center">
           <span className="inline-flex items-center gap-2 rounded-pill border border-white/60 bg-white/55 px-4 py-2 backdrop-blur-md">
-            {/* Le point clignotait en boucle a cote du libelle. */}
-            <ShieldCheck className="h-4 w-4 text-lime-700" aria-hidden="true" />
+            <ShieldCheck className="h-4 w-4 text-forest-700" aria-hidden="true" />
             <span className="text-[0.8125rem] text-neutral-700">Paiement sous séquestre</span>
           </span>
 
           <h2 className="mt-6 font-display text-[clamp(1.75rem,4vw,2.5rem)] font-semibold leading-[1.1] tracking-[-0.025em] text-forest-900">
-            Comment ça marche
-            {/* text-lime-400 sur fond clair tombe a 1,2:1 : le point etait
-                quasi invisible. lime-600 est le stop prevu pour ca. */}
-            <span className="text-lime-600">.</span>
+            Comment ça marche.
           </h2>
 
           <p className="mt-4 text-base leading-relaxed text-foreground-muted">
@@ -78,15 +74,6 @@ export function HowItWorksSection() {
           </p>
         </header>
 
-        {/*
-          Avant : quatre cartes en degrade forest-950, posees sur le canvas
-          clair. Quatre trous sombres dans la page, alors que la regle qu'on
-          s'est fixee reserve l'inverse a UNE section qui marque un moment.
-
-          Ici une seule carte est sombre : l'etape 03, la remise des cles.
-          C'est la seule ou l'utilisateur agit, et c'est le moment que le nom
-          du produit designe.
-        */}
         <ol className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
           {STEPS.map(({ number, icon: Icon, title, description, key: isKey }) => (
             <li
@@ -104,7 +91,7 @@ export function HowItWorksSection() {
                   'grid h-10 w-10 shrink-0 place-items-center rounded-inner',
                   isKey
                     ? 'border border-lime-400/20 bg-lime-400/15 text-lime-400'
-                    : 'bg-lime-400/25 text-forest-800',
+                    : 'bg-forest-100 text-forest-800',
                 )}>
                   <Icon className="h-[1.125rem] w-[1.125rem]" aria-hidden="true" />
                 </span>

@@ -165,10 +165,9 @@ function getPrioritySectionIds(preferences: HomePreferences): string[] {
   return ids;
 }
 
-// Cache clé pour sessionStorage
-const FEED_CACHE_KEY = 'listings_feed_cache';
-const FEED_CACHE_TIMESTAMP_KEY = 'listings_feed_cache_timestamp';
-const CACHE_DURATION = 5 * 60 * 1000;
+// Cache clés pour localStorage avec motif Stale-While-Revalidate (SWR)
+const FEED_CACHE_KEY = 'klef_feed_cache_v3';
+const FEED_CACHE_TIMESTAMP_KEY = 'klef_feed_cache_ts_v3';
 
 function getSectionConfig(sectionId: string) {
   if (SECTION_CONFIG[sectionId]) return SECTION_CONFIG[sectionId];
@@ -190,36 +189,47 @@ export function FeedSections() {
   const { preferences, isLoaded: prefsLoaded } = useHomePreferences();
 
   useEffect(() => {
-    const fetchFeed = async () => {
-      try {
-        const cachedData = sessionStorage.getItem(FEED_CACHE_KEY);
-        const cachedTimestamp = sessionStorage.getItem(FEED_CACHE_TIMESTAMP_KEY);
+    let mounted = true;
 
-        if (cachedData && cachedTimestamp) {
-          const age = Date.now() - parseInt(cachedTimestamp, 10);
-          if (age < CACHE_DURATION) {
-            setFeed(JSON.parse(cachedData));
-            setLoading(false);
-            return;
-          }
+    // 1. Lecture prioritaire du cache local (0ms de latence - Rendu immédiat)
+    try {
+      const cached = localStorage.getItem(FEED_CACHE_KEY);
+      if (cached) {
+        const parsed = JSON.parse(cached);
+        if (parsed && Array.isArray(parsed.sections)) {
+          setFeed(parsed);
+          setLoading(false);
         }
+      }
+    } catch (e) {
+      console.warn('[FeedSections] Erreur lecture cache local:', e);
+    }
 
+    // 2. Revalidation en arrière-plan (Stale-While-Revalidate)
+    const revalidateFeed = async () => {
+      try {
         const response = await fetch('/api/v1/listings/feed');
         if (!response.ok) throw new Error('Failed to fetch feed');
         const data = await response.json();
 
-        sessionStorage.setItem(FEED_CACHE_KEY, JSON.stringify(data));
-        sessionStorage.setItem(FEED_CACHE_TIMESTAMP_KEY, Date.now().toString());
+        if (!mounted) return;
+
+        localStorage.setItem(FEED_CACHE_KEY, JSON.stringify(data));
+        localStorage.setItem(FEED_CACHE_TIMESTAMP_KEY, Date.now().toString());
 
         setFeed(data);
       } catch (error) {
-        console.error('[FeedSections] Failed to fetch feed:', error);
+        console.error('[FeedSections] Erreur revalidation feed:', error);
       } finally {
-        setLoading(false);
+        if (mounted) setLoading(false);
       }
     };
 
-    fetchFeed();
+    revalidateFeed();
+
+    return () => {
+      mounted = false;
+    };
   }, []);
 
   if (loading || !prefsLoaded) {
@@ -258,22 +268,111 @@ export function FeedSections() {
     return null;
   }
 
-  const priorityIds = getPrioritySectionIds(preferences);
+  // Extraire tous les logements uniques du feed backend pour le filtrage dynamique
+  const allListingsMap = new Map<string, Listing>();
+  feed.sections.forEach((sec) => {
+    sec.listings.forEach((l) => {
+      if (!allListingsMap.has(l.id)) {
+        allListingsMap.set(l.id, l);
+      }
+    });
+  });
+  const allListings = Array.from(allListingsMap.values());
 
-  // 1. Sections prioritaires selon les choix de l'utilisateur (non vides)
-  const prioritySections = feed.sections.filter(
-    (s) => priorityIds.includes(s.id) && getSectionConfig(s.id) && s.listings.length > 0,
-  );
+  // 1. Générer les sections prioritaires pour chaque Zone sélectionnée
+  const customZoneSections: { id: string; listings: Listing[]; config: { title: string; subtitle?: string; link?: string; variant?: 'standard' | 'premium' } }[] = [];
+  preferences.zones.forEach((zone) => {
+    const slug = zone.toLowerCase().replace(/[^a-z0-9]/g, '-');
+    const sectionId = `zone-${slug}`;
+    const backendSec = feed.sections.find((s) => s.id === sectionId);
 
-  // 2. Autres sections (non vides)
-  const remainingSections = feed.sections.filter(
-    (s) => !priorityIds.includes(s.id) && getSectionConfig(s.id) && s.listings.length > 0,
-  );
+    if (backendSec && backendSec.listings.length > 0) {
+      customZoneSections.push({
+        id: backendSec.id,
+        listings: backendSec.listings,
+        config: getSectionConfig(backendSec.id) || {
+          title: zone,
+          subtitle: `Séjours d'exception à ${zone}`,
+          link: `/explorer?ville=${encodeURIComponent(zone)}`,
+        },
+      });
+    } else {
+      const matched = allListings.filter(
+        (l) =>
+          l.ville?.toLowerCase().includes(zone.toLowerCase()) ||
+          l.quartier?.toLowerCase().includes(zone.toLowerCase()) ||
+          zone.toLowerCase().includes(l.ville?.toLowerCase() || ''),
+      );
 
-  const displayedSections = [...prioritySections, ...remainingSections].map((section) => ({
-    ...section,
-    config: getSectionConfig(section.id)!,
-  }));
+      if (matched.length > 0) {
+        customZoneSections.push({
+          id: `custom-zone-${slug}`,
+          listings: matched,
+          config: {
+            title: zone,
+            subtitle: `Séjours d'exception à ${zone}`,
+            link: `/explorer?ville=${encodeURIComponent(zone)}`,
+          },
+        });
+      }
+    }
+  });
+
+  // 2. Générer les sections prioritaires pour chaque Sous-type sélectionné
+  const customSousTypeSections: { id: string; listings: Listing[]; config: { title: string; subtitle?: string; link?: string; variant?: 'standard' | 'premium' } }[] = [];
+  preferences.sousTypes.forEach((st) => {
+    const backendSecId = SOUS_TYPE_SECTION_MAP[st];
+    const backendSec = backendSecId ? feed.sections.find((s) => s.id === backendSecId) : null;
+
+    if (backendSec && backendSec.listings.length > 0) {
+      customSousTypeSections.push({
+        id: backendSec.id,
+        listings: backendSec.listings,
+        config: getSectionConfig(backendSec.id) || {
+          title: st,
+          subtitle: `Nos meilleurs ${st.toLowerCase()}s`,
+          link: `/explorer?sousType=${encodeURIComponent(st)}`,
+        },
+      });
+    } else {
+      const matched = allListings.filter(
+        (l) =>
+          l.sousType?.toLowerCase() === st.toLowerCase() ||
+          l.type?.toLowerCase() === st.toLowerCase() ||
+          st.toLowerCase().includes(l.sousType?.toLowerCase() || ''),
+      );
+
+      if (matched.length > 0) {
+        customSousTypeSections.push({
+          id: `custom-st-${st.toLowerCase().replace(/[^a-z0-9]/g, '-')}`,
+          listings: matched,
+          config: {
+            title: st,
+            subtitle: `Sélectionnés pour vous : ${st}`,
+            link: `/explorer?sousType=${encodeURIComponent(st)}`,
+          },
+        });
+      }
+    }
+  });
+
+  const usedPriorityIds = new Set([
+    ...customZoneSections.map((s) => s.id),
+    ...customSousTypeSections.map((s) => s.id),
+  ]);
+
+  const remainingSections = feed.sections
+    .filter((s) => !usedPriorityIds.has(s.id) && getSectionConfig(s.id) && s.listings.length > 0)
+    .map((s) => ({
+      ...s,
+      config: getSectionConfig(s.id)!,
+    }));
+
+  const displayedSections = [
+    ...customZoneSections,
+    ...customSousTypeSections,
+    ...remainingSections,
+  ];
 
   if (displayedSections.length === 0) {
     return (

@@ -87,7 +87,7 @@ export function HeroSection({ listings = [] }: Props) {
           {/* -- Colonne texte ------------------------------------------- */}
           <div>
             <div className="klef-rise mb-6 inline-flex items-center gap-2 rounded-pill border border-white/60 bg-white/55 px-4 py-2 backdrop-blur-md">
-              <ShieldCheck className="h-4 w-4 text-lime-700" aria-hidden="true" />
+              <ShieldCheck className="h-4 w-4 text-forest-700" aria-hidden="true" />
               <span className="text-[0.8125rem] text-neutral-700">
                 Votre argent est bloqué jusqu’à la remise des clés
               </span>
@@ -114,17 +114,13 @@ export function HeroSection({ listings = [] }: Props) {
                     stroke="currentColor"
                     strokeWidth="3"
                     strokeLinecap="round"
-                    className="text-lime-500/60"
+                    className="text-forest-400/30"
                   />
                 </svg>
               </span>
               ,
               <br />
-              à Dakar comme à{' '}
-              <span className="bg-gradient-to-r from-lime-600 to-lime-500 bg-clip-text text-transparent font-bold">
-                Saly
-              </span>
-              <span className="text-lime-600">.</span>
+              à Dakar comme à Saly.
             </h1>
 
             <p

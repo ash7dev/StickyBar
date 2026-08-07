@@ -1,217 +1,131 @@
 'use client';
 
-import { Wallet, TrendingUp, Shield, Users, Zap, Headphones } from 'lucide-react';
 import Link from 'next/link';
+import {
+  Wallet, TrendingUp, Shield, Users, Zap, Headphones, Check, ArrowRight, Star,
+} from 'lucide-react';
 
 const BENEFITS = [
-  {
-    icon: Wallet,
-    title: 'Paiements sécurisés par séquestre',
-    subtitle: 'Zéro risque',
-  },
-  {
-    icon: Users,
-    title: 'Locataires vérifiés avec KYC obligatoire',
-    subtitle: null,
-  },
-  {
-    icon: TrendingUp,
-    title: 'Dashboard premium pour piloter vos revenus',
-    subtitle: null,
-  },
-  {
-    icon: Headphones,
-    title: 'Support dédié propriétaires 7j/7',
-    subtitle: null,
-  },
-  {
-    icon: Zap,
-    title: 'Publication en 5 minutes, visibilité immédiate',
-    subtitle: null,
-  },
-  {
-    icon: Shield,
-    title: 'Assurance dégâts et litiges incluse',
-    subtitle: null,
-  },
+  { icon: Wallet, title: 'Paiement sous séquestre', subtitle: 'Les fonds sont bloqués jusqu’au check-in' },
+  { icon: Users, title: 'Locataires vérifiés', subtitle: 'KYC obligatoire avant toute réservation' },
+  { icon: TrendingUp, title: 'Tableau de bord', subtitle: 'Réservations et revenus en temps réel' },
+  { icon: Headphones, title: 'Support propriétaires', subtitle: 'Une équipe joignable 7 j/7' },
+  { icon: Zap, title: 'Publication rapide', subtitle: 'En ligne après vérification sous 48 h' },
+  { icon: Shield, title: 'Litiges arbitrés', subtitle: 'Médiation Klef en cas de désaccord' },
 ];
 
-const STATS = [
-  { value: '500+', label: 'Hôtes actifs' },
-  { value: '4.8★', label: 'Note moyenne' },
-  { value: '48h', label: 'Délai réponse' },
-];
-
-const FLOATING_ICONS = [
-  { Icon: Wallet, position: 'top-12 left-8', delay: '0s' },
-  { Icon: TrendingUp, position: 'top-1/4 left-1/4', delay: '0.5s' },
-  { Icon: Shield, position: 'top-1/3 left-12', delay: '1s' },
-  { Icon: Users, position: 'bottom-1/3 left-16', delay: '1.5s' },
+/* ⚠️ « +30 % de revenus », « 500+ hôtes », « 4.8★ » : aucun de ces chiffres
+   n'est sourcé. Sur une page publique adressée à des propriétaires, ce sont
+   des engagements opposables. Remplacés par ce qui est vérifiable dans le
+   produit. Si tu as les vraies données, réintroduis-les avec leur période. */
+const PROMESSES = [
+  { value: '0 %', label: 'Commission à l’inscription' },
+  { value: '48 h', label: 'Délai de vérification' },
+  { value: '5 min', label: 'Pour publier une annonce' },
 ];
 
 export function OwnerCTASection() {
   return (
-    <section className="relative py-20 overflow-hidden">
-      <div className="max-w-7xl mx-auto px-6">
-        <div className="relative rounded-[var(--radius-card)] bg-gradient-to-br from-forest-900 via-forest-800 to-forest-900 overflow-hidden">
+    <section className="overflow-hidden py-20">
+      <div className="mx-auto max-w-7xl px-6">
+        {/* `.section-inverse` porte déjà le dégradé forest-900 → 950 et bascule
+            correctement en mode sombre. */}
+        <div className="section-inverse relative overflow-hidden">
 
-          {/* Background decorative elements */}
-          <div className="absolute inset-0 overflow-hidden pointer-events-none">
-            {/* Large circles */}
-            <div className="absolute -top-32 -left-32 w-64 h-64 bg-lime-400/5 rounded-full blur-3xl" />
-            <div className="absolute top-1/2 -right-40 w-80 h-80 bg-forest-600/20 rounded-full blur-3xl" />
-            <div className="absolute -bottom-20 left-1/3 w-72 h-72 bg-lime-400/10 rounded-full blur-2xl" />
+          {/* Un seul halo. Les trois précédents, la grille, les quatre icônes
+              flottantes, le carré rotatif et le cercle pulsant animaient en
+              continu — y compris hors du viewport — sans respecter
+              prefers-reduced-motion, que le <style jsx> court-circuitait. */}
+          <div
+            aria-hidden="true"
+            className="pointer-events-none absolute -top-32 -right-32 h-96 w-96 rounded-pill bg-forest-700/40 blur-3xl"
+          />
 
-            {/* Grid pattern */}
-            <div className="absolute inset-0 opacity-[0.02]" style={{
-              backgroundImage: `linear-gradient(rgba(211, 242, 110, 0.3) 1px, transparent 1px),
-                               linear-gradient(90deg, rgba(211, 242, 110, 0.3) 1px, transparent 1px)`,
-              backgroundSize: '48px 48px'
-            }} />
+          <div className="relative grid gap-12 p-8 md:p-12 lg:grid-cols-2 lg:p-16">
 
-            {/* Floating icons */}
-            {FLOATING_ICONS.map(({ Icon, position, delay }, index) => (
-              <div
-                key={index}
-                className={`absolute ${position} w-12 h-12 rounded-xl bg-forest-700/30 border border-forest-600/50 flex items-center justify-center animate-float-slow`}
-                style={{ animationDelay: delay }}
-              >
-                <Icon className="w-6 h-6 text-lime-400/40" />
-              </div>
-            ))}
+            {/* ── Gauche ─────────────────────────────────────────────────── */}
 
-            {/* Geometric shapes */}
-            <div className="absolute top-1/2 left-1/3 w-24 h-24 border border-lime-400/10 rounded-xl rotate-45 animate-spin-very-slow" />
-            <div className="absolute bottom-1/4 left-1/4 w-16 h-16 bg-gradient-to-br from-lime-400/5 to-transparent rounded-full animate-pulse-slow" />
-          </div>
+            <div className="flex flex-col justify-center">
+              <span className="mb-8 inline-flex items-center gap-2 self-start rounded-pill border border-gold-400/30 bg-gold-400/12 px-3 py-1.5 text-xs font-semibold uppercase tracking-wider text-gold-300">
+                <Star className="h-3 w-3 fill-current" aria-hidden="true" />
+                Espace propriétaires
+              </span>
 
-          {/* Content Grid */}
-          <div className="relative grid lg:grid-cols-2 gap-12 p-8 md:p-12 lg:p-16">
-
-            {/* Left side - Stats & Visual */}
-            <div className="relative flex flex-col justify-center">
-
-              {/* Badge */}
-              <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-[var(--radius-pill)] bg-gold-400/20 border border-gold-400/40 mb-8 self-start">
-                <svg className="w-3 h-3 text-gold-400" viewBox="0 0 24 24" fill="currentColor">
-                  <path d="M12 2L15.09 8.26L22 9.27L17 14.14L18.18 21.02L12 17.77L5.82 21.02L7 14.14L2 9.27L8.91 8.26L12 2Z" />
-                </svg>
-                <span className="text-xs font-bold text-gold-400 uppercase tracking-wide">Propriétaires</span>
-              </div>
-
-              {/* Big number */}
               <div className="mb-8">
-                <div className="text-7xl md:text-8xl font-display font-bold text-lime-400 leading-none mb-2">
-                  +30%
-                </div>
-                <p className="text-lime-300/80 text-lg">
-                  de revenus supplémentaires<br />
-                  <span className="text-neutral-400 text-base">en moyenne pour nos hôtes</span>
+                <p className="font-display text-6xl font-semibold leading-none tracking-tight text-on-inverse-display md:text-7xl">
+                  0 %
+                </p>
+                <p className="mt-3 text-lg text-on-inverse">
+                  de commission à l’inscription
+                  <span className="mt-1 block text-base text-on-inverse-muted">
+                    Vous ne payez que sur les séjours réellement effectués.
+                  </span>
                 </p>
               </div>
 
-              {/* Stats */}
-              <div className="grid grid-cols-3 gap-6">
-                {STATS.map((stat, index) => (
-                  <div key={index} className="text-center lg:text-left">
-                    <div className="text-2xl md:text-3xl font-bold text-white mb-1">
-                      {stat.value}
-                    </div>
-                    <div className="text-xs text-neutral-400 uppercase tracking-wide">
-                      {stat.label}
-                    </div>
+              <dl className="grid grid-cols-3 gap-6 border-t border-border-inverse pt-6">
+                {PROMESSES.map(({ value, label }) => (
+                  <div key={label}>
+                    <dd className="font-display text-2xl font-semibold tabular-nums text-on-inverse md:text-3xl">
+                      {value}
+                    </dd>
+                    <dt className="mt-1 text-xs uppercase tracking-wider text-on-inverse-muted">
+                      {label}
+                    </dt>
                   </div>
                 ))}
-              </div>
+              </dl>
             </div>
 
-            {/* Right side - Content */}
-            <div className="flex flex-col justify-center">
+            {/* ── Droite ─────────────────────────────────────────────────── */}
 
-              <h2 className="text-3xl md:text-4xl lg:text-5xl font-display font-bold text-white mb-4">
-                Votre logement dort ?<br />
-                <span className="text-lime-400">Faites-le travailler.</span>
+            <div className="flex flex-col justify-center">
+              <h2 className="mb-4 font-display text-3xl font-semibold leading-tight tracking-tight text-on-inverse-display md:text-4xl lg:text-5xl">
+                Votre logement dort ?<br />Faites-le travailler.
               </h2>
 
-              <p className="text-lg text-neutral-300 mb-8">
-                Rejoignez des centaines de propriétaires qui rentabilisent leur bien avec Klef. Inscription gratuite, 0 commission à l'inscription.
+              <p className="mb-8 text-lg leading-relaxed text-on-inverse-muted">
+                Publiez votre bien sur Klef. Les paiements sont sécurisés, les locataires
+                vérifiés, et vous gardez la main sur chaque réservation.
               </p>
 
-              {/* Benefits grid */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-8">
-                {BENEFITS.map((benefit, index) => {
-                  const Icon = benefit.icon;
-                  return (
-                    <div
-                      key={index}
-                      className="flex items-start gap-3 p-3 rounded-lg bg-forest-800/40 border border-forest-700/50 hover:border-lime-400/30 transition-all duration-300 group"
-                    >
-                      <div className="flex-shrink-0 w-8 h-8 rounded-lg bg-lime-400/10 border border-lime-400/30 flex items-center justify-center group-hover:bg-lime-400/20 transition-colors">
-                        <Icon className="w-4 h-4 text-lime-400" />
-                      </div>
-                      <div className="flex-1 min-w-0">
-                        <p className="text-sm font-medium text-neutral-200 leading-tight">
-                          {benefit.title}
-                        </p>
-                        {benefit.subtitle && (
-                          <p className="text-xs text-lime-400 mt-0.5">
-                            {benefit.subtitle}
-                          </p>
-                        )}
-                      </div>
+              <ul className="mb-8 grid grid-cols-1 gap-3 sm:grid-cols-2">
+                {BENEFITS.map(({ icon: Icon, title, subtitle }) => (
+                  <li
+                    key={title}
+                    className="flex items-start gap-3 rounded-inner border border-border-inverse bg-white/5 p-3"
+                  >
+                    <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-inner border border-border-inverse bg-white/5 text-on-inverse-muted">
+                      <Icon className="h-4 w-4" aria-hidden="true" />
+                    </span>
+                    <div className="min-w-0">
+                      <p className="text-sm font-semibold leading-tight text-on-inverse">
+                        {title}
+                      </p>
+                      <p className="mt-0.5 text-xs leading-relaxed text-on-inverse-muted">
+                        {subtitle}
+                      </p>
                     </div>
-                  );
-                })}
-              </div>
+                  </li>
+                ))}
+              </ul>
 
-              {/* CTA */}
-              <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4">
-                <Link
-                  href="/devenir-hote"
-                  className="inline-flex items-center gap-2 px-8 py-4 rounded-[var(--radius-pill)] bg-lime-400 text-forest-950 font-bold text-lg hover:bg-lime-300 transition-all duration-300 hover:shadow-xl hover:shadow-lime-400/30 hover:scale-105"
-                >
+              <div className="flex flex-col items-start gap-4 sm:flex-row sm:items-center">
+                {/* ★ Seul aplat lime de la section. */}
+                <Link href="/devenir-hote" className="btn-action px-8 py-4 text-lg">
                   Devenir hôte
-                  <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7l5 5m0 0l-5 5m5-5H6" />
-                  </svg>
+                  <ArrowRight className="h-5 w-5" aria-hidden="true" />
                 </Link>
 
-                <div className="flex items-center gap-2 text-sm text-neutral-400">
-                  <svg className="w-4 h-4 text-lime-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                  </svg>
-                  <span>Gratuit · Sans engagement · En 5 min</span>
-                </div>
+                <p className="flex items-center gap-2 text-sm text-on-inverse-muted">
+                  <Check className="h-4 w-4 shrink-0" aria-hidden="true" />
+                  Gratuit · sans engagement · 5 minutes
+                </p>
               </div>
             </div>
           </div>
         </div>
       </div>
-
-      {/* Custom animations */}
-      <style jsx>{`
-        @keyframes float-slow {
-          0%, 100% { transform: translateY(0px) rotate(0deg); }
-          50% { transform: translateY(-12px) rotate(2deg); }
-        }
-
-        @keyframes spin-very-slow {
-          from { transform: rotate(45deg); }
-          to { transform: rotate(405deg); }
-        }
-
-        .animate-float-slow {
-          animation: float-slow 6s ease-in-out infinite;
-        }
-
-        .animate-spin-very-slow {
-          animation: spin-very-slow 30s linear infinite;
-        }
-
-        .animate-pulse-slow {
-          animation: pulse 4s cubic-bezier(0.4, 0, 0.6, 1) infinite;
-        }
-      `}</style>
     </section>
   );
 }

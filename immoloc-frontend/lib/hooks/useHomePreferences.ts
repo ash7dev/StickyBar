@@ -102,16 +102,39 @@ export function useHomePreferences() {
     }
   }, [preferences]);
 
-  /* Synchronisation entre onglets : sans ça, modifier ses préférences dans
-     un onglet laissait les autres sur des valeurs périmées. */
+  /* Synchronisation entre onglets et composants sans boucle d'update infinie. */
   useEffect(() => {
+    const isSame = (a: HomePreferences, b: HomePreferences) =>
+      a.hasCompletedOnboarding === b.hasCompletedOnboarding &&
+      a.zones.join(',') === b.zones.join(',') &&
+      a.sousTypes.join(',') === b.sousTypes.join(',');
+
     const onStorage = (e: StorageEvent) => {
       if (e.key !== STORAGE_KEY) return;
-      setPreferences(parseStored(e.newValue));
+      const fresh = parseStored(e.newValue);
+      setPreferences((prev) => (isSame(prev, fresh) ? prev : fresh));
     };
+
+    const onCustomUpdate = () => {
+      try {
+        const fresh = parseStored(localStorage.getItem(STORAGE_KEY));
+        setPreferences((prev) => (isSame(prev, fresh) ? prev : fresh));
+      } catch {}
+    };
+
     window.addEventListener('storage', onStorage);
-    return () => window.removeEventListener('storage', onStorage);
+    window.addEventListener('klef-preferences-updated', onCustomUpdate);
+    return () => {
+      window.removeEventListener('storage', onStorage);
+      window.removeEventListener('klef-preferences-updated', onCustomUpdate);
+    };
   }, []);
+
+  const notifyUpdated = () => {
+    setTimeout(() => {
+      try { window.dispatchEvent(new CustomEvent('klef-preferences-updated')); } catch {}
+    }, 0);
+  };
 
   const savePreferences = useCallback((next: Partial<HomePreferences>) => {
     setPreferences((prev) => ({
@@ -123,12 +146,9 @@ export function useHomePreferences() {
         : prev.sousTypes,
       hasCompletedOnboarding: next.hasCompletedOnboarding ?? prev.hasCompletedOnboarding,
     }));
+    notifyUpdated();
   }, []);
 
-  /* Toggles en forme fonctionnelle : la version précédente lisait
-     `preferences` depuis la closure, donc deux clics rapides dans le même
-     cycle de rendu — courant sur une grille de chips tactile — faisaient
-     perdre le premier. */
   const toggleZone = useCallback((zone: string) => {
     setPreferences((prev) => {
       if (prev.zones.includes(zone)) {
@@ -138,6 +158,7 @@ export function useHomePreferences() {
       if (!AVAILABLE_ZONES.includes(zone as Zone)) return prev;
       return { ...prev, zones: [...prev.zones, zone] };
     });
+    notifyUpdated();
   }, []);
 
   const toggleSousType = useCallback((sousType: string) => {
@@ -149,17 +170,17 @@ export function useHomePreferences() {
       if (!AVAILABLE_SOUS_TYPES.includes(sousType as SousType)) return prev;
       return { ...prev, sousTypes: [...prev.sousTypes, sousType] };
     });
+    notifyUpdated();
   }, []);
 
   const resetPreferences = useCallback(() => {
     setPreferences(DEFAULT_PREFERENCES);
+    notifyUpdated();
   }, []);
 
-  /* `hasCompletedOnboarding` restait à false après un reset alors que
-     l'utilisateur avait déjà vu l'onboarding : il lui était reproposé au
-     rechargement suivant. Vider ses filtres n'est pas revenir à zéro. */
   const clearFilters = useCallback(() => {
     setPreferences((prev) => ({ ...prev, zones: [], sousTypes: [] }));
+    notifyUpdated();
   }, []);
 
   const completeOnboarding = useCallback((zones?: string[], sousTypes?: string[]) => {
@@ -170,6 +191,7 @@ export function useHomePreferences() {
         : prev.sousTypes,
       hasCompletedOnboarding: true,
     }));
+    notifyUpdated();
   }, []);
 
   return {

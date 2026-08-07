@@ -83,11 +83,11 @@ export function RecentlyViewedSection() {
                 {/* Info */}
                 <div className="flex flex-col flex-1 p-4">
                   <div className="flex items-center gap-1 text-xs text-foreground-muted mb-1.5">
-                    <MapPin className="w-3.5 h-3.5 text-forest-600 dark:text-lime-400 shrink-0" />
+                    <MapPin className="w-3.5 h-3.5 text-forest-600 dark:text-forest-300 shrink-0" />
                     <span className="truncate font-semibold">{location || 'Sénégal'}</span>
                   </div>
 
-                  <h3 className="text-sm font-bold text-foreground line-clamp-1 group-hover:text-forest-700 dark:group-hover:text-lime-400 transition-colors mb-3">
+                  <h3 className="text-sm font-bold text-foreground line-clamp-1 group-hover:text-forest-700 dark:group-hover:text-forest-200 transition-colors mb-3">
                     <Link href={`/explorer/${item.slug ?? item.id}`} className="after:absolute after:inset-0">
                       {item.titre}
                     </Link>
@@ -95,7 +95,7 @@ export function RecentlyViewedSection() {
 
                   <div className="mt-auto pt-2 border-t border-border/60 flex items-center justify-between">
                     <TenantPriceDisplay prixBase={item.prixBase} size="sm" reserveSpace={false} />
-                    <span className="w-7 h-7 rounded-full bg-forest-50 dark:bg-forest-900 text-forest-700 dark:text-lime-300 flex items-center justify-center group-hover:bg-forest-900 group-hover:text-lime-300 transition-colors">
+                    <span className="w-7 h-7 rounded-full bg-forest-50 dark:bg-forest-900 text-forest-700 dark:text-forest-200 flex items-center justify-center group-hover:bg-forest-900 group-hover:text-white transition-colors">
                       <ArrowRight className="w-3.5 h-3.5" />
                     </span>
                   </div>
