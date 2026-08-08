@@ -72,6 +72,7 @@ export function AvailabilityCalendar({
       : 0;
 
   const hasRange = !!(range?.from && range?.to);
+  const isMinNightsSatisfied = !hasRange || nights >= minNights;
 
   /* ── Mode compact (bottom sheet mobile) ── */
   if (compact) {
@@ -111,17 +112,25 @@ export function AvailabilityCalendar({
           </div>
         </div>
 
-        {/* Message confirmation */}
+        {/* Message confirmation ou avertissement séjour min */}
         {hasRange ? (
-          <div className="flex items-center gap-2 mb-3 px-3 py-2 bg-success-50 border border-success-500/30 rounded-xl">
-            <Check className="w-3.5 h-3.5 text-success-600 shrink-0" />
-            <p className="text-xs font-semibold text-success-700">
-              {nights} nuit{nights > 1 ? 's' : ''} sélectionnée{nights > 1 ? 's' : ''} — modifiez si besoin
-            </p>
-          </div>
+          !isMinNightsSatisfied ? (
+            <div className="flex items-center gap-2 mb-3 px-3 py-2 bg-error-50 border border-error-200 rounded-xl">
+              <span className="text-xs font-bold text-error-700">
+                ⚠️ Séjour minimum requis : {minNights} nuit{minNights > 1 ? 's' : ''} ({nights} nuit{nights > 1 ? 's' : ''} sélectionnée{nights > 1 ? 's' : ''})
+              </span>
+            </div>
+          ) : (
+            <div className="flex items-center gap-2 mb-3 px-3 py-2 bg-success-50 border border-success-500/30 rounded-xl">
+              <Check className="w-3.5 h-3.5 text-success-600 shrink-0" />
+              <p className="text-xs font-semibold text-success-700">
+                {nights} nuit{nights > 1 ? 's' : ''} sélectionnée{nights > 1 ? 's' : ''} — modifiez si besoin
+              </p>
+            </div>
+          )
         ) : (
           <p className="text-xs text-foreground-muted font-medium mb-3 px-1">
-            Sélectionnez vos dates d&apos;arrivée et de départ
+            Sélectionnez vos dates d&apos;arrivée et de départ {minNights > 1 ? `(Min. ${minNights} nuits)` : ''}
           </p>
         )}
 
@@ -309,17 +318,28 @@ export function AvailabilityCalendar({
           <span className="text-sm font-black text-foreground">Disponibilités</span>
         </div>
         {range?.from ? (
-          <p className="text-xs font-medium text-foreground-muted">
-            {range.from.toLocaleDateString('fr-FR', { day: 'numeric', month: 'long' })}
-            {range.to && range.to !== range.from
-              ? ` → ${range.to.toLocaleDateString('fr-FR', { day: 'numeric', month: 'long' })} · `
-              : ' — '}
-            {nights > 0 && (
-              <span className="font-black text-success-600">{nights} nuit{nights > 1 ? 's' : ''}</span>
+          <div className="space-y-1">
+            <p className="text-xs font-medium text-foreground-muted">
+              {range.from.toLocaleDateString('fr-FR', { day: 'numeric', month: 'long' })}
+              {range.to && range.to !== range.from
+                ? ` → ${range.to.toLocaleDateString('fr-FR', { day: 'numeric', month: 'long' })} · `
+                : ' — '}
+              {nights > 0 && (
+                <span className={`font-black ${!isMinNightsSatisfied ? 'text-error-600' : 'text-success-600'}`}>
+                  {nights} nuit{nights > 1 ? 's' : ''}
+                </span>
+              )}
+            </p>
+            {!isMinNightsSatisfied && (
+              <p className="text-xs font-bold text-error-600 bg-error-50 px-2.5 py-1 rounded-inner border border-error-200">
+                ⚠️ Ce logement exige un séjour d&apos;au moins {minNights} nuits.
+              </p>
             )}
-          </p>
+          </div>
         ) : (
-          <p className="text-xs font-medium text-foreground-muted">Sélectionnez vos dates d&apos;arrivée et de départ</p>
+          <p className="text-xs font-medium text-foreground-muted">
+            Sélectionnez vos dates d&apos;arrivée et de départ {minNights > 1 ? `(Min. ${minNights} nuits)` : ''}
+          </p>
         )}
       </div>
 

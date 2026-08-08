@@ -160,9 +160,11 @@ export default function ReserverPage({ searchParams }: Props) {
 
   const mainPhoto = listing?.photos.find((p) => p.estPrincipale) ?? listing?.photos[0];
   const categoryLabel = listing?.sousType || listing?.type || 'Logement';
+  const minNights = listing?.nuitesMinimum ?? 1;
+  const hasValidMinNights = nights >= minNights;
 
   async function handlePay() {
-    if (!cguAccepted || !dateDebut || !dateFin || nights <= 0) return;
+    if (!cguAccepted || !dateDebut || !dateFin || nights <= 0 || !hasValidMinNights) return;
     setLoading(true); setError('');
     try {
       const token = (await refreshIfNeeded()) ?? '';
@@ -447,23 +449,34 @@ export default function ReserverPage({ searchParams }: Props) {
             </label>
           </div>
 
+          {!hasValidMinNights && nights > 0 && (
+            <div className="flex items-start gap-3 bg-error-50 border border-error-200 rounded-inner p-4">
+              <AlertCircle className="w-4 h-4 text-error-600 shrink-0 mt-0.5" />
+              <p className="text-xs font-bold text-error-700 leading-relaxed">
+                ⚠️ Ce logement exige un séjour minimum de {minNights} nuits (vous avez sélectionné {nights} nuit{nights > 1 ? 's' : ''}). Veuillez modifier vos dates.
+              </p>
+            </div>
+          )}
+
           {/* Bouton Continuer vers étape 2/2 (Mobile) */}
           <button
             type="button"
             onClick={() => {
-              if (cguAccepted && dateDebut && dateFin && nights > 0) {
+              if (cguAccepted && dateDebut && dateFin && nights > 0 && hasValidMinNights) {
                 setStep(2);
               }
             }}
-            disabled={!cguAccepted || !dateDebut || !dateFin || nights <= 0}
+            disabled={!cguAccepted || !dateDebut || !dateFin || nights <= 0 || !hasValidMinNights}
             className={cn(
               'w-full flex items-center justify-center gap-2 py-4 px-6 font-bold rounded-pill text-base shadow-md transition-all active:scale-98',
-              cguAccepted && dateDebut && dateFin && nights > 0
+              cguAccepted && dateDebut && dateFin && nights > 0 && hasValidMinNights
                 ? 'bg-action hover:bg-action-hover text-forest-950'
                 : 'bg-background-alt text-foreground-muted cursor-not-allowed',
             )}
           >
-            Continuer vers le paiement
+            {!hasValidMinNights && nights > 0
+              ? `Min. ${minNights} nuits requises`
+              : 'Continuer vers le paiement'}
             <ArrowRight className="w-5 h-5" />
           </button>
         </div>
@@ -720,16 +733,18 @@ export default function ReserverPage({ searchParams }: Props) {
               <button
                 type="button"
                 onClick={handlePay}
-                disabled={!cguAccepted || loading || listingLoading}
+                disabled={!cguAccepted || loading || listingLoading || !hasValidMinNights}
                 className={cn(
                   'w-full flex items-center justify-center gap-2 py-4 px-6 font-bold rounded-pill text-base shadow-md transition-all active:scale-98',
-                  cguAccepted && !loading
+                  cguAccepted && !loading && hasValidMinNights
                     ? 'bg-action hover:bg-action-hover text-forest-950 shadow-forest-900/10'
                     : 'bg-background-alt text-foreground-muted cursor-not-allowed',
                 )}
               >
                 {loading ? (
                   <><Loader2 className="w-5 h-5 animate-spin" /> Traitement en cours…</>
+                ) : !hasValidMinNights ? (
+                  `Séjour minimum requis : ${minNights} nuits`
                 ) : (
                   <>
                     Payer {fmt(typePaiement === 'DEPOSIT' && (listing?.acomptePourcentage ?? 30) < 100 ? Math.round(estimatedTotal * ((listing?.acomptePourcentage ?? 30) / 100)) : estimatedTotal)} FCFA avec {fournisseur === 'WAVE' ? 'Wave' : 'Orange Money'}

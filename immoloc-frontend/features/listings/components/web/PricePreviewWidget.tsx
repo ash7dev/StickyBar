@@ -175,15 +175,18 @@ export function PricePreviewWidget({
       ? Math.round(Number(estimatedTotal) * (acomptePourcentage / 100))
       : Math.round(Number(estimatedTotal));
 
-  const canBook = hasRange && cguAccepted && hasHydrated;
+  const hasValidMinNights = nights >= nuitesMinimum;
+  const canBook = hasRange && hasValidMinNights && cguAccepted && hasHydrated;
 
   const blockerMessage = !hasHydrated
     ? 'Chargement…'
     : !hasRange
       ? 'Choisissez vos dates d’arrivée et de départ'
-      : !cguAccepted
-        ? 'Acceptez les conditions pour continuer'
-        : '';
+      : !hasValidMinNights
+        ? `Séjour min. ${nuitesMinimum} nuits (${nights} nuit${nights > 1 ? 's' : ''} choisie${nights > 1 ? 's' : ''})`
+        : !cguAccepted
+          ? 'Acceptez les conditions pour continuer'
+          : '';
 
   /* ── Navigation ──────────────────────────────────────────────────────── */
 
@@ -592,7 +595,19 @@ export function PricePreviewWidget({
             </label>
           </div>
 
-          {/* ── Âge minimum ──────────────────────────────────────────────── */}
+          {/* ── Âge minimum & Nuits minimum ──────────────────────────────── */}
+
+          {hasRange && !hasValidMinNights && (
+            <div
+              role="alert"
+              className="flex items-start gap-3 rounded-inner border border-error-500/20 bg-error-50 p-4"
+            >
+              <AlertCircle className="mt-0.5 h-4 w-4 shrink-0 text-error-600" />
+              <p className="text-xs font-bold leading-relaxed text-error-700">
+                Séjour minimum requis : {nuitesMinimum} nuits. Vous avez sélectionné {nights} nuit{nights > 1 ? 's' : ''}. Veuillez ajouter des dates pour continuer.
+              </p>
+            </div>
+          )}
 
           {ageError && (
             <div
@@ -672,7 +687,7 @@ export function PricePreviewWidget({
           passer par le gate d'authentification.                             */}
 
       <div
-        className="fixed inset-x-0 bottom-0 z-40 flex items-center justify-between gap-4 border-t border-border bg-background-card/95 p-4 pb-[calc(1rem+env(safe-area-inset-bottom))] shadow-lg backdrop-blur-md lg:hidden"
+        className="fixed inset-x-0 bottom-0 z-40 flex items-center justify-between gap-4 border-t border-forest-800/80 bg-forest-950 p-4 pb-[calc(1rem+env(safe-area-inset-bottom))] shadow-[0_-8px_32px_rgba(0,0,0,0.45)] backdrop-blur-xl lg:hidden"
       >
         <div className="min-w-0">
           <TenantPriceDisplay
@@ -680,8 +695,9 @@ export function PricePreviewWidget({
             derniereMinuteActive={derniereMinuteActive}
             size="sm"
             showBadge={false}
+            textColor="text-white"
           />
-          <p className="truncate text-xs text-foreground-muted">
+          <p className="truncate text-xs text-forest-200/90 font-medium">
             {hasRange
               ? `${nights} nuit${nights > 1 ? 's' : ''} · ${nbPersonnes} voyageur${nbPersonnes > 1 ? 's' : ''}`
               : `Minimum ${nuitesMinimum} nuit${nuitesMinimum > 1 ? 's' : ''}`}
@@ -692,7 +708,7 @@ export function PricePreviewWidget({
           type="button"
           onClick={canBook ? handleBook : focusBlocker}
           disabled={!hasHydrated}
-          className="flex shrink-0 items-center gap-1.5 rounded-pill bg-action px-6 py-3 text-sm font-semibold text-on-action shadow-action transition-transform active:scale-[0.98] disabled:opacity-50"
+          className="flex shrink-0 items-center gap-1.5 rounded-pill bg-action hover:bg-action-hover px-6 py-3.5 text-sm font-bold text-forest-950 shadow-md transition-transform active:scale-[0.98] disabled:opacity-50"
         >
           {canBook ? 'Réserver' : hasRange ? 'Accepter et réserver' : 'Choisir les dates'}
         </button>

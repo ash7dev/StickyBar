@@ -101,7 +101,8 @@ export function MobileReservationSheet({
   }, [listingId, nbPersonnes, nights, range]);
 
   const hasRange = !!(range?.from && range?.to);
-  const canBook = hasRange && cguAccepted;
+  const hasValidMinNights = nights >= nuitesMinimum;
+  const canBook = hasRange && hasValidMinNights && cguAccepted;
   const prixBaseNum = typeof prixBase === 'string' ? parseFloat(prixBase) : prixBase;
   const prixAffiche = Math.round(prixBaseNum * 1.07);
   const estimatedTotal = preview
@@ -171,32 +172,38 @@ export function MobileReservationSheet({
     <>
       {/* ── Barre sticky bas ───────────────────────────────────── */}
       <div
-        className="lg:hidden fixed left-0 right-0 bottom-0 z-50"
+        className="lg:hidden fixed left-0 right-0 bottom-0 z-50 pointer-events-none"
         style={{
           paddingBottom: 'env(safe-area-inset-bottom, 8px)',
         }}
       >
         {/* Gradient fade */}
-        <div className="absolute -top-8 left-0 right-0 h-8 bg-gradient-to-t from-background-card/80 to-transparent pointer-events-none" />
+        <div className="absolute -top-10 left-0 right-0 h-10 bg-gradient-to-t from-forest-950/60 to-transparent pointer-events-none" />
 
-        <div className="mx-3 mb-2 px-4 py-3 rounded-2xl bg-background-card border border-border shadow-[0_-4px_24px_rgba(0,0,0,0.08)] flex items-center justify-between gap-3">
+        <div className="mx-3 mb-2 px-4 py-3.5 rounded-2xl bg-forest-950 border border-forest-800/80 shadow-[0_-8px_32px_rgba(0,0,0,0.45)] flex items-center justify-between gap-3 pointer-events-auto">
           {/* Prix */}
-          <div>
+          <div className="min-w-0">
             <TenantPriceDisplay
               prixBase={prixBase}
               derniereMinuteActive={derniereMinuteActive}
               size="sm"
               showBadge={false}
+              textColor="text-white"
             />
+            <p className="text-xs text-forest-200/90 font-medium truncate mt-0.5">
+              {nights > 0
+                ? `${nights} nuit${nights > 1 ? 's' : ''} · ${nbPersonnes} pers.`
+                : `Min. ${nuitesMinimum} nuit${nuitesMinimum > 1 ? 's' : ''}`}
+            </p>
           </div>
 
           {/* CTA */}
           <button
             onClick={() => setOpen(true)}
-            className="flex items-center gap-2 px-5 py-3 bg-success-600 hover:bg-success-700 text-white text-sm font-black rounded-xl shadow-lg shadow-success-500/30 active:scale-[0.97] transition-all"
+            className="flex items-center gap-1.5 px-6 py-3 bg-action hover:bg-action-hover text-forest-950 text-sm font-bold rounded-pill shadow-md active:scale-[0.97] transition-all"
           >
             Réserver
-            <ChevronRight className="w-4 h-4" />
+            <ChevronRight className="w-4 h-4 text-forest-950" />
           </button>
         </div>
       </div>
@@ -415,7 +422,16 @@ export function MobileReservationSheet({
               </p>
             </label>
 
-            {/* ── Erreur âge ── */}
+            {/* ── Erreurs ── */}
+            {hasRange && !hasValidMinNights && (
+              <div className="flex items-start gap-2.5 bg-error-50 border border-error-100 rounded-xl p-3.5">
+                <AlertCircle className="w-4 h-4 text-error-500 shrink-0 mt-0.5" />
+                <p className="text-xs font-bold text-error-600 leading-relaxed">
+                  Séjour minimum requis : {nuitesMinimum} nuits ({nights} nuit{nights > 1 ? 's' : ''} choisie{nights > 1 ? 's' : ''}).
+                </p>
+              </div>
+            )}
+
             {ageError && (
               <div className="flex items-start gap-2.5 bg-error-50 border border-error-100 rounded-xl p-3.5">
                 <AlertCircle className="w-4 h-4 text-error-500 shrink-0 mt-0.5" />
@@ -436,6 +452,7 @@ export function MobileReservationSheet({
             >
               {!hasHydrated ? 'Chargement…'
                 : !hasRange ? 'Sélectionnez vos dates'
+                : !hasValidMinNights ? `Min. ${nuitesMinimum} nuits requises`
                 : !cguAccepted ? 'Acceptez les conditions'
                 : (
                   <>
