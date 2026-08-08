@@ -5,7 +5,7 @@ import Image from 'next/image';
 import Link from 'next/link';
 import {
   Calendar, Edit3, ExternalLink, Eye, ImageOff, MapPin,
-  MoreVertical, PauseCircle, PlayCircle, Zap,
+  MoreVertical, PauseCircle, PlayCircle, Trash2, Zap, AlertTriangle
 } from 'lucide-react';
 import { cn } from '@/lib/utils/cn';
 
@@ -33,6 +33,7 @@ interface Props {
   viewMode?: 'list' | 'grid';
   onToggleStatus?: (id: string, currentStatus: string) => void;
   onToggleDerniereMinute?: (id: string, active: boolean) => void;
+  onDelete?: (id: string) => void;
 }
 
 /* Statuts pensés pour un fond CLAIR : ces cartes vivent sur le canvas, pas
@@ -47,7 +48,7 @@ const STATUT_CONFIG: Record<string, { label: string; cls: string; dot: string }>
   REJECTED: { label: 'Rejetée', cls: 'bg-error-50 text-error-700', dot: 'bg-error-500' },
 };
 
-export function OwnerListingCard({ listing, viewMode = 'grid', onToggleStatus, onToggleDerniereMinute }: Props) {
+export function OwnerListingCard({ listing, viewMode = 'grid', onToggleStatus, onToggleDerniereMinute, onDelete }: Props) {
   const [menuOpen, setMenuOpen] = useState(false);
   const rawPrice = listing.prixParNuit ?? listing.prixNuit ?? listing.prixBase ?? 0;
   const num = Number(rawPrice);
@@ -128,7 +129,7 @@ export function OwnerListingCard({ listing, viewMode = 'grid', onToggleStatus, o
               <Edit3 className="h-3.5 w-3.5 text-forest-950 stroke-[2px]" aria-hidden="true" />
               Modifier
             </Link>
-            <ActionsMenu listing={listing} onToggleStatus={onToggleStatus} onToggleDerniereMinute={onToggleDerniereMinute} onOpenChange={setMenuOpen} />
+            <ActionsMenu listing={listing} onToggleStatus={onToggleStatus} onToggleDerniereMinute={onToggleDerniereMinute} onDelete={onDelete} onOpenChange={setMenuOpen} />
           </div>
         </div>
       </article>
@@ -172,7 +173,7 @@ export function OwnerListingCard({ listing, viewMode = 'grid', onToggleStatus, o
         </div>
 
         <div className="absolute right-3 top-3 z-30">
-          <ActionsMenu listing={listing} onToggleStatus={onToggleStatus} onToggleDerniereMinute={onToggleDerniereMinute} onPhoto onOpenChange={setMenuOpen} />
+          <ActionsMenu listing={listing} onToggleStatus={onToggleStatus} onToggleDerniereMinute={onToggleDerniereMinute} onDelete={onDelete} onPhoto onOpenChange={setMenuOpen} />
         </div>
       </div>
 
@@ -191,9 +192,6 @@ export function OwnerListingCard({ listing, viewMode = 'grid', onToggleStatus, o
           </Link>
         </h3>
 
-        {/* Le prix était une pastille flottante en lime sur la photo. Il
-            appartient au contenu : sur une grille, on compare des prix, et
-            comparer suppose qu'ils soient alignés, pas posés sur des images. */}
         <div className="mt-auto flex items-end justify-between gap-3 border-t border-border pt-3">
           {Price}
           {listing.typeLogement && (
@@ -226,15 +224,17 @@ function Thumb({ photo, className }: { photo?: string; className?: string }) {
 /* ── Menu d'actions ─────────────────────────────────────────────────────── */
 
 function ActionsMenu({
-  listing, onToggleStatus, onToggleDerniereMinute, onPhoto = false, onOpenChange,
+  listing, onToggleStatus, onToggleDerniereMinute, onDelete, onPhoto = false, onOpenChange,
 }: {
   listing: OwnerListing;
   onToggleStatus?: (id: string, currentStatus: string) => void;
   onToggleDerniereMinute?: (id: string, active: boolean) => void;
+  onDelete?: (id: string) => void;
   onPhoto?: boolean;
   onOpenChange?: (open: boolean) => void;
 }) {
   const [open, setOpen] = useState(false);
+  const [showConfirmDelete, setShowConfirmDelete] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
   const btnRef = useRef<HTMLButtonElement>(null);
   const menuId = useId();
@@ -266,103 +266,170 @@ function ActionsMenu({
   const item = 'flex w-full items-center gap-2.5 rounded-inner px-3 py-2.5 text-sm text-foreground transition-colors hover:bg-neutral-100 cursor-pointer';
 
   return (
-    <div ref={ref} className={cn("relative shrink-0", open ? "z-50" : "z-20")}>
-      <button
-        ref={btnRef}
-        type="button"
-        onClick={(e) => { e.preventDefault(); e.stopPropagation(); toggleOpen(); }}
-        aria-label={`Actions pour ${listing.titre}`}
-        aria-expanded={open}
-        aria-haspopup="menu"
-        aria-controls={open ? menuId : undefined}
-        className={cn(
-          'grid h-9 w-9 place-items-center rounded-pill border transition-colors duration-150 cursor-pointer',
-          onPhoto
-            ? 'border-white/60 bg-white/85 text-forest-800 backdrop-blur-md hover:bg-white'
-            : 'border-border bg-background-card text-foreground-muted hover:bg-neutral-100 hover:text-forest-700',
-        )}
-      >
-        <MoreVertical className="h-4 w-4" aria-hidden="true" />
-      </button>
-
-      {open && (
-        <div
-          id={menuId}
-          role="menu"
-          className="absolute right-0 top-full z-50 mt-2 w-60 space-y-0.5 overflow-hidden rounded-card border border-border bg-background-card p-1.5 shadow-lg"
+    <>
+      <div ref={ref} className={cn("relative shrink-0", open ? "z-50" : "z-20")}>
+        <button
+          ref={btnRef}
+          type="button"
+          onClick={(e) => { e.preventDefault(); e.stopPropagation(); toggleOpen(); }}
+          aria-label={`Actions pour ${listing.titre}`}
+          aria-expanded={open}
+          aria-haspopup="menu"
+          aria-controls={open ? menuId : undefined}
+          className={cn(
+            'grid h-9 w-9 place-items-center rounded-pill border transition-colors duration-150 cursor-pointer',
+            onPhoto
+              ? 'border-white/60 bg-white/85 text-forest-800 backdrop-blur-md hover:bg-white'
+              : 'border-border bg-background-card text-foreground-muted hover:bg-neutral-100 hover:text-forest-700',
+          )}
         >
-          <Link href={`/dashboard/annonces/${listing.id}/modifier`} role="menuitem" className={item}>
-            <Edit3 className="h-4 w-4 text-forest-600" aria-hidden="true" />
-            Modifier l&apos;annonce
-          </Link>
+          <MoreVertical className="h-4 w-4" aria-hidden="true" />
+        </button>
 
-          <Link
-            href={`/logements/${listing.slug ?? listing.id}`}
-            target="_blank"
-            rel="noopener noreferrer"
-            role="menuitem"
-            className={item}
+        {open && (
+          <div
+            id={menuId}
+            role="menu"
+            className="absolute right-0 top-full z-50 mt-2 w-60 space-y-0.5 overflow-hidden rounded-card border border-border bg-background-card p-1.5 shadow-lg"
           >
-            <Eye className="h-4 w-4 text-forest-600" aria-hidden="true" />
-            Fiche publique
-            <ExternalLink className="ml-auto h-3.5 w-3.5 text-foreground-faint" aria-hidden="true" />
-          </Link>
+            <Link href={`/dashboard/annonces/${listing.id}/modifier`} role="menuitem" className={item}>
+              <Edit3 className="h-4 w-4 text-forest-600" aria-hidden="true" />
+              Modifier l&apos;annonce
+            </Link>
 
-          <Link href={`/dashboard/reservations?logementId=${listing.id}`} role="menuitem" className={item}>
-            <Calendar className="h-4 w-4 text-forest-600" aria-hidden="true" />
-            Réservations
-          </Link>
+            <Link
+              href={`/logements/${listing.slug ?? listing.id}`}
+              target="_blank"
+              rel="noopener noreferrer"
+              role="menuitem"
+              className={item}
+            >
+              <Eye className="h-4 w-4 text-forest-600" aria-hidden="true" />
+              Fiche publique
+              <ExternalLink className="ml-auto h-3.5 w-3.5 text-foreground-faint" aria-hidden="true" />
+            </Link>
 
-          {onToggleDerniereMinute && (
-            <>
-              <div className="my-1 h-px bg-border" />
+            <Link href={`/dashboard/reservations?logementId=${listing.id}`} role="menuitem" className={item}>
+              <Calendar className="h-4 w-4 text-forest-600" aria-hidden="true" />
+              Réservations
+            </Link>
+
+            {onToggleDerniereMinute && (
+              <>
+                <div className="my-1 h-px bg-border" />
+                <button
+                  type="button"
+                  role="menuitem"
+                  onClick={(e) => {
+                    e.preventDefault(); e.stopPropagation();
+                    setOpen(false);
+                    onToggleDerniereMinute(listing.id, !listing.derniereMinuteActive);
+                  }}
+                  className={cn(item, 'text-left')}
+                >
+                  <Zap className={cn('h-4 w-4 shrink-0', listing.derniereMinuteActive ? 'text-amber-500 fill-amber-400' : 'text-foreground-muted')} />
+                  <span className="font-semibold text-xs">
+                    {listing.derniereMinuteActive ? '⚡ Désactiver -15% Dernière Min.' : '⚡ Activer -15% Dernière Min.'}
+                  </span>
+                </button>
+              </>
+            )}
+
+            {onToggleStatus && (
+              <>
+                <div className="my-1 h-px bg-border" />
+                <button
+                  type="button"
+                  role="menuitem"
+                  onClick={(e) => {
+                    e.preventDefault(); e.stopPropagation();
+                    setOpen(false);
+                    onToggleStatus(listing.id, listing.statut);
+                  }}
+                  className={cn(item, 'text-left')}
+                >
+                  {listing.statut === 'PUBLISHED' ? (
+                    <>
+                      <PauseCircle className="h-4 w-4 text-warning-600" aria-hidden="true" />
+                      Mettre en pause
+                    </>
+                  ) : (
+                    <>
+                      <PlayCircle className="h-4 w-4 text-success-600" aria-hidden="true" />
+                      Activer l&apos;annonce
+                    </>
+                  )}
+                </button>
+              </>
+            )}
+
+            {onDelete && (
+              <>
+                <div className="my-1 h-px bg-border" />
+                <button
+                  type="button"
+                  role="menuitem"
+                  onClick={(e) => {
+                    e.preventDefault(); e.stopPropagation();
+                    setOpen(false);
+                    setShowConfirmDelete(true);
+                  }}
+                  className={cn(item, 'text-left text-error-600 hover:bg-error-50')}
+                >
+                  <Trash2 className="h-4 w-4 text-error-600" aria-hidden="true" />
+                  Supprimer l&apos;annonce
+                </button>
+              </>
+            )}
+          </div>
+        )}
+      </div>
+
+      {/* Modal de confirmation de suppression */}
+      {showConfirmDelete && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-forest-950/60 backdrop-blur-xs p-4">
+          <div className="w-full max-w-md rounded-card border border-border bg-background-card p-6 shadow-xl space-y-4 animate-in fade-in zoom-in duration-200">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-pill bg-error-100 flex items-center justify-center text-error-600 shrink-0">
+                <AlertTriangle className="w-5 h-5" />
+              </div>
+              <div>
+                <h3 className="font-display text-base font-extrabold text-foreground">
+                  Supprimer l&apos;annonce ?
+                </h3>
+                <p className="text-xs text-foreground-muted truncate max-w-[260px]">
+                  {listing.titre}
+                </p>
+              </div>
+            </div>
+
+            <p className="text-xs text-foreground-muted leading-relaxed">
+              Cette action est définitive. L&apos;annonce et tous ses éléments associés (photos, tarifs, indisponibilités) seront définitivement retirés de la plateforme.
+            </p>
+
+            <div className="flex items-center justify-end gap-3 pt-2">
               <button
                 type="button"
-                role="menuitem"
-                onClick={(e) => {
-                  e.preventDefault(); e.stopPropagation();
-                  setOpen(false);
-                  onToggleDerniereMinute(listing.id, !listing.derniereMinuteActive);
-                }}
-                className={cn(item, 'text-left')}
+                onClick={() => setShowConfirmDelete(false)}
+                className="px-4 py-2 rounded-pill border border-border text-xs font-semibold text-foreground hover:bg-background-alt transition-colors"
               >
-                <Zap className={cn('h-4 w-4 shrink-0', listing.derniereMinuteActive ? 'text-amber-500 fill-amber-400' : 'text-foreground-muted')} />
-                <span className="font-semibold text-xs">
-                  {listing.derniereMinuteActive ? '⚡ Desactiver -15% Dernière Min.' : '⚡ Activer -15% Dernière Min.'}
-                </span>
+                Annuler
               </button>
-            </>
-          )}
 
-          {onToggleStatus && (
-            <>
-              <div className="my-1 h-px bg-border" />
               <button
                 type="button"
-                role="menuitem"
-                onClick={(e) => {
-                  e.preventDefault(); e.stopPropagation();
-                  setOpen(false);
-                  onToggleStatus(listing.id, listing.statut);
+                onClick={() => {
+                  setShowConfirmDelete(false);
+                  onDelete?.(listing.id);
                 }}
-                className={cn(item, 'text-left')}
+                className="px-4 py-2 rounded-pill bg-error-600 hover:bg-error-700 text-white text-xs font-bold transition-all shadow-md active:scale-95 cursor-pointer"
               >
-                {listing.statut === 'PUBLISHED' ? (
-                  <>
-                    <PauseCircle className="h-4 w-4 text-warning-600" aria-hidden="true" />
-                    Mettre en pause
-                  </>
-                ) : (
-                  <>
-                    <PlayCircle className="h-4 w-4 text-success-600" aria-hidden="true" />
-                    Activer l&apos;annonce
-                  </>
-                )}
+                Supprimer définitivement
               </button>
-            </>
-          )}
+            </div>
+          </div>
         </div>
       )}
-    </div>
+    </>
   );
 }

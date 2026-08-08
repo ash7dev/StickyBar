@@ -716,18 +716,57 @@ export class LogementsService {
     const logement = await this.assertOwner(id, userId);
     await this.assertNoActiveReservations(id);
 
-    const updateData: { archiveLe: Date; statut?: StatutLogement } = {
-      archiveLe: new Date(),
-    };
+    const reservationCount = await this.prisma.reservation.count({
+      where: { logementId: id },
+    });
 
-    if (logement.statut !== StatutLogement.PAUSED) {
-      updateData.statut = StatutLogement.PAUSED;
+    if (reservationCount === 0) {
+      // 1. Nettoyage des photos sur Cloudinary
+      const photos = await this.prisma.photoLogement.findMany({
+        where: { logementId: id },
+        select: { publicId: true },
+      });
+      for (const p of photos) {
+        if (p.publicId) {
+          try {
+            await cloudinary.uploader.destroy(p.publicId);
+          } catch (err) {
+            this.logger.warn(`Échec suppression photo Cloudinary [${p.publicId}]: ${(err as Error).message}`);
+          }
+        }
+      }
+
+      // 2. Nettoyage de la vidéo de présentation sur Cloudinary
+      if (logement.videoPublicId) {
+        try {
+          await this.cloudinaryService.deleteFile(logement.videoPublicId);
+        } catch (err) {
+          this.logger.warn(`Échec suppression vidéo Cloudinary [${logement.videoPublicId}]: ${(err as Error).message}`);
+        }
+      }
+
+      // 3. Suppression définitive en BDD (Prisma CASCADE supprime photos, équipements, tarifs, indisponibilités, avis)
+      await this.prisma.logement.delete({ where: { id } });
+      await this.invalidateSearchCache();
+
+      this.logger.log(`Logement [${id}] supprimé définitivement par utilisateur [${userId}]`);
+      return { message: 'Logement supprimé définitivement' };
+    } else {
+      // Si le logement possède un historique comptable de réservations passées/annulées
+      const updateData: { archiveLe: Date; statut?: StatutLogement } = {
+        archiveLe: new Date(),
+      };
+
+      if (logement.statut !== StatutLogement.PAUSED) {
+        updateData.statut = StatutLogement.PAUSED;
+      }
+
+      await this.prisma.logement.update({ where: { id }, data: updateData });
+      await this.invalidateSearchCache();
+
+      this.logger.log(`Logement [${id}] archivé (historique conservé) par utilisateur [${userId}]`);
+      return { message: 'Logement archivé' };
     }
-
-    await this.prisma.logement.update({ where: { id }, data: updateData });
-
-    this.logger.log(`Logement [${id}] archivé par utilisateur [${userId}]`);
-    return { message: 'Logement archivé' };
   }
 
   async setTarifsPersonnes(

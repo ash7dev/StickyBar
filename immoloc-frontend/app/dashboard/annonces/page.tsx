@@ -64,6 +64,14 @@ export default function AnnoncesPage() {
     ),
   });
 
+  const deleteListing = useMutation({
+    mutationFn: (id: string) => nestFetch(NEST_API.LISTINGS.ARCHIVE(id), { method: 'DELETE' }),
+    onSuccess: invalidate,
+    onError: (e) => setActionError(
+      e instanceof Error && e.message ? e.message : 'La suppression de l’annonce n’a pas abouti.',
+    ),
+  });
+
   const { filtered, counts } = useMemo(() => {
     const all = listings ?? [];
     const byStatus = new Map<string, number>();
@@ -215,6 +223,7 @@ export default function AnnoncesPage() {
               viewMode={viewMode}
               onToggleStatus={(id, currentStatus) => toggleStatus.mutate({ id, currentStatus })}
               onToggleDerniereMinute={(id, active) => toggleDerniereMinute.mutate({ id, active })}
+              onDelete={(id) => deleteListing.mutate(id)}
             />
           ))}
         </div>
