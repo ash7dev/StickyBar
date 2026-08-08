@@ -66,8 +66,19 @@ export class LogementsService {
     const cached = await this.redis.get(cacheKey);
     if (cached) return JSON.parse(cached);
 
-    const dateDebut = dto.dateDebut ? new Date(dto.dateDebut) : undefined;
-    const dateFin = dto.dateFin ? new Date(dto.dateFin) : undefined;
+    let dateDebut = dto.dateDebut ? new Date(dto.dateDebut) : undefined;
+    let dateFin = dto.dateFin ? new Date(dto.dateFin) : undefined;
+
+    // Ajuster l'heure pour les requêtes de disponibilité :
+    // Arrivée à 12:01 pour ne pas chevaucher un départ à 12:00 le même jour
+    if (dateDebut) {
+      dateDebut = new Date(dateDebut);
+      dateDebut.setUTCHours(12, 1, 0, 0);
+    }
+    if (dateFin) {
+      dateFin = new Date(dateFin);
+      dateFin.setUTCHours(11, 59, 0, 0);
+    }
 
     const withDates = dateDebut && dateFin;
 

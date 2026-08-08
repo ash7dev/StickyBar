@@ -115,11 +115,23 @@ export class CreateReservationUseCase {
         FOR UPDATE
       `;
 
-      // Vérification manuelle du chevauchement après verrouillage
+      // Helper pour obtenir la date au format YYYY-MM-DD (comparaison par nuitée)
+      const toDateStr = (d: Date | string) => {
+        const dateObj = new Date(d);
+        const y = dateObj.getUTCFullYear();
+        const m = String(dateObj.getUTCMonth() + 1).padStart(2, '0');
+        const day = String(dateObj.getUTCDate()).padStart(2, '0');
+        return `${y}-${m}-${day}`;
+      };
+
+      const inputStartStr = toDateStr(dateDebut);
+      const inputEndStr = toDateStr(dateFin);
+
+      // Vérification manuelle du chevauchement par nuitée (A < D et B > C)
       const overlap = activeReservations.find(r => {
-        const rDebut = new Date(r.dateDebut);
-        const rFin = new Date(r.dateFin);
-        return rDebut < dateFin && rFin > dateDebut;
+        const rDebutStr = toDateStr(r.dateDebut);
+        const rFinStr = toDateStr(r.dateFin);
+        return rDebutStr < inputEndStr && rFinStr > inputStartStr;
       });
       if (overlap) throw new ConflictException('Le logement est déjà réservé sur ces dates');
 
