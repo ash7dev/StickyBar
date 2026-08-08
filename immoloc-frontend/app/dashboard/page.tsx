@@ -1,7 +1,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useQuery } from '@tanstack/react-query';
 import { dashboardApi } from '@/lib/nestjs';
 import { HostWelcomeBanner } from '@/features/dashboard/components/owner/HostWelcomeBanner';
 import { KpiSection } from '@/features/dashboard/components/owner/KpiSection';
@@ -18,30 +18,25 @@ import DashboardLoading from './loading';
 // ── Page ─────────────────────────────────────────────────────────────────────
 
 export default function DashboardPage() {
-  const [loading, setLoading] = useState(true);
-  const [data, setData] = useState<any>(null);
+  const { data, isLoading, isPending } = useQuery({
+    queryKey: ['dashboard', 'full-data'],
+    queryFn: async () => {
+      const [stats, pending, recent, upcoming] = await Promise.all([
+        dashboardApi.getOwnerStats(),
+        dashboardApi.getPendingActions(),
+        dashboardApi.getRecentActivity(),
+        dashboardApi.getUpcomingEvents(),
+      ]);
+      return { stats, pending, recent, upcoming };
+    },
+    staleTime: 5 * 60 * 1000, // Caches data for 5 minutes
+    gcTime: 15 * 60 * 1000,
+    refetchOnWindowFocus: false,
+    placeholderData: (previousData) => previousData,
+  });
 
-  useEffect(() => {
-    async function load() {
-      try {
-        const [stats, pending, recent, upcoming] = await Promise.all([
-          dashboardApi.getOwnerStats(),
-          dashboardApi.getPendingActions(),
-          dashboardApi.getRecentActivity(),
-          dashboardApi.getUpcomingEvents(),
-        ]);
-        setData({ stats, pending, recent, upcoming });
-      } catch (err) {
-        console.error('Erreur chargement dashboard:', err);
-      } finally {
-        setLoading(false);
-      }
-    }
-    load();
-  }, []);
-
-  if (loading) return <DashboardLoading />;
-  if (!data) return null;
+  if ((isLoading || isPending) && !data) return <DashboardLoading />;
+  if (!data) return <DashboardLoading />;
 
   const { stats, pending, recent, upcoming } = data;
 
