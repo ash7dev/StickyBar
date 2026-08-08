@@ -97,16 +97,16 @@ export class HttpExceptionFilter implements ExceptionFilter {
   private translateMessage(msg: string, status: number): string {
     const lower = msg.toLowerCase();
 
-    if (lower.includes('unauthorized') || status === 401) {
+    if (lower === 'unauthorized' || (status === 401 && lower.includes('unauthorized'))) {
       return 'Votre session a expiré ou vos identifiants sont incorrects. Veuillez vous reconnecter.';
     }
-    if (lower.includes('forbidden') || status === 403) {
+    if (lower === 'forbidden' || (status === 403 && lower.includes('forbidden'))) {
       return 'Vous n\'avez pas les autorisations nécessaires pour effectuer cette action.';
     }
-    if (lower.includes('not found') || status === 404) {
+    if (lower === 'not found' || (status === 404 && lower.includes('not found'))) {
       return 'La ressource demandée n\'existe pas ou a été déplacée.';
     }
-    if (lower.includes('already exists') || lower.includes('conflict') || status === 409) {
+    if (lower === 'conflict' || lower.includes('already exists') || lower.includes('unique constraint')) {
       return 'Cette donnée existe déjà sur la plateforme (ex: e-mail ou téléphone déjà inscrit).';
     }
     if (lower.includes('invalid credentials')) {
