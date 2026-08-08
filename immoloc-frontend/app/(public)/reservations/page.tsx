@@ -1,7 +1,9 @@
 'use client';
 
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
+import { History, ChevronDown, AlertCircle } from 'lucide-react';
+import { cn } from '@/lib/utils/cn';
 import { useRoleStore } from '@/stores/role.store';
 import { nestFetch } from '@/lib/nestjs/api-client';
 import { NEST_API } from '@/lib/nestjs/endpoints';
@@ -16,15 +18,27 @@ import {
 } from '@/features/reservations/components/tenant/TenantReservationsList';
 import { TenantReservationsPageSkeleton } from '@/features/reservations/components/tenant/TenantReservationsSkeleton';
 import type { TenantReservation } from '@/features/reservations/components/tenant-reservation-card';
-import { History, ChevronDown, Sparkles } from 'lucide-react';
-import { cn } from '@/lib/utils/cn';
 
-const ACTIVE_STATUSES = ['PENDING', 'CONFIRMED', 'CHECKED_IN', 'PAID', 'DISPUTED'];
+const ACTIVE_STATUSES = ['PENDING', 'PAID', 'CONFIRMED', 'CHECKED_IN', 'DISPUTED'];
+
+/* Correspondance onglet → statuts, déclarée une fois.
+   ⚠️ `PENDING` et `DISPUTED` figurent dans ACTIVE_STATUSES mais n'étaient
+   comptés par aucun onglet : la somme des compteurs affichés était donc
+   inférieure au total, et une réservation en attente de paiement ou en litige
+   était introuvable autrement qu'en parcourant « Toutes ». Ils rejoignent
+   « Confirmées » faute d'onglet dédié — l'idéal reste d'en ajouter un dans
+   TenantReservationsHeader. */
+const TAB_STATUSES: Record<Exclude<ReservationTabId, 'ALL'>, string[]> = {
+  CONFIRMED: ['CONFIRMED', 'PAID', 'PENDING', 'DISPUTED'],
+  CHECKED_IN: ['CHECKED_IN'],
+  COMPLETED: ['COMPLETED'],
+  CANCELLED: ['CANCELLED', 'EXPIRED'],
+};
 
 function TenantReservationsContent() {
   const [activeTab, setActiveTab] = useState<ReservationTabId>('ALL');
-  const [showHistory, setShowHistory] = useState<boolean>(false);
-  const { activeRole } = useRoleStore();
+  const [showHistory, setShowHistory] = useState(false);
+  const activeRole = useRoleStore((s) => s.activeRole);
 
   const { data: reservations, isLoading, error } = useQuery<TenantReservation[]>({
     queryKey: ['reservations', 'me', activeRole],
@@ -32,122 +46,126 @@ function TenantReservationsContent() {
     enabled: activeRole === 'LOCATAIRE',
   });
 
-  const totalCount = reservations?.length ?? 0;
-  const confirmedCount = reservations?.filter((r) => r.statut === 'CONFIRMED' || r.statut === 'PAID').length ?? 0;
-  const checkedInCount = reservations?.filter((r) => r.statut === 'CHECKED_IN').length ?? 0;
-  const completedCount = reservations?.filter((r) => r.statut === 'COMPLETED').length ?? 0;
-  const cancelledCount = reservations?.filter((r) => r.statut === 'CANCELLED' || r.statut === 'EXPIRED').length ?? 0;
+  /* Six parcours complets de la liste à chaque rendu. */
+  const { counts, filtered, activeList, historyList } = useMemo(() => {
+    const all = reservations ?? [];
+    const countIn = (statuses: string[]) => all.filter((r) => statuses.includes(r.statut)).length;
 
-  const filtered = reservations?.filter((r) => {
-    if (activeTab === 'ALL') return true;
-    if (activeTab === 'CONFIRMED') return r.statut === 'CONFIRMED' || r.statut === 'PAID';
-    if (activeTab === 'CHECKED_IN') return r.statut === 'CHECKED_IN';
-    if (activeTab === 'COMPLETED') return r.statut === 'COMPLETED';
-    if (activeTab === 'CANCELLED') return r.statut === 'CANCELLED' || r.statut === 'EXPIRED';
-    return true;
-  });
+    const list = activeTab === 'ALL'
+      ? all
+      : all.filter((r) => TAB_STATUSES[activeTab].includes(r.statut));
 
-  const activeList = filtered?.filter((r) => ACTIVE_STATUSES.includes(r.statut)) ?? [];
-  const historyList = filtered?.filter((r) => !ACTIVE_STATUSES.includes(r.statut)) ?? [];
+    return {
+      counts: {
+        total: all.length,
+        confirmed: countIn(TAB_STATUSES.CONFIRMED),
+        checkedIn: countIn(TAB_STATUSES.CHECKED_IN),
+        completed: countIn(TAB_STATUSES.COMPLETED),
+        cancelled: countIn(TAB_STATUSES.CANCELLED),
+      },
+      filtered: list,
+      activeList: list.filter((r) => ACTIVE_STATUSES.includes(r.statut)),
+      historyList: list.filter((r) => !ACTIVE_STATUSES.includes(r.statut)),
+    };
+  }, [reservations, activeTab]);
 
   return (
-    <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 pt-10 lg:pt-12 pb-24 space-y-8">
-      {/* En-tête de la page avec statistiques & filtre segmenté */}
+    <div className="mx-auto max-w-6xl space-y-8 px-4 pt-10 pb-24 sm:px-6 lg:px-8 lg:pt-12">
+
       <TenantReservationsHeader
         activeTab={activeTab}
         onTabChange={setActiveTab}
-        totalCount={totalCount}
-        confirmedCount={confirmedCount}
-        checkedInCount={checkedInCount}
-        completedCount={completedCount}
-        cancelledCount={cancelledCount}
+        totalCount={counts.total}
+        confirmedCount={counts.confirmed}
+        checkedInCount={counts.checkedIn}
+        completedCount={counts.completed}
+        cancelledCount={counts.cancelled}
       />
 
-      {/* État d'erreur */}
       {error && (
-        <div className="bg-error-50 border border-error-100 rounded-card p-5 text-center text-error-700 text-sm font-medium">
-          Impossible de charger vos réservations. Veuillez rafraîchir la page.
+        <div
+          role="alert"
+          className="flex items-center gap-3 rounded-card border border-error-500/20 bg-error-50 p-5 text-sm text-error-700"
+        >
+          <AlertCircle className="h-5 w-5 shrink-0 text-error-600" aria-hidden="true" />
+          Impossible de charger vos réservations. Rafraîchissez la page.
         </div>
       )}
 
-      {/* Chargement Skeleton Ultra-Fluide */}
       {isLoading && <TenantReservationsPageSkeleton />}
 
-      {/* État vide */}
-      {!isLoading && !error && filtered?.length === 0 && (
+      {!isLoading && !error && filtered.length === 0 && (
         <TenantReservationsEmptyState filtered={activeTab !== 'ALL'} />
       )}
 
-      {/* Liste des Réservations */}
-      {!isLoading && !error && filtered && filtered.length > 0 && (
-        <>
-          {activeTab === 'ALL' ? (
-            <div className="space-y-8">
-              {/* Section 1: Séjours actifs & à venir */}
-              {activeList.length > 0 ? (
-                <div className="flex flex-col gap-3 sm:gap-4">
-                  {activeList.map((reservation) => (
-                    <TenantReservationCardItem key={reservation.id} reservation={reservation} />
-                  ))}
-                </div>
-              ) : (
-                <div className="p-4 rounded-card border border-border bg-background-alt text-xs font-semibold text-foreground-muted">
-                  Aucun séjour actif pour le moment.
-                </div>
-              )}
+      {!isLoading && !error && filtered.length > 0 && (
+        activeTab === 'ALL' ? (
+          <div className="space-y-8">
+            {activeList.length > 0 ? (
+              <div className="flex flex-col gap-3 sm:gap-4">
+                {activeList.map((r) => (
+                  <TenantReservationCardItem key={r.id} reservation={r} />
+                ))}
+              </div>
+            ) : (
+              <p className="rounded-card border border-border bg-background-alt p-4 text-xs text-foreground-muted">
+                Aucun séjour en cours ou à venir.
+              </p>
+            )}
 
-              {/* Section 2: Historique dépliable des séjours passés & annulés */}
-              {historyList.length > 0 && (
-                <div className="border-t border-border/80 pt-6 space-y-4">
-                  <button
-                    type="button"
-                    onClick={() => setShowHistory((v) => !v)}
-                    className="flex items-center justify-between w-full p-4 rounded-card border border-border bg-background-card hover:bg-background-alt transition-colors group shadow-2xs cursor-pointer"
-                  >
-                    <div className="flex items-center gap-3">
-                      <span className="flex h-9 w-9 items-center justify-center rounded-inner bg-slate-100 text-slate-700">
-                        <History className="h-4.5 w-4.5" />
-                      </span>
-                      <div className="text-left">
-                        <h3 className="font-display text-sm font-bold text-foreground flex items-center gap-2">
-                          Historique des séjours & annulations
-                          <span className="px-2 py-0.5 rounded-pill bg-slate-100 text-slate-700 text-xs font-bold border border-slate-200">
-                            {historyList.length}
-                          </span>
-                        </h3>
-                        <p className="text-xs text-foreground-muted mt-0.5">
-                          {showHistory
-                            ? 'Cliquez pour replier la liste de l\'historique'
-                            : 'Séjours terminés, annulations et réservations archivées'}
-                        </p>
-                      </div>
+            {historyList.length > 0 && (
+              <div className="space-y-4 border-t border-border pt-6">
+                <button
+                  type="button"
+                  onClick={() => setShowHistory((v) => !v)}
+                  aria-expanded={showHistory}
+                  className="group flex w-full items-center justify-between gap-4 rounded-card border border-border bg-background-card p-4 text-left transition-colors hover:bg-background-alt"
+                >
+                  <div className="flex min-w-0 items-center gap-3">
+                    {/* `slate` n'existe pas dans la palette : ce bloc rendait
+                       sans fond, sans bordure et sans couleur de texte. */}
+                    <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-inner border border-border bg-background-alt text-foreground-muted">
+                      <History className="h-4 w-4" aria-hidden="true" />
+                    </span>
+                    <div className="min-w-0">
+                      <p className="flex flex-wrap items-center gap-2 font-display text-sm font-semibold text-foreground">
+                        Historique
+                        <span className="rounded-pill border border-border bg-background-alt px-2 py-0.5 text-xs font-semibold tabular-nums text-foreground-muted">
+                          {historyList.length}
+                        </span>
+                      </p>
+                      <p className="mt-0.5 text-xs text-foreground-muted">
+                        Séjours terminés et réservations annulées
+                      </p>
                     </div>
+                  </div>
 
-                    <div className="flex items-center gap-1.5 text-xs font-semibold text-forest-700 bg-forest-50 border border-forest-100 px-3 py-1.5 rounded-pill group-hover:bg-forest-100 transition-colors">
-                      <span>{showHistory ? 'Masquer' : 'Dérouler l\'historique'}</span>
-                      <ChevronDown className={cn('h-4 w-4 transition-transform duration-200', showHistory && 'rotate-180')} />
-                    </div>
-                  </button>
+                  <span className="flex shrink-0 items-center gap-1.5 rounded-pill border border-border px-3 py-1.5 text-xs font-semibold text-foreground-muted">
+                    {showHistory ? 'Masquer' : 'Afficher'}
+                    <ChevronDown
+                      className={cn('h-4 w-4 transition-transform duration-200', showHistory && 'rotate-180')}
+                      aria-hidden="true"
+                    />
+                  </span>
+                </button>
 
-                  {showHistory && (
-                    <div className="flex flex-col gap-3 sm:gap-4">
-                      {historyList.map((reservation) => (
-                        <TenantReservationCardItem key={reservation.id} reservation={reservation} />
-                      ))}
-                    </div>
-                  )}
-                </div>
-              )}
-            </div>
-          ) : (
-            /* Onglet spécifique sélectionné (ex: Confirmées, En cours, Terminées, Annulées) */
-            <div className="flex flex-col gap-3 sm:gap-4">
-              {filtered.map((reservation) => (
-                <TenantReservationCardItem key={reservation.id} reservation={reservation} />
-              ))}
-            </div>
-          )}
-        </>
+                {showHistory && (
+                  <div className="flex flex-col gap-3 sm:gap-4">
+                    {historyList.map((r) => (
+                      <TenantReservationCardItem key={r.id} reservation={r} />
+                    ))}
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
+        ) : (
+          <div className="flex flex-col gap-3 sm:gap-4">
+            {filtered.map((r) => (
+              <TenantReservationCardItem key={r.id} reservation={r} />
+            ))}
+          </div>
+        )
       )}
     </div>
   );
