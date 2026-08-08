@@ -1,12 +1,10 @@
 'use client';
 
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useState } from 'react';
 import { Sparkles, SlidersHorizontal } from 'lucide-react';
 import { useHomePreferences } from '@/lib/hooks/useHomePreferences';
 import { HomePersonalizationModal } from '@/components/home/HomePersonalizationModal';
 import { cn } from '@/lib/utils/cn';
-
-const AUTO_OPEN_KEY = 'klef_onboarding_shown';
 
 interface Props {
   className?: string;
@@ -16,32 +14,9 @@ export function PersonalizationTrigger({ className }: Props) {
   const [isOpen, setIsOpen] = useState(false);
   const [syncKey, setSyncKey] = useState(0);
 
-  const { preferences, hasActivePreferences, isLoaded, completeOnboarding } = useHomePreferences();
+  const { preferences, hasActivePreferences, isLoaded } = useHomePreferences();
   const selection = [...preferences.zones, ...preferences.sousTypes];
   const count = selection.length;
-
-  const autoOpened = useRef(false);
-
-  /* Ouverture automatique à la toute première visite uniquement.
-     Stocké dans localStorage (au lieu de sessionStorage) pour ne jamais
-     se ré-afficher lorsque l'application est fermée/tuée en arrière-plan. */
-  useEffect(() => {
-    if (!isLoaded || autoOpened.current) return;
-    autoOpened.current = true;
-
-    if (preferences.hasCompletedOnboarding) return;
-
-    try {
-      if (localStorage.getItem(AUTO_OPEN_KEY)) return;
-      localStorage.setItem(AUTO_OPEN_KEY, 'true');
-    } catch {
-      /* localStorage indisponible : navigation privée ou restriction navigateur. */
-    }
-
-    /* Marquer immédiatement comme complété pour éviter toute réouverture au relancement de l'app */
-    completeOnboarding();
-    setIsOpen(true);
-  }, [isLoaded, preferences.hasCompletedOnboarding, completeOnboarding]);
 
   const handleClose = useCallback(() => {
     setIsOpen(false);
