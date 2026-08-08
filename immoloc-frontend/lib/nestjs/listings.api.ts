@@ -37,7 +37,10 @@ export const listingsApi = {
 
   /** Feed home — toutes les sections en un seul appel (cache 5 min côté backend) */
   feed: () =>
-    nestFetch<FeedResponse>(NEST_API.LISTINGS.FEED, { skipAutoToken: true }),
+    nestFetch<FeedResponse>(NEST_API.LISTINGS.FEED, {
+      skipAutoToken: true,
+      next: { revalidate: 60, tags: ['home-feed'] },
+    }),
 
   /** Rechercher des annonces publiques avec filtres */
   search: (params: SearchListingsParams = {}) => {

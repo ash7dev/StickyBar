@@ -177,7 +177,10 @@ export default function OwnerPublicProfilePage({
       try {
         setLoading(true);
         setError(null);
-        const res = await nestFetch<OwnerData>(NEST_API.USERS.OWNER_PROFILE(ownerId));
+        const res = await nestFetch<OwnerData>(NEST_API.USERS.OWNER_PROFILE(ownerId), {
+          skipAutoToken: true,
+          next: { revalidate: 60 },
+        });
         if (!cancelled) setData(res);
       } catch (err) {
         if (cancelled) return;

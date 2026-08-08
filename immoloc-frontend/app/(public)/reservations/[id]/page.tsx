@@ -28,8 +28,8 @@ function TenantReservationDetailContent({ id }: { id: string }) {
   const { data: res, isLoading, error } = useQuery<ReservationDetail>({
     queryKey: ['reservation', id],
     queryFn:  () => nestFetch<ReservationDetail>(NEST_API.RESERVATIONS.FIND_ONE(id)),
-    staleTime: 0,
-    refetchOnWindowFocus: true,
+    staleTime: 5000,
+    refetchOnWindowFocus: false,
   });
 
   const onRefetch = () => queryClient.invalidateQueries({ queryKey: ['reservation', id] });

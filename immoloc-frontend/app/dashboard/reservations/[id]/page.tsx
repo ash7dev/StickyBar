@@ -225,8 +225,8 @@ export default function ReservationDetailPage({ params }: { params: Promise<{ id
   const { data: res, isLoading, error, refetch } = useQuery<ReservationDetail>({
     queryKey: ['reservation', id],
     queryFn: () => nestFetch<ReservationDetail>(NEST_API.RESERVATIONS.FIND_ONE(id)),
-    staleTime: 0,
-    refetchOnWindowFocus: true,
+    staleTime: 5000,
+    refetchOnWindowFocus: false,
   });
 
   const [panelOpen, setPanelOpen] = useState(false);
