@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useId, useRef, useState } from 'react';
+import { createPortal } from 'react-dom';
 import Image from 'next/image';
 import Link from 'next/link';
 import {
@@ -235,9 +236,14 @@ function ActionsMenu({
 }) {
   const [open, setOpen] = useState(false);
   const [showConfirmDelete, setShowConfirmDelete] = useState(false);
+  const [mounted, setMounted] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
   const btnRef = useRef<HTMLButtonElement>(null);
   const menuId = useId();
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   const toggleOpen = (val?: boolean) => {
     setOpen((prev) => (val !== undefined ? val : !prev));
@@ -385,15 +391,21 @@ function ActionsMenu({
         )}
       </div>
 
-      {/* Modal de confirmation de suppression */}
-      {showConfirmDelete && (
-        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-forest-950/60 backdrop-blur-xs p-4">
-          <div className="w-full max-w-md rounded-card border border-border bg-background-card p-6 shadow-xl space-y-4 animate-in fade-in zoom-in duration-200">
+      {/* Modal de confirmation de suppression (Portail au niveau de document.body) */}
+      {showConfirmDelete && mounted && createPortal(
+        <div
+          className="fixed inset-0 z-[9999] flex items-center justify-center bg-forest-950/60 backdrop-blur-xs p-4 animate-in fade-in duration-200"
+          onClick={() => setShowConfirmDelete(false)}
+        >
+          <div
+            className="w-full max-w-md rounded-card border border-border bg-background-card p-6 shadow-2xl space-y-4 animate-in zoom-in-95 duration-200"
+            onClick={(e) => e.stopPropagation()}
+          >
             <div className="flex items-center gap-3">
               <div className="w-10 h-10 rounded-pill bg-error-100 flex items-center justify-center text-error-600 shrink-0">
                 <AlertTriangle className="w-5 h-5" />
               </div>
-              <div>
+              <div className="min-w-0">
                 <h3 className="font-display text-base font-extrabold text-foreground">
                   Supprimer l&apos;annonce ?
                 </h3>
@@ -428,7 +440,8 @@ function ActionsMenu({
               </button>
             </div>
           </div>
-        </div>
+        </div>,
+        document.body,
       )}
     </>
   );

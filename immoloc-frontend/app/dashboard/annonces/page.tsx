@@ -1,9 +1,8 @@
 'use client';
 
 import { useCallback, useMemo, useState } from 'react';
-import Link from 'next/link';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { LayoutGrid, List, AlertCircle, Plus } from 'lucide-react';
+import { LayoutGrid, List, AlertCircle } from 'lucide-react';
 import { cn } from '@/lib/utils/cn';
 import { nestFetch } from '@/lib/nestjs/api-client';
 import { NEST_API } from '@/lib/nestjs/endpoints';
@@ -99,12 +98,6 @@ export default function AnnoncesPage() {
               Mes annonces
             </h1>
           </div>
-
-          {/* ★ Seul aplat lime de la page : la publication. */}
-          <Link href="/dashboard/annonces/nouvelle" className="btn-action shrink-0 px-4 py-2.5 text-sm">
-            <Plus className="h-4 w-4" aria-hidden="true" />
-            <span className="whitespace-nowrap">Publier un bien</span>
-          </Link>
         </div>
 
         <p className="pt-1 text-sm text-foreground-muted">
