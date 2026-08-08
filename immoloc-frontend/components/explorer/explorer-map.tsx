@@ -130,7 +130,7 @@ export function ExplorerMap({ listings }: ExplorerMapProps) {
           className: 'custom-user-gps-pin',
           html: `<div style="position: relative; width: 26px; height: 26px;">
                   <div style="position: absolute; inset: 0; border-radius: 9999px; background-color: ${colors.lime[400]}; opacity: 0.65; animation: pulse 2s infinite;"></div>
-                  <div style="position: absolute; inset: 3px; border-radius: 9999px; background-color: ${colors.forest[950]}; border: 2.5px solid #ffffff; box-shadow: 0 4px 12px rgba(0,0,0,0.4); display: flex; align-items: center; justify-content: center;">
+                  <div style="position: absolute; inset: 3px; border-radius: 9999px; background-color: ${colors.forest[950]}; border: 2.5px solid ${colors.neutral[0]}; box-shadow: 0 4px 12px rgba(0,0,0,0.4); display: flex; align-items: center; justify-content: center;">
                     <div style="width: 8px; height: 8px; border-radius: 9999px; background-color: ${colors.lime[400]};"></div>
                   </div>
                 </div>`,
@@ -176,7 +176,7 @@ export function ExplorerMap({ listings }: ExplorerMapProps) {
 
           const priceIcon = L.divIcon({
             className: 'custom-price-pin',
-            html: `<div style="background-color: ${isPromo ? colors.lime[400] : colors.forest[950]}; color: ${isPromo ? colors.forest[800] : '#ffffff'}; font-weight: 800; font-size: 11px; padding: 5px 10px; border-radius: 9999px; border: 1.5px solid #ffffff; box-shadow: 0 4px 12px rgba(0,0,0,0.25); text-align: center; whitespace: nowrap; cursor: pointer;">${isPromo ? '⚡ ' : ''}${priceText}</div>`,
+            html: `<div style="background-color: ${isPromo ? colors.lime[400] : colors.forest[950]}; color: ${isPromo ? colors.forest[800] : colors.neutral[0]}; font-weight: 800; font-size: 11px; padding: 5px 10px; border-radius: 9999px; border: 1.5px solid ${colors.neutral[0]}; box-shadow: 0 4px 12px rgba(0,0,0,0.25); text-align: center; whitespace: nowrap; cursor: pointer;">${isPromo ? '⚡ ' : ''}${priceText}</div>`,
             iconSize: [85, 28],
             iconAnchor: [42, 14],
           });
@@ -186,7 +186,7 @@ export function ExplorerMap({ listings }: ExplorerMapProps) {
           const popupContent = `
             <div style="font-family: system-ui, sans-serif; padding: 4px; max-width: 190px;">
               <strong style="font-size: 13px; color: ${colors.forest[950]}; display: block; margin-bottom: 2px;">${listing.titre}</strong>
-              <span style="font-size: 11px; color: #666; display: block; margin-bottom: 4px;">${listing.ville}${listing.quartier ? ` · ${listing.quartier}` : ''}</span>
+              <span style="font-size: 11px; color: ${colors.neutral[600]}; display: block; margin-bottom: 4px;">${listing.ville}${listing.quartier ? ` · ${listing.quartier}` : ''}</span>
               ${listing.distanceKm !== undefined && listing.distanceKm !== null ? `<span style="font-size: 10px; font-weight: 700; color: ${colors.forest[600]}; display: block; margin-bottom: 4px;">📍 À ${(listing.distanceKm as number).toFixed(1)} km de vous</span>` : ''}
               <span style="font-size: 14px; font-weight: 800; color: ${colors.forest[950]};">${priceText}</span>
               <a href="/explorer/${listing.id}" style="display: block; margin-top: 6px; text-align: center; background-color: ${colors.forest[950]}; color: ${colors.lime[300]}; padding: 5px 8px; border-radius: 8px; text-decoration: none; font-size: 11px; font-weight: 800;">Voir l'annonce</a>

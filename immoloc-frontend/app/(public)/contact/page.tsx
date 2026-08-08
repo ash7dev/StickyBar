@@ -109,7 +109,7 @@ export default function ContactPage() {
     <div className="bg-canvas min-h-dvh">
 
       {/* ── Hero ────────────────────────────────────────────────────────── */}
-      <section className="-mt-20 bg-[radial-gradient(70%_60%_at_50%_0%,#0F503D_0%,rgba(15,80,61,0)_70%),linear-gradient(180deg,#072A20_0%,#041912_100%)] pb-16 pt-32 text-white sm:pt-36">
+      <section className="-mt-20 bg-[radial-gradient(70%_60%_at_50%_0%,var(--forest-700)_0%,rgba(15,80,61,0)_70%),linear-gradient(180deg,var(--forest-900)_0%,var(--forest-950)_100%)] pb-16 pt-32 text-white sm:pt-36">
         <div className="mx-auto max-w-[1120px] px-6 text-center">
           <h1 className="mx-auto max-w-3xl font-display text-[clamp(2rem,5vw,3.25rem)] font-semibold leading-[1.06] tracking-[-0.03em] text-neutral-50">
             Nous joindre<span className="text-on-inverse-marker">.</span>

@@ -30,7 +30,7 @@ export function AuthShell({ children }: { children: React.ReactNode }) {
         <div className="w-full max-w-sm">{children}</div>
       </div>
 
-      <aside className="relative hidden overflow-hidden lg:flex lg:flex-col lg:justify-center bg-[radial-gradient(72%_58%_at_50%_0%,#0F503D_0%,rgba(15,80,61,0)_68%),linear-gradient(180deg,#072A20_0%,#041912_100%)] px-12 py-16">
+      <aside className="relative hidden overflow-hidden lg:flex lg:flex-col lg:justify-center bg-[radial-gradient(72%_58%_at_50%_0%,var(--forest-700)_0%,rgba(15,80,61,0)_68%),linear-gradient(180deg,var(--forest-900)_0%,var(--forest-950)_100%)] px-12 py-16">
         <span className="mb-8 inline-flex h-11 w-11 items-center justify-center rounded-inner border border-action-edge bg-action/[0.13]">
           <ShieldCheck className="h-5 w-5 text-on-inverse-marker" aria-hidden="true" />
         </span>

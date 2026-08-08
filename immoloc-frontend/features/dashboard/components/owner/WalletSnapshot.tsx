@@ -20,7 +20,7 @@ function Shell({ children }: { children: React.ReactNode }) {
     // Le degrade partait de forest-950 pour y revenir via #072A20, soit
     // forest-900 en hexadecimal brut. Le halo radial remplace aussi les deux
     // orbes floutes en blur-3xl.
-    <section className="klef-rise flex h-full min-h-[22rem] flex-col rounded-card bg-[radial-gradient(75%_55%_at_50%_0%,#0F503D_0%,rgba(15,80,61,0)_70%),linear-gradient(180deg,#072A20_0%,#041912_100%)] p-6 text-white">
+    <section className="klef-rise flex h-full min-h-[22rem] flex-col rounded-card bg-[radial-gradient(75%_55%_at_50%_0%,var(--forest-700)_0%,rgba(15,80,61,0)_70%),linear-gradient(180deg,var(--forest-900)_0%,var(--forest-950)_100%)] p-6 text-white">
       {children}
     </section>
   );

@@ -103,7 +103,7 @@ export function HowItWorksPage() {
         forest-900, ecrit en hexadecimal brut alors que le token existe.
         Remplace par le halo radial du systeme.
       */}
-      <section className="-mt-20 bg-[radial-gradient(70%_60%_at_50%_0%,#0F503D_0%,rgba(15,80,61,0)_70%),linear-gradient(180deg,#072A20_0%,#041912_100%)] pb-16 pt-32 text-white sm:pt-36 lg:pb-20">
+      <section className="-mt-20 bg-[radial-gradient(70%_60%_at_50%_0%,var(--forest-700)_0%,rgba(15,80,61,0)_70%),linear-gradient(180deg,var(--forest-900)_0%,var(--forest-950)_100%)] pb-16 pt-32 text-white sm:pt-36 lg:pb-20">
         <div className="mx-auto max-w-[1120px] px-6 text-center">
           <span className="inline-flex items-center gap-2 rounded-pill border border-white/10 bg-white/[0.06] px-4 py-1.5">
             {/* Le point clignotait en boucle a cote du libelle. */}
@@ -196,7 +196,7 @@ export function HowItWorksPage() {
         {/* Une seule surface sombre dans le corps de page, et elle marque une
             bascule d'audience. Les trois orbes floutes en blur-3xl sont
             remplaces par le halo radial. */}
-        <section className="space-y-8 rounded-card bg-[radial-gradient(70%_55%_at_50%_0%,#0F503D_0%,rgba(15,80,61,0)_70%),linear-gradient(180deg,#072A20_0%,#041912_100%)] p-6 text-white sm:p-10">
+        <section className="space-y-8 rounded-card bg-[radial-gradient(70%_55%_at_50%_0%,var(--forest-700)_0%,rgba(15,80,61,0)_70%),linear-gradient(180deg,var(--forest-900)_0%,var(--forest-950)_100%)] p-6 text-white sm:p-10">
           <header className="space-y-3 text-center">
             <span className="inline-block rounded-pill border border-white/10 bg-white/[0.06] px-3 py-1 text-[0.6875rem] font-semibold uppercase tracking-[0.14em] text-forest-200">
               Espace propriétaire

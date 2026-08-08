@@ -159,7 +159,7 @@ function KpiCard({ kpi, delay }: { kpi: Kpi; delay: string }) {
     hero
       // Le degrade partait de forest-950 pour y revenir via #072A20, soit
       // forest-900 en hexadecimal brut. Halo radial du systeme a la place.
-      ? 'bg-[radial-gradient(80%_60%_at_50%_0%,#0F503D_0%,rgba(15,80,61,0)_70%),linear-gradient(180deg,#072A20_0%,#041912_100%)] text-white'
+      ? 'bg-[radial-gradient(80%_60%_at_50%_0%,var(--forest-700)_0%,rgba(15,80,61,0)_70%),linear-gradient(180deg,var(--forest-900)_0%,var(--forest-950)_100%)] text-white'
       : alert
         ? 'border border-error-500/30 bg-error-50'
         : 'border border-border bg-background-card shadow-sm hover:-translate-y-0.5 hover:shadow-md',

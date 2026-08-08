@@ -247,9 +247,9 @@ export function ContactPage() {
                         required
                         className="w-full bg-black/50 backdrop-blur-xl border border-white/10 shadow-[inset_0_1px_0_rgba(255,255,255,0.04)] rounded-xl px-4 py-3 text-sm font-medium text-white focus:outline-none focus:border-emerald-500/50 focus:bg-black/70 transition-all appearance-none cursor-pointer"
                       >
-                        <option value="" disabled className="bg-[#0a0a0a]">Choisissez un sujet…</option>
+                        <option value="" disabled className="bg-forest-950">Choisissez un sujet…</option>
                         {SUBJECTS.map((s) => (
-                          <option key={s.value} value={s.value} className="bg-[#0a0a0a]">{s.label}</option>
+                          <option key={s.value} value={s.value} className="bg-forest-950">{s.label}</option>
                         ))}
                       </select>
                     </div>

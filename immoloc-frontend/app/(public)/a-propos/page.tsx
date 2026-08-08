@@ -88,7 +88,7 @@ export default function AProposPage() {
     <div className="bg-canvas min-h-dvh">
 
       {/* ── Hero ────────────────────────────────────────────────────────── */}
-      <section className="-mt-20 bg-[radial-gradient(70%_60%_at_50%_0%,#0F503D_0%,rgba(15,80,61,0)_70%),linear-gradient(180deg,#072A20_0%,#041912_100%)] pb-16 pt-32 text-white sm:pt-36">
+      <section className="-mt-20 bg-[radial-gradient(70%_60%_at_50%_0%,var(--forest-700)_0%,rgba(15,80,61,0)_70%),linear-gradient(180deg,var(--forest-900)_0%,var(--forest-950)_100%)] pb-16 pt-32 text-white sm:pt-36">
         <div className="mx-auto max-w-[1120px] px-6 text-center">
           <h1 className="mx-auto max-w-3xl font-display text-[clamp(2rem,5vw,3.25rem)] font-semibold leading-[1.06] tracking-[-0.03em] text-neutral-50">
             À propos de Klef<span className="text-on-inverse-marker">.</span>
@@ -212,7 +212,7 @@ export default function AProposPage() {
         </section>
 
         {/* ── CTA ───────────────────────────────────────────────────────── */}
-        <section className="rounded-card bg-[radial-gradient(70%_55%_at_50%_0%,#0F503D_0%,rgba(15,80,61,0)_70%),linear-gradient(180deg,#072A20_0%,#041912_100%)] p-8 text-center text-white sm:p-12">
+        <section className="rounded-card bg-[radial-gradient(70%_55%_at_50%_0%,var(--forest-700)_0%,rgba(15,80,61,0)_70%),linear-gradient(180deg,var(--forest-900)_0%,var(--forest-950)_100%)] p-8 text-center text-white sm:p-12">
           <h2 className="mx-auto max-w-xl font-display text-[clamp(1.5rem,3.5vw,2.25rem)] font-semibold leading-[1.1] tracking-[-0.02em] text-neutral-50">
             Vous savez qui nous sommes.
           </h2>

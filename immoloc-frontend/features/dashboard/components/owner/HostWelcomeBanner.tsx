@@ -71,7 +71,7 @@ export function HostWelcomeBanner({
     // Le dégradé partait de forest-950 pour y revenir via #072A20, soit
     // forest-900 écrit en hexadécimal brut. Le halo radial du système le
     // remplace, et rend inutiles les deux orbes floutés en blur-3xl.
-    <section className="klef-rise flex flex-col items-start justify-between gap-6 rounded-card bg-[radial-gradient(70%_55%_at_50%_0%,#0F503D_0%,rgba(15,80,61,0)_70%),linear-gradient(180deg,#072A20_0%,#041912_100%)] p-6 text-white md:flex-row md:items-center">
+    <section className="klef-rise flex flex-col items-start justify-between gap-6 rounded-card bg-[radial-gradient(70%_55%_at_50%_0%,var(--forest-700)_0%,rgba(15,80,61,0)_70%),linear-gradient(180deg,var(--forest-900)_0%,var(--forest-950)_100%)] p-6 text-white md:flex-row md:items-center">
 
       <div className="max-w-2xl space-y-2.5">
         <span className="inline-flex items-center gap-2 rounded-pill border border-white/10 bg-white/[0.06] px-3 py-1">

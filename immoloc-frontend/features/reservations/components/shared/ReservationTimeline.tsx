@@ -129,7 +129,7 @@ export function ReservationTimeline({ historique, variant = 'light', isOwner = f
     return (
       <section className={cn(
         'rounded-card border p-6',
-        isDark ? 'border-white/10 bg-[linear-gradient(180deg,#072A20_0%,#041912_100%)] text-white' : 'border-border bg-background-card',
+        isDark ? 'border-white/10 bg-[linear-gradient(180deg,var(--forest-900)_0%,var(--forest-950)_100%)] text-white' : 'border-border bg-background-card',
       )}>
         <p className={cn('text-sm', isDark ? 'text-forest-200' : 'text-foreground-muted')}>
           Aucun événement enregistré pour cette réservation.
@@ -148,7 +148,7 @@ export function ReservationTimeline({ historique, variant = 'light', isOwner = f
     <section className={cn(
       'rounded-card border p-6 shadow-sm',
       isDark
-        ? 'border-white/10 bg-[linear-gradient(180deg,#072A20_0%,#041912_100%)] text-white'
+        ? 'border-white/10 bg-[linear-gradient(180deg,var(--forest-900)_0%,var(--forest-950)_100%)] text-white'
         : 'border-border bg-background-card',
     )}>
       <header className={cn('mb-5 flex items-center gap-3 border-b pb-4', isDark ? 'border-white/10' : 'border-border')}>

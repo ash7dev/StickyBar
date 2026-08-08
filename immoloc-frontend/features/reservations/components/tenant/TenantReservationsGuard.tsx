@@ -116,7 +116,7 @@ export function TenantReservationsGuard({ children }: TenantReservationsGuardPro
   if (activeRole === 'PROPRIETAIRE') {
     return (
       <div className="max-w-2xl mx-auto px-4 py-12">
-        <div className="relative rounded-[28px] border border-forest-800/90 bg-gradient-to-b from-forest-950 via-[#072A20] to-forest-950 p-8 sm:p-12 shadow-2xl text-center overflow-hidden">
+        <div className="relative rounded-[28px] border border-forest-800/90 bg-gradient-to-b from-forest-950 via-forest-900 to-forest-950 p-8 sm:p-12 shadow-2xl text-center overflow-hidden">
           {/* Halos de lumière décoratifs */}
           <div className="pointer-events-none absolute -top-28 -left-28 w-72 h-72 rounded-full bg-marker-bg blur-3xl" />
           <div className="pointer-events-none absolute -bottom-28 -right-28 w-72 h-72 rounded-full bg-gold-400/10 blur-3xl" />

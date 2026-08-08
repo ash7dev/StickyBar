@@ -78,7 +78,7 @@ export function HeroSection({ listings = [] }: Props) {
         <div className="absolute top-1/4 right-[25%] w-1 h-32 bg-gradient-to-b from-lime-500/20 to-transparent" />
 
         {/* Grille subtile en arrière-plan */}
-        <div className="absolute inset-0 bg-[linear-gradient(to_right,#14654C08_1px,transparent_1px),linear-gradient(to_bottom,#14654C08_1px,transparent_1px)] bg-[size:4rem_4rem]" />
+        <div className="absolute inset-0 bg-[linear-gradient(to_right,rgba(20,101,76,0.03)_1px,transparent_1px),linear-gradient(to_bottom,rgba(20,101,76,0.03)_1px,transparent_1px)] bg-[size:4rem_4rem]" />
       </div>
 
       <div className="mx-auto w-full max-w-7xl px-4 sm:px-6 lg:px-8 pb-16 pt-20 md:pb-24 md:pt-28 relative z-10">

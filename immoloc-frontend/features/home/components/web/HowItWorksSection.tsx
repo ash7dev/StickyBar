@@ -82,7 +82,7 @@ export function HowItWorksSection() {
                 'flex flex-col rounded-card p-5 transition-[transform,box-shadow] duration-200 ease-[cubic-bezier(0.22,1,0.36,1)]',
                 'hover:-translate-y-1 motion-reduce:transform-none motion-reduce:transition-none',
                 isKey
-                  ? 'bg-[linear-gradient(180deg,#072A20_0%,#041912_100%)] shadow-lg'
+                  ? 'bg-[linear-gradient(180deg,var(--forest-900)_0%,var(--forest-950)_100%)] shadow-lg'
                   : 'border border-white/60 bg-white/55 shadow-[0_2px_20px_rgba(11,61,46,0.05)] backdrop-blur-md hover:shadow-md',
               )}
             >

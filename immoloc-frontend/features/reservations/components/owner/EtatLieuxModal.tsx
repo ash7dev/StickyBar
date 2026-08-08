@@ -309,7 +309,7 @@ function EtatLieuxModal({ reservationId, type, onSuccess, onCancel }: Props) {
         role="dialog"
         aria-modal="true"
         aria-labelledby={titleId}
-        className="relative z-10 flex max-h-[90dvh] w-full max-w-lg flex-col overflow-hidden rounded-card border border-white/10 bg-[linear-gradient(180deg,#072A20_0%,#041912_100%)] text-white shadow-xl"
+        className="relative z-10 flex max-h-[90dvh] w-full max-w-lg flex-col overflow-hidden rounded-card border border-white/10 bg-[linear-gradient(180deg,var(--forest-900)_0%,var(--forest-950)_100%)] text-white shadow-xl"
       >
         <header className="flex shrink-0 items-start justify-between gap-4 border-b border-white/10 px-6 py-5">
           <div className="flex items-center gap-3.5">
