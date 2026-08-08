@@ -604,6 +604,11 @@ export function ReservationActionPanel({ id, res, onRefetch }: Props) {
   const hoursUntilCheckin = Math.max(1, Math.ceil((checkinWindowStart - now) / 3_600_000));
   const canSignalNoshow = now - debutMs >= NOSHOW_DELAY_MS;
 
+  const finMs = new Date(res.dateFin).getTime();
+  const checkoutWindowStart = finMs - CHECKIN_GUARD_MS;
+  const canStartCheckout = now >= checkoutWindowStart;
+  const hoursUntilCheckout = Math.max(1, Math.ceil((checkoutWindowStart - now) / 3_600_000));
+
   const daysToCheckin = (debutMs - now) / 86_400_000;
   const penaliteOwner =
     daysToCheckin > 7 ? PENALITES.early : daysToCheckin >= 2 ? PENALITES.mid : PENALITES.late;
@@ -617,9 +622,11 @@ export function ReservationActionPanel({ id, res, onRefetch }: Props) {
       ? 'photos-uploaded'
       : canStartCheckin ? 'ready' : 'locked';
 
-  const checkedInSub = ownerCheckoutDone
-    ? 'awaiting-completion'
-    : checkoutPhotos.length > 0 ? 'photos-uploaded' : 'ready';
+  const checkedInSub = !canStartCheckout
+    ? 'locked'
+    : ownerCheckoutDone
+      ? 'awaiting-completion'
+      : checkoutPhotos.length > 0 ? 'photos-uploaded' : 'ready';
 
   /* ── Helpers ──────────────────────────────────────────────────────────── */
 
@@ -687,11 +694,11 @@ export function ReservationActionPanel({ id, res, onRefetch }: Props) {
 
   const handleCheckoutProprio = () => run(async () => {
     await nestFetch(NEST_API.RESERVATIONS.CHECKOUT_PROPRIO(id), { method: 'POST' });
-  }, 'État des lieux de sortie confirmé. Vous pouvez libérer les fonds.');
+  }, 'État des lieux de sortie confirmé. Vous pouvez clôturer la réservation.');
 
   const handleCompleteCheckout = () => run(async () => {
     await nestFetch(NEST_API.RESERVATIONS.COMPLETE_CHECKOUT(id), { method: 'PATCH' });
-  }, 'Check-out finalisé. Les fonds ont été débloqués.');
+  }, 'Réservation clôturée avec succès.');
 
   const handleOpenLitige = () => {
     if (!litigeMotif || litigeDescription.trim().length < MOTIF_MIN) {
@@ -983,14 +990,47 @@ export function ReservationActionPanel({ id, res, onRefetch }: Props) {
           {/* ══ CHECKED_IN ══ */}
           {statut === 'CHECKED_IN' && (
             <>
+              {checkedInSub === 'locked' && (
+                <Notice
+                  tone="neutral"
+                  icon={Lock}
+                  title={`Check-out et clôture disponibles dans ${hoursUntilCheckout} h`}
+                >
+                  L’état des lieux de sortie et la clôture du séjour ne peuvent être effectués qu’à la date de fin de la réservation, à partir du{' '}
+                  <span className="font-semibold text-foreground">
+                    {formatDateTime(checkoutWindowStart)}
+                  </span>.
+                </Notice>
+              )}
+
               {checkedInSub === 'ready' && (
-                <ActionCard
-                  icon={Camera}
-                  tone="warning"
-                  title="Démarrer l’état des lieux de sortie"
-                  description="Documentez l’état du logement après le départ du locataire"
-                  onClick={() => { clearFeedback(); setShowCheckoutModal(true); }}
-                />
+                <div className="space-y-4">
+                  <ActionCard
+                    icon={Camera}
+                    tone="warning"
+                    title="Démarrer l’état des lieux de sortie"
+                    description="Photographiez le logement au départ du locataire (recommandé)"
+                    onClick={() => { clearFeedback(); setShowCheckoutModal(true); }}
+                  />
+
+                  <div className="space-y-3 rounded-card border border-border bg-background-alt p-4">
+                    <div>
+                      <p className="text-xs font-semibold text-foreground">Clôture directe sans état des lieux</p>
+                      <p className="mt-0.5 text-xs text-foreground-muted">
+                        Si vous ne souhaitez pas effectuer d’état des lieux photographique, vous pouvez clôturer directement le séjour.
+                      </p>
+                    </div>
+
+                    <PrimaryButton
+                      onClick={handleCompleteCheckout}
+                      loading={isSubmitting}
+                      loadingLabel="Clôture en cours…"
+                      icon={CheckCircle2}
+                    >
+                      Clôturer la réservation
+                    </PrimaryButton>
+                  </div>
+                </div>
               )}
 
               {checkedInSub === 'photos-uploaded' && (
@@ -1000,7 +1040,7 @@ export function ReservationActionPanel({ id, res, onRefetch }: Props) {
                     icon={Camera}
                     title={`${checkoutPhotos.length} photo${checkoutPhotos.length > 1 ? 's' : ''} de sortie — confirmation requise`}
                   >
-                    Confirmez l’état des lieux de sortie pour pouvoir libérer les fonds.
+                    Confirmez l’état des lieux de sortie pour pouvoir clôturer la réservation.
                   </Notice>
 
                   <PrimaryButton
@@ -1012,12 +1052,20 @@ export function ReservationActionPanel({ id, res, onRefetch }: Props) {
                     Confirmer l’état des lieux de sortie
                   </PrimaryButton>
 
-                  <GhostButton
-                    onClick={() => { clearFeedback(); setShowCheckoutModal(true); }}
-                    className="w-full"
-                  >
-                    Ajouter d’autres photos
-                  </GhostButton>
+                  <div className="flex flex-col gap-2">
+                    <GhostButton
+                      onClick={() => { clearFeedback(); setShowCheckoutModal(true); }}
+                      className="w-full"
+                    >
+                      Ajouter d’autres photos
+                    </GhostButton>
+                    <GhostButton
+                      onClick={handleCompleteCheckout}
+                      className="w-full text-forest-700"
+                    >
+                      Clôturer directement la réservation
+                    </GhostButton>
+                  </div>
                 </>
               )}
 
@@ -1028,16 +1076,16 @@ export function ReservationActionPanel({ id, res, onRefetch }: Props) {
                     icon={CheckCircle2}
                     title={`${checkoutPhotos.length} photo${checkoutPhotos.length > 1 ? 's' : ''} de check-out confirmée${checkoutPhotos.length > 1 ? 's' : ''}`}
                   >
-                    État des lieux documenté. Clôturez le séjour pour libérer les fonds.
+                    État des lieux documenté. Vous pouvez maintenant clôturer la réservation.
                   </Notice>
 
                   <PrimaryButton
                     onClick={handleCompleteCheckout}
                     loading={isSubmitting}
                     loadingLabel="Clôture en cours…"
-                    icon={Banknote}
+                    icon={CheckCircle2}
                   >
-                    Finaliser et libérer les fonds
+                    Clôturer la réservation
                   </PrimaryButton>
                 </>
               )}

@@ -23,6 +23,14 @@ export class CheckoutProprioUseCase {
     if (reservation.statut !== StatutReservation.CHECKED_IN) {
       throw new ConflictException(`Action impossible dans le statut actuel: ${reservation.statut}`);
     }
+
+    // Vérification de la fenêtre de check-out (4 h avant la date/heure de fin)
+    const CHECKOUT_GUARD_MS = 4 * 60 * 60 * 1000;
+    const checkoutWindowStart = new Date(reservation.dateFin).getTime() - CHECKOUT_GUARD_MS;
+    if (Date.now() < checkoutWindowStart) {
+      throw new ConflictException("L'état des lieux de sortie ne peut pas être effectué avant la date de fin du séjour.");
+    }
+
     if (reservation.photosEtatLieu.length === 0) {
       throw new ConflictException("Aucune photo de check-out — uploadez au moins une photo avant de confirmer");
     }

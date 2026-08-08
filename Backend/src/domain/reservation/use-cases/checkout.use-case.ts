@@ -32,6 +32,13 @@ export class CheckoutUseCase {
       throw new ForbiddenException('Seul le propriétaire peut valider le check-out');
     }
 
+    // Vérification de la fenêtre de check-out (4 h avant la date/heure de fin)
+    const CHECKOUT_GUARD_MS = 4 * 60 * 60 * 1000;
+    const checkoutWindowStart = new Date(reservation.dateFin).getTime() - CHECKOUT_GUARD_MS;
+    if (Date.now() < checkoutWindowStart) {
+      throw new ConflictException('Le check-out ne peut pas être effectué avant la date de fin du séjour.');
+    }
+
     // Validation via State Machine
     this.stateMachine.transition(reservation.statut, StatutReservation.COMPLETED);
 
