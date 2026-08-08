@@ -22,11 +22,9 @@ export function PersonalizationTrigger({ className }: Props) {
 
   const autoOpened = useRef(false);
 
-  /* Ouverture automatique à la première visite, une seule fois.
-     Deux gardes : `hasCompletedOnboarding` en localStorage pour les visites
-     suivantes, et un flag de session pour le cas où le localStorage est
-     indisponible (navigation privée, cookies bloqués) — sans lui, la modale
-     se rouvrirait à chaque chargement de page. */
+  /* Ouverture automatique à la toute première visite uniquement.
+     Stocké dans localStorage (au lieu de sessionStorage) pour ne jamais
+     se ré-afficher lorsque l'application est fermée/tuée en arrière-plan. */
   useEffect(() => {
     if (!isLoaded || autoOpened.current) return;
     autoOpened.current = true;
@@ -34,24 +32,21 @@ export function PersonalizationTrigger({ className }: Props) {
     if (preferences.hasCompletedOnboarding) return;
 
     try {
-      if (sessionStorage.getItem(AUTO_OPEN_KEY)) return;
-      sessionStorage.setItem(AUTO_OPEN_KEY, '1');
+      if (localStorage.getItem(AUTO_OPEN_KEY)) return;
+      localStorage.setItem(AUTO_OPEN_KEY, 'true');
     } catch {
-      /* Stockage de session indisponible : on ouvre quand même, une fois. */
+      /* localStorage indisponible : navigation privée ou restriction navigateur. */
     }
 
+    /* Marquer immédiatement comme complété pour éviter toute réouverture au relancement de l'app */
+    completeOnboarding();
     setIsOpen(true);
-  }, [isLoaded, preferences.hasCompletedOnboarding]);
+  }, [isLoaded, preferences.hasCompletedOnboarding, completeOnboarding]);
 
   const handleClose = useCallback(() => {
     setIsOpen(false);
-    /* Marqué comme vu même si rien n'a été sélectionné : sinon la modale
-       reviendrait à chaque visite pour quelqu'un qui l'a fermée exprès. */
-    if (!preferences.hasCompletedOnboarding) completeOnboarding();
-    /* `syncKey` force la relecture : ce composant et la modale appellent
-       `useHomePreferences()` séparément, donc chacun a son propre état. */
     setSyncKey((k) => k + 1);
-  }, [completeOnboarding, preferences.hasCompletedOnboarding]);
+  }, []);
 
   /* Sans cet écran d'attente, le libellé passait de « Personnaliser » à
      « Modifier » après l'hydratation, avec un saut visible. */

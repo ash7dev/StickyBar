@@ -26,6 +26,7 @@ import { QueueModule } from '../../infrastructure/queue/queue.module';
 import { WalletDomainModule } from '../wallet/wallet.domain.module';
 import { PaymentDomainModule } from '../payment/payment.domain.module';
 import { ContratModule } from '../../infrastructure/contrat/contrat.module';
+import { RedisModule } from '../../infrastructure/redis/redis.module';
 
 const USE_CASES = [
   CreateReservationUseCase,
@@ -59,6 +60,7 @@ const USE_CASES = [
     WalletDomainModule,
     PaymentDomainModule,
     ContratModule,
+    RedisModule,
   ],
   providers: [...USE_CASES],
   exports: [...USE_CASES],

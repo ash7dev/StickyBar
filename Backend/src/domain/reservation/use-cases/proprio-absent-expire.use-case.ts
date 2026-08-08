@@ -3,6 +3,7 @@ import { StatutReservation, StatutPaiement, StatutLogement, SensTransaction, Typ
 import { PrismaService } from '../../../infrastructure/prisma/prisma.service';
 import { ReservationStateMachine } from '../reservation.state-machine';
 import { RefundPaymentUseCase } from '../../payment/use-cases/refund-payment.use-case';
+import { RedisService } from '../../../infrastructure/redis/redis.service';
 
 @Injectable()
 export class ProprioAbsentExpireUseCase {
@@ -12,6 +13,7 @@ export class ProprioAbsentExpireUseCase {
     private readonly prisma: PrismaService,
     private readonly stateMachine: ReservationStateMachine,
     private readonly refundPayment: RefundPaymentUseCase,
+    private readonly redis: RedisService,
   ) {}
 
   async execute(reservationId: string) {
@@ -83,15 +85,17 @@ export class ProprioAbsentExpireUseCase {
         },
       });
 
-      // 4. Sanction radicale : Suspension si >= 3 absences
-      if (updatedUser.nbAbsencesJourJ >= 3) {
+      // 4. Sanction radicale : Suspension si >= 7 absences
+      if (updatedUser.nbAbsencesJourJ >= 7) {
         await tx.logement.updateMany({
           where: { proprietaireId: reservation.proprietaireId, statut: StatutLogement.PUBLISHED },
           data: {
             statut: StatutLogement.SUSPENDED,
-            rejectionReason: 'Suspension automatique : trop d\'absences signalées le jour du check-in.',
+            rejectionReason: 'Suspension automatique : 7 absences signalées le jour du check-in atteintes.',
           },
         });
+        await this.redis.getClient().incr('listings:search:version');
+        await this.redis.del('listings:feed:all');
         this.logger.error(`PROPRIÉTAIRE SUSPENDU [${reservation.proprietaireId}] pour absences répétées.`);
       }
 

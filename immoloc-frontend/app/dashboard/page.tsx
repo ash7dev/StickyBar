@@ -4,6 +4,7 @@
 import { useQuery } from '@tanstack/react-query';
 import { dashboardApi } from '@/lib/nestjs';
 import { HostWelcomeBanner } from '@/features/dashboard/components/owner/HostWelcomeBanner';
+import { CancellationWarningBanner } from '@/features/dashboard/components/owner/CancellationWarningBanner';
 import { KpiSection } from '@/features/dashboard/components/owner/KpiSection';
 import { RevenueChart } from '@/features/dashboard/components/owner/RevenueChart';
 import { WalletSnapshot } from '@/features/dashboard/components/owner/WalletSnapshot';
@@ -45,6 +46,7 @@ export default function DashboardPage() {
 
       {/* ── Vue Mobile : Synthèse KPIs 2x2 & Actions Rapides Menu ── */}
       <div className="block sm:hidden space-y-6">
+        <CancellationWarningBanner />
         <MobileKpiGrid
           stats={{
             revenue: Number(stats.bookings.revenue ?? 0),
@@ -61,6 +63,8 @@ export default function DashboardPage() {
 
       {/* ── Vue Desktop ──────────────────────────────────────────── */}
       <div className="hidden sm:block space-y-8">
+        <CancellationWarningBanner />
+
         {/* ── Section 0 : Bandeau de bienvenue & Synthèse Hôte ─────── */}
         <HostWelcomeBanner
           pendingConfirmations={pending.pendingConfirmations ?? 0}

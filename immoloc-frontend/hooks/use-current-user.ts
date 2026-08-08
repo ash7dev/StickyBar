@@ -5,11 +5,14 @@ import { useRoleStore } from '@/stores/role.store';
 import { nestFetch, NEST_API } from '@/lib/nestjs';
 
 interface User {
+  id?: string;
   email?: string;
   prenom?: string;
   nom?: string;
   telephone?: string;
   photoUrl?: string;
+  nbAnnulations?: number;
+  nbAbsencesJourJ?: number;
 }
 
 /**

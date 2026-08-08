@@ -20,6 +20,7 @@ import { QueueService } from '../../../infrastructure/queue/queue.service';
 import { ReservationStateMachine } from '../reservation.state-machine';
 import { RefundPaymentUseCase } from '../../payment/use-cases/refund-payment.use-case';
 import { NotificationsService } from '../../../modules/notifications/notifications.service';
+import { RedisService } from '../../../infrastructure/redis/redis.service';
 
 @Injectable()
 export class CancelReservationUseCase {
@@ -31,6 +32,7 @@ export class CancelReservationUseCase {
     private readonly stateMachine: ReservationStateMachine,
     private readonly refundPayment: RefundPaymentUseCase,
     private readonly notifications: NotificationsService,
+    private readonly redis: RedisService,
   ) {}
 
   async execute(reservationId: string, userId: string, raison: string) {
@@ -157,15 +159,17 @@ export class CancelReservationUseCase {
           },
         });
 
-        // Suspension automatique après 3 annulations
-        if (updatedProprio.nbAnnulations >= 3) {
+        // Suspension automatique après 7 annulations
+        if (updatedProprio.nbAnnulations >= 7) {
           await tx.logement.updateMany({
             where: { proprietaireId: userId, statut: StatutLogement.PUBLISHED },
             data: {
               statut: StatutLogement.SUSPENDED,
-              rejectionReason: 'Suspension automatique : trop d\'annulations de réservations confirmées.',
+              rejectionReason: 'Suspension automatique : 7 annulations de réservations confirmées atteintes.',
             },
           });
+          await this.redis.getClient().incr('listings:search:version');
+          await this.redis.del('listings:feed:all');
           this.logger.error(`PROPRIÉTAIRE SUSPENDU [${userId}] pour annulations répétées.`);
         }
       }
