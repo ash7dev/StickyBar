@@ -1,5 +1,4 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
-import { Suspense } from 'react';
+import { cache, Suspense } from 'react';
 import { notFound } from 'next/navigation';
 import Link from 'next/link';
 import type { Metadata } from 'next';
@@ -20,6 +19,11 @@ export const dynamic = 'force-dynamic';
 
 const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
+// React cache() pour mémoriser l'appel API findOne entre generateMetadata et le composant Page (0ms sur le 2e appel)
+const getCachedListing = cache(async (slug: string) => {
+  return await listingsApi.findOne(slug);
+});
+
 interface Props {
   params: Promise<{ slug: string }>;
   searchParams: Promise<{
@@ -37,7 +41,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 
   if (UUID_RE.test(slug)) {
     try {
-      const listing = await listingsApi.findOne(slug);
+      const listing = await getCachedListing(slug);
       const mainPhoto = listing.photos.find((p) => p.estPrincipale) ?? listing.photos[0];
       return {
         title: `${listing.titre} — ${BRAND.name}`,
@@ -151,7 +155,7 @@ function getDisabledDates(listing: any): Date[] {
 async function ListingDetailPage({ slug }: { slug: string }) {
   let listing;
   try {
-    listing = await listingsApi.findOne(slug);
+    listing = await getCachedListing(slug);
   } catch {
     notFound();
   }

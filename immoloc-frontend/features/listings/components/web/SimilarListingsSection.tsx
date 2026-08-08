@@ -25,25 +25,18 @@ export function SimilarListingsSection({ currentListing, className }: SimilarLis
     async function loadSimilar() {
       setLoading(true);
       try {
-        // 1. Chercher d'abord dans la même ville
-        const resCity = await listingsApi.search({
-          ville: currentListing.ville,
-          limit: 10,
-        });
+        // Lancer les recherches ville et type en parallèle (divise le temps de chargement par 2)
+        const [resCity, resType] = await Promise.all([
+          listingsApi.search({ ville: currentListing.ville, limit: 10 }),
+          listingsApi.search({ type: currentListing.type, limit: 8 }),
+        ]);
 
-        let items = (resCity.data ?? []).filter((l) => l.id !== currentListing.id);
+        const cityItems = (resCity.data ?? []).filter((l) => l.id !== currentListing.id);
+        const typeItems = (resType.data ?? []).filter(
+          (l) => l.id !== currentListing.id && !cityItems.some((existing) => existing.id === l.id),
+        );
 
-        // 2. Si moins de 4 résultats, compléter par des hébergements du même type
-        if (items.length < 4) {
-          const resType = await listingsApi.search({
-            type: currentListing.type,
-            limit: 8,
-          });
-          const typeItems = (resType.data ?? []).filter(
-            (l) => l.id !== currentListing.id && !items.some((existing) => existing.id === l.id),
-          );
-          items = [...items, ...typeItems];
-        }
+        const items = cityItems.length >= 4 ? cityItems : [...cityItems, ...typeItems];
 
         if (isMounted) {
           setSimilarListings(items as unknown as Listing[]);
