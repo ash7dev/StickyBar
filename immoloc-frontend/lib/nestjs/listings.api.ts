@@ -49,12 +49,18 @@ export const listingsApi = {
     const url = query
       ? `${NEST_API.LISTINGS.SEARCH}?${query}`
       : NEST_API.LISTINGS.SEARCH;
-    return nestFetch<SearchListingsResponse>(url, { skipAutoToken: true });
+    return nestFetch<SearchListingsResponse>(url, {
+      skipAutoToken: true,
+      next: { revalidate: 60 },
+    });
   },
 
   /** Récupérer une annonce par son ID */
   findOne: (id: string) =>
-    nestFetch<Listing>(NEST_API.LISTINGS.FIND_ONE(id), { skipAutoToken: true }),
+    nestFetch<Listing>(NEST_API.LISTINGS.FIND_ONE(id), {
+      skipAutoToken: true,
+      next: { revalidate: 60, tags: [`listing-${id}`] },
+    }),
 
   /** Mettre à jour les informations d'une annonce */
   update: (id: string, payload: UpdateListingPayload) =>
@@ -100,6 +106,7 @@ export const listingsApi = {
   listEquipements: () =>
     nestFetch<Equipement[]>(NEST_API.LISTINGS.LIST_EQUIPEMENTS, {
       skipAutoToken: true,
+      next: { revalidate: 3600 },
     }),
 
   /** Définir les équipements d'une annonce */
