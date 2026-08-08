@@ -160,9 +160,17 @@ export function TenantReservationActionPanel({ id, res, onRefetch }: Props) {
     }, 'Votre évaluation a été publiée.');
   };
 
-  const isOwnerNoshowReported = useMemo(() => {
-    return res.historique?.some((h) => h.modifiePar === 'OWNER_SIGNAL_TENANT_NOSHOW') ?? false;
+  const noshowHistoriqueItem = useMemo(() => {
+    return res.historique?.find((h) => h.modifiePar === 'OWNER_SIGNAL_TENANT_NOSHOW');
   }, [res.historique]);
+
+  const isOwnerNoshowActive = useMemo(() => {
+    if (!noshowHistoriqueItem) return false;
+    if (statut !== 'CONFIRMED' || hasTenantCheckin) return false;
+    const signalDate = new Date(noshowHistoriqueItem.modifieLe).getTime();
+    const THREE_HOURS_MS = 3 * 60 * 60 * 1000;
+    return now - signalDate < THREE_HOURS_MS;
+  }, [noshowHistoriqueItem, statut, hasTenantCheckin, now]);
 
   if (!['CONFIRMED', 'CHECKED_IN', 'COMPLETED', 'DISPUTED'].includes(statut)) return null;
 
@@ -272,7 +280,7 @@ export function TenantReservationActionPanel({ id, res, onRefetch }: Props) {
           {errorMsg && <Feedback type="error" message={errorMsg} />}
           {successMsg && <Feedback type="success" message={successMsg} />}
 
-          {isOwnerNoshowReported && (
+          {isOwnerNoshowActive && (
             <Notice tone="warning" icon={ShieldAlert} title="⚠️ Votre hôte a signalé votre absence (No-Show)">
               Votre hôte signale ne pas vous avoir vu sur les lieux. Si vous êtes arrivé ou en route, contactez rapidement votre hôte ou validez votre état des lieux pour empêcher l&apos;annulation automatique.
             </Notice>

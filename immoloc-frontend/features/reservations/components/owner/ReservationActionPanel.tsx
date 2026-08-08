@@ -609,6 +609,13 @@ export function ReservationActionPanel({ id, res, onRefetch }: Props) {
   const canStartCheckout = now >= checkoutWindowStart;
   const hoursUntilCheckout = Math.max(1, Math.ceil((checkoutWindowStart - now) / 3_600_000));
 
+  const absenceMs = res.absenceSignaleeLe ? new Date(res.absenceSignaleeLe).getTime() : 0;
+  const isAbsenceActive =
+    !!res.absenceSignaleeLe &&
+    statut === 'CONFIRMED' &&
+    !res.checkinProprioLe &&
+    now - absenceMs < 2 * 60 * 60 * 1000;
+
   const daysToCheckin = (debutMs - now) / 86_400_000;
   const penaliteOwner =
     daysToCheckin > 7 ? PENALITES.early : daysToCheckin >= 2 ? PENALITES.mid : PENALITES.late;
@@ -823,10 +830,10 @@ export function ReservationActionPanel({ id, res, onRefetch }: Props) {
           {errorMsg && <Feedback type="error" message={errorMsg} />}
           {successMsg && <Feedback type="success" message={successMsg} />}
 
-          {res.absenceSignaleeLe && (
+          {isAbsenceActive && (
             <Notice tone="error" icon={AlertTriangle} title="⚠️ URGENT : Le locataire signale votre absence le jour J !">
               Le locataire a indiqué être sans nouvelles de vous pour l&apos;arrivée (signalé le{' '}
-              <span className="font-semibold">{formatDateTime(res.absenceSignaleeLe)}</span>). Vous disposez de 2h à compter du signalement pour réaliser l&apos;état des lieux ou contacter le locataire, sans quoi la réservation sera annulée avec remboursement à 100%.
+              <span className="font-semibold">{formatDateTime(res.absenceSignaleeLe!)}</span>). Vous disposez de 2h à compter du signalement pour réaliser l&apos;état des lieux ou contacter le locataire, sans quoi la réservation sera annulée avec remboursement à 100%.
             </Notice>
           )}
 
