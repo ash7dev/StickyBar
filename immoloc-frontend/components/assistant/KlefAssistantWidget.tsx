@@ -280,12 +280,12 @@ export function KlefAssistantWidget() {
   };
 
   return (
-    <aside className="fixed bottom-5 right-5 z-50 flex flex-col items-end print:hidden">
+    <aside className="fixed bottom-[calc(7rem+env(safe-area-inset-bottom,0px))] right-4 sm:bottom-6 sm:right-6 z-[60] flex flex-col items-end print:hidden">
       {/* Fenêtre principale de l'assistant */}
       {store.isOpen && (
         <div
           id={dialogId}
-          className="mb-3 flex h-[560px] w-[360px] flex-col overflow-hidden rounded-2xl border border-forest-800/20 bg-background-card shadow-2xl transition-all sm:w-[410px]"
+          className="mb-3 flex h-[520px] w-[360px] max-w-[calc(100vw-2rem)] max-h-[70vh] flex-col overflow-hidden rounded-2xl border border-forest-800/20 bg-background-card shadow-2xl transition-all sm:h-[560px] sm:w-[410px]"
         >
           {/* Header de l'assistant */}
           <div className="flex items-center justify-between border-b border-border bg-forest-950 px-4 py-3.5 text-neutral-0">
