@@ -70,6 +70,33 @@ export class AdminListingsService {
     };
   }
 
+  async getDetailsForAdmin(id: string) {
+    const logement = await this.prisma.logement.findUnique({
+      where: { id },
+      include: {
+        photos: { orderBy: [{ estPrincipale: 'desc' }, { position: 'asc' }] },
+        equipements: { include: { equipement: true } },
+        tarifsPersonnes: { orderBy: { position: 'asc' } },
+        tarifsNuits: { orderBy: { position: 'asc' } },
+        proprietaire: {
+          select: {
+            id: true,
+            prenom: true,
+            nom: true,
+            email: true,
+            telephone: true,
+            statutKyc: true,
+            nbAnnulations: true,
+            nbAbsencesJourJ: true,
+          },
+        },
+      },
+    });
+
+    if (!logement) throw new NotFoundException('Logement introuvable');
+    return logement;
+  }
+
   async publish(id: string, adminId: string) {
     const logement = await this.prisma.logement.findUnique({
       where: { id },
@@ -247,6 +274,52 @@ export class AdminListingsService {
     );
 
     return { suspendus: 1, reservationsAnnulees };
+  }
+
+  async unsuspend(id: string, adminId: string) {
+    const logement = await this.prisma.logement.findUnique({
+      where: { id },
+      select: { statut: true },
+    });
+
+    if (!logement) throw new NotFoundException('Logement introuvable');
+    if (logement.statut !== StatutLogement.SUSPENDED) {
+      throw new UnprocessableEntityException(
+        `Seuls les logements suspendus peuvent être réactivés (statut actuel : ${logement.statut})`,
+      );
+    }
+
+    const updated = await this.prisma.logement.update({
+      where: { id },
+      data: {
+        statut: StatutLogement.PUBLISHED,
+        rejectionReason: null,
+        valideParAdminId: adminId,
+      },
+    });
+
+    await this.invalidateSearchCache();
+    return updated;
+  }
+
+  async setFeatured(id: string, isFeatured: boolean, durationDays: number = 30) {
+    const logement = await this.prisma.logement.findUnique({ where: { id } });
+    if (!logement) throw new NotFoundException('Logement introuvable');
+
+    const featuredUntil = isFeatured
+      ? new Date(Date.now() + durationDays * 24 * 60 * 60 * 1000)
+      : null;
+
+    const updated = await this.prisma.logement.update({
+      where: { id },
+      data: {
+        isFeatured,
+        featuredUntil,
+      },
+    });
+
+    await this.invalidateSearchCache();
+    return updated;
   }
 
   private async invalidateSearchCache(): Promise<void> {

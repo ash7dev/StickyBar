@@ -36,14 +36,16 @@ export class RedisService implements OnModuleInit, OnModuleDestroy {
       connectTimeout: 10_000,
       disconnectTimeout: 5_000,
       retryStrategy: (times) => {
-        if (times > 10) {
-          this.logger.error('❌ Redis : abandon des tentatives après 10 essais');
+        if (times > 3) {
+          this.logger.error('❌ Redis : abandon des tentatives après 3 essais — Fallback activé');
           return null; // Stop retrying → évite accumulation de connexions zombies
         }
-        const delay = Math.min(times * 200, 5000);
+        const delay = Math.min(times * 200, 2000);
         return delay;
       },
     });
+
+    this.client.setMaxListeners(50);
 
     this.client.on('connect', () => {
       this.logger.log('✅ Redis connecté');

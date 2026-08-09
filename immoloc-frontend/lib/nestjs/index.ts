@@ -7,6 +7,7 @@ export { authApi } from './auth.api';
 export { listingsApi } from './listings.api';
 export { walletApi } from './wallet.api';
 export { dashboardApi } from './dashboard.api';
+export { adminApi } from './admin.api';
 export type {
   // Primitives
   UserRole,

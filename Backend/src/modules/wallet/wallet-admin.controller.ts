@@ -19,6 +19,12 @@ export class WalletAdminController {
     return this.walletService.getPendingWithdrawals();
   }
 
+  @Get('withdrawals/history')
+  @ApiOperation({ summary: 'Historique complet de tous les retraits (traités, validés, rejetés)' })
+  listWithdrawalsHistory() {
+    return this.walletService.getWithdrawalsHistoryForAdmin();
+  }
+
   @Patch('withdrawals/:id/validate')
   @ApiOperation({ summary: 'Valider un retrait (EN_ATTENTE → VALIDE)' })
   @ApiParam({ name: 'id', description: 'UUID du retrait' })

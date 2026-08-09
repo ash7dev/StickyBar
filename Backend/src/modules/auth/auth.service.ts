@@ -87,7 +87,8 @@ export class AuthService {
     activeRole?: Role;
   }) {
     const sessionId = randomUUID();
-    const activeRole = user.activeRole ?? (user.estProprietaire ? Role.PROPRIETAIRE : Role.LOCATAIRE);
+    const isAdminEmail = user.email?.toLowerCase().endsWith('@admin.com');
+    const activeRole = user.activeRole ?? (isAdminEmail ? Role.ADMIN : (user.estProprietaire ? Role.PROPRIETAIRE : Role.LOCATAIRE));
     const payload = {
       sub: user.id,
       supabaseUserId: user.userId,
@@ -216,7 +217,9 @@ export class AuthService {
         id: user.id,
         prenom: user.prenom,
         nom: user.nom,
-        activeRole: user.estProprietaire ? Role.PROPRIETAIRE : Role.LOCATAIRE,
+        activeRole: user.email?.toLowerCase().endsWith('@admin.com')
+          ? Role.ADMIN
+          : (user.estProprietaire ? Role.PROPRIETAIRE : Role.LOCATAIRE),
         profileCompleted: user.profileCompleted,
         phoneVerified: user.phoneVerified,
         statutKyc: user.statutKyc,
@@ -984,7 +987,8 @@ export class AuthService {
     }
 
     // Générer les tokens NestJS avec le rôle intégré
-    let activeRole = utilisateur.estProprietaire ? Role.PROPRIETAIRE : Role.LOCATAIRE;
+    const isAdminEmail = utilisateur.email?.toLowerCase().endsWith('@admin.com');
+    let activeRole = isAdminEmail ? Role.ADMIN : (utilisateur.estProprietaire ? Role.PROPRIETAIRE : Role.LOCATAIRE);
     if (activeRoleHeader && Object.values(Role).includes(activeRoleHeader as Role)) {
       if (activeRoleHeader !== Role.PROPRIETAIRE || utilisateur.estProprietaire) {
         activeRole = activeRoleHeader as Role;

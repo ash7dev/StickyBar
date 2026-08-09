@@ -19,7 +19,7 @@ export function useSwitchRole() {
   const { activeRole, setRole, estProprietaire, setSession, userId, hasAnnonce } = useRoleStore();
 
   const switchRole = async (
-    targetRole: 'LOCATAIRE' | 'PROPRIETAIRE',
+    targetRole: 'LOCATAIRE' | 'PROPRIETAIRE' | 'ADMIN',
     options?: { redirectTo?: string | null }
   ) => {
     if (!estProprietaire && targetRole === 'PROPRIETAIRE') {
@@ -66,6 +66,8 @@ export function useSwitchRole() {
           router.push(options.redirectTo);
         }
         // Si options.redirectTo === null, on reste sur la page courante
+      } else if (targetRole === 'ADMIN') {
+        router.push('/admin/dashboard');
       } else if (targetRole === 'PROPRIETAIRE') {
         router.push('/dashboard');
       } else {

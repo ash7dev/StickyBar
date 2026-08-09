@@ -71,4 +71,21 @@ export class WalletService {
       },
     });
   }
+
+  async getWithdrawalsHistoryForAdmin(statut?: any) {
+    return this.prisma.retrait.findMany({
+      where: statut ? { statut } : {},
+      orderBy: { demandeeLe: 'desc' },
+      include: {
+        wallet: {
+          select: {
+            utilisateurId: true,
+            utilisateur: {
+              select: { id: true, nom: true, prenom: true, telephone: true, email: true },
+            },
+          },
+        },
+      },
+    });
+  }
 }

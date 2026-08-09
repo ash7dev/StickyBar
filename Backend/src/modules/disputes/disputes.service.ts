@@ -111,6 +111,30 @@ export class DisputesService {
   }
 
   /**
+   * Consulter la fiche détaillée d'un litige pour l'admin
+   */
+  async getDetailsForAdmin(id: string) {
+    const litige = await this.prisma.litige.findUnique({
+      where: { id },
+      include: {
+        reservation: {
+          include: {
+            locataire: true,
+            proprietaire: true,
+            logement: true,
+            photosEtatLieu: true,
+            paiement: true,
+            historique: { orderBy: { modifieLe: 'desc' } },
+          },
+        },
+      },
+    });
+
+    if (!litige) throw new NotFoundException('Litige introuvable');
+    return litige;
+  }
+
+  /**
    * Lister les litiges pour l'admin
    */
   async listForAdmin(statut?: StatutLitige) {

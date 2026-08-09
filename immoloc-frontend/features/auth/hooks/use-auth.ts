@@ -33,6 +33,9 @@ function resolveRedirect(user: AuthTokensResponse['user'], next?: string | null)
   if (next && next.startsWith('/') && !next.startsWith('//')) {
     if (!AUTH_PAGES.includes(next.split('?')[0])) return next;
   }
+  if (user.activeRole === 'ADMIN') {
+    return '/admin/dashboard';
+  }
   if (user.activeRole === 'PROPRIETAIRE') {
     return user.hasAnnonce ? '/dashboard' : '/become-host';
   }

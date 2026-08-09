@@ -175,7 +175,9 @@ export async function GET(request: NextRequest) {
             } else if (!next) {
               const role = payload.user?.activeRole;
               const hasAnnonce = payload.user?.hasAnnonce;
-              if (role === 'PROPRIETAIRE') {
+              if (role === 'ADMIN') {
+                redirectPath = '/admin/dashboard';
+              } else if (role === 'PROPRIETAIRE') {
                 redirectPath = hasAnnonce ? '/dashboard' : '/become-host';
               }
             }

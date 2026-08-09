@@ -116,6 +116,33 @@ export class KycService {
   }
 
   /**
+   * Fiche détaillée d'un KYC pour l'admin avec toutes les URLs signées et métriques selfie
+   */
+  async getKycDetailsForAdmin(id: string) {
+    const user = await this.prisma.utilisateur.findUnique({
+      where: { id },
+      include: {
+        profile: true,
+      },
+    });
+
+    if (!user) throw new NotFoundException('Utilisateur introuvable');
+
+    return {
+      ...user,
+      kycDocumentUrl: user.kycDocumentPublicId
+        ? this.cloudinary.generateSignedUrl(user.kycDocumentPublicId)
+        : user.kycDocumentUrl,
+      kycVersoUrl: user.kycVersoPublicId
+        ? this.cloudinary.generateSignedUrl(user.kycVersoPublicId)
+        : user.kycVersoUrl,
+      kycSelfieUrl: user.kycSelfiePublicId
+        ? this.cloudinary.generateSignedUrl(user.kycSelfiePublicId)
+        : user.kycSelfieUrl,
+    };
+  }
+
+  /**
    * Liste des KYC pour l'admin avec URLs signées
    */
   async listForAdmin(statut?: StatutKyc) {

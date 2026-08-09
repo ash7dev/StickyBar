@@ -21,6 +21,8 @@ import { AdminListingsQueryDto } from './dto/admin-listings-query.dto';
 import { ReviewListingDto } from './dto/review-listing.dto';
 import { AdminListingsService } from './admin-listings.service';
 
+import { FeaturedListingDto } from './dto/featured-listing.dto';
+
 @ApiTags('Admin — Listings')
 @ApiBearerAuth()
 @Controller('admin/listings')
@@ -32,6 +34,13 @@ export class AdminListingsController {
   @ApiOperation({ summary: 'Lister les annonces par statut (défaut : PENDING_REVIEW)' })
   list(@Query() dto: AdminListingsQueryDto) {
     return this.service.listForReview(dto);
+  }
+
+  @Get(':id')
+  @ApiOperation({ summary: 'Détails complets d\'une annonce pour la modération' })
+  @ApiParam({ name: 'id', description: 'UUID du logement' })
+  getDetails(@Param('id') id: string) {
+    return this.service.getDetailsForAdmin(id);
   }
 
   @Patch(':id/publish')
@@ -69,5 +78,21 @@ export class AdminListingsController {
     @Body() dto: ReviewListingDto,
   ) {
     return this.service.suspend(id, user.id, dto.raison);
+  }
+
+  @Patch(':id/unsuspend')
+  @HttpCode(200)
+  @ApiOperation({ summary: 'Lever la suspension d\'une annonce (SUSPENDED → PUBLISHED)' })
+  @ApiParam({ name: 'id', description: 'UUID du logement' })
+  unsuspend(@Param('id') id: string, @CurrentUser() user: AuthUser) {
+    return this.service.unsuspend(id, user.id);
+  }
+
+  @Patch(':id/featured')
+  @HttpCode(200)
+  @ApiOperation({ summary: 'Mettre en vedette une annonce (boost page d\'accueil)' })
+  @ApiParam({ name: 'id', description: 'UUID du logement' })
+  setFeatured(@Param('id') id: string, @Body() dto: FeaturedListingDto) {
+    return this.service.setFeatured(id, dto.isFeatured, dto.durationDays);
   }
 }

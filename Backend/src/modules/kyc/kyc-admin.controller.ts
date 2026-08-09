@@ -30,6 +30,14 @@ export class KycAdminController {
   }
 
   /**
+   * Consulter la fiche détaillée d'un KYC (CNI Recto/Verso, Selfie, Score Facial)
+   */
+  @Get(':id')
+  async getDetails(@Param('id') id: string) {
+    return this.kycService.getKycDetailsForAdmin(id);
+  }
+
+  /**
    * Valider le KYC d'un utilisateur
    */
   @Patch(':id/verify')

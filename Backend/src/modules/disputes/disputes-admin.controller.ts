@@ -31,6 +31,14 @@ export class DisputesAdminController {
   }
 
   /**
+   * Consulter la fiche détaillée d'un litige pour l'admin
+   */
+  @Get(':id')
+  async getDetails(@Param('id') id: string) {
+    return this.disputesService.getDetailsForAdmin(id);
+  }
+
+  /**
    * Résoudre un litige (FONDE / NON_FONDE)
    */
   @Patch(':id/resolve')
