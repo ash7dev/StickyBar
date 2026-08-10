@@ -1,0 +1,201 @@
+<h2 class="title">Votre réservation est confirmée ! 🎉</h2>
+
+<p class="text">
+  Bonjour {{guestName}},
+</p>
+
+<p class="text">
+  Excellente nouvelle ! Votre réservation pour <strong>{{propertyTitle}}</strong> a été confirmée par le propriétaire. Vous pouvez maintenant préparer votre séjour en toute sérénité.
+</p>
+
+<div class="success-box">
+  <p class="text" style="margin: 0;">
+    <strong>✓ Réservation confirmée</strong><br>
+    <span class="text-muted">Référence: #{{bookingReference}}</span>
+  </p>
+</div>
+
+<!-- Détails de la réservation -->
+<div class="card-inverse">
+  <h3 style="font-size: 18px; font-weight: 600; color: #F8FBF4; margin: 0 0 20px;">
+    Détails de votre séjour
+  </h3>
+
+  <table width="100%" cellpadding="0" cellspacing="0" border="0">
+    <tr>
+      <td style="padding: 12px 0; border-bottom: 1px solid rgba(255, 255, 255, 0.09);">
+        <span style="color: #A8D5C1; font-size: 14px;">📍 Logement</span>
+      </td>
+      <td style="padding: 12px 0; border-bottom: 1px solid rgba(255, 255, 255, 0.09); text-align: right;">
+        <span style="color: #F8FBF4; font-weight: 600;">{{propertyTitle}}</span>
+      </td>
+    </tr>
+    <tr>
+      <td style="padding: 12px 0; border-bottom: 1px solid rgba(255, 255, 255, 0.09);">
+        <span style="color: #A8D5C1; font-size: 14px;">📅 Arrivée</span>
+      </td>
+      <td style="padding: 12px 0; border-bottom: 1px solid rgba(255, 255, 255, 0.09); text-align: right;">
+        <span style="color: #F8FBF4; font-weight: 600;">{{checkInDate}}</span>
+      </td>
+    </tr>
+    <tr>
+      <td style="padding: 12px 0; border-bottom: 1px solid rgba(255, 255, 255, 0.09);">
+        <span style="color: #A8D5C1; font-size: 14px;">📅 Départ</span>
+      </td>
+      <td style="padding: 12px 0; border-bottom: 1px solid rgba(255, 255, 255, 0.09); text-align: right;">
+        <span style="color: #F8FBF4; font-weight: 600;">{{checkOutDate}}</span>
+      </td>
+    </tr>
+    <tr>
+      <td style="padding: 12px 0; border-bottom: 1px solid rgba(255, 255, 255, 0.09);">
+        <span style="color: #A8D5C1; font-size: 14px;">👥 Voyageurs</span>
+      </td>
+      <td style="padding: 12px 0; border-bottom: 1px solid rgba(255, 255, 255, 0.09); text-align: right;">
+        <span style="color: #F8FBF4; font-weight: 600;">{{guestCount}} personne(s)</span>
+      </td>
+    </tr>
+    <tr>
+      <td style="padding: 12px 0;">
+        <span style="color: #A8D5C1; font-size: 14px;">🏠 Propriétaire</span>
+      </td>
+      <td style="padding: 12px 0; text-align: right;">
+        <span style="color: #F8FBF4; font-weight: 600;">{{hostName}}</span>
+        {{#if hostVerified}}
+        <span style="display: inline-block; margin-left: 8px; padding: 2px 8px; background-color: rgba(201, 162, 75, 0.12); color: #DABB68; border: 1px solid rgba(201, 162, 75, 0.28); border-radius: 9999px; font-size: 11px; font-weight: 600;">
+          ✓ Vérifié
+        </span>
+        {{/if}}
+      </td>
+    </tr>
+  </table>
+</div>
+
+<!-- Récapitulatif financier -->
+<h3 style="font-size: 18px; font-weight: 600; color: #22271F; margin: 32px 0 16px;">
+  Récapitulatif financier
+</h3>
+
+<table class="details-table">
+  <tr>
+    <td>Loyer ({{nightCount}} nuit(s))</td>
+    <td>{{rentAmount}} FCFA</td>
+  </tr>
+  {{#if cleaningFee}}
+  <tr>
+    <td>Frais de ménage</td>
+    <td>{{cleaningFee}} FCFA</td>
+  </tr>
+  {{/if}}
+  {{#if serviceFee}}
+  <tr>
+    <td>Frais de service Klef</td>
+    <td>{{serviceFee}} FCFA</td>
+  </tr>
+  {{/if}}
+  <tr style="border-top: 2px solid #E4EBDB;">
+    <td><strong>Total payé</strong></td>
+    <td><strong style="color: #14654C; font-size: 18px;">{{totalAmount}} FCFA</strong></td>
+  </tr>
+</table>
+
+<div style="text-align: center; margin: 40px 0;">
+  <a href="{{appUrl}}/bookings/{{bookingId}}" class="btn-action">
+    Voir les détails complets
+  </a>
+</div>
+
+<hr class="divider">
+
+<!-- Prochaines étapes -->
+<h3 style="font-size: 18px; font-weight: 600; color: #22271F; margin: 32px 0 16px;">
+  Prochaines étapes
+</h3>
+
+<table width="100%" cellpadding="0" cellspacing="0" border="0" style="margin: 24px 0;">
+  <tr>
+    <td style="padding: 16px 0;">
+      <table cellpadding="0" cellspacing="0" border="0">
+        <tr>
+          <td style="background-color: rgba(211, 242, 110, 0.30); border-radius: 12px; padding: 12px; width: 40px; height: 40px; text-align: center; vertical-align: top;">
+            <span style="font-size: 20px;">💬</span>
+          </td>
+          <td style="padding-left: 16px;">
+            <strong style="color: #22271F; display: block; margin-bottom: 4px;">Contactez le propriétaire</strong>
+            <span style="color: #5F6B59; font-size: 14px;">Discutez des modalités d'arrivée et posez vos questions</span>
+          </td>
+        </tr>
+      </table>
+    </td>
+  </tr>
+  <tr>
+    <td style="padding: 16px 0;">
+      <table cellpadding="0" cellspacing="0" border="0">
+        <tr>
+          <td style="background-color: rgba(211, 242, 110, 0.30); border-radius: 12px; padding: 12px; width: 40px; height: 40px; text-align: center; vertical-align: top;">
+            <span style="font-size: 20px;">📋</span>
+          </td>
+          <td style="padding-left: 16px;">
+            <strong style="color: #22271F; display: block; margin-bottom: 4px;">Préparez vos documents</strong>
+            <span style="color: #5F6B59; font-size: 14px;">Le propriétaire pourrait vous demander une pièce d'identité</span>
+          </td>
+        </tr>
+      </table>
+    </td>
+  </tr>
+  <tr>
+    <td style="padding: 16px 0;">
+      <table cellpadding="0" cellspacing="0" border="0">
+        <tr>
+          <td style="background-color: rgba(211, 242, 110, 0.30); border-radius: 12px; padding: 12px; width: 40px; height: 40px; text-align: center; vertical-align: top;">
+            <span style="font-size: 20px;">📍</span>
+          </td>
+          <td style="padding-left: 16px;">
+            <strong style="color: #22271F; display: block; margin-bottom: 4px;">Consultez l'adresse exacte</strong>
+            <span style="color: #5F6B59; font-size: 14px;">L'adresse complète est disponible dans vos détails de réservation</span>
+          </td>
+        </tr>
+      </table>
+    </td>
+  </tr>
+</table>
+
+<div class="info-box">
+  <p class="text" style="margin: 0 0 8px;">
+    <strong>📲 Restez informé</strong>
+  </p>
+  <p class="text-muted" style="margin: 0;">
+    Nous vous enverrons un rappel 24h avant votre arrivée avec toutes les informations importantes pour votre check-in.
+  </p>
+</div>
+
+<hr class="divider">
+
+<!-- Politique d'annulation -->
+<h3 style="font-size: 18px; font-weight: 600; color: #22271F; margin: 32px 0 16px;">
+  Politique d'annulation
+</h3>
+
+<p class="text-muted">
+  {{cancellationPolicy}}
+</p>
+
+<div style="margin-top: 16px;">
+  <a href="{{appUrl}}/cancellation-policy" style="color: #14654C; text-decoration: none; font-size: 14px; font-weight: 600;">
+    En savoir plus sur les politiques d'annulation →
+  </a>
+</div>
+
+<hr class="divider">
+
+<p class="text">
+  Nous vous souhaitons un excellent séjour !
+</p>
+
+<p class="text" style="margin-top: 24px;">
+  Cordialement,<br>
+  <strong style="color: #14654C;">L'équipe Klef</strong>
+</p>
+
+<p class="text-muted" style="margin-top: 32px; font-size: 12px;">
+  Des questions ? Contactez notre support à tout moment via l'application ou par email à support@klef.com
+</p>

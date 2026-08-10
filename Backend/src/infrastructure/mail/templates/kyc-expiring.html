@@ -1,0 +1,134 @@
+<h2 class="title">Votre vérification d'identité arrive à expiration</h2>
+
+<p class="text">
+  Bonjour {{userName}},
+</p>
+
+<p class="text">
+  Votre vérification d'identité (KYC) arrive bientôt à expiration. Pour continuer à profiter pleinement de tous les avantages de votre compte certifié, vous devez renouveler vos documents.
+</p>
+
+<div class="warning-box">
+  <p class="text" style="margin: 0;">
+    <strong>⏰ Expiration le {{expirationDate}}</strong><br>
+    <span class="text-muted">
+      Il vous reste {{daysRemaining}} jour(s) pour renouveler votre vérification.
+    </span>
+  </p>
+</div>
+
+<hr class="divider">
+
+<h3 style="font-size: 18px; font-weight: 600; color: #22271F; margin: 32px 0 16px;">
+  Que se passe-t-il si je ne renouvelle pas ?
+</h3>
+
+<div class="error-box">
+  <p class="text" style="margin: 0 0 12px;">
+    <strong>Après le {{expirationDate}}, vous perdrez :</strong>
+  </p>
+  <ul style="margin: 0; padding-left: 20px;">
+    <li style="color: #5F6B59; margin: 8px 0;">Votre badge "Identité vérifiée"</li>
+    <li style="color: #5F6B59; margin: 8px 0;">La priorité dans les demandes de réservation</li>
+    {{#if isHost}}
+    <li style="color: #5F6B59; margin: 8px 0;">La possibilité d'effectuer des retraits depuis votre portefeuille</li>
+    <li style="color: #5F6B59; margin: 8px 0;">L'accès à certaines fonctionnalités propriétaire</li>
+    {{/if}}
+    <li style="color: #5F6B59; margin: 8px 0;">L'accès aux annonces qui exigent une vérification</li>
+  </ul>
+</div>
+
+<hr class="divider">
+
+<h3 style="font-size: 18px; font-weight: 600; color: #22271F; margin: 32px 0 16px;">
+  Comment renouveler en 3 étapes simples
+</h3>
+
+<table width="100%" cellpadding="0" cellspacing="0" border="0" style="margin: 24px 0;">
+  <tr>
+    <td style="padding: 12px 0;">
+      <table cellpadding="0" cellspacing="0" border="0">
+        <tr>
+          <td style="background-color: rgba(211, 242, 110, 0.30); border-radius: 12px; padding: 10px; width: 36px; height: 36px; text-align: center; vertical-align: top;">
+            <span style="font-size: 18px;">1️⃣</span>
+          </td>
+          <td style="padding-left: 16px;">
+            <strong style="color: #22271F; display: block; margin-bottom: 4px;">Préparez vos documents</strong>
+            <span style="color: #5F6B59; font-size: 14px;">Pièce d'identité en cours de validité + justificatif de domicile récent</span>
+          </td>
+        </tr>
+      </table>
+    </td>
+  </tr>
+  <tr>
+    <td style="padding: 12px 0;">
+      <table cellpadding="0" cellspacing="0" border="0">
+        <tr>
+          <td style="background-color: rgba(211, 242, 110, 0.30); border-radius: 12px; padding: 10px; width: 36px; height: 36px; text-align: center; vertical-align: top;">
+            <span style="font-size: 18px;">2️⃣</span>
+          </td>
+          <td style="padding-left: 16px;">
+            <strong style="color: #22271F; display: block; margin-bottom: 4px;">Téléchargez-les en ligne</strong>
+            <span style="color: #5F6B59; font-size: 14px;">Rendez-vous dans votre profil, section "Vérification"</span>
+          </td>
+        </tr>
+      </table>
+    </td>
+  </tr>
+  <tr>
+    <td style="padding: 12px 0;">
+      <table cellpadding="0" cellspacing="0" border="0">
+        <tr>
+          <td style="background-color: rgba(211, 242, 110, 0.30); border-radius: 12px; padding: 10px; width: 36px; height: 36px; text-align: center; vertical-align: top;">
+            <span style="font-size: 18px;">3️⃣</span>
+          </td>
+          <td style="padding-left: 16px;">
+            <strong style="color: #22271F; display: block; margin-bottom: 4px;">Validation sous 24-48h</strong>
+            <span style="color: #5F6B59; font-size: 14px;">Notre équipe vérifie vos documents et vous recevez une confirmation</span>
+          </td>
+        </tr>
+      </table>
+    </td>
+  </tr>
+</table>
+
+<div style="text-align: center; margin: 40px 0;">
+  <a href="{{appUrl}}/profile/kyc/renew" class="btn-action">
+    Renouveler ma vérification
+  </a>
+</div>
+
+<hr class="divider">
+
+<div class="info-box">
+  <p class="text" style="margin: 0 0 12px;">
+    <strong>📄 Documents acceptés</strong>
+  </p>
+  <p class="text-muted" style="margin: 0 0 12px;"><strong>Pièce d'identité :</strong></p>
+  <ul style="margin: 0 0 16px 0; padding-left: 20px;">
+    <li style="color: #5F6B59; margin: 4px 0;">Carte nationale d'identité</li>
+    <li style="color: #5F6B59; margin: 4px 0;">Passeport</li>
+    <li style="color: #5F6B59; margin: 4px 0;">Permis de conduire</li>
+  </ul>
+  <p class="text-muted" style="margin: 0 0 12px;"><strong>Justificatif de domicile (moins de 3 mois) :</strong></p>
+  <ul style="margin: 0; padding-left: 20px;">
+    <li style="color: #5F6B59; margin: 4px 0;">Facture d'électricité, eau, gaz</li>
+    <li style="color: #5F6B59; margin: 4px 0;">Attestation de loyer</li>
+    <li style="color: #5F6B59; margin: 4px 0;">Relevé bancaire</li>
+  </ul>
+</div>
+
+<hr class="divider">
+
+<p class="text">
+  Ne tardez pas ! Le renouvellement ne prend que quelques minutes et vous permettra de continuer à profiter de tous vos avantages.
+</p>
+
+<p class="text" style="margin-top: 24px;">
+  Cordialement,<br>
+  <strong style="color: #14654C;">L'équipe Klef</strong>
+</p>
+
+<p class="text-muted" style="margin-top: 32px; font-size: 12px;">
+  Ce renouvellement est obligatoire pour des raisons de sécurité et de conformité réglementaire.
+</p>

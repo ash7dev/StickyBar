@@ -1,0 +1,234 @@
+<h2 class="title">Comment s'est passé votre séjour ? ⭐</h2>
+
+<p class="text">
+  Bonjour {{userName}},
+</p>
+
+<p class="text">
+  Votre séjour à <strong>{{propertyTitle}}</strong> est maintenant terminé. Nous espérons que vous avez passé un excellent moment !
+</p>
+
+<p class="text">
+  Votre avis est précieux et aide notre communauté à faire les meilleurs choix. Prenez quelques minutes pour partager votre expérience.
+</p>
+
+<!-- Image du logement si disponible -->
+{{#if propertyImage}}
+<div style="margin: 32px 0; border-radius: 20px; overflow: hidden;">
+  <img src="{{propertyImage}}" alt="{{propertyTitle}}" style="width: 100%; height: auto; display: block;">
+</div>
+{{/if}}
+
+<div class="card-inverse">
+  <h3 style="font-size: 18px; font-weight: 600; color: #F8FBF4; margin: 0 0 20px;">
+    Détails de votre séjour
+  </h3>
+
+  <table width="100%" cellpadding="0" cellspacing="0" border="0">
+    <tr>
+      <td style="padding: 12px 0; border-bottom: 1px solid rgba(255, 255, 255, 0.09);">
+        <span style="color: #A8D5C1; font-size: 14px;">🏠 Logement</span>
+      </td>
+      <td style="padding: 12px 0; border-bottom: 1px solid rgba(255, 255, 255, 0.09); text-align: right;">
+        <span style="color: #F8FBF4; font-weight: 600;">{{propertyTitle}}</span>
+      </td>
+    </tr>
+    <tr>
+      <td style="padding: 12px 0; border-bottom: 1px solid rgba(255, 255, 255, 0.09);">
+        <span style="color: #A8D5C1; font-size: 14px;">📅 Dates</span>
+      </td>
+      <td style="padding: 12px 0; border-bottom: 1px solid rgba(255, 255, 255, 0.09); text-align: right;">
+        <span style="color: #F8FBF4; font-weight: 600;">{{checkInDate}} - {{checkOutDate}}</span>
+      </td>
+    </tr>
+    <tr>
+      <td style="padding: 12px 0; border-bottom: 1px solid rgba(255, 255, 255, 0.09);">
+        <span style="color: #A8D5C1; font-size: 14px;">🏡 Propriétaire</span>
+      </td>
+      <td style="padding: 12px 0; border-bottom: 1px solid rgba(255, 255, 255, 0.09); text-align: right;">
+        <span style="color: #F8FBF4; font-weight: 600;">{{hostName}}</span>
+      </td>
+    </tr>
+    <tr>
+      <td style="padding: 12px 0;">
+        <span style="color: #A8D5C1; font-size: 14px;">📋 Référence</span>
+      </td>
+      <td style="padding: 12px 0; text-align: right;">
+        <span style="color: #F8FBF4; font-weight: 600;">#{{bookingReference}}</span>
+      </td>
+    </tr>
+  </table>
+</div>
+
+<div style="text-align: center; margin: 40px 0;">
+  <a href="{{appUrl}}/bookings/{{bookingId}}/review" class="btn-action">
+    Laisser un avis
+  </a>
+</div>
+
+<!-- Points à évaluer -->
+<h3 style="font-size: 18px; font-weight: 600; color: #22271F; margin: 32px 0 16px;">
+  Ce que vous allez évaluer
+</h3>
+
+<table width="100%" cellpadding="0" cellspacing="0" border="0" style="margin: 24px 0;">
+  <tr>
+    <td style="padding: 12px 0;">
+      <table cellpadding="0" cellspacing="0" border="0">
+        <tr>
+          <td style="background-color: rgba(211, 242, 110, 0.30); border-radius: 12px; padding: 10px; width: 36px; height: 36px; text-align: center; vertical-align: top;">
+            <span style="font-size: 18px;">✨</span>
+          </td>
+          <td style="padding-left: 16px;">
+            <strong style="color: #22271F; display: block; margin-bottom: 4px;">Propreté</strong>
+            <span style="color: #5F6B59; font-size: 14px;">Le logement était-il propre et bien entretenu ?</span>
+          </td>
+        </tr>
+      </table>
+    </td>
+  </tr>
+  <tr>
+    <td style="padding: 12px 0;">
+      <table cellpadding="0" cellspacing="0" border="0">
+        <tr>
+          <td style="background-color: rgba(211, 242, 110, 0.30); border-radius: 12px; padding: 10px; width: 36px; height: 36px; text-align: center; vertical-align: top;">
+            <span style="font-size: 18px;">📸</span>
+          </td>
+          <td style="padding-left: 16px;">
+            <strong style="color: #22271F; display: block; margin-bottom: 4px;">Conformité</strong>
+            <span style="color: #5F6B59; font-size: 14px;">Le logement correspondait-il à l'annonce ?</span>
+          </td>
+        </tr>
+      </table>
+    </td>
+  </tr>
+  <tr>
+    <td style="padding: 12px 0;">
+      <table cellpadding="0" cellspacing="0" border="0">
+        <tr>
+          <td style="background-color: rgba(211, 242, 110, 0.30); border-radius: 12px; padding: 10px; width: 36px; height: 36px; text-align: center; vertical-align: top;">
+            <span style="font-size: 18px;">💬</span>
+          </td>
+          <td style="padding-left: 16px;">
+            <strong style="color: #22271F; display: block; margin-bottom: 4px;">Communication</strong>
+            <span style="color: #5F6B59; font-size: 14px;">Le propriétaire a-t-il bien communiqué avec vous ?</span>
+          </td>
+        </tr>
+      </table>
+    </td>
+  </tr>
+  <tr>
+    <td style="padding: 12px 0;">
+      <table cellpadding="0" cellspacing="0" border="0">
+        <tr>
+          <td style="background-color: rgba(211, 242, 110, 0.30); border-radius: 12px; padding: 10px; width: 36px; height: 36px; text-align: center; vertical-align: top;">
+            <span style="font-size: 18px;">📍</span>
+          </td>
+          <td style="padding-left: 16px;">
+            <strong style="color: #22271F; display: block; margin-bottom: 4px;">Emplacement</strong>
+            <span style="color: #5F6B59; font-size: 14px;">L'emplacement vous a-t-il convenu ?</span>
+          </td>
+        </tr>
+      </table>
+    </td>
+  </tr>
+  <tr>
+    <td style="padding: 12px 0;">
+      <table cellpadding="0" cellspacing="0" border="0">
+        <tr>
+          <td style="background-color: rgba(211, 242, 110, 0.30); border-radius: 12px; padding: 10px; width: 36px; height: 36px; text-align: center; vertical-align: top;">
+            <span style="font-size: 18px;">💰</span>
+          </td>
+          <td style="padding-left: 16px;">
+            <strong style="color: #22271F; display: block; margin-bottom: 4px;">Rapport qualité/prix</strong>
+            <span style="color: #5F6B59; font-size: 14px;">Le séjour valait-il son prix ?</span>
+          </td>
+        </tr>
+      </table>
+    </td>
+  </tr>
+</table>
+
+<hr class="divider">
+
+<!-- Pourquoi laisser un avis -->
+<div class="info-box">
+  <p class="text" style="margin: 0 0 12px;">
+    <strong>💡 Pourquoi votre avis compte</strong>
+  </p>
+  <ul style="margin: 0; padding-left: 20px;">
+    <li style="color: #5F6B59; margin: 8px 0;">Aidez les futurs voyageurs à faire le bon choix</li>
+    <li style="color: #5F6B59; margin: 8px 0;">Encouragez les bons propriétaires à continuer leurs efforts</li>
+    <li style="color: #5F6B59; margin: 8px 0;">Signalez les points à améliorer de manière constructive</li>
+    <li style="color: #5F6B59; margin: 8px 0;">Construisez votre réputation de voyageur fiable</li>
+  </ul>
+</div>
+
+<hr class="divider">
+
+<!-- Incitation -->
+<div class="success-box">
+  <p class="text" style="margin: 0 0 8px;">
+    <strong>🎁 Bonus pour votre avis</strong>
+  </p>
+  <p class="text-muted" style="margin: 0;">
+    Les voyageurs qui laissent régulièrement des avis bénéficient d'avantages exclusifs : badge "Contributeur", priorité dans les demandes de réservation, et offres spéciales.
+  </p>
+</div>
+
+<hr class="divider">
+
+<!-- Consignes pour un bon avis -->
+<h3 style="font-size: 18px; font-weight: 600; color: #22271F; margin: 32px 0 16px;">
+  Conseils pour un avis utile
+</h3>
+
+<div class="info-box">
+  <ul style="margin: 0; padding-left: 20px;">
+    <li style="color: #5F6B59; margin: 8px 0;"><strong>Soyez honnête</strong> : partagez votre expérience réelle</li>
+    <li style="color: #5F6B59; margin: 8px 0;"><strong>Soyez précis</strong> : donnez des exemples concrets</li>
+    <li style="color: #5F6B59; margin: 8px 0;"><strong>Soyez constructif</strong> : suggérez des améliorations si nécessaire</li>
+    <li style="color: #5F6B59; margin: 8px 0;"><strong>Soyez respectueux</strong> : gardez un ton courtois</li>
+    <li style="color: #5F6B59; margin: 8px 0;"><strong>Soyez complet</strong> : mentionnez les points positifs ET négatifs</li>
+  </ul>
+</div>
+
+<hr class="divider">
+
+<div class="warning-box">
+  <p class="text" style="margin: 0 0 8px;">
+    <strong>⏱️ Vous avez 14 jours</strong>
+  </p>
+  <p class="text-muted" style="margin: 0;">
+    Vous pouvez laisser un avis jusqu'au <strong>{{reviewDeadline}}</strong>. Passé ce délai, vous ne pourrez plus évaluer ce séjour.
+  </p>
+</div>
+
+<div style="text-align: center; margin: 40px 0;">
+  <a href="{{appUrl}}/bookings/{{bookingId}}/review" class="btn-action">
+    Évaluer mon séjour
+  </a>
+</div>
+
+<hr class="divider">
+
+<!-- Confidentialité -->
+<p class="text-muted" style="font-size: 13px;">
+  <strong>Confidentialité de votre avis :</strong><br>
+  Votre avis sera publié une fois que le propriétaire aura laissé le sien, ou après 14 jours, selon ce qui arrive en premier. Le propriétaire ne verra pas votre avis avant de laisser le sien, garantissant ainsi l'honnêteté des deux parties.
+</p>
+
+<hr class="divider">
+
+<p class="text">
+  Merci de contribuer à améliorer l'expérience Klef !
+</p>
+
+<p class="text" style="margin-top: 24px;">
+  Cordialement,<br>
+  <strong style="color: #14654C;">L'équipe Klef</strong>
+</p>
+
+<p class="text-muted" style="margin-top: 32px; font-size: 12px;">
+  Vous pouvez également laisser votre avis directement depuis l'application mobile.
+</p>

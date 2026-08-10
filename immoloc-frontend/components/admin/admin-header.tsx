@@ -23,11 +23,16 @@ import { cn } from '@/lib/utils/cn';
 
 const ADMIN_PAGE_TITLES: Array<[string, string]> = [
   ['/admin/dashboard', 'Vue d’ensemble Administrateur'],
+  ['/admin/statistiques', 'Statistiques Financières & Gains Klef'],
   ['/admin/kyc', 'Vérification KYC & Identité'],
   ['/admin/annonces', 'Modération du Catalogue d’Annonces'],
   ['/admin/litiges', 'Centre de Résolution des Litiges'],
+  ['/admin/support', 'Centre de Support & Tickets Assistance'],
   ['/admin/avis', 'Modération des Avis & Notes'],
-  ['/admin/utilisateurs', 'Gestion des Utilisateurs & Hôtes'],
+  ['/admin/hotes', 'Gestion des Hôtes & Propriétaires'],
+  ['/admin/locataires', 'Annuaire des Locataires & Voyageurs'],
+  ['/admin/logements', 'Tous les Logements & Parc Immobilier'],
+  ['/admin/utilisateurs', 'Gestion des Utilisateurs'],
   ['/admin/reservations', 'Supervision des Réservations'],
   ['/admin/finances', 'Finance, Retraits & Webhooks'],
   ['/admin/notifications', 'Diffusion de Notifications Broadcast'],

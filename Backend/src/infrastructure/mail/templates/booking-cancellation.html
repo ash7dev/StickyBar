@@ -1,0 +1,224 @@
+<h2 class="title">Annulation de réservation</h2>
+
+<p class="text">
+  Bonjour {{userName}},
+</p>
+
+<p class="text">
+  Nous vous confirmons l'annulation de votre réservation pour <strong>{{propertyTitle}}</strong>.
+</p>
+
+<div class="warning-box">
+  <p class="text" style="margin: 0;">
+    <strong>✕ Réservation annulée</strong><br>
+    <span class="text-muted">Référence: #{{bookingReference}}</span>
+  </p>
+</div>
+
+<!-- Détails de la réservation annulée -->
+<h3 style="font-size: 18px; font-weight: 600; color: #22271F; margin: 32px 0 16px;">
+  Détails de la réservation annulée
+</h3>
+
+<table class="details-table">
+  <tr>
+    <td>Logement</td>
+    <td>{{propertyTitle}}</td>
+  </tr>
+  <tr>
+    <td>Dates prévues</td>
+    <td>{{checkInDate}} - {{checkOutDate}}</td>
+  </tr>
+  <tr>
+    <td>Durée</td>
+    <td>{{nightCount}} nuit(s)</td>
+  </tr>
+  <tr>
+    <td>Date d'annulation</td>
+    <td>{{cancellationDate}}</td>
+  </tr>
+  <tr>
+    <td>Annulée par</td>
+    <td>{{cancelledBy}}</td>
+  </tr>
+  {{#if cancellationReason}}
+  <tr>
+    <td>Motif</td>
+    <td>{{cancellationReason}}</td>
+  </tr>
+  {{/if}}
+</table>
+
+<!-- Informations de remboursement -->
+<div class="card-inverse">
+  <h3 style="font-size: 18px; font-weight: 600; color: #F8FBF4; margin: 0 0 20px;">
+    💰 Remboursement
+  </h3>
+
+  {{#if refundAmount}}
+  <div style="text-align: center; margin: 24px 0;">
+    <p style="color: #A8D5C1; margin: 0 0 8px; font-size: 14px;">Montant remboursé</p>
+    <p style="color: #DFF5A4; font-size: 32px; font-weight: 600; margin: 0; font-variant-numeric: tabular-nums; font-feature-settings: 'tnum';">
+      {{refundAmount}} FCFA
+    </p>
+  </div>
+
+  <table width="100%" cellpadding="0" cellspacing="0" border="0" style="margin-top: 24px;">
+    <tr>
+      <td style="padding: 12px 0; border-bottom: 1px solid rgba(255, 255, 255, 0.09);">
+        <span style="color: #A8D5C1; font-size: 14px;">Montant initial</span>
+      </td>
+      <td style="padding: 12px 0; border-bottom: 1px solid rgba(255, 255, 255, 0.09); text-align: right;">
+        <span style="color: #F8FBF4; font-weight: 600;">{{totalAmount}} FCFA</span>
+      </td>
+    </tr>
+    {{#if cancellationFee}}
+    <tr>
+      <td style="padding: 12px 0; border-bottom: 1px solid rgba(255, 255, 255, 0.09);">
+        <span style="color: #A8D5C1; font-size: 14px;">Frais d'annulation</span>
+      </td>
+      <td style="padding: 12px 0; border-bottom: 1px solid rgba(255, 255, 255, 0.09); text-align: right;">
+        <span style="color: #F8FBF4; font-weight: 600;">-{{cancellationFee}} FCFA</span>
+      </td>
+    </tr>
+    {{/if}}
+    <tr>
+      <td style="padding: 12px 0;">
+        <span style="color: #A8D5C1; font-size: 14px;">Montant remboursé</span>
+      </td>
+      <td style="padding: 12px 0; text-align: right;">
+        <span style="color: #DFF5A4; font-weight: 600; font-size: 18px;">{{refundAmount}} FCFA</span>
+      </td>
+    </tr>
+  </table>
+
+  <div class="success-box" style="margin-top: 24px; background-color: rgba(46, 158, 82, 0.15); border-left-color: #77BB9E;">
+    <p class="text" style="margin: 0; color: #F1F6EA;">
+      <strong>Délai de remboursement : {{refundDelay}}</strong><br>
+      <span style="color: #A8D5C1; font-size: 14px;">
+        Le remboursement sera effectué sur votre mode de paiement original.
+      </span>
+    </p>
+  </div>
+
+  {{else}}
+  <!-- Aucun remboursement -->
+  <div class="warning-box" style="background-color: rgba(217, 154, 34, 0.15); border-left-color: #DABB68;">
+    <p class="text" style="margin: 0; color: #F1F6EA;">
+      <strong>Aucun remboursement applicable</strong><br>
+      <span style="color: #A8D5C1; font-size: 14px;">
+        Selon la politique d'annulation de ce logement, aucun remboursement n'est prévu pour cette annulation.
+      </span>
+    </p>
+  </div>
+
+  <table width="100%" cellpadding="0" cellspacing="0" border="0" style="margin-top: 24px;">
+    <tr>
+      <td style="padding: 12px 0; border-bottom: 1px solid rgba(255, 255, 255, 0.09);">
+        <span style="color: #A8D5C1; font-size: 14px;">Montant initial</span>
+      </td>
+      <td style="padding: 12px 0; border-bottom: 1px solid rgba(255, 255, 255, 0.09); text-align: right;">
+        <span style="color: #F8FBF4; font-weight: 600;">{{totalAmount}} FCFA</span>
+      </td>
+    </tr>
+    <tr>
+      <td style="padding: 12px 0;">
+        <span style="color: #A8D5C1; font-size: 14px;">Montant remboursé</span>
+      </td>
+      <td style="padding: 12px 0; text-align: right;">
+        <span style="color: #F8FBF4; font-weight: 600;">0 FCFA</span>
+      </td>
+    </tr>
+  </table>
+  {{/if}}
+</div>
+
+<!-- Politique d'annulation -->
+<h3 style="font-size: 18px; font-weight: 600; color: #22271F; margin: 32px 0 16px;">
+  Politique d'annulation appliquée
+</h3>
+
+<div class="info-box">
+  <p class="text" style="margin: 0;">
+    <strong>{{cancellationPolicyName}}</strong>
+  </p>
+  <p class="text-muted" style="margin: 12px 0 0;">
+    {{cancellationPolicyDescription}}
+  </p>
+</div>
+
+<div style="margin-top: 16px;">
+  <a href="{{appUrl}}/cancellation-policy" style="color: #14654C; text-decoration: none; font-size: 14px; font-weight: 600;">
+    En savoir plus sur les politiques d'annulation →
+  </a>
+</div>
+
+<hr class="divider">
+
+<!-- Message selon qui a annulé -->
+{{#if cancelledByHost}}
+<!-- Annulation par le propriétaire -->
+<div class="info-box">
+  <p class="text" style="margin: 0 0 12px;">
+    <strong>Annulation par le propriétaire</strong>
+  </p>
+  <p class="text-muted" style="margin: 0;">
+    Nous sommes désolés que le propriétaire ait dû annuler votre réservation. Vous avez été intégralement remboursé. Nous vous invitons à explorer d'autres logements similaires pour vos dates de voyage.
+  </p>
+</div>
+
+<div style="text-align: center; margin: 32px 0;">
+  <a href="{{appUrl}}/explore?checkIn={{checkInDate}}&checkOut={{checkOutDate}}&guests={{guestCount}}" class="btn-action">
+    Trouver un logement similaire
+  </a>
+</div>
+
+{{else}}
+<!-- Annulation par le voyageur -->
+<p class="text">
+  Nous espérons vous revoir bientôt sur Klef. N'hésitez pas à explorer nos autres logements pour vos prochains voyages.
+</p>
+
+<div style="text-align: center; margin: 32px 0;">
+  <a href="{{appUrl}}/explore" class="btn-primary">
+    Explorer d'autres logements
+  </a>
+</div>
+{{/if}}
+
+<hr class="divider">
+
+<!-- Aide et support -->
+<div class="info-box">
+  <p class="text" style="margin: 0 0 8px;">
+    <strong>❓ Des questions sur cette annulation ?</strong>
+  </p>
+  <p class="text-muted" style="margin: 0 0 16px;">
+    Notre équipe support est disponible pour répondre à toutes vos questions concernant cette annulation ou votre remboursement.
+  </p>
+  <div style="text-align: center;">
+    <a href="{{appUrl}}/support?booking={{bookingId}}" class="btn-ghost" style="font-size: 14px; padding: 10px 20px; display: inline-block;">
+      Contacter le support
+    </a>
+  </div>
+</div>
+
+<hr class="divider">
+
+<p class="text">
+  {{#if cancelledByHost}}
+  Nous sommes désolés de ce désagrément et espérons pouvoir mieux vous servir lors de votre prochaine réservation.
+  {{else}}
+  Nous espérons que vous trouverez le logement parfait pour votre prochain séjour.
+  {{/if}}
+</p>
+
+<p class="text" style="margin-top: 24px;">
+  Cordialement,<br>
+  <strong style="color: #14654C;">L'équipe Klef</strong>
+</p>
+
+<p class="text-muted" style="margin-top: 32px; font-size: 12px;">
+  Référence de l'annulation : {{cancellationReference}}<br>
+  Pour toute question, citez cette référence lors de votre contact avec le support.
+</p>

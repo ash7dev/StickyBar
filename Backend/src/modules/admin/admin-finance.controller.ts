@@ -5,8 +5,7 @@ import { RolesGuard } from '../../shared/guards/roles.guard';
 import { Roles } from '../../shared/decorators/roles.decorator';
 import { Role } from '../../shared/types/jwt-payload.type';
 import { AdminFinanceService } from './admin-finance.service';
-import { AdminFinanceQueryDto, AdminRefundsQueryDto, AdminWebhooksQueryDto } from './dto/admin-finance-query.dto';
-
+import { AdminFinanceQueryDto, AdminFinanceStatsQueryDto, AdminRefundsQueryDto, AdminWebhooksQueryDto } from './dto/admin-finance-query.dto';
 import { Body } from '@nestjs/common';
 import { WalletAdjustmentDto } from './dto/wallet-adjustment.dto';
 
@@ -17,6 +16,12 @@ import { WalletAdjustmentDto } from './dto/wallet-adjustment.dto';
 @Controller('admin/finance')
 export class AdminFinanceController {
   constructor(private readonly service: AdminFinanceService) {}
+
+  @Get('stats')
+  @ApiOperation({ summary: 'Statistiques avancées des gains et revenus nets Klef (commissions, pénalités)' })
+  getFinancialStats(@Query() dto: AdminFinanceStatsQueryDto) {
+    return this.service.getFinancialStats(dto);
+  }
 
   @Get('transactions')
   @ApiOperation({ summary: 'Audit global des transactions wallet de la plateforme' })

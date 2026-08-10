@@ -42,6 +42,7 @@ export class AdminReservationsService {
           totalLocataire: true,
           montantCommission: true,
           netProprietaire: true,
+          typePaiement: true,
           statut: true,
           creeLe: true,
           locataire: {

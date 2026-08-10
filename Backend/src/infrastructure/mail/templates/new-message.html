@@ -1,0 +1,148 @@
+<h2 class="title">Nouveau message de {{senderName}} 💬</h2>
+
+<p class="text">
+  Bonjour {{recipientName}},
+</p>
+
+<p class="text">
+  Vous avez reçu un nouveau message {{#if propertyTitle}}concernant <strong>{{propertyTitle}}</strong>{{/if}}.
+</p>
+
+<!-- Message -->
+<div class="card-inverse">
+  <table width="100%" cellpadding="0" cellspacing="0" border="0">
+    <tr>
+      <td style="padding-bottom: 16px; border-bottom: 1px solid rgba(255, 255, 255, 0.09);">
+        <table cellpadding="0" cellspacing="0" border="0">
+          <tr>
+            <td>
+              {{#if senderAvatar}}
+              <img src="{{senderAvatar}}" alt="{{senderName}}" style="width: 48px; height: 48px; border-radius: 50%; object-fit: cover;">
+              {{else}}
+              <div style="width: 48px; height: 48px; border-radius: 50%; background-color: rgba(211, 242, 110, 0.30); display: flex; align-items: center; justify-content: center; color: #0B3D2E; font-weight: 600; font-size: 18px;">
+                {{senderInitials}}
+              </div>
+              {{/if}}
+            </td>
+            <td style="padding-left: 12px;">
+              <div style="color: #F8FBF4; font-weight: 600; margin-bottom: 4px;">
+                {{senderName}}
+                {{#if senderVerified}}
+                <span style="display: inline-block; margin-left: 8px; padding: 2px 8px; background-color: rgba(201, 162, 75, 0.12); color: #DABB68; border: 1px solid rgba(201, 162, 75, 0.28); border-radius: 9999px; font-size: 11px; font-weight: 600;">
+                  ✓ Vérifié
+                </span>
+                {{/if}}
+              </div>
+              <div style="color: #A8D5C1; font-size: 14px;">
+                {{#if senderRole}}{{senderRole}} · {{/if}}{{messageDate}}
+              </div>
+            </td>
+          </tr>
+        </table>
+      </td>
+    </tr>
+    <tr>
+      <td style="padding-top: 20px;">
+        <div style="color: #F1F6EA; line-height: 1.6; white-space: pre-line;">{{messageContent}}</div>
+      </td>
+    </tr>
+  </table>
+</div>
+
+<!-- Informations contextuelles -->
+{{#if bookingReference}}
+<div class="info-box" style="margin-top: 24px;">
+  <table width="100%" cellpadding="0" cellspacing="0" border="0">
+    <tr>
+      <td style="padding: 8px 0;">
+        <span style="color: #5F6B59; font-size: 14px;">📋 Réservation</span>
+      </td>
+      <td style="padding: 8px 0; text-align: right;">
+        <strong style="color: #22271F;">#{{bookingReference}}</strong>
+      </td>
+    </tr>
+    {{#if propertyTitle}}
+    <tr>
+      <td style="padding: 8px 0;">
+        <span style="color: #5F6B59; font-size: 14px;">🏠 Logement</span>
+      </td>
+      <td style="padding: 8px 0; text-align: right;">
+        <strong style="color: #22271F;">{{propertyTitle}}</strong>
+      </td>
+    </tr>
+    {{/if}}
+    {{#if checkInDate}}
+    <tr>
+      <td style="padding: 8px 0;">
+        <span style="color: #5F6B59; font-size: 14px;">📅 Dates</span>
+      </td>
+      <td style="padding: 8px 0; text-align: right;">
+        <strong style="color: #22271F;">{{checkInDate}} - {{checkOutDate}}</strong>
+      </td>
+    </tr>
+    {{/if}}
+  </table>
+</div>
+{{/if}}
+
+<div style="text-align: center; margin: 40px 0;">
+  <a href="{{appUrl}}/messages/{{conversationId}}" class="btn-action">
+    Répondre au message
+  </a>
+</div>
+
+<hr class="divider">
+
+<!-- Conseils de sécurité -->
+<div class="warning-box">
+  <p class="text" style="margin: 0 0 8px;">
+    <strong>🔒 Restez sur Klef pour votre sécurité</strong>
+  </p>
+  <ul style="margin: 12px 0 0 0; padding-left: 20px;">
+    <li style="color: #5F6B59; margin: 8px 0;">Ne communiquez jamais vos coordonnées bancaires par message</li>
+    <li style="color: #5F6B59; margin: 8px 0;">Effectuez tous les paiements via la plateforme Klef</li>
+    <li style="color: #5F6B59; margin: 8px 0;">Signalez tout comportement suspect à notre équipe</li>
+    <li style="color: #5F6B59; margin: 8px 0;">Ne finalisez jamais de transaction en dehors de la plateforme</li>
+  </ul>
+</div>
+
+<hr class="divider">
+
+<!-- Guide de réponse rapide -->
+{{#if isInquiry}}
+<div class="info-box">
+  <p class="text" style="margin: 0 0 12px;">
+    <strong>💡 Conseils pour une bonne réponse</strong>
+  </p>
+  <ul style="margin: 0; padding-left: 20px;">
+    <li style="color: #5F6B59; margin: 8px 0;">Répondez rapidement (idéalement dans les 24h) pour augmenter vos chances de réservation</li>
+    <li style="color: #5F6B59; margin: 8px 0;">Soyez courtois et professionnel dans vos échanges</li>
+    <li style="color: #5F6B59; margin: 8px 0;">Fournissez des informations claires et précises</li>
+    <li style="color: #5F6B59; margin: 8px 0;">N'hésitez pas à poser des questions pour mieux comprendre les besoins</li>
+  </ul>
+</div>
+{{/if}}
+
+<hr class="divider">
+
+<!-- Gestion des notifications -->
+<p class="text-muted" style="text-align: center;">
+  Vous recevez cet email car vous avez activé les notifications pour les nouveaux messages.
+</p>
+
+<div style="text-align: center; margin: 16px 0;">
+  <a href="{{appUrl}}/settings/notifications" style="color: #14654C; text-decoration: none; font-size: 14px; font-weight: 600;">
+    Gérer mes notifications →
+  </a>
+</div>
+
+<hr class="divider">
+
+<p class="text">
+  Cordialement,<br>
+  <strong style="color: #14654C;">L'équipe Klef</strong>
+</p>
+
+<p class="text-muted" style="margin-top: 32px; font-size: 12px;">
+  Ne partagez jamais d'informations personnelles ou financières sensibles par message. Klef ne vous demandera jamais ces informations.
+</p>

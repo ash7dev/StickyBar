@@ -1,0 +1,242 @@
+<h2 class="title">Nouvelle demande de réservation ! 🎉</h2>
+
+<p class="text">
+  Bonjour {{hostName}},
+</p>
+
+<p class="text">
+  Excellente nouvelle ! <strong>{{guestName}}</strong> souhaite réserver votre logement <strong>{{propertyTitle}}</strong>.
+</p>
+
+<div class="info-box">
+  <p class="text" style="margin: 0;">
+    <strong>⏱️ Répondez rapidement</strong><br>
+    <span class="text-muted">
+      Vous avez 24 heures pour accepter ou refuser cette demande. Un taux de réponse élevé améliore votre visibilité sur la plateforme.
+    </span>
+  </p>
+</div>
+
+<!-- Détails de la demande -->
+<div class="card-inverse">
+  <h3 style="font-size: 18px; font-weight: 600; color: #F8FBF4; margin: 0 0 20px;">
+    Détails de la demande
+  </h3>
+
+  <table width="100%" cellpadding="0" cellspacing="0" border="0">
+    <tr>
+      <td style="padding: 12px 0; border-bottom: 1px solid rgba(255, 255, 255, 0.09);">
+        <span style="color: #A8D5C1; font-size: 14px;">📅 Arrivée</span>
+      </td>
+      <td style="padding: 12px 0; border-bottom: 1px solid rgba(255, 255, 255, 0.09); text-align: right;">
+        <span style="color: #F8FBF4; font-weight: 600;">{{checkInDate}}</span>
+      </td>
+    </tr>
+    <tr>
+      <td style="padding: 12px 0; border-bottom: 1px solid rgba(255, 255, 255, 0.09);">
+        <span style="color: #A8D5C1; font-size: 14px;">📅 Départ</span>
+      </td>
+      <td style="padding: 12px 0; border-bottom: 1px solid rgba(255, 255, 255, 0.09); text-align: right;">
+        <span style="color: #F8FBF4; font-weight: 600;">{{checkOutDate}}</span>
+      </td>
+    </tr>
+    <tr>
+      <td style="padding: 12px 0; border-bottom: 1px solid rgba(255, 255, 255, 0.09);">
+        <span style="color: #A8D5C1; font-size: 14px;">🌙 Durée</span>
+      </td>
+      <td style="padding: 12px 0; border-bottom: 1px solid rgba(255, 255, 255, 0.09); text-align: right;">
+        <span style="color: #F8FBF4; font-weight: 600;">{{nightCount}} nuit(s)</span>
+      </td>
+    </tr>
+    <tr>
+      <td style="padding: 12px 0; border-bottom: 1px solid rgba(255, 255, 255, 0.09);">
+        <span style="color: #A8D5C1; font-size: 14px;">👥 Voyageurs</span>
+      </td>
+      <td style="padding: 12px 0; border-bottom: 1px solid rgba(255, 255, 255, 0.09); text-align: right;">
+        <span style="color: #F8FBF4; font-weight: 600;">{{guestCount}} personne(s)</span>
+      </td>
+    </tr>
+    <tr>
+      <td style="padding: 12px 0;">
+        <span style="color: #A8D5C1; font-size: 14px;">💰 Revenu estimé</span>
+      </td>
+      <td style="padding: 12px 0; text-align: right;">
+        <span style="color: #DFF5A4; font-weight: 600; font-size: 20px; font-variant-numeric: tabular-nums; font-feature-settings: 'tnum';">{{hostEarnings}} FCFA</span>
+      </td>
+    </tr>
+  </table>
+</div>
+
+<!-- Profil du voyageur -->
+<h3 style="font-size: 18px; font-weight: 600; color: #22271F; margin: 32px 0 16px;">
+  À propos du voyageur
+</h3>
+
+<table width="100%" cellpadding="0" cellspacing="0" border="0" style="background-color: #F8FBF4; border-radius: 12px; padding: 20px;">
+  <tr>
+    <td>
+      <table cellpadding="0" cellspacing="0" border="0">
+        <tr>
+          <td style="vertical-align: top;">
+            {{#if guestAvatar}}
+            <img src="{{guestAvatar}}" alt="{{guestName}}" style="width: 64px; height: 64px; border-radius: 50%; object-fit: cover;">
+            {{else}}
+            <div style="width: 64px; height: 64px; border-radius: 50%; background-color: rgba(211, 242, 110, 0.30); display: flex; align-items: center; justify-content: center; color: #0B3D2E; font-weight: 600; font-size: 24px;">
+              {{guestInitials}}
+            </div>
+            {{/if}}
+          </td>
+          <td style="padding-left: 16px; vertical-align: top;">
+            <div style="margin-bottom: 12px;">
+              <strong style="color: #22271F; font-size: 18px; display: block; margin-bottom: 4px;">{{guestName}}</strong>
+              <span style="color: #5F6B59; font-size: 14px;">Membre depuis {{guestMemberSince}}</span>
+            </div>
+
+            {{#if guestVerified}}
+            <div style="margin-bottom: 12px;">
+              <span class="badge-verified">
+                ✓ Identité vérifiée
+              </span>
+            </div>
+            {{/if}}
+
+            <table cellpadding="0" cellspacing="0" border="0" style="margin-top: 12px;">
+              {{#if guestReviewsCount}}
+              <tr>
+                <td style="padding: 4px 0;">
+                  <span style="color: #5F6B59; font-size: 14px;">⭐ {{guestRating}} ({{guestReviewsCount}} avis)</span>
+                </td>
+              </tr>
+              {{/if}}
+              {{#if guestBookingsCount}}
+              <tr>
+                <td style="padding: 4px 0;">
+                  <span style="color: #5F6B59; font-size: 14px;">🏠 {{guestBookingsCount}} séjour(s) effectué(s)</span>
+                </td>
+              </tr>
+              {{/if}}
+            </table>
+          </td>
+        </tr>
+      </table>
+
+      {{#if guestMessage}}
+      <div style="margin-top: 20px; padding-top: 20px; border-top: 1px solid #E4EBDB;">
+        <p style="color: #5F6B59; font-size: 14px; margin: 0 0 8px;">Message du voyageur :</p>
+        <p style="color: #22271F; margin: 0; white-space: pre-line;">"{{guestMessage}}"</p>
+      </div>
+      {{/if}}
+    </td>
+  </tr>
+</table>
+
+<div style="text-align: center; margin: 40px 0;">
+  <a href="{{appUrl}}/host/bookings/{{bookingRequestId}}" class="btn-action">
+    Voir la demande et répondre
+  </a>
+</div>
+
+<!-- Actions rapides -->
+<table width="100%" cellpadding="0" cellspacing="0" border="0" style="margin: 32px 0;">
+  <tr>
+    <td style="width: 48%; padding-right: 8px;">
+      <a href="{{appUrl}}/host/bookings/{{bookingRequestId}}/accept" style="display: block; padding: 14px 20px; background-color: #14654C; color: #FFFFFF; text-decoration: none; border-radius: 9999px; font-weight: 600; font-size: 15px; text-align: center;">
+        ✓ Accepter
+      </a>
+    </td>
+    <td style="width: 4%;"></td>
+    <td style="width: 48%; padding-left: 8px;">
+      <a href="{{appUrl}}/host/bookings/{{bookingRequestId}}/decline" style="display: block; padding: 14px 20px; background-color: #FFFFFF; color: #22271F; text-decoration: none; border-radius: 9999px; font-weight: 600; font-size: 15px; border: 1px solid #E4EBDB; text-align: center;">
+        ✕ Refuser
+      </a>
+    </td>
+  </tr>
+</table>
+
+<p class="text-muted" style="text-align: center; font-size: 13px;">
+  Vous pouvez également contacter le voyageur avant de prendre votre décision
+</p>
+
+<hr class="divider">
+
+<!-- Récapitulatif financier -->
+<h3 style="font-size: 18px; font-weight: 600; color: #22271F; margin: 32px 0 16px;">
+  Récapitulatif financier
+</h3>
+
+<table class="details-table">
+  <tr>
+    <td>Loyer ({{nightCount}} nuit(s) × {{nightlyRate}} FCFA)</td>
+    <td>{{totalRent}} FCFA</td>
+  </tr>
+  {{#if cleaningFee}}
+  <tr>
+    <td>Frais de ménage</td>
+    <td>{{cleaningFee}} FCFA</td>
+  </tr>
+  {{/if}}
+  <tr style="border-top: 1px solid #E4EBDB;">
+    <td>Total pour le voyageur</td>
+    <td><strong>{{guestTotal}} FCFA</strong></td>
+  </tr>
+  <tr>
+    <td style="color: #5F6B59; font-size: 14px;">Frais de service Klef ({{serviceFeePercentage}}%)</td>
+    <td style="color: #5F6B59; font-size: 14px;">-{{serviceFee}} FCFA</td>
+  </tr>
+  <tr style="border-top: 2px solid #E4EBDB;">
+    <td><strong style="color: #14654C;">Vos revenus</strong></td>
+    <td><strong style="color: #14654C; font-size: 18px;">{{hostEarnings}} FCFA</strong></td>
+  </tr>
+</table>
+
+<div class="success-box" style="margin-top: 24px;">
+  <p class="text" style="margin: 0;">
+    <strong>💰 Paiement garanti</strong><br>
+    <span class="text-muted">
+      Le voyageur a déjà effectué le paiement. Votre revenu sera transféré 24h après l'arrivée du voyageur.
+    </span>
+  </p>
+</div>
+
+<hr class="divider">
+
+<!-- Conseils pour une bonne décision -->
+<div class="info-box">
+  <p class="text" style="margin: 0 0 12px;">
+    <strong>💡 Conseils pour répondre</strong>
+  </p>
+  <ul style="margin: 0; padding-left: 20px;">
+    <li style="color: #5F6B59; margin: 8px 0;">Consultez le profil complet du voyageur et ses avis</li>
+    <li style="color: #5F6B59; margin: 8px 0;">Vérifiez votre calendrier pour confirmer la disponibilité</li>
+    <li style="color: #5F6B59; margin: 8px 0;">N'hésitez pas à poser des questions au voyageur</li>
+    <li style="color: #5F6B59; margin: 8px 0;">Répondez dans les 24h pour maintenir un bon taux de réponse</li>
+    <li style="color: #5F6B59; margin: 8px 0;">Si vous refusez, soyez courtois et expliquez brièvement pourquoi</li>
+  </ul>
+</div>
+
+<hr class="divider">
+
+<div class="warning-box">
+  <p class="text" style="margin: 0 0 8px;">
+    <strong>⚠️ Important</strong>
+  </p>
+  <p class="text-muted" style="margin: 0;">
+    Cette demande expire dans <strong>24 heures</strong>. Passé ce délai, elle sera automatiquement refusée et le voyageur sera remboursé intégralement.
+  </p>
+</div>
+
+<hr class="divider">
+
+<p class="text">
+  Bonne chance avec cette réservation !
+</p>
+
+<p class="text" style="margin-top: 24px;">
+  Cordialement,<br>
+  <strong style="color: #14654C;">L'équipe Klef</strong>
+</p>
+
+<p class="text-muted" style="margin-top: 32px; font-size: 12px;">
+  Référence de la demande : #{{bookingRequestId}}<br>
+  Des questions ? Contactez notre support hôte à host-support@klef.com
+</p>

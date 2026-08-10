@@ -6,6 +6,17 @@ import { CreateEquipementDto, UpdateEquipementDto } from './dto/admin-equipement
 export class AdminEquipementsService {
   constructor(private readonly prisma: PrismaService) {}
 
+  async findAll() {
+    return this.prisma.equipement.findMany({
+      orderBy: [{ categorie: 'asc' }, { nom: 'asc' }],
+      include: {
+        _count: {
+          select: { logements: true },
+        },
+      },
+    });
+  }
+
   async create(dto: CreateEquipementDto) {
     const existing = await this.prisma.equipement.findUnique({
       where: { nom: dto.nom },

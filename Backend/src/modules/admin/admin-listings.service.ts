@@ -5,6 +5,7 @@ import {
   UnprocessableEntityException,
 } from '@nestjs/common';
 import {
+  Prisma,
   ResultatAnnulation,
   SensTransaction,
   StatutLogement,
@@ -27,19 +28,42 @@ export class AdminListingsService {
 
   async listForReview(dto: AdminListingsQueryDto) {
     const page = dto.page ?? 1;
-    const limit = 20;
-    const statut = dto.statut ?? StatutLogement.PENDING_REVIEW;
+    const limit = dto.limit ?? 20;
+
+    const where: Prisma.LogementWhereInput = {
+      ...(dto.statut && { statut: dto.statut }),
+      ...(dto.type && { type: dto.type as any }),
+      ...(dto.search && {
+        OR: [
+          { titre: { contains: dto.search, mode: 'insensitive' } },
+          { ville: { contains: dto.search, mode: 'insensitive' } },
+          { quartier: { contains: dto.search, mode: 'insensitive' } },
+          { proprietaire: { prenom: { contains: dto.search, mode: 'insensitive' } } },
+          { proprietaire: { nom: { contains: dto.search, mode: 'insensitive' } } },
+          { proprietaire: { email: { contains: dto.search, mode: 'insensitive' } } },
+        ],
+      }),
+      archiveLe: null,
+    };
 
     const [total, logements] = await this.prisma.$transaction([
-      this.prisma.logement.count({ where: { statut, archiveLe: null } }),
+      this.prisma.logement.count({ where }),
       this.prisma.logement.findMany({
-        where: { statut, archiveLe: null },
+        where,
         select: {
           id: true,
           titre: true,
           type: true,
           ville: true,
           prixBase: true,
+          acomptePourcentage: true,
+          surface: true,
+          nombreChambres: true,
+          nombreSallesBain: true,
+          capaciteMax: true,
+          isFeatured: true,
+          isInstantBooking: true,
+          nbNonConformitesAnnonce: true,
           statut: true,
           rejectionReason: true,
           creeLe: true,
@@ -58,7 +82,7 @@ export class AdminListingsService {
             },
           },
         },
-        orderBy: { creeLe: 'asc' },
+        orderBy: { creeLe: 'desc' },
         skip: (page - 1) * limit,
         take: limit,
       }),

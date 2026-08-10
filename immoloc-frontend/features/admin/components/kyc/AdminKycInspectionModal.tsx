@@ -24,8 +24,8 @@ export function AdminKycInspectionModal({
   const fullName = `${user.prenom ?? ''} ${user.nom ?? ''}`.trim() || 'Utilisateur';
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-forest-950/60 backdrop-blur-xs overflow-y-auto">
-      <div className="relative w-full max-w-4xl max-h-[90vh] overflow-y-auto rounded-card border border-border bg-background-card p-6 shadow-2xl space-y-6">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-forest-950/60 backdrop-blur-xs overflow-y-auto no-scrollbar">
+      <div className="relative w-full max-w-4xl max-h-[90vh] overflow-y-auto no-scrollbar rounded-card border border-border bg-background-card p-6 shadow-2xl space-y-6">
         {/* Header Modal */}
         <div className="flex items-start justify-between border-b border-border pb-4">
           <div className="flex items-center gap-3">

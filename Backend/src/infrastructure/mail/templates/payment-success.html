@@ -1,0 +1,176 @@
+<h2 class="title">Paiement réussi ! ✓</h2>
+
+<p class="text">
+  Bonjour {{userName}},
+</p>
+
+<p class="text">
+  Votre paiement a été traité avec succès. Merci pour votre confiance !
+</p>
+
+<div class="success-box">
+  <p class="text" style="margin: 0;">
+    <strong>✓ Paiement confirmé</strong><br>
+    <span class="text-muted">Transaction #{{transactionId}}</span>
+  </p>
+</div>
+
+<!-- Montant principal -->
+<div style="text-align: center; margin: 32px 0;">
+  <p class="text-muted" style="margin: 0 0 8px;">Montant payé</p>
+  <p class="amount" style="margin: 0;">
+    {{amount}} FCFA
+  </p>
+</div>
+
+<!-- Détails du paiement -->
+<div class="card-inverse">
+  <h3 style="font-size: 18px; font-weight: 600; color: #F8FBF4; margin: 0 0 20px;">
+    Détails de la transaction
+  </h3>
+
+  <table width="100%" cellpadding="0" cellspacing="0" border="0">
+    <tr>
+      <td style="padding: 12px 0; border-bottom: 1px solid rgba(255, 255, 255, 0.09);">
+        <span style="color: #A8D5C1; font-size: 14px;">Référence</span>
+      </td>
+      <td style="padding: 12px 0; border-bottom: 1px solid rgba(255, 255, 255, 0.09); text-align: right;">
+        <span style="color: #F8FBF4; font-weight: 600;">{{transactionId}}</span>
+      </td>
+    </tr>
+    <tr>
+      <td style="padding: 12px 0; border-bottom: 1px solid rgba(255, 255, 255, 0.09);">
+        <span style="color: #A8D5C1; font-size: 14px;">Date</span>
+      </td>
+      <td style="padding: 12px 0; border-bottom: 1px solid rgba(255, 255, 255, 0.09); text-align: right;">
+        <span style="color: #F8FBF4; font-weight: 600;">{{paymentDate}}</span>
+      </td>
+    </tr>
+    <tr>
+      <td style="padding: 12px 0; border-bottom: 1px solid rgba(255, 255, 255, 0.09);">
+        <span style="color: #A8D5C1; font-size: 14px;">Méthode</span>
+      </td>
+      <td style="padding: 12px 0; border-bottom: 1px solid rgba(255, 255, 255, 0.09); text-align: right;">
+        <span style="color: #F8FBF4; font-weight: 600;">{{paymentMethod}}</span>
+      </td>
+    </tr>
+    <tr>
+      <td style="padding: 12px 0; border-bottom: 1px solid rgba(255, 255, 255, 0.09);">
+        <span style="color: #A8D5C1; font-size: 14px;">Motif</span>
+      </td>
+      <td style="padding: 12px 0; border-bottom: 1px solid rgba(255, 255, 255, 0.09); text-align: right;">
+        <span style="color: #F8FBF4; font-weight: 600;">{{description}}</span>
+      </td>
+    </tr>
+    <tr>
+      <td style="padding: 12px 0;">
+        <span style="color: #A8D5C1; font-size: 14px;">Statut</span>
+      </td>
+      <td style="padding: 12px 0; text-align: right;">
+        <span style="display: inline-block; padding: 4px 12px; background-color: rgba(46, 158, 82, 0.2); color: #77BB9E; border: 1px solid rgba(46, 158, 82, 0.3); border-radius: 9999px; font-size: 13px; font-weight: 600;">
+          ✓ Payé
+        </span>
+      </td>
+    </tr>
+  </table>
+</div>
+
+{{#if bookingReference}}
+<!-- Si c'est pour une réservation -->
+<hr class="divider">
+
+<h3 style="font-size: 18px; font-weight: 600; color: #22271F; margin: 32px 0 16px;">
+  Réservation associée
+</h3>
+
+<div class="info-box">
+  <table width="100%" cellpadding="0" cellspacing="0" border="0">
+    <tr>
+      <td style="padding: 8px 0;">
+        <span style="color: #5F6B59; font-size: 14px;">Référence réservation</span>
+      </td>
+      <td style="padding: 8px 0; text-align: right;">
+        <strong style="color: #22271F;">#{{bookingReference}}</strong>
+      </td>
+    </tr>
+    <tr>
+      <td style="padding: 8px 0;">
+        <span style="color: #5F6B59; font-size: 14px;">Logement</span>
+      </td>
+      <td style="padding: 8px 0; text-align: right;">
+        <strong style="color: #22271F;">{{propertyTitle}}</strong>
+      </td>
+    </tr>
+    <tr>
+      <td style="padding: 8px 0;">
+        <span style="color: #5F6B59; font-size: 14px;">Dates</span>
+      </td>
+      <td style="padding: 8px 0; text-align: right;">
+        <strong style="color: #22271F;">{{checkInDate}} - {{checkOutDate}}</strong>
+      </td>
+    </tr>
+  </table>
+</div>
+
+<div style="text-align: center; margin: 32px 0;">
+  <a href="{{appUrl}}/bookings/{{bookingId}}" class="btn-primary">
+    Voir ma réservation
+  </a>
+</div>
+{{/if}}
+
+<!-- Détails de facturation -->
+<h3 style="font-size: 18px; font-weight: 600; color: #22271F; margin: 32px 0 16px;">
+  Décomposition du paiement
+</h3>
+
+<table class="details-table">
+  {{#each items}}
+  <tr>
+    <td>{{this.label}}</td>
+    <td>{{this.amount}} FCFA</td>
+  </tr>
+  {{/each}}
+  {{#if taxAmount}}
+  <tr>
+    <td>TVA (18%)</td>
+    <td>{{taxAmount}} FCFA</td>
+  </tr>
+  {{/if}}
+  <tr style="border-top: 2px solid #E4EBDB;">
+    <td><strong>Total</strong></td>
+    <td><strong style="color: #14654C; font-size: 18px;">{{amount}} FCFA</strong></td>
+  </tr>
+</table>
+
+<div style="text-align: center; margin: 40px 0;">
+  <a href="{{receiptUrl}}" class="btn-ghost">
+    📄 Télécharger le reçu
+  </a>
+</div>
+
+<hr class="divider">
+
+<div class="info-box">
+  <p class="text" style="margin: 0 0 8px;">
+    <strong>💼 Besoin d'une facture ?</strong>
+  </p>
+  <p class="text-muted" style="margin: 0;">
+    Vous pouvez télécharger une facture détaillée depuis votre espace "Paiements" ou en cliquant sur le bouton ci-dessus. La facture contient tous les détails nécessaires pour votre comptabilité.
+  </p>
+</div>
+
+<hr class="divider">
+
+<p class="text">
+  Merci de faire confiance à Klef pour vos besoins en location immobilière.
+</p>
+
+<p class="text" style="margin-top: 24px;">
+  Cordialement,<br>
+  <strong style="color: #14654C;">L'équipe Klef</strong>
+</p>
+
+<p class="text-muted" style="margin-top: 32px; font-size: 12px;">
+  Ce paiement a été traité de manière sécurisée. En cas de question concernant cette transaction, contactez notre support avec la référence {{transactionId}}.
+</p>

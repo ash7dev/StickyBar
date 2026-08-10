@@ -1,6 +1,7 @@
 'use client';
 
-import { Award, Building2, UserCheck, Inbox } from 'lucide-react';
+import { Award, UserCheck, Inbox } from 'lucide-react';
+import { cn } from '@/lib/utils/cn';
 
 export interface TopPerformerHost {
   id: string;
@@ -10,86 +11,109 @@ export interface TopPerformerHost {
   totalLogements: number;
 }
 
-interface AdminTopPerformersProps {
+interface Props {
   performers?: TopPerformerHost[];
   isLoading?: boolean;
 }
 
-export function AdminTopPerformers({ performers = [], isLoading = false }: AdminTopPerformersProps) {
+export function AdminTopPerformers({ performers = [], isLoading = false }: Props) {
   if (isLoading) {
-    return (
-      <div className="h-52 animate-pulse rounded-card border border-border bg-background-alt p-6" />
-    );
+    return <div className="h-52 animate-pulse rounded-card border border-border bg-background-alt" />;
   }
 
   return (
-    <div className="rounded-card border border-border bg-background-card p-5 shadow-xs sm:p-6 space-y-4">
-      <div className="flex items-center justify-between gap-3 border-b border-border pb-3">
-        <div className="flex items-center gap-2.5">
-          <span className="flex h-9 w-9 items-center justify-center rounded-inner bg-gold-50 border border-gold-200 text-gold-700">
-            <Award className="h-4.5 w-4.5" />
-          </span>
-          <div>
-            <h2 className="font-display text-base font-semibold text-foreground">
-              Top Hôtes Performants
-            </h2>
-            <p className="text-xs text-foreground-muted">
-              Hôtes vérifiés possédant le plus grand nombre de logements actifs
-            </p>
-          </div>
-        </div>
+    <section className="space-y-4 rounded-card border border-border bg-background-card p-5 shadow-sm sm:p-6">
 
-        <span className="rounded-pill bg-gold-50 border border-gold-200 px-2.5 py-0.5 text-xs font-semibold text-gold-800">
-          Partenaires Klef
+      <header className="flex items-center gap-2.5 border-b border-border pb-3">
+        <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-inner border border-gold-200 bg-gold-50 text-gold-700">
+          <Award className="h-4 w-4" aria-hidden="true" />
         </span>
-      </div>
+        <div className="min-w-0">
+          <h2 className="font-display text-base font-semibold text-foreground">
+            Hôtes les plus actifs
+          </h2>
+          {/* Le sous-titre annonçait « hôtes vérifiés » alors que rien ne le
+             garantit : le badge n'apparaît que si le KYC est validé, donc un
+             hôte non vérifié pouvait figurer dans une liste qui se présente
+             comme filtrée. Et « Partenaires Klef » désignait un statut qui
+             n'existe pas dans le produit. */}
+          <p className="text-xs text-foreground-muted">
+            Classement par nombre de logements publiés
+          </p>
+        </div>
+      </header>
 
       {performers.length > 0 ? (
-        <div className="space-y-3">
-          {performers.map((host, idx) => (
-            <div
-              key={host.id}
-              className="flex items-center justify-between gap-3 rounded-inner border border-border bg-background-alt/40 p-3 transition-colors hover:bg-background-alt"
-            >
-              <div className="flex items-center gap-3 min-w-0">
-                <span className="flex h-7 w-7 items-center justify-center rounded-inner bg-forest-800 font-display text-xs font-bold text-neutral-0">
-                  #{idx + 1}
-                </span>
-                <div className="min-w-0">
-                  <div className="flex items-center gap-2">
-                    <p className="truncate text-xs font-semibold text-foreground">{host.nom}</p>
-                    {host.statutKyc === 'VERIFIE' && (
-                      <span className="inline-flex items-center gap-1 text-[0.625rem] font-bold text-forest-700 bg-forest-50 border border-forest-200 px-1.5 py-0.2 rounded-pill">
-                        <UserCheck className="h-3 w-3" /> Vérifié
-                      </span>
+        <ol className="space-y-3">
+          {performers.map((host, idx) => {
+            const verified = host.statutKyc === 'VERIFIE';
+
+            return (
+              <li
+                key={host.id}
+                className="flex items-center justify-between gap-3 rounded-inner border border-border bg-background-alt p-3 transition-colors hover:border-border-hover"
+              >
+                <div className="flex min-w-0 items-center gap-3">
+                  {/* Les trois premiers se distinguent : un classement où
+                     toutes les positions ont le même poids visuel n'en est
+                     pas vraiment un. */}
+                  <span
+                    className={cn(
+                      'flex h-7 w-7 shrink-0 items-center justify-center rounded-inner font-display text-xs font-semibold tabular-nums',
+                      idx === 0
+                        ? 'bg-gold-400 text-forest-900'
+                        : idx < 3
+                          ? 'bg-forest-700 text-neutral-0'
+                          : 'border border-border bg-background-card text-foreground-muted',
                     )}
+                  >
+                    {idx + 1}
+                  </span>
+
+                  <div className="min-w-0">
+                    <div className="flex items-center gap-2">
+                      <p className="truncate text-sm font-semibold text-foreground">{host.nom}</p>
+                      {verified ? (
+                        <span className="inline-flex shrink-0 items-center gap-1 rounded-pill border border-gold-200 bg-gold-50 px-1.5 py-0.5 text-xs font-semibold text-gold-700">
+                          <UserCheck className="h-3 w-3" aria-hidden="true" />
+                          Vérifié
+                        </span>
+                      ) : (
+                        /* L'absence de badge ne se remarque pas dans une
+                           liste : un admin doit voir qu'un hôte publie sans
+                           KYC validé, c'est précisément l'anomalie à repérer. */
+                        <span className="inline-flex shrink-0 items-center rounded-pill border border-warning-500/25 bg-warning-50 px-1.5 py-0.5 text-xs font-semibold text-warning-700">
+                          KYC en attente
+                        </span>
+                      )}
+                    </div>
+                    <p className="truncate text-xs text-foreground-muted">{host.email}</p>
                   </div>
-                  <p className="text-[0.75rem] text-foreground-muted truncate">
-                    {host.email}
+                </div>
+
+                <div className="shrink-0 text-right">
+                  <p className="text-sm font-semibold tabular-nums text-foreground">
+                    {host.totalLogements}
+                  </p>
+                  <p className="text-xs text-foreground-muted">
+                    logement{host.totalLogements > 1 ? 's' : ''}
                   </p>
                 </div>
-              </div>
-
-              <div className="text-right shrink-0">
-                <p className="text-xs font-bold text-foreground">
-                  {host.totalLogements} logement{host.totalLogements > 1 ? 's' : ''}
-                </p>
-                <span className="text-[0.6875rem] font-medium text-forest-700">
-                  Annonces actives
-                </span>
-              </div>
-            </div>
-          ))}
-        </div>
+              </li>
+            );
+          })}
+        </ol>
       ) : (
-        <div className="flex flex-col items-center justify-center p-8 text-center space-y-2 rounded-inner border border-dashed border-border bg-background-alt/30">
-          <span className="flex h-10 w-10 items-center justify-center rounded-pill bg-background-alt text-foreground-muted">
-            <Inbox className="h-5 w-5" />
+        <div className="flex flex-col items-center justify-center space-y-2 rounded-inner border border-dashed border-border bg-background-alt p-8 text-center">
+          <span className="flex h-10 w-10 items-center justify-center rounded-pill border border-border bg-background-card text-foreground-muted">
+            <Inbox className="h-5 w-5" aria-hidden="true" />
           </span>
-          <p className="text-xs font-semibold text-foreground">Aucun hôte enregistré</p>
-          <p className="text-[0.75rem] text-foreground-muted">Les partenaires hôtes s'afficheront ici au fur et à mesure.</p>
+          <p className="text-sm font-semibold text-foreground">Aucun hôte pour le moment</p>
+          <p className="text-xs text-foreground-muted">
+            Le classement apparaîtra dès les premières publications.
+          </p>
         </div>
       )}
-    </div>
+    </section>
   );
 }

@@ -1,0 +1,329 @@
+<h2 class="title">Litige ouvert : {{disputeSubject}}</h2>
+
+<p class="text">
+  Bonjour {{userName}},
+</p>
+
+<p class="text">
+  {{#if isCreator}}
+  Nous avons bien reçu votre réclamation concernant la réservation <strong>#{{bookingReference}}</strong>. Notre équipe va l'examiner dans les plus brefs délais.
+  {{else}}
+  Un litige a été ouvert par {{creatorName}} concernant votre réservation <strong>#{{bookingReference}}</strong>.
+  {{/if}}
+</p>
+
+<div class="warning-box">
+  <p class="text" style="margin: 0;">
+    <strong>📋 Litige #{{disputeId}}</strong><br>
+    <span class="text-muted">Ouvert le {{disputeCreatedDate}}</span>
+  </p>
+</div>
+
+<!-- Détails du litige -->
+<div class="card-inverse">
+  <h3 style="font-size: 18px; font-weight: 600; color: #F8FBF4; margin: 0 0 20px;">
+    Détails du litige
+  </h3>
+
+  <table width="100%" cellpadding="0" cellspacing="0" border="0">
+    <tr>
+      <td style="padding: 12px 0; border-bottom: 1px solid rgba(255, 255, 255, 0.09);">
+        <span style="color: #A8D5C1; font-size: 14px;">Sujet</span>
+      </td>
+      <td style="padding: 12px 0; border-bottom: 1px solid rgba(255, 255, 255, 0.09); text-align: right;">
+        <span style="color: #F8FBF4; font-weight: 600;">{{disputeSubject}}</span>
+      </td>
+    </tr>
+    <tr>
+      <td style="padding: 12px 0; border-bottom: 1px solid rgba(255, 255, 255, 0.09);">
+        <span style="color: #A8D5C1; font-size: 14px;">Catégorie</span>
+      </td>
+      <td style="padding: 12px 0; border-bottom: 1px solid rgba(255, 255, 255, 0.09); text-align: right;">
+        <span style="color: #F8FBF4; font-weight: 600;">{{disputeCategory}}</span>
+      </td>
+    </tr>
+    <tr>
+      <td style="padding: 12px 0; border-bottom: 1px solid rgba(255, 255, 255, 0.09);">
+        <span style="color: #A8D5C1; font-size: 14px;">Ouvert par</span>
+      </td>
+      <td style="padding: 12px 0; border-bottom: 1px solid rgba(255, 255, 255, 0.09); text-align: right;">
+        <span style="color: #F8FBF4; font-weight: 600;">{{creatorName}}</span>
+      </td>
+    </tr>
+    <tr>
+      <td style="padding: 12px 0; border-bottom: 1px solid rgba(255, 255, 255, 0.09);">
+        <span style="color: #A8D5C1; font-size: 14px;">Statut</span>
+      </td>
+      <td style="padding: 12px 0; border-bottom: 1px solid rgba(255, 255, 255, 0.09); text-align: right;">
+        <span style="display: inline-block; padding: 4px 12px; background-color: rgba(217, 154, 34, 0.2); color: #DABB68; border: 1px solid rgba(217, 154, 34, 0.3); border-radius: 9999px; font-size: 13px; font-weight: 600;">
+          En cours
+        </span>
+      </td>
+    </tr>
+    {{#if disputeAmount}}
+    <tr>
+      <td style="padding: 12px 0;">
+        <span style="color: #A8D5C1; font-size: 14px;">Montant contesté</span>
+      </td>
+      <td style="padding: 12px 0; text-align: right;">
+        <span style="color: #DFF5A4; font-weight: 600; font-size: 18px;">{{disputeAmount}} FCFA</span>
+      </td>
+    </tr>
+    {{/if}}
+  </table>
+</div>
+
+<!-- Description du litige -->
+<h3 style="font-size: 18px; font-weight: 600; color: #22271F; margin: 32px 0 16px;">
+  Description
+</h3>
+
+<div class="info-box">
+  <p class="text" style="margin: 0; white-space: pre-line;">{{disputeDescription}}</p>
+</div>
+
+<!-- Preuves jointes -->
+{{#if evidenceCount}}
+<div style="margin-top: 16px;">
+  <p class="text-muted" style="margin: 0;">
+    📎 {{evidenceCount}} pièce(s) jointe(s)
+  </p>
+</div>
+{{/if}}
+
+<!-- Informations de la réservation -->
+<h3 style="font-size: 18px; font-weight: 600; color: #22271F; margin: 32px 0 16px;">
+  Réservation concernée
+</h3>
+
+<table class="details-table">
+  <tr>
+    <td>Référence</td>
+    <td>#{{bookingReference}}</td>
+  </tr>
+  <tr>
+    <td>Logement</td>
+    <td>{{propertyTitle}}</td>
+  </tr>
+  <tr>
+    <td>Dates du séjour</td>
+    <td>{{checkInDate}} - {{checkOutDate}}</td>
+  </tr>
+  <tr>
+    <td>Voyageur</td>
+    <td>{{guestName}}</td>
+  </tr>
+  <tr>
+    <td>Propriétaire</td>
+    <td>{{hostName}}</td>
+  </tr>
+  <tr>
+    <td>Montant total</td>
+    <td>{{bookingAmount}} FCFA</td>
+  </tr>
+</table>
+
+<div style="text-align: center; margin: 40px 0;">
+  <a href="{{appUrl}}/disputes/{{disputeId}}" class="btn-action">
+    Voir le litige complet
+  </a>
+</div>
+
+<hr class="divider">
+
+<!-- Prochaines étapes -->
+<h3 style="font-size: 18px; font-weight: 600; color: #22271F; margin: 32px 0 16px;">
+  Prochaines étapes
+</h3>
+
+{{#if isCreator}}
+<!-- Pour le créateur du litige -->
+<div class="success-box">
+  <p class="text" style="margin: 0 0 12px;">
+    <strong>✓ Votre litige a été enregistré</strong>
+  </p>
+  <p class="text-muted" style="margin: 0;">
+    Notre équipe va examiner votre réclamation. Nous vous contacterons si nous avons besoin d'informations complémentaires.
+  </p>
+</div>
+
+<table width="100%" cellpadding="0" cellspacing="0" border="0" style="margin: 24px 0;">
+  <tr>
+    <td style="padding: 12px 0;">
+      <table cellpadding="0" cellspacing="0" border="0">
+        <tr>
+          <td style="background-color: rgba(211, 242, 110, 0.30); border-radius: 12px; padding: 10px; width: 36px; height: 36px; text-align: center; vertical-align: top;">
+            <span style="font-size: 18px;">1️⃣</span>
+          </td>
+          <td style="padding-left: 16px;">
+            <strong style="color: #22271F; display: block; margin-bottom: 4px;">Examen du dossier (1-2 jours)</strong>
+            <span style="color: #5F6B59; font-size: 14px;">Notre équipe vérifie les informations et preuves fournies</span>
+          </td>
+        </tr>
+      </table>
+    </td>
+  </tr>
+  <tr>
+    <td style="padding: 12px 0;">
+      <table cellpadding="0" cellspacing="0" border="0">
+        <tr>
+          <td style="background-color: rgba(211, 242, 110, 0.30); border-radius: 12px; padding: 10px; width: 36px; height: 36px; text-align: center; vertical-align: top;">
+            <span style="font-size: 18px;">2️⃣</span>
+          </td>
+          <td style="padding-left: 16px;">
+            <strong style="color: #22271F; display: block; margin-bottom: 4px;">Médiation</strong>
+            <span style="color: #5F6B59; font-size: 14px;">Nous contactons l'autre partie pour trouver une solution amiable</span>
+          </td>
+        </tr>
+      </table>
+    </td>
+  </tr>
+  <tr>
+    <td style="padding: 12px 0;">
+      <table cellpadding="0" cellspacing="0" border="0">
+        <tr>
+          <td style="background-color: rgba(211, 242, 110, 0.30); border-radius: 12px; padding: 10px; width: 36px; height: 36px; text-align: center; vertical-align: top;">
+            <span style="font-size: 18px;">3️⃣</span>
+          </td>
+          <td style="padding-left: 16px;">
+            <strong style="color: #22271F; display: block; margin-bottom: 4px;">Résolution (3-7 jours)</strong>
+            <span style="color: #5F6B59; font-size: 14px;">Décision finale et mise en œuvre de la solution</span>
+          </td>
+        </tr>
+      </table>
+    </td>
+  </tr>
+</table>
+
+{{else}}
+<!-- Pour la partie adverse -->
+<div class="warning-box">
+  <p class="text" style="margin: 0 0 12px;">
+    <strong>⚠️ Votre réponse est attendue</strong>
+  </p>
+  <p class="text-muted" style="margin: 0;">
+    Vous avez 48 heures pour répondre à ce litige et fournir votre version des faits. Votre réponse rapide aidera à accélérer la résolution.
+  </p>
+</div>
+
+<div style="text-align: center; margin: 24px 0;">
+  <a href="{{appUrl}}/disputes/{{disputeId}}/respond" class="btn-primary">
+    Répondre au litige
+  </a>
+</div>
+
+<table width="100%" cellpadding="0" cellspacing="0" border="0" style="margin: 24px 0;">
+  <tr>
+    <td style="padding: 12px 0;">
+      <table cellpadding="0" cellspacing="0" border="0">
+        <tr>
+          <td style="background-color: rgba(211, 242, 110, 0.30); border-radius: 12px; padding: 10px; width: 36px; height: 36px; text-align: center; vertical-align: top;">
+            <span style="font-size: 18px;">📝</span>
+          </td>
+          <td style="padding-left: 16px;">
+            <strong style="color: #22271F; display: block; margin-bottom: 4px;">Préparez votre réponse</strong>
+            <span style="color: #5F6B59; font-size: 14px;">Expliquez votre point de vue de manière claire et factuelle</span>
+          </td>
+        </tr>
+      </table>
+    </td>
+  </tr>
+  <tr>
+    <td style="padding: 12px 0;">
+      <table cellpadding="0" cellspacing="0" border="0">
+        <tr>
+          <td style="background-color: rgba(211, 242, 110, 0.30); border-radius: 12px; padding: 10px; width: 36px; height: 36px; text-align: center; vertical-align: top;">
+            <span style="font-size: 18px;">📎</span>
+          </td>
+          <td style="padding-left: 16px;">
+            <strong style="color: #22271F; display: block; margin-bottom: 4px;">Joignez des preuves</strong>
+            <span style="color: #5F6B59; font-size: 14px;">Photos, messages, reçus - tout document pertinent</span>
+          </td>
+        </tr>
+      </table>
+    </td>
+  </tr>
+  <tr>
+    <td style="padding: 12px 0;">
+      <table cellpadding="0" cellspacing="0" border="0">
+        <tr>
+          <td style="background-color: rgba(211, 242, 110, 0.30); border-radius: 12px; padding: 10px; width: 36px; height: 36px; text-align: center; vertical-align: top;">
+            <span style="font-size: 18px;">🤝</span>
+          </td>
+          <td style="padding-left: 16px;">
+            <strong style="color: #22271F; display: block; margin-bottom: 4px;">Proposez une solution</strong>
+            <span style="color: #5F6B59; font-size: 14px;">Si possible, suggérez un arrangement à l'amiable</span>
+          </td>
+        </tr>
+      </table>
+    </td>
+  </tr>
+</table>
+{{/if}}
+
+<hr class="divider">
+
+<!-- Conseils -->
+<div class="info-box">
+  <p class="text" style="margin: 0 0 12px;">
+    <strong>💡 Conseils pour une résolution rapide</strong>
+  </p>
+  <ul style="margin: 0; padding-left: 20px;">
+    <li style="color: #5F6B59; margin: 8px 0;">Restez courtois et professionnel dans vos échanges</li>
+    <li style="color: #5F6B59; margin: 8px 0;">Fournissez le maximum de preuves (photos, captures d'écran, etc.)</li>
+    <li style="color: #5F6B59; margin: 8px 0;">Répondez rapidement aux demandes de notre équipe</li>
+    <li style="color: #5F6B59; margin: 8px 0;">Privilégiez une solution à l'amiable si possible</li>
+    <li style="color: #5F6B59; margin: 8px 0;">Soyez factuel et évitez les jugements personnels</li>
+  </ul>
+</div>
+
+<hr class="divider">
+
+<!-- Politique de résolution -->
+<h3 style="font-size: 18px; font-weight: 600; color: #22271F; margin: 32px 0 16px;">
+  Notre processus de résolution
+</h3>
+
+<p class="text-muted">
+  Klef s'engage à traiter tous les litiges de manière équitable et impartiale. Notre équipe examine attentivement les preuves fournies par les deux parties avant de prendre une décision. Dans la plupart des cas, nous trouvons une solution dans un délai de 3 à 7 jours ouvrables.
+</p>
+
+<div style="margin-top: 16px;">
+  <a href="{{appUrl}}/help/dispute-resolution" style="color: #14654C; text-decoration: none; font-size: 14px; font-weight: 600;">
+    En savoir plus sur notre politique de résolution →
+  </a>
+</div>
+
+<hr class="divider">
+
+<!-- Contact support -->
+<div class="info-box">
+  <p class="text" style="margin: 0 0 8px;">
+    <strong>❓ Besoin d'aide ?</strong>
+  </p>
+  <p class="text-muted" style="margin: 0 0 16px;">
+    Notre équipe support est disponible pour répondre à vos questions concernant ce litige.
+  </p>
+  <div style="text-align: center;">
+    <a href="{{appUrl}}/support?dispute={{disputeId}}" class="btn-ghost" style="font-size: 14px; padding: 10px 20px; display: inline-block;">
+      Contacter le support
+    </a>
+  </div>
+</div>
+
+<hr class="divider">
+
+<p class="text">
+  Nous mettons tout en œuvre pour résoudre ce litige dans les meilleurs délais.
+</p>
+
+<p class="text" style="margin-top: 24px;">
+  Cordialement,<br>
+  <strong style="color: #14654C;">L'équipe Klef</strong>
+</p>
+
+<p class="text-muted" style="margin-top: 32px; font-size: 12px;">
+  Référence du litige : #{{disputeId}}<br>
+  Créé le : {{disputeCreatedDate}}<br>
+  Délai de réponse pour l'autre partie : {{responseDeadline}}
+</p>

@@ -5,8 +5,6 @@ import { AdminShell } from '@/components/admin/admin-shell';
 import { AdminDashboardHeaderBar } from '@/features/admin/components/dashboard/AdminDashboardHeaderBar';
 import { AdminStatsOverview } from '@/features/admin/components/dashboard/AdminStatsOverview';
 import { AdminUrgentActions } from '@/features/admin/components/dashboard/AdminUrgentActions';
-import { AdminModerationQueue } from '@/features/admin/components/dashboard/AdminModerationQueue';
-import { AdminFinancialFlowWidget } from '@/features/admin/components/dashboard/AdminFinancialFlowWidget';
 import { AdminRevenueChart } from '@/features/admin/components/dashboard/AdminRevenueChart';
 import { AdminRecentActivityFeed } from '@/features/admin/components/dashboard/AdminRecentActivityFeed';
 import { AdminGeographicStats } from '@/features/admin/components/dashboard/AdminGeographicStats';
@@ -98,17 +96,7 @@ export default function AdminDashboardPage() {
         {/* 3. Panneau d'Actions Urgentes Requis */}
         <AdminUrgentActions summary={pendingSummary} isLoading={isLoading} />
 
-        {/* 4. Grille 2 Colonnes : File de Modération Rapide & Flux Financiers / Séquestre */}
-        <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
-          <AdminModerationQueue
-            pendingKyc={pendingKyc}
-            pendingListings={pendingListings}
-            isLoading={isLoading}
-          />
-          <AdminFinancialFlowWidget stats={stats} isLoading={isLoading} />
-        </div>
-
-        {/* 5. NOUVEAU : Grille 2 Colonnes : Demandes de Retraits Mobile Money & Centre de Litiges */}
+        {/* 4. Grille 2 Colonnes : Demandes de Retraits Mobile Money & Centre de Litiges */}
         <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
           <AdminPendingPayoutsQueue withdrawals={pendingWithdrawals} isLoading={isLoading} />
           <AdminDisputesOverviewCard disputes={pendingDisputes} isLoading={isLoading} />

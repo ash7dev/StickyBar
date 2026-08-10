@@ -71,3 +71,25 @@ export class AdminWebhooksQueryDto {
   @Min(1)
   limit?: number = 20;
 }
+
+export class AdminFinanceStatsQueryDto {
+  @ApiPropertyOptional({ description: 'Date de début (YYYY-MM-DD)' })
+  @IsOptional()
+  @IsString()
+  startDate?: string;
+
+  @ApiPropertyOptional({ description: 'Date de fin (YYYY-MM-DD)' })
+  @IsOptional()
+  @IsString()
+  endDate?: string;
+
+  @ApiPropertyOptional({ description: 'Filtrer par ville' })
+  @IsOptional()
+  @IsString()
+  ville?: string;
+
+  @ApiPropertyOptional({ description: 'Filtrer par type de logement' })
+  @IsOptional()
+  @IsString()
+  type?: string;
+}

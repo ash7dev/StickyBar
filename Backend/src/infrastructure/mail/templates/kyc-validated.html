@@ -1,0 +1,131 @@
+<h2 class="title">Votre identité a été vérifiée ! ✓</h2>
+
+<p class="text">
+  Bonjour {{userName}},
+</p>
+
+<p class="text">
+  Excellente nouvelle ! Votre dossier de vérification d'identité (KYC) a été validé avec succès par notre équipe.
+</p>
+
+<div class="success-box">
+  <p class="text" style="margin: 0;">
+    <strong>✓ Compte certifié</strong><br>
+    <span class="text-muted">
+      Vous bénéficiez désormais du badge "Identité vérifiée" qui renforce votre crédibilité auprès des autres utilisateurs.
+    </span>
+  </p>
+</div>
+
+<div style="text-align: center; margin: 40px 0;">
+  <span class="badge-verified" style="font-size: 16px; padding: 8px 20px;">
+    ✓ Identité vérifiée
+  </span>
+</div>
+
+<hr class="divider">
+
+<h3 style="font-size: 18px; font-weight: 600; color: #22271F; margin: 32px 0 16px;">
+  Avantages de la vérification
+</h3>
+
+<table width="100%" cellpadding="0" cellspacing="0" border="0" style="margin: 24px 0;">
+  <tr>
+    <td style="padding: 12px 0;">
+      <table cellpadding="0" cellspacing="0" border="0">
+        <tr>
+          <td style="background-color: rgba(211, 242, 110, 0.30); border-radius: 12px; padding: 10px; width: 36px; height: 36px; text-align: center; vertical-align: top;">
+            <span style="font-size: 18px;">🛡️</span>
+          </td>
+          <td style="padding-left: 16px;">
+            <strong style="color: #22271F; display: block; margin-bottom: 4px;">Confiance renforcée</strong>
+            <span style="color: #5F6B59; font-size: 14px;">Votre badge inspire confiance aux propriétaires et aux locataires</span>
+          </td>
+        </tr>
+      </table>
+    </td>
+  </tr>
+  <tr>
+    <td style="padding: 12px 0;">
+      <table cellpadding="0" cellspacing="0" border="0">
+        <tr>
+          <td style="background-color: rgba(211, 242, 110, 0.30); border-radius: 12px; padding: 10px; width: 36px; height: 36px; text-align: center; vertical-align: top;">
+            <span style="font-size: 18px;">⚡</span>
+          </td>
+          <td style="padding-left: 16px;">
+            <strong style="color: #22271F; display: block; margin-bottom: 4px;">Réservations prioritaires</strong>
+            <span style="color: #5F6B59; font-size: 14px;">Vos demandes sont traitées en priorité par les propriétaires</span>
+          </td>
+        </tr>
+      </table>
+    </td>
+  </tr>
+  <tr>
+    <td style="padding: 12px 0;">
+      <table cellpadding="0" cellspacing="0" border="0">
+        <tr>
+          <td style="background-color: rgba(211, 242, 110, 0.30); border-radius: 12px; padding: 10px; width: 36px; height: 36px; text-align: center; vertical-align: top;">
+            <span style="font-size: 18px;">🏡</span>
+          </td>
+          <td style="padding-left: 16px;">
+            <strong style="color: #22271F; display: block; margin-bottom: 4px;">Accès aux annonces premium</strong>
+            <span style="color: #5F6B59; font-size: 14px;">Certains propriétaires exigent une identité vérifiée</span>
+          </td>
+        </tr>
+      </table>
+    </td>
+  </tr>
+  {{#if isHost}}
+  <tr>
+    <td style="padding: 12px 0;">
+      <table cellpadding="0" cellspacing="0" border="0">
+        <tr>
+          <td style="background-color: rgba(211, 242, 110, 0.30); border-radius: 12px; padding: 10px; width: 36px; height: 36px; text-align: center; vertical-align: top;">
+            <span style="font-size: 18px;">💰</span>
+          </td>
+          <td style="padding-left: 16px;">
+            <strong style="color: #22271F; display: block; margin-bottom: 4px;">Retraits autorisés</strong>
+            <span style="color: #5F6B59; font-size: 14px;">Vous pouvez maintenant effectuer des retraits depuis votre portefeuille</span>
+          </td>
+        </tr>
+      </table>
+    </td>
+  </tr>
+  {{/if}}
+</table>
+
+{{#if isHost}}
+<div style="text-align: center; margin: 40px 0;">
+  <a href="{{appUrl}}/host/wallet" class="btn-action">
+    Accéder à mon portefeuille
+  </a>
+</div>
+{{else}}
+<div style="text-align: center; margin: 40px 0;">
+  <a href="{{appUrl}}/profile" class="btn-action">
+    Voir mon profil
+  </a>
+</div>
+{{/if}}
+
+<hr class="divider">
+
+<div class="info-box">
+  <p class="text" style="margin: 0 0 8px;">
+    <strong>📅 Validité du KYC</strong>
+  </p>
+  <p class="text-muted" style="margin: 0;">
+    Votre vérification est valide pour une durée de {{validityPeriod}}. Nous vous enverrons un rappel avant l'expiration pour renouveler vos documents si nécessaire.
+  </p>
+</div>
+
+<hr class="divider">
+
+<p class="text">
+  Merci de votre confiance et bienvenue dans la communauté certifiée Klef !
+</p>
+
+<p class="text" style="margin-top: 24px;">
+  Cordialement,<br>
+  <strong style="color: #14654C;">L'équipe Klef</strong>
+</p>

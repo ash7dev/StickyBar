@@ -1,0 +1,243 @@
+<h2 class="title">Votre arrivée approche ! 📅</h2>
+
+<p class="text">
+  Bonjour {{guestName}},
+</p>
+
+<p class="text">
+  Votre séjour à <strong>{{propertyTitle}}</strong> commence bientôt ! Voici toutes les informations importantes pour votre arrivée.
+</p>
+
+<div class="info-box">
+  <table width="100%" cellpadding="0" cellspacing="0" border="0">
+    <tr>
+      <td style="padding: 8px 0;">
+        <span style="color: #5F6B59; font-size: 14px;">📅 Arrivée</span>
+      </td>
+      <td style="padding: 8px 0; text-align: right;">
+        <strong style="color: #22271F; font-size: 18px;">{{checkInDate}}</strong>
+      </td>
+    </tr>
+    <tr>
+      <td style="padding: 8px 0;">
+        <span style="color: #5F6B59; font-size: 14px;">🕐 Heure de check-in</span>
+      </td>
+      <td style="padding: 8px 0; text-align: right;">
+        <strong style="color: #22271F;">{{checkInTime}}</strong>
+      </td>
+    </tr>
+    <tr>
+      <td style="padding: 8px 0;">
+        <span style="color: #5F6B59; font-size: 14px;">📍 Adresse</span>
+      </td>
+      <td style="padding: 8px 0; text-align: right;">
+        <strong style="color: #22271F;">{{propertyAddress}}</strong>
+      </td>
+    </tr>
+  </table>
+</div>
+
+<!-- Informations du propriétaire -->
+<div class="card-inverse">
+  <h3 style="font-size: 18px; font-weight: 600; color: #F8FBF4; margin: 0 0 20px;">
+    Contact du propriétaire
+  </h3>
+
+  <table width="100%" cellpadding="0" cellspacing="0" border="0">
+    <tr>
+      <td style="padding: 12px 0; border-bottom: 1px solid rgba(255, 255, 255, 0.09);">
+        <span style="color: #A8D5C1; font-size: 14px;">👤 Nom</span>
+      </td>
+      <td style="padding: 12px 0; border-bottom: 1px solid rgba(255, 255, 255, 0.09); text-align: right;">
+        <span style="color: #F8FBF4; font-weight: 600;">{{hostName}}</span>
+        {{#if hostVerified}}
+        <span style="display: inline-block; margin-left: 8px; padding: 2px 8px; background-color: rgba(201, 162, 75, 0.12); color: #DABB68; border: 1px solid rgba(201, 162, 75, 0.28); border-radius: 9999px; font-size: 11px; font-weight: 600;">
+          ✓ Vérifié
+        </span>
+        {{/if}}
+      </td>
+    </tr>
+    <tr>
+      <td style="padding: 12px 0; border-bottom: 1px solid rgba(255, 255, 255, 0.09);">
+        <span style="color: #A8D5C1; font-size: 14px;">📞 Téléphone</span>
+      </td>
+      <td style="padding: 12px 0; border-bottom: 1px solid rgba(255, 255, 255, 0.09); text-align: right;">
+        <a href="tel:{{hostPhone}}" style="color: #DFF5A4; font-weight: 600; text-decoration: none;">{{hostPhone}}</a>
+      </td>
+    </tr>
+    {{#if hostEmail}}
+    <tr>
+      <td style="padding: 12px 0;">
+        <span style="color: #A8D5C1; font-size: 14px;">📧 Email</span>
+      </td>
+      <td style="padding: 12px 0; text-align: right;">
+        <a href="mailto:{{hostEmail}}" style="color: #DFF5A4; font-weight: 600; text-decoration: none;">{{hostEmail}}</a>
+      </td>
+    </tr>
+    {{/if}}
+  </table>
+
+  <div style="margin-top: 20px; text-align: center;">
+    <a href="{{appUrl}}/messages/{{conversationId}}" style="display: inline-block; padding: 10px 20px; background-color: #D3F26E; color: #0B3D2E; text-decoration: none; border-radius: 9999px; font-weight: 600; font-size: 14px;">
+      💬 Contacter le propriétaire
+    </a>
+  </div>
+</div>
+
+<!-- Instructions d'arrivée -->
+{{#if checkInInstructions}}
+<h3 style="font-size: 18px; font-weight: 600; color: #22271F; margin: 32px 0 16px;">
+  Instructions d'arrivée
+</h3>
+
+<div class="info-box">
+  <p class="text" style="margin: 0; white-space: pre-line;">{{checkInInstructions}}</p>
+</div>
+{{/if}}
+
+<!-- Checklist avant le départ -->
+<h3 style="font-size: 18px; font-weight: 600; color: #22271F; margin: 32px 0 16px;">
+  Checklist avant le départ
+</h3>
+
+<table width="100%" cellpadding="0" cellspacing="0" border="0" style="margin: 24px 0;">
+  <tr>
+    <td style="padding: 12px 0;">
+      <table cellpadding="0" cellspacing="0" border="0">
+        <tr>
+          <td style="background-color: rgba(211, 242, 110, 0.30); border-radius: 12px; padding: 10px; width: 36px; height: 36px; text-align: center; vertical-align: top;">
+            <span style="font-size: 18px;">✓</span>
+          </td>
+          <td style="padding-left: 16px;">
+            <strong style="color: #22271F; display: block; margin-bottom: 4px;">Vérifiez votre pièce d'identité</strong>
+            <span style="color: #5F6B59; font-size: 14px;">Le propriétaire pourrait vous la demander à l'arrivée</span>
+          </td>
+        </tr>
+      </table>
+    </td>
+  </tr>
+  <tr>
+    <td style="padding: 12px 0;">
+      <table cellpadding="0" cellspacing="0" border="0">
+        <tr>
+          <td style="background-color: rgba(211, 242, 110, 0.30); border-radius: 12px; padding: 10px; width: 36px; height: 36px; text-align: center; vertical-align: top;">
+            <span style="font-size: 18px;">✓</span>
+          </td>
+          <td style="padding-left: 16px;">
+            <strong style="color: #22271F; display: block; margin-bottom: 4px;">Confirmez votre heure d'arrivée</strong>
+            <span style="color: #5F6B59; font-size: 14px;">Prévenez le propriétaire si vous arrivez plus tôt ou plus tard</span>
+          </td>
+        </tr>
+      </table>
+    </td>
+  </tr>
+  <tr>
+    <td style="padding: 12px 0;">
+      <table cellpadding="0" cellspacing="0" border="0">
+        <tr>
+          <td style="background-color: rgba(211, 242, 110, 0.30); border-radius: 12px; padding: 10px; width: 36px; height: 36px; text-align: center; vertical-align: top;">
+            <span style="font-size: 18px;">✓</span>
+          </td>
+          <td style="padding-left: 16px;">
+            <strong style="color: #22271F; display: block; margin-bottom: 4px;">Enregistrez l'adresse</strong>
+            <span style="color: #5F6B59; font-size: 14px;">Notez l'adresse exacte et les instructions d'accès</span>
+          </td>
+        </tr>
+      </table>
+    </td>
+  </tr>
+  <tr>
+    <td style="padding: 12px 0;">
+      <table cellpadding="0" cellspacing="0" border="0">
+        <tr>
+          <td style="background-color: rgba(211, 242, 110, 0.30); border-radius: 12px; padding: 10px; width: 36px; height: 36px; text-align: center; vertical-align: top;">
+            <span style="font-size: 18px;">✓</span>
+          </td>
+          <td style="padding-left: 16px;">
+            <strong style="color: #22271F; display: block; margin-bottom: 4px;">Préparez vos questions</strong>
+            <span style="color: #5F6B59; font-size: 14px;">N'hésitez pas à contacter le propriétaire pour toute information</span>
+          </td>
+        </tr>
+      </table>
+    </td>
+  </tr>
+</table>
+
+<div style="text-align: center; margin: 40px 0;">
+  <a href="{{appUrl}}/bookings/{{bookingId}}" class="btn-action">
+    Voir tous les détails
+  </a>
+</div>
+
+<!-- Détails du séjour -->
+<h3 style="font-size: 18px; font-weight: 600; color: #22271F; margin: 32px 0 16px;">
+  Récapitulatif de votre séjour
+</h3>
+
+<table class="details-table">
+  <tr>
+    <td>Référence</td>
+    <td>#{{bookingReference}}</td>
+  </tr>
+  <tr>
+    <td>Arrivée</td>
+    <td>{{checkInDate}} à {{checkInTime}}</td>
+  </tr>
+  <tr>
+    <td>Départ</td>
+    <td>{{checkOutDate}} à {{checkOutTime}}</td>
+  </tr>
+  <tr>
+    <td>Durée</td>
+    <td>{{nightCount}} nuit(s)</td>
+  </tr>
+  <tr>
+    <td>Voyageurs</td>
+    <td>{{guestCount}} personne(s)</td>
+  </tr>
+</table>
+
+<hr class="divider">
+
+<!-- Navigation GPS -->
+{{#if propertyLatitude}}
+<div class="info-box">
+  <p class="text" style="margin: 0 0 12px;">
+    <strong>📍 Navigation GPS</strong>
+  </p>
+  <p class="text-muted" style="margin: 0 0 16px;">
+    Cliquez ci-dessous pour ouvrir l'itinéraire dans votre application de navigation préférée.
+  </p>
+  <div style="text-align: center;">
+    <a href="https://www.google.com/maps/dir/?api=1&destination={{propertyLatitude}},{{propertyLongitude}}" class="btn-ghost" style="font-size: 14px; padding: 10px 20px; display: inline-block;">
+      🗺️ Ouvrir dans Google Maps
+    </a>
+  </div>
+</div>
+{{/if}}
+
+<hr class="divider">
+
+<div class="warning-box">
+  <p class="text" style="margin: 0 0 8px;">
+    <strong>⚠️ Règles de la maison</strong>
+  </p>
+  <p class="text-muted" style="margin: 0;">
+    Respectez les règles établies par le propriétaire pour garantir un séjour agréable pour tous. Vous pouvez consulter les règles complètes dans les détails de votre réservation.
+  </p>
+</div>
+
+<hr class="divider">
+
+<p class="text">
+  Nous vous souhaitons un excellent séjour ! N'hésitez pas à nous contacter si vous avez besoin d'assistance.
+</p>
+
+<p class="text" style="margin-top: 24px;">
+  Bon voyage,<br>
+  <strong style="color: #14654C;">L'équipe Klef</strong>
+</p>
+
+<p class="text-muted" style="margin-top: 32px; font-size: 12px;">
+  Support disponible 7j/7 : support@klef.com ou via l'application
+</p>

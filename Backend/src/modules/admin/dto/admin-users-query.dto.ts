@@ -16,13 +16,19 @@ export class AdminUsersQueryDto {
 
   @ApiPropertyOptional({ description: 'Filtrer les utilisateurs propriétaires uniquement' })
   @IsOptional()
-  @Transform(({ value }) => value === 'true' || value === true)
+  @Transform(({ value }) => {
+    if (value === undefined || value === null || value === '') return undefined;
+    return value === 'true' || value === true;
+  })
   @IsBoolean()
   estProprietaire?: boolean;
 
   @ApiPropertyOptional({ description: 'Filtrer les comptes actifs/bloqués' })
   @IsOptional()
-  @Transform(({ value }) => value === 'true' || value === true)
+  @Transform(({ value }) => {
+    if (value === undefined || value === null || value === '') return undefined;
+    return value === 'true' || value === true;
+  })
   @IsBoolean()
   actif?: boolean;
 

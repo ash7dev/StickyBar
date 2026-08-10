@@ -1,4 +1,4 @@
-import { Body, Controller, Delete, Param, Patch, Post, UseGuards } from '@nestjs/common';
+import { Body, Controller, Delete, Get, Param, Patch, Post, UseGuards } from '@nestjs/common';
 import { ApiBearerAuth, ApiOperation, ApiParam, ApiTags } from '@nestjs/swagger';
 import { JwtAuthGuard } from '../../shared/guards/jwt-auth.guard';
 import { RolesGuard } from '../../shared/guards/roles.guard';
@@ -14,6 +14,12 @@ import { CreateEquipementDto, UpdateEquipementDto } from './dto/admin-equipement
 @Controller('admin/equipements')
 export class AdminEquipementsController {
   constructor(private readonly service: AdminEquipementsService) {}
+
+  @Get()
+  @ApiOperation({ summary: 'Lister tous les équipements du référentiel' })
+  findAll() {
+    return this.service.findAll();
+  }
 
   @Post()
   @ApiOperation({ summary: 'Ajouter un nouvel équipement au référentiel' })

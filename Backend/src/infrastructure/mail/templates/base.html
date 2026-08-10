@@ -1,0 +1,476 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <title>{{subject}}</title>
+  <!--[if mso]>
+  <style type="text/css">
+    body, table, td {font-family: Arial, Helvetica, sans-serif !important;}
+  </style>
+  <![endif]-->
+  <style>
+    /* ═══════════════════════════════════════════════════════════════════════════
+       Klef — Email Design System
+       Couleurs extraites de globals.css
+       ═══════════════════════════════════════════════════════════════════════════ */
+
+    /* Reset */
+    body {
+      margin: 0;
+      padding: 0;
+      -webkit-text-size-adjust: 100%;
+      -ms-text-size-adjust: 100%;
+    }
+
+    table {
+      border-collapse: collapse;
+      mso-table-lspace: 0pt;
+      mso-table-rspace: 0pt;
+    }
+
+    img {
+      border: 0;
+      height: auto;
+      line-height: 100%;
+      outline: none;
+      text-decoration: none;
+      -ms-interpolation-mode: bicubic;
+    }
+
+    /* Couleurs Klef */
+    :root {
+      /* Forest */
+      --forest-50: #ECF6F1;
+      --forest-100: #D2EADF;
+      --forest-200: #A8D5C1;
+      --forest-300: #77BB9E;
+      --forest-400: #479C79;
+      --forest-500: #22805D;
+      --forest-600: #14654C;
+      --forest-700: #0F503D;
+      --forest-800: #0B3D2E;
+      --forest-900: #072A20;
+      --forest-950: #041912;
+
+      /* Lime */
+      --lime-50: #F7FCE9;
+      --lime-100: #EEF9CE;
+      --lime-200: #E4F7B8;
+      --lime-300: #DFF5A4;
+      --lime-400: #D3F26E;
+      --lime-500: #BCE04A;
+      --lime-600: #9BC22C;
+      --lime-700: #74941C;
+      --lime-800: #556D15;
+      --lime-900: #3A4A0E;
+
+      /* Gold */
+      --gold-50: #FBF6E9;
+      --gold-100: #F4E9CB;
+      --gold-200: #E9D398;
+      --gold-300: #DABB68;
+      --gold-400: #C9A24B;
+      --gold-500: #A88336;
+      --gold-600: #856527;
+      --gold-700: #63491B;
+      --gold-800: #423110;
+
+      /* Neutral */
+      --neutral-0: #FFFFFF;
+      --neutral-50: #F8FBF4;
+      --neutral-100: #F1F6EA;
+      --neutral-200: #E4EBDB;
+      --neutral-300: #CDD6C3;
+      --neutral-400: #A3AE99;
+      --neutral-500: #7D8975;
+      --neutral-600: #5F6B59;
+      --neutral-700: #475041;
+      --neutral-800: #333A2F;
+      --neutral-900: #22271F;
+      --neutral-950: #141812;
+
+      /* Sémantiques */
+      --success-50: #E9F6EC;
+      --success-500: #2E9E52;
+      --success-600: #1F7D3E;
+      --success-700: #175E2F;
+
+      --warning-50: #FDF4E3;
+      --warning-500: #D99A22;
+      --warning-600: #B47B14;
+      --warning-700: #8A5D0E;
+
+      --error-50: #FBEDEB;
+      --error-500: #D64B3C;
+      --error-600: #B33628;
+      --error-700: #8A281D;
+
+      --info-50: #E9F2F5;
+      --info-500: #3A7D95;
+      --info-600: #2A6076;
+      --info-700: #1E4757;
+    }
+
+    /* Styles globaux */
+    .body {
+      background-color: #F8FBF4;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Helvetica Neue', Arial, sans-serif;
+      -webkit-font-smoothing: antialiased;
+      font-size: 16px;
+      line-height: 1.5;
+      margin: 0;
+      padding: 0;
+    }
+
+    .container {
+      max-width: 600px;
+      margin: 0 auto;
+      padding: 20px;
+    }
+
+    .content {
+      background-color: #FFFFFF;
+      border-radius: 20px;
+      overflow: hidden;
+      box-shadow: 0 4px 16px rgba(20, 24, 18, 0.06), 0 1px 3px rgba(20, 24, 18, 0.04);
+    }
+
+    /* Header avec dégradé */
+    .header {
+      background: linear-gradient(165deg, #FBFCF7 0%, #FFFFFF 55%);
+      padding: 40px 32px 32px;
+      text-align: center;
+      border-bottom: 1px solid #E4EBDB;
+    }
+
+    .logo {
+      font-family: Georgia, serif;
+      font-size: 32px;
+      font-weight: 600;
+      color: #14654C;
+      margin: 0;
+      letter-spacing: -0.015em;
+    }
+
+    /* Corps du message */
+    .main-content {
+      padding: 40px 32px;
+      color: #22271F;
+    }
+
+    .title {
+      font-family: Georgia, serif;
+      font-size: 24px;
+      font-weight: 600;
+      color: #22271F;
+      margin: 0 0 16px;
+      letter-spacing: -0.015em;
+      line-height: 1.18;
+    }
+
+    .text {
+      font-size: 16px;
+      line-height: 1.5;
+      color: #22271F;
+      margin: 0 0 16px;
+    }
+
+    .text-muted {
+      color: #5F6B59;
+      font-size: 14px;
+      line-height: 1.5;
+    }
+
+    /* Boutons */
+    .btn-action {
+      display: inline-block;
+      padding: 14px 28px;
+      background-color: #D3F26E;
+      color: #0B3D2E !important;
+      text-decoration: none;
+      border-radius: 9999px;
+      font-weight: 600;
+      font-size: 16px;
+      border: 1px solid rgba(122, 158, 26, 0.30);
+      box-shadow: 0 6px 20px rgba(155, 194, 44, 0.30);
+      margin: 24px 0;
+    }
+
+    .btn-primary {
+      display: inline-block;
+      padding: 14px 28px;
+      background-color: #14654C;
+      color: #FFFFFF !important;
+      text-decoration: none;
+      border-radius: 9999px;
+      font-weight: 600;
+      font-size: 16px;
+      margin: 24px 0;
+    }
+
+    .btn-ghost {
+      display: inline-block;
+      padding: 14px 28px;
+      background-color: #FFFFFF;
+      color: #22271F !important;
+      text-decoration: none;
+      border-radius: 9999px;
+      font-weight: 600;
+      font-size: 16px;
+      border: 1px solid #E4EBDB;
+      margin: 24px 0;
+    }
+
+    /* Card inversée (sombre) */
+    .card-inverse {
+      background: linear-gradient(180deg, #072A20 0%, #041912 100%);
+      color: #F1F6EA;
+      border-radius: 20px;
+      padding: 32px;
+      margin: 24px 0;
+    }
+
+    .card-inverse .title {
+      color: #F8FBF4;
+    }
+
+    .card-inverse .text {
+      color: #A8D5C1;
+    }
+
+    /* Info box */
+    .info-box {
+      background-color: #F8FBF4;
+      border-left: 4px solid #14654C;
+      border-radius: 12px;
+      padding: 20px;
+      margin: 24px 0;
+    }
+
+    .success-box {
+      background-color: #E9F6EC;
+      border-left: 4px solid #2E9E52;
+      border-radius: 12px;
+      padding: 20px;
+      margin: 24px 0;
+    }
+
+    .warning-box {
+      background-color: #FDF4E3;
+      border-left: 4px solid #D99A22;
+      border-radius: 12px;
+      padding: 20px;
+      margin: 24px 0;
+    }
+
+    .error-box {
+      background-color: #FBEDEB;
+      border-left: 4px solid #D64B3C;
+      border-radius: 12px;
+      padding: 20px;
+      margin: 24px 0;
+    }
+
+    /* Badge vérifié */
+    .badge-verified {
+      display: inline-block;
+      padding: 4px 12px;
+      background-color: #FBF6E9;
+      color: #63491B;
+      border: 1px solid #E9D398;
+      border-radius: 9999px;
+      font-size: 13px;
+      font-weight: 600;
+      margin: 8px 0;
+    }
+
+    /* Tableau de détails */
+    .details-table {
+      width: 100%;
+      border-collapse: collapse;
+      margin: 24px 0;
+    }
+
+    .details-table td {
+      padding: 12px 0;
+      border-bottom: 1px solid #E4EBDB;
+    }
+
+    .details-table td:first-child {
+      color: #5F6B59;
+      font-weight: 600;
+      width: 40%;
+    }
+
+    .details-table td:last-child {
+      color: #22271F;
+      text-align: right;
+    }
+
+    .details-table tr:last-child td {
+      border-bottom: none;
+    }
+
+    /* Montant en valeur */
+    .amount {
+      font-size: 28px;
+      font-weight: 600;
+      color: #14654C;
+      font-variant-numeric: tabular-nums;
+      font-feature-settings: "tnum";
+      margin: 16px 0;
+    }
+
+    /* Divider */
+    .divider {
+      height: 1px;
+      background-color: #E4EBDB;
+      margin: 32px 0;
+      border: none;
+    }
+
+    /* Footer */
+    .footer {
+      background-color: #F8FBF4;
+      padding: 32px;
+      text-align: center;
+      border-top: 1px solid #E4EBDB;
+    }
+
+    .footer-text {
+      color: #5F6B59;
+      font-size: 14px;
+      line-height: 1.5;
+      margin: 8px 0;
+    }
+
+    .footer-links {
+      margin: 16px 0;
+    }
+
+    .footer-link {
+      color: #14654C;
+      text-decoration: none;
+      font-size: 14px;
+      margin: 0 12px;
+    }
+
+    .social-links {
+      margin: 20px 0 0;
+    }
+
+    .social-link {
+      display: inline-block;
+      margin: 0 8px;
+    }
+
+    /* Responsive */
+    @media only screen and (max-width: 600px) {
+      .container {
+        padding: 10px !important;
+      }
+
+      .main-content {
+        padding: 24px 20px !important;
+      }
+
+      .header {
+        padding: 24px 20px 20px !important;
+      }
+
+      .footer {
+        padding: 24px 20px !important;
+      }
+
+      .title {
+        font-size: 20px !important;
+      }
+
+      .amount {
+        font-size: 24px !important;
+      }
+
+      .btn-action,
+      .btn-primary,
+      .btn-ghost {
+        display: block !important;
+        width: 100% !important;
+        box-sizing: border-box;
+      }
+    }
+
+    /* Dark mode support */
+    @media (prefers-color-scheme: dark) {
+      .body {
+        background-color: #041912 !important;
+      }
+
+      .content {
+        background-color: #072A20 !important;
+      }
+
+      .title,
+      .text {
+        color: #F1F6EA !important;
+      }
+
+      .text-muted {
+        color: #A8D5C1 !important;
+      }
+
+      .footer {
+        background-color: #041912 !important;
+      }
+    }
+  </style>
+</head>
+<body class="body">
+  <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
+    <tr>
+      <td align="center" style="padding: 20px 0;">
+        <table class="container" role="presentation" width="600" cellpadding="0" cellspacing="0" border="0">
+          <tr>
+            <td>
+              <table class="content" role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
+                <!-- Header -->
+                <tr>
+                  <td class="header">
+                    <h1 class="logo">Klef</h1>
+                  </td>
+                </tr>
+
+                <!-- Main Content -->
+                <tr>
+                  <td class="main-content">
+                    {{content}}
+                  </td>
+                </tr>
+
+                <!-- Footer -->
+                <tr>
+                  <td class="footer">
+                    <p class="footer-text">
+                      Vous recevez cet email car vous avez un compte sur Klef.
+                    </p>
+                    <div class="footer-links">
+                      <a href="{{appUrl}}/help" class="footer-link">Centre d'aide</a>
+                      <a href="{{appUrl}}/contact" class="footer-link">Nous contacter</a>
+                      <a href="{{appUrl}}/privacy" class="footer-link">Confidentialité</a>
+                    </div>
+                    <p class="footer-text" style="margin-top: 24px;">
+                      © {{year}} Klef. Tous droits réservés.<br>
+                      Klef SAS — Abidjan, Côte d'Ivoire
+                    </p>
+                  </td>
+                </tr>
+              </table>
+            </td>
+          </tr>
+        </table>
+      </td>
+    </tr>
+  </table>
+</body>
+</html>

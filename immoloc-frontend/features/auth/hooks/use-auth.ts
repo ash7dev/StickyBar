@@ -30,11 +30,11 @@ const AUTH_PAGES = ['/login', '/register', '/complete-profile', '/verify'];
 
 // Retourne `next` si c'est un chemin interne sûr, sinon le fallback selon le rôle.
 function resolveRedirect(user: AuthTokensResponse['user'], next?: string | null): string {
+  if (user.activeRole === 'ADMIN' || user.email?.toLowerCase().endsWith('@admin.com')) {
+    return '/admin/dashboard';
+  }
   if (next && next.startsWith('/') && !next.startsWith('//')) {
     if (!AUTH_PAGES.includes(next.split('?')[0])) return next;
-  }
-  if (user.activeRole === 'ADMIN') {
-    return '/admin/dashboard';
   }
   if (user.activeRole === 'PROPRIETAIRE') {
     return user.hasAnnonce ? '/dashboard' : '/become-host';

@@ -4,6 +4,7 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useEffect, useRef, useState } from 'react';
 import {
+  Home,
   LayoutDashboard,
   ShieldCheck,
   Building2,
@@ -19,6 +20,9 @@ import {
   LogOut,
   ArrowLeft,
   ExternalLink,
+  UserCheck,
+  TrendingUp,
+  Headphones,
 } from 'lucide-react';
 import { cn } from '@/lib/utils/cn';
 import { useCurrentUser } from '@/hooks/use-current-user';
@@ -42,6 +46,7 @@ const ADMIN_NAV_GROUPS: NavGroup[] = [
     title: 'Vue d’ensemble',
     items: [
       { href: '/admin/dashboard', label: 'Tableau de bord', icon: LayoutDashboard, exact: true },
+      { href: '/admin/statistiques', label: 'Revenus & Stats Klef', icon: TrendingUp },
     ],
   },
   {
@@ -50,13 +55,17 @@ const ADMIN_NAV_GROUPS: NavGroup[] = [
       { href: '/admin/kyc', label: 'Vérification KYC', icon: ShieldCheck },
       { href: '/admin/annonces', label: 'Modération Annonces', icon: Building2 },
       { href: '/admin/litiges', label: 'Litiges & Arbitrage', icon: Scale },
+      { href: '/admin/support', label: 'Tickets & Assistance', icon: Headphones },
       { href: '/admin/avis', label: 'Modération Avis', icon: Star },
     ],
   },
   {
     title: 'Gestion & Supervision',
     items: [
-      { href: '/admin/utilisateurs', label: 'Utilisateurs & Hôtes', icon: Users },
+      { href: '/admin/utilisateurs', label: 'Tous les Utilisateurs', icon: Users, exact: true },
+      { href: '/admin/hotes', label: 'Hôtes & Propriétaires', icon: Home },
+      { href: '/admin/locataires', label: 'Locataires & Voyageurs', icon: UserCheck },
+      { href: '/admin/logements', label: 'Tous les Logements', icon: Building2 },
       { href: '/admin/reservations', label: 'Réservations', icon: CalendarDays },
       { href: '/admin/finances', label: 'Retraits & Finances', icon: Wallet },
     ],

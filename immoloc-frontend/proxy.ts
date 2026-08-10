@@ -101,6 +101,13 @@ export async function proxy(request: NextRequest) {
   // Si l'utilisateur est déjà connecté, le rediriger hors des pages d'authentification
   if (AUTH_ROUTES.some(route => pathname.startsWith(route))) {
     if (user) {
+      const isAdmin = user.email?.toLowerCase().endsWith('@admin.com') ||
+                      user.app_metadata?.role === 'ADMIN' ||
+                      user.user_metadata?.role === 'ADMIN';
+      if (isAdmin) {
+        return NextResponse.redirect(new URL('/admin/dashboard', request.url));
+      }
+
       // Si un paramètre 'next' existe, rediriger vers cette URL
       const next = searchParams.get('next');
       if (next && next.startsWith('/') && !next.startsWith('//')) {
