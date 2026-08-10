@@ -212,16 +212,16 @@ export class SystemLedgerService {
         where: { type: 'DEBIT_PENALITE' },
         _sum: { montant: true },
       }),
-      this.prisma.reservation.aggregate({
-        where: { subventionKlef: { gt: 0 } },
-        _sum: { subventionKlef: true },
+      this.prisma.terangaAccount.aggregate({
+        _sum: { soldeCoins: true },
       }),
     ]);
 
     const realSequestre = Number(pendingEscrowDeposit._sum.montantAcompte || 0) + Number(pendingEscrowFull._sum.totalLocataire || 0) + Number(ledger.soldeSequestre);
     const realCommissions = Number(checkedInCommissions._sum.montantCommission || 0) + Number(totalPenalties._sum.montant || 0) + Number(ledger.soldeCommissionsCumulees);
     const INITIAL_POOL = 10000000;
-    const realPool = INITIAL_POOL - Number(totalSubventions._sum.subventionKlef || 0);
+    const activeUserCoins = Number(totalSubventions._sum.soldeCoins || 0);
+    const realPool = INITIAL_POOL - activeUserCoins;
 
     return {
       soldeSequestre: Math.max(0, realSequestre),
