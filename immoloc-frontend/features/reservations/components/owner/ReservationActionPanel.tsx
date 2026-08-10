@@ -997,6 +997,12 @@ export function ReservationActionPanel({ id, res, onRefetch }: Props) {
           {/* ══ CHECKED_IN ══ */}
           {statut === 'CHECKED_IN' && (
             <>
+              {/* Notice spéciale si auto-checkin système */}
+              {res.historique?.some((h) => h.modifiePar === 'SYSTEM_AUTO_CHECKIN') && (
+                <Notice tone="forest" icon={CheckCircle2} title="⚡ Check-in validé automatiquement par le système (H+6)">
+                  6 heures se sont écoulées après l'heure d'arrivée sans action ni litige. Le séjour a été activé automatiquement et votre portefeuille a été crédité du montant net de la réservation.
+                </Notice>
+              )}
               {checkedInSub === 'locked' && (
                 <Notice
                   tone="neutral"

@@ -8,6 +8,7 @@ import {
 import { StatutReservation, StatutPaiement } from '@prisma/client';
 import { PrismaService } from '../../../infrastructure/prisma/prisma.service';
 import { ReservationStateMachine } from '../reservation.state-machine';
+import { NotificationsService } from '../../../modules/notifications/notifications.service';
 
 @Injectable()
 export class CheckInRefuseUseCase {
@@ -16,6 +17,7 @@ export class CheckInRefuseUseCase {
   constructor(
     private readonly prisma: PrismaService,
     private readonly stateMachine: ReservationStateMachine,
+    private readonly notifications: NotificationsService,
   ) {}
 
   async execute(reservationId: string, userId: string, motif: string, commentaire: string) {
@@ -64,9 +66,16 @@ export class CheckInRefuseUseCase {
 
       this.logger.warn(`Check-in REFUSÉ pour la réservation [${reservationId}]. Statut: DISPUTED. Admin notifié.`);
 
-      // TODO: Notification Admin pour arbitrage
-      
+      // Notification au propriétaire : check-in refusé, fonds gelés
+      this.notifications.sendReservationPush(
+        reservation.proprietaireId,
+        '⚠️ Check-in refusé par le locataire',
+        `Le locataire a refusé l'état des lieux d'entrée (motif : ${motif}). Vos fonds sont temporairement gelés. Notre équipe va examiner la situation.`,
+        `/dashboard/reservations/${reservationId}`,
+      ).catch(() => {});
+
       return updated;
     });
   }
 }
+

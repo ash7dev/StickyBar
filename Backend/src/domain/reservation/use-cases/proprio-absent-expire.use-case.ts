@@ -4,6 +4,7 @@ import { PrismaService } from '../../../infrastructure/prisma/prisma.service';
 import { ReservationStateMachine } from '../reservation.state-machine';
 import { RefundPaymentUseCase } from '../../payment/use-cases/refund-payment.use-case';
 import { RedisService } from '../../../infrastructure/redis/redis.service';
+import { NotificationsService } from '../../../modules/notifications/notifications.service';
 
 @Injectable()
 export class ProprioAbsentExpireUseCase {
@@ -14,6 +15,7 @@ export class ProprioAbsentExpireUseCase {
     private readonly stateMachine: ReservationStateMachine,
     private readonly refundPayment: RefundPaymentUseCase,
     private readonly redis: RedisService,
+    private readonly notifications: NotificationsService,
   ) {}
 
   async execute(reservationId: string) {
@@ -118,6 +120,22 @@ export class ProprioAbsentExpireUseCase {
     // Déclencher le remboursement financier réel après la TX
     await this.refundPayment.execute(reservationId);
 
+    // Notifier les deux parties
+    this.notifications.sendReservationPush(
+      reservation.locataireId,
+      '🔄 Réservation annulée — Remboursement en cours',
+      'Le propriétaire est resté injoignable pendant plus de 2h. Votre réservation a été annulée et un remboursement intégral est en cours.',
+      `/reservations/${reservationId}`,
+    ).catch(() => {});
+
+    this.notifications.sendReservationPush(
+      reservation.proprietaireId,
+      '🚫 Absence confirmée — Pénalité appliquée',
+      'Vous n\'avez pas répondu dans le délai de 2h après le signalement du locataire. La réservation a été annulée, le locataire remboursé, et une pénalité de 10 000 FCFA a été appliquée.',
+      `/dashboard/reservations/${reservationId}`,
+    ).catch(() => {});
+
     return result;
   }
 }
+

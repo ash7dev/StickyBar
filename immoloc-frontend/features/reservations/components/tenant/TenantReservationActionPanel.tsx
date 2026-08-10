@@ -450,10 +450,16 @@ export function TenantReservationActionPanel({ id, res, onRefetch }: Props) {
 
           {hasTenantCheckin && statut !== 'COMPLETED' && (
             <>
-              <Notice tone="forest" icon={CheckCircle2} title="Séjour en cours">
-                Votre arrivée a été validée. Votre séjour reste couvert par l’assistance et la
-                garantie Klef.
-              </Notice>
+              {res.historique?.some((h) => h.modifiePar === 'SYSTEM_AUTO_CHECKIN') ? (
+                <Notice tone="warning" icon={CheckCircle2} title="⚡ Check-in automatique par le système (H+6)">
+                  Ce séjour a été activé automatiquement car 6 heures se sont écoulées après l’heure d’arrivée sans action ni litige. L’acompte sous séquestre a été transmis au propriétaire pour valider votre accès.
+                </Notice>
+              ) : (
+                <Notice tone="forest" icon={CheckCircle2} title="Séjour en cours">
+                  Votre arrivée a été validée. Votre séjour reste couvert par l’assistance et la
+                  garantie Klef.
+                </Notice>
+              )}
 
               {hasPhotos && galleryButton(
                 'Voir l’état des lieux d’entrée',

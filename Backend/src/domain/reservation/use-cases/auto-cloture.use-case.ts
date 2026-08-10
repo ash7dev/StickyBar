@@ -3,6 +3,7 @@ import { StatutReservation } from '@prisma/client';
 import { PrismaService } from '../../../infrastructure/prisma/prisma.service';
 import { ReservationStateMachine } from '../reservation.state-machine';
 import { QueueService } from '../../../infrastructure/queue/queue.service';
+import { NotificationsService } from '../../../modules/notifications/notifications.service';
 
 @Injectable()
 export class AutoClotureUseCase {
@@ -12,6 +13,7 @@ export class AutoClotureUseCase {
     private readonly prisma: PrismaService,
     private readonly stateMachine: ReservationStateMachine,
     private readonly queue: QueueService,
+    private readonly notifications: NotificationsService,
   ) {}
 
   async execute(reservationId: string) {
@@ -49,6 +51,22 @@ export class AutoClotureUseCase {
     // Ouvrir la fenêtre d'avis 7 jours après la clôture
     await this.queue.scheduleFenetreAvis(reservationId, new Date());
 
+    // Notifier les deux parties
+    this.notifications.sendReservationPush(
+      reservation.proprietaireId,
+      'Séjour terminé — versement effectué ✅',
+      'La réservation a été clôturée automatiquement. Le versement a été crédité sur votre portefeuille. Vous avez 7 jours pour laisser un avis sur le locataire.',
+      `/dashboard/reservations/${reservationId}`,
+    ).catch(() => {});
+
+    this.notifications.sendReservationPush(
+      reservation.locataireId,
+      'Séjour terminé 🏠',
+      'Votre réservation est clôturée. Merci pour votre confiance ! Vous avez 7 jours pour laisser un avis sur le logement et le propriétaire.',
+      `/reservations/${reservationId}`,
+    ).catch(() => {});
+
     this.logger.log(`Réservation [${reservationId}] clôturée automatiquement par le système`);
   }
 }
+

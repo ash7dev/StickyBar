@@ -112,16 +112,18 @@ export class AutoCheckinUseCase {
     // Programmer l'auto-clôture à dateFin + 24h
     await this.queue.scheduleAutoClose(reservationId, reservation.dateFin);
 
-    // Notifier les deux parties
+    // Notifier les deux parties avec explications claires
     await this.queue.enqueueNotification(reservation.proprietaireId, 'AUTO_CHECKIN_SYSTEME', {
       reservationId,
       logementId: reservation.logementId,
-      message: 'Le check-in a été validé automatiquement par le système.',
+      title: '🔑 Check-in automatique validé',
+      message: 'Aucune action ni litige n\'ayant été signalé 6h après l\'heure d\'arrivée, le séjour a été activé automatiquement. Votre portefeuille a été crédité du montant net.',
     });
     await this.queue.enqueueNotification(reservation.locataireId, 'AUTO_CHECKIN_SYSTEME', {
       reservationId,
       logementId: reservation.logementId,
-      message: 'Le check-in a été validé automatiquement par le système.',
+      title: '🔑 Séjour activé automatiquement (Auto-Checkin)',
+      message: 'Aucun problème n\'ayant été signalé 6h après l\'heure d\'arrivée, votre réservation est passée en mode séjour actif et l\'acompte sous séquestre a été transmis au propriétaire pour valider l\'accès.',
     });
 
     this.logger.log(

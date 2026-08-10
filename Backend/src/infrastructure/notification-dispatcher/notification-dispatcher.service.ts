@@ -158,6 +158,10 @@ function buildMessage(
       title: 'Check-in validé',
       text: `Votre check-in au "${p('logementTitre')}" est confirmé. Bon séjour !`,
     },
+    AUTO_CHECKIN_SYSTEME: {
+      title: p('title', '🔑 Check-in automatique validé'),
+      text: p('message', 'Le check-in a été validé automatiquement par le système 6h après l\'heure d\'arrivée.'),
+    },
     CHECKOUT_VALIDE: {
       title: 'Checkout confirmé',
       text: `Le checkout de votre séjour au "${p('logementTitre')}" est confirmé. Merci pour votre confiance !`,
