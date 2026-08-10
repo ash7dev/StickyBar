@@ -13,6 +13,7 @@ import type { ReservationDetail } from '@/lib/nestjs/types';
 import { CheckinGalleryModal } from './CheckinGalleryModal';
 import { RefuseCheckInModal } from './RefuseCheckInModal';
 import { DigitalWelcomeGuideModal } from './DigitalWelcomeGuideModal';
+import { TerangaRewardModal } from '@/features/teranga-club/components/TerangaRewardModal';
 import {
   Modal, Notice, Feedback, PrimaryButton, GhostButton, DangerButton,
   RefundScale, StarRating, useNow, resolveRefundTier, MOTIF_MIN, type Tone,
@@ -53,6 +54,7 @@ export function TenantReservationActionPanel({ id, res, onRefetch }: Props) {
   const [showRefuseModal, setShowRefuseModal] = useState(false);
   const [showAbsentModal, setShowAbsentModal] = useState(false);
   const [showCancelModal, setShowCancelModal] = useState(false);
+  const [showRewardModal, setShowRewardModal] = useState(false);
 
   const [cancelReason, setCancelReason] = useState('');
   const [rating, setRating] = useState(0);
@@ -117,6 +119,7 @@ export function TenantReservationActionPanel({ id, res, onRefetch }: Props) {
 
   const handleConfirmCheckin = () => run(async () => {
     await nestFetch(NEST_API.RESERVATIONS.CONFIRM_CHECKIN(id), { method: 'POST' });
+    setShowRewardModal(true);
   }, 'Check-in validé. Bon séjour !');
 
   const handleReportAbsent = () => {
@@ -705,6 +708,14 @@ export function TenantReservationActionPanel({ id, res, onRefetch }: Props) {
             </PrimaryButton>
           </div>
         </Modal>
+      )}
+
+      {showRewardModal && (
+        <TerangaRewardModal
+          isOpen={showRewardModal}
+          onClose={() => setShowRewardModal(false)}
+          earnedCoins={Math.round((res.totalLocataire ?? 0) * 0.015)}
+        />
       )}
     </>
   );

@@ -10,6 +10,13 @@ function TransactionRow({ tx }: { tx: WalletTransaction }) {
   const meta = getTransactionMeta(tx.type, tx.sens);
   const isCredit = tx.sens === 'CREDIT';
 
+  // Déterminer le mode de paiement (Acompte vs Totalité)
+  const rawType = tx.reservation?.typePaiement?.toUpperCase() ?? '';
+  const desc = tx.description ?? '';
+  const isDeposit = rawType === 'DEPOSIT' || desc.toLowerCase().includes('acompte');
+  const isFull = rawType === 'FULL' || desc.toLowerCase().includes('totalité') || desc.toLowerCase().includes('totalite');
+  const isRentalCredit = tx.type === 'CREDIT_LOCATION';
+
   return (
     <div className="flex items-start gap-3 py-3.5 border-b border-border last:border-0 hover:bg-background-alt/60 -mx-2 px-3 rounded-inner transition-colors">
       {/* Icône sens */}
@@ -31,10 +38,25 @@ function TransactionRow({ tx }: { tx: WalletTransaction }) {
             <span className="text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-pill border bg-background-alt border-border text-foreground-muted">
               {tx.type.replace('_', ' ')}
             </span>
+            {isRentalCredit && isDeposit && (
+              <span className="text-[10px] font-extrabold uppercase tracking-wider px-2.5 py-0.5 rounded-pill border bg-warning-500/15 border-warning-500/30 text-warning-700 dark:text-warning-400">
+                Acompte (DEPOSIT)
+              </span>
+            )}
+            {isRentalCredit && isFull && (
+              <span className="text-[10px] font-extrabold uppercase tracking-wider px-2.5 py-0.5 rounded-pill border bg-success-500/15 border-success-500/30 text-success-700 dark:text-success-400">
+                Totalité (FULL)
+              </span>
+            )}
           </div>
           {tx.description && (
             <p className="text-xs text-foreground-muted truncate">{tx.description}</p>
           )}
+          {isRentalCredit && isDeposit && tx.reservation?.montantSoldeRestant ? (
+            <p className="text-[11px] font-medium text-warning-700 dark:text-warning-400 mt-0.5">
+              💡 Reste à percevoir sur place : {formatFCFA(Number(tx.reservation.montantSoldeRestant))} FCFA (espèces)
+            </p>
+          ) : null}
           <p className="text-[11px] text-foreground-faint mt-0.5">
             {new Date(tx.creeLe).toLocaleDateString('fr-FR', {
               day: 'numeric', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit',

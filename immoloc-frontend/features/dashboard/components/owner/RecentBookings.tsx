@@ -4,7 +4,7 @@ import Image from 'next/image';
 import Link from 'next/link';
 import { ArrowRight, Calendar, ChevronRight, ImageOff, Inbox } from 'lucide-react';
 import { cn } from '@/lib/utils/cn';
-import { netHost, STATUT_CFG_LIGHT } from '@/lib/dashboard/owner-tokens';
+import { STATUT_CFG_LIGHT } from '@/lib/dashboard/owner-tokens';
 
 const nf = new Intl.NumberFormat('fr-FR', { maximumFractionDigits: 0 });
 const fmtDate = (d: string) =>
@@ -16,6 +16,7 @@ interface Booking {
   dateFin: string;
   nbNuits?: number;
   totalLocataire: number;
+  netProprietaire: number;
   statut: string;
   locataire: { prenom?: string | null; nom?: string | null; avatarUrl?: string | null };
   // photos: any[] etait typé any.
@@ -96,7 +97,7 @@ function Row({ booking }: { booking: Booking }) {
             differents pour la meme ligne selon l'ecran.
           */}
           <span className="block text-sm font-semibold tabular-nums text-forest-900">
-            {nf.format(netHost(booking.totalLocataire))}
+            {nf.format(booking.netProprietaire)}
           </span>
           <span className="block text-[0.6875rem] text-foreground-faint">FCFA net</span>
         </span>

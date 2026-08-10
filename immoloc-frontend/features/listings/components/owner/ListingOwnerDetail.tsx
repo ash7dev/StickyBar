@@ -20,7 +20,7 @@ import { NEST_API } from '@/lib/nestjs/endpoints';
 import { cn } from '@/lib/utils/cn';
 import {
   buildDonutPath, buildMonthlyRevenue, CAT_LABELS, catRank, DONUT_SEGMENTS,
-  fcfa, fmtDateShort, fmtNote, netHost, STATUT_CFG, trendPercent, TYPE_LABELS,
+  fcfa, fmtDateShort, fmtNote, STATUT_CFG, trendPercent, TYPE_LABELS,
 } from '@/lib/dashboard/owner-tokens';
 
 const CAT_ICONS: Record<string, typeof Armchair> = {
@@ -51,7 +51,7 @@ function RevenueCard({ revenue, reservations }: { revenue: number; reservations:
     const matching = reservations.filter((r) => r.statut === s.key);
     return {
       ...s,
-      value: matching.reduce((sum, r) => sum + netHost(r.totalLocataire), 0),
+      value: matching.reduce((sum, r) => sum + Number(r.netProprietaire ?? r.totalLocataire ?? 0), 0),
       count: matching.length,
     };
   }).filter((s) => s.value > 0);
@@ -772,7 +772,7 @@ export function ListingOwnerDetail({ listing }: { listing: ListingDetail }) {
 
   const revenue = reservations
     .filter((r) => ['COMPLETED', 'CHECKED_IN', 'CONFIRMED', 'PAID'].includes(r.statut))
-    .reduce((sum, r) => sum + netHost(r.totalLocataire), 0);
+    .reduce((sum, r) => sum + Number(r.netProprietaire ?? r.totalLocataire ?? 0), 0);
 
   const specs = [
     { icon: Bed, value: listing.nombreChambres, label: listing.nombreChambres > 1 ? 'chambres' : 'chambre' },
@@ -1037,7 +1037,7 @@ export function ListingOwnerDetail({ listing }: { listing: ListingDetail }) {
                   <div className="flex shrink-0 items-center gap-3">
                     <span className="hidden text-right sm:block">
                       <span className="block text-sm font-semibold tabular-nums text-neutral-50">
-                        {fcfa(netHost(r.totalLocataire))}
+                        {fcfa(Number(r.netProprietaire ?? r.totalLocataire ?? 0))}
                       </span>
                       <span className="block text-[0.6875rem] text-forest-200">FCFA</span>
                     </span>

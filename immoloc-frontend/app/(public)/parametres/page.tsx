@@ -18,6 +18,7 @@ import { ProfileKycCard }     from '@/features/profile/components/ProfileKycCard
 import { ProfileActionsCard } from '@/features/profile/components/ProfileActionsCard';
 import { ParametresSkeleton } from '@/features/profile/components/ParametresSkeleton';
 import { PushNotificationWidget } from '@/components/pwa/PushNotificationWidget';
+import { TerangaClubWidgetCard } from '@/features/teranga-club/components/TerangaClubWidgetCard';
 
 function ParametresContent() {
   const store       = useRoleStore();
@@ -108,6 +109,7 @@ function ParametresContent() {
               onKycClick={() => setGateOpen(true)}
             />
             <div className="lg:col-span-2 space-y-6">
+              <TerangaClubWidgetCard />
               <PushNotificationWidget userId={user.id} />
               <ProfileActionsCard user={user} />
             </div>

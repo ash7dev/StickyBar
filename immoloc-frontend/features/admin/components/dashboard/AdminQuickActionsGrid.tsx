@@ -1,84 +1,117 @@
 'use client';
 
 import Link from 'next/link';
-import { Megaphone, Star, RefreshCw, CreditCard, Sliders, ArrowUpRight } from 'lucide-react';
+import { Megaphone, Star, RefreshCw, CreditCard, Sliders, ArrowUpRight, ShieldAlert } from 'lucide-react';
 import { cn } from '@/lib/utils/cn';
 
-export function AdminQuickActionsGrid() {
-  const actions = [
-    {
-      title: 'Diffusion Broadcast',
-      description: 'Envoyer une notification Push/SMS groupée à tous les hôtes ou voyageurs',
-      href: '/admin/notifications',
-      icon: Megaphone,
-      iconBg: 'bg-forest-50 border-forest-200 text-forest-800',
-    },
-    {
-      title: 'Modération des Avis',
-      description: 'Inspecter les commentaires récents et supprimer les avis inappropriés',
-      href: '/admin/avis',
-      icon: Star,
-      iconBg: 'bg-gold-50 border-gold-200 text-gold-700',
-    },
-    {
-      title: 'Réinitialisation Fautes',
-      description: 'Réinitialiser le compteur d’annulations d’un hôte et débloquer ses annonces',
-      href: '/admin/utilisateurs',
-      icon: RefreshCw,
-      iconBg: 'bg-lime-100 border-lime-200 text-forest-900',
-    },
-    {
-      title: 'Ajustement Wallet',
-      description: 'Créditer ou débiter manuellement le solde d’un utilisateur avec motif',
-      href: '/admin/finances',
-      icon: CreditCard,
-      iconBg: 'bg-purple-50 border-purple-200 text-purple-800',
-    },
-    {
-      title: 'Catalogue Équipements',
-      description: 'Ajouter ou modifier les équipements disponibles pour les logements',
-      href: '/admin/equipements',
-      icon: Sliders,
-      iconBg: 'bg-background-alt border-border text-foreground-muted',
-    },
-  ];
+interface Action {
+  title: string;
+  description: string;
+  href: string;
+  icon: typeof Megaphone;
+  /* Les opérations qui touchent l'argent ou l'accès d'un utilisateur étaient
+     présentées au même niveau qu'un accès au catalogue d'équipements. */
+  sensitive?: boolean;
+}
 
+const ACTIONS: Action[] = [
+  {
+    title: 'Diffusion groupée',
+    description: 'Envoyer une notification à tous les hôtes ou voyageurs',
+    href: '/admin/notifications',
+    icon: Megaphone,
+    sensitive: true,
+  },
+  {
+    title: 'Modération des avis',
+    description: 'Inspecter et supprimer les commentaires inappropriés',
+    href: '/admin/avis',
+    icon: Star,
+  },
+  {
+    title: 'Débloquer un hôte',
+    /* Le lien menait à `/admin/utilisateurs` : il fallait encore chercher
+       la personne. Le filtre pré-appliqué amène directement aux comptes
+       concernés — à adapter au paramètre que ta page accepte. */
+    description: 'Réinitialiser le compteur d’annulations et réactiver ses annonces',
+    href: '/admin/utilisateurs?statut=SUSPENDU',
+    icon: RefreshCw,
+    sensitive: true,
+  },
+  {
+    title: 'Ajuster un wallet',
+    description: 'Créditer ou débiter manuellement un solde, avec motif',
+    href: '/admin/finances?action=ajustement',
+    icon: CreditCard,
+    sensitive: true,
+  },
+  {
+    title: 'Catalogue d’équipements',
+    description: 'Ajouter ou modifier les équipements proposés aux hôtes',
+    href: '/admin/equipements',
+    icon: Sliders,
+  },
+];
+
+export function AdminQuickActionsGrid() {
   return (
-    <div className="rounded-card border border-border bg-background-card p-5 shadow-xs sm:p-6 space-y-4">
-      <div className="border-b border-border pb-3">
+    <section className="space-y-4 rounded-card border border-border bg-background-card p-5 shadow-sm sm:p-6">
+
+      <header className="border-b border-border pb-3">
         <h2 className="font-display text-base font-semibold text-foreground">
-          Raccourcis Administrateur
+          Raccourcis
         </h2>
         <p className="text-xs text-foreground-muted">
-          Accès direct aux opérations fréquentes d'administration
+          Opérations d’administration fréquentes
         </p>
-      </div>
+      </header>
 
-      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
-        {actions.map((action) => (
-          <Link
-            key={action.title}
-            href={action.href}
-            className="group flex items-start gap-3.5 rounded-inner border border-border bg-background-alt/40 p-4 transition-all duration-150 hover:border-border-hover hover:bg-background-alt hover:shadow-xs"
-          >
-            <span className={cn('flex h-10 w-10 shrink-0 items-center justify-center rounded-inner border shadow-2xs', action.iconBg)}>
-              <action.icon className="h-5 w-5" aria-hidden="true" />
-            </span>
+      <ul className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
+        {ACTIONS.map(({ title, description, href, icon: Icon, sensitive }) => (
+          <li key={title}>
+            <Link
+              href={href}
+              className="group flex h-full items-start gap-3.5 rounded-inner border border-border bg-background-alt p-4 transition-[border-color,background-color] duration-150 hover:border-border-hover hover:bg-background-card"
+            >
+              <span className={cn(
+                'flex h-10 w-10 shrink-0 items-center justify-center rounded-inner border',
+                /* `bg-lime-100` et `bg-purple-50` : le lime signale l'action
+                   — or les cinq cartes en sont — et purple n'est pas dans la
+                   palette, donc cette pastille n'avait aucune couleur.
+                   Les sensibles se distinguent, les autres sont neutres. */
+                sensitive
+                  ? 'border-warning-500/25 bg-warning-50 text-warning-700'
+                  : 'border-border bg-background-card text-foreground-muted',
+              )}>
+                <Icon className="h-5 w-5" aria-hidden="true" />
+              </span>
 
-            <div className="min-w-0 flex-1">
-              <div className="flex items-center justify-between gap-1">
-                <h3 className="truncate text-xs font-semibold text-foreground group-hover:text-forest-800">
-                  {action.title}
-                </h3>
-                <ArrowUpRight className="h-3.5 w-3.5 text-foreground-muted opacity-0 transition-opacity group-hover:opacity-100" />
+              <div className="min-w-0 flex-1">
+                <div className="flex items-center justify-between gap-1">
+                  <h3 className="truncate text-sm font-semibold text-foreground">
+                    {title}
+                  </h3>
+                  {/* L'icône n'apparaissait qu'au survol : invisible au
+                     tactile, où rien n'indiquait que la carte est un lien. */}
+                  <ArrowUpRight
+                    className="h-3.5 w-3.5 shrink-0 text-foreground-muted transition-transform group-hover:translate-x-0.5"
+                    aria-hidden="true"
+                  />
+                </div>
+                <p className="mt-1 text-xs leading-relaxed text-foreground-muted">
+                  {description}
+                </p>
+                {sensitive && (
+                  <p className="mt-1.5 flex items-center gap-1 text-xs font-semibold text-warning-700">
+                    <ShieldAlert className="h-3 w-3 shrink-0" aria-hidden="true" />
+                    Action sensible
+                  </p>
+                )}
               </div>
-              <p className="mt-1 line-clamp-2 text-[0.75rem] text-foreground-muted">
-                {action.description}
-              </p>
-            </div>
-          </Link>
+            </Link>
+          </li>
         ))}
-      </div>
-    </div>
+      </ul>
+    </section>
   );
 }

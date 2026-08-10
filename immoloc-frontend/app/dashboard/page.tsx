@@ -1,8 +1,12 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 'use client';
 
+import { useMemo } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { dashboardApi } from '@/lib/nestjs';
+import { buildMonthlyRevenue } from '@/lib/dashboard/owner-tokens';
+import { nestFetch } from '@/lib/nestjs/api-client';
+import { NEST_API } from '@/lib/nestjs/endpoints';
 import { HostWelcomeBanner } from '@/features/dashboard/components/owner/HostWelcomeBanner';
 import { CancellationWarningBanner } from '@/features/dashboard/components/owner/CancellationWarningBanner';
 import { KpiSection } from '@/features/dashboard/components/owner/KpiSection';
@@ -22,19 +26,26 @@ export default function DashboardPage() {
   const { data, isLoading, isPending } = useQuery({
     queryKey: ['dashboard', 'full-data'],
     queryFn: async () => {
-      const [stats, pending, recent, upcoming] = await Promise.all([
+      const [stats, pending, recent, upcoming, allReservations] = await Promise.all([
         dashboardApi.getOwnerStats(),
         dashboardApi.getPendingActions(),
         dashboardApi.getRecentActivity(),
         dashboardApi.getUpcomingEvents(),
+        nestFetch<any[]>(NEST_API.RESERVATIONS.MINE()).catch(() => []),
       ]);
-      return { stats, pending, recent, upcoming };
+      return { stats, pending, recent, upcoming, allReservations };
     },
     staleTime: 5 * 60 * 1000, // Caches data for 5 minutes
     gcTime: 15 * 60 * 1000,
     refetchOnWindowFocus: false,
     placeholderData: (previousData) => previousData,
   });
+
+  // Récupère les points mensuels calculés par le backend ou calcule en fallback
+  const monthlyPoints = useMemo(
+    () => data?.stats?.monthlyRevenue?.length ? data.stats.monthlyRevenue : buildMonthlyRevenue(data?.allReservations || [], 6),
+    [data]
+  );
 
   if ((isLoading || isPending) && !data) return <DashboardLoading />;
   if (!data) return <DashboardLoading />;
@@ -89,6 +100,7 @@ export default function DashboardPage() {
         <section className="space-y-3">
           <div className="grid lg:grid-cols-[1fr_380px] gap-6 items-stretch">
             <RevenueChart
+              points={monthlyPoints}
               revenue={Number(stats.bookings.revenue ?? 0)}
               totalBookings={stats.bookings.total ?? 0}
             />

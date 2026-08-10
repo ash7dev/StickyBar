@@ -40,10 +40,33 @@ export class PushService {
     }
   }
 
-  async sendToUser(userId: string, payload: PushPayload): Promise<number> {
+  async sendToUser(userIdInput: string, payload: PushPayload): Promise<number> {
     if (!this.ready || !webPush) return 0;
 
-    const subscriptions = await this.prisma.pushSubscription.findMany({ where: { userId } });
+    let targetUserId = userIdInput;
+    let targetPrismaId = userIdInput;
+
+    const user = await this.prisma.utilisateur.findFirst({
+      where: {
+        OR: [{ userId: userIdInput }, { id: userIdInput }],
+      },
+      select: { id: true, userId: true },
+    });
+
+    if (user) {
+      targetUserId = user.userId;
+      targetPrismaId = user.id;
+    }
+
+    const subscriptions = await this.prisma.pushSubscription.findMany({
+      where: {
+        OR: [
+          { userId: targetUserId },
+          { userId: targetPrismaId },
+        ],
+      },
+    });
+
     if (!subscriptions.length) return 0;
 
     let sent = 0;
@@ -56,7 +79,7 @@ export class PushService {
           );
           sent++;
         } catch (e: any) {
-          if (e?.statusCode === 410) {
+          if (e?.statusCode === 410 || e?.statusCode === 404) {
             await this.prisma.pushSubscription.delete({ where: { id: sub.id } }).catch(() => null);
           } else {
             this.logger.warn(`[Push] Échec envoi ${sub.endpoint}: ${e?.message}`);

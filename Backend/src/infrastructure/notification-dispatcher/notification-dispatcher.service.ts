@@ -24,9 +24,11 @@ export class NotificationDispatcherService {
   async dispatch(input: DispatchInput): Promise<void> {
     const { userId, type, payload, reservationId } = input;
 
-    const user = await this.prisma.utilisateur.findUnique({
-      where: { id: userId },
-      select: { telephone: true, phoneVerified: true },
+    const user = await this.prisma.utilisateur.findFirst({
+      where: {
+        OR: [{ id: userId }, { userId: userId }],
+      },
+      select: { id: true, userId: true, telephone: true, phoneVerified: true },
     });
 
     if (!user) {

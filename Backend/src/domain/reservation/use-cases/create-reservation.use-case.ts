@@ -157,8 +157,8 @@ export class CreateReservationUseCase {
       }
       const delaiConfirmation = new Date(now.getTime() + delaiMs);
 
-      const acomptePct = logement.acomptePourcentage || 30;
-      const isDeposit = input.typePaiement === 'DEPOSIT' && acomptePct < 100;
+      const acomptePct = Number(logement.acomptePourcentage) || 30;
+      const isDeposit = input.typePaiement?.toUpperCase() === 'DEPOSIT' && acomptePct < 100;
       const typePaiement = isDeposit ? 'DEPOSIT' : 'FULL';
       const totalLocataireNum = Number(breakdown.totalLocataire);
       const montantAcompte = isDeposit ? Math.round(totalLocataireNum * (acomptePct / 100)) : totalLocataireNum;

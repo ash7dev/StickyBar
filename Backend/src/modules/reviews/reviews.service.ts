@@ -8,8 +8,8 @@ import {
 } from '@nestjs/common';
 import { PrismaService } from '../../infrastructure/prisma/prisma.service';
 import { CreateReviewDto } from './dto/create-review.dto';
-import { StatutReservation, TypeAvis } from '@prisma/client';
-
+import { CodeBadgeTeranga, StatutReservation, TypeAvis } from '@prisma/client';
+import { UnlockBadgeUseCase } from '../../domain/teranga-club/use-cases/unlock-badge.use-case';
 import { NotificationsService } from '../notifications/notifications.service';
 
 @Injectable()
@@ -82,6 +82,23 @@ export class ReviewsService {
       await this.updateAverageRatings(cibleId, isLocataire ? reservation.logementId : null, typeAvis);
 
       this.logger.log(`Avis créé [${review.id}] par [${auteurId}] pour [${cibleId}]`);
+
+      // Déblocage automatique du badge Teranga Club AVIS_STAR (+500 Klef Coins)
+      if (isLocataire) {
+        try {
+          const unlockUseCase = new UnlockBadgeUseCase(this.prisma);
+          await unlockUseCase.execute(
+            auteurId,
+            CodeBadgeTeranga.AVIS_STAR,
+            500,
+            'Avis Étoilé',
+            'Merci d’avoir laissé un avis constructif après votre séjour !',
+            '⭐',
+          );
+        } catch (bErr) {
+          this.logger.warn(`Erreur unlock badge AVIS_STAR: ${(bErr as Error).message}`);
+        }
+      }
 
       // Notification Push à la personne évaluée
       this.notifications.sendReviewPush(

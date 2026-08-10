@@ -7,11 +7,12 @@
 // du donut contenait trois hex (#38bdf8, #a78bfa, #fbbf24) absents du système.
 // ---------------------------------------------------------------------------
 
-/** Part reversée à l'hôte après commission Klef. Source unique. */
-export const HOST_SHARE = 0.85;
-
-/** Montant net hôte pour une réservation. */
-export const netHost = (totalLocataire: number) => totalLocataire * HOST_SHARE;
+/**
+ * Commission Klef : 7% ajoutée au prix de base du propriétaire.
+ * Ex: Si le propriétaire demande 75 000 FCFA, le locataire paie 75 000 + 7% = 80 250 FCFA.
+ * Le propriétaire reçoit 75 000 FCFA (netProprietaire), Klef garde 5 250 FCFA.
+ */
+export const COMMISSION_RATE = 0.07;
 
 export const fcfa = (n: number) =>
   new Intl.NumberFormat('fr-FR', { maximumFractionDigits: 0 }).format(Math.round(n));
@@ -130,7 +131,7 @@ export interface MonthlyPoint {
 }
 
 export function buildMonthlyRevenue<
-  T extends { statut: string; dateDebut: string; totalLocataire: number },
+  T extends { statut: string; dateDebut: string; netProprietaire?: number; totalLocataire?: number },
 >(reservations: T[], monthsBack = 6): MonthlyPoint[] {
   const COUNTED = ['COMPLETED', 'CHECKED_IN', 'CONFIRMED', 'PAID'];
   const now = new Date();
@@ -144,7 +145,7 @@ export function buildMonthlyRevenue<
         const rd = new Date(r.dateDebut);
         return rd.getFullYear() === d.getFullYear() && rd.getMonth() === d.getMonth();
       })
-      .reduce((sum, r) => sum + netHost(r.totalLocataire), 0);
+      .reduce((sum, r) => sum + Number(r.netProprietaire ?? r.totalLocataire ?? 0), 0);
 
     points.push({ label: fmtMonthShort(d), value, isCurrent: i === 0 });
   }

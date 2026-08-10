@@ -14,6 +14,7 @@ export interface Reservation {
   dateFin: string;
   nbNuits?: number;
   totalLocataire: number;
+  netProprietaire?: number;
   statut: 'PENDING' | 'CONFIRMED' | 'CHECKED_IN' | 'COMPLETED' | 'CANCELLED' | 'DISPUTED' | 'PAID' | 'EXPIRED';
   locataire: { prenom: string; nom: string; avatarUrl?: string | null };
   logement: { id: string; titre: string; ville: string; photos: Array<{ url: string; estPrincipale: boolean }> };

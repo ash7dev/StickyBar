@@ -1,12 +1,30 @@
 'use client';
 
-import { useEffect, useState } from 'react';
-import { X, User, Home, Wallet, ShieldAlert, RotateCcw, MapPin, Calendar, CreditCard, Building2, Loader2, CheckCircle2, AlertTriangle, Lock } from 'lucide-react';
-import { UserItem } from './AdminUsersTable';
-import { adminApi } from '@/lib/nestjs';
+import { useCallback, useEffect, useId, useRef, useState } from 'react';
+import Image from 'next/image';
+import {
+  X, User, Wallet, ShieldAlert, RotateCcw, Building2, Loader2,
+  CheckCircle2, AlertTriangle,
+} from 'lucide-react';
 import { cn } from '@/lib/utils/cn';
+import { adminApi } from '@/lib/nestjs';
+import type { UserItem } from './AdminUsersTable';
 
-interface AdminUserDetailModalProps {
+interface Logement {
+  id: string; titre: string; type?: string; ville?: string;
+  prixBase?: number; statut: string; creeLe?: string;
+}
+interface Faute {
+  id: string; type: string; description?: string; creeLe?: string; traitee?: boolean;
+}
+interface UserDetails extends UserItem {
+  profile?: { adresse?: string; ville?: string; nationalite?: string };
+  wallet?: { solde?: number; soldeBloque?: number };
+  logements?: Logement[];
+  compteursFautes?: Faute[];
+}
+
+interface Props {
   user: UserItem | null;
   isOpen: boolean;
   onClose: () => void;
@@ -14,236 +32,383 @@ interface AdminUserDetailModalProps {
   onResetFaults: (user: UserItem) => void;
 }
 
-function formatPrice(amount?: number | null) {
-  if (amount == null) return "—";
-  return new Intl.NumberFormat("fr-SN", { style: "currency", currency: "XOF", maximumFractionDigits: 0 }).format(amount);
-}
+const KYC_LABELS: Record<string, { label: string; tone: string }> = {
+  VERIFIE: { label: 'Vérifié', tone: 'text-gold-700' },
+  EN_ATTENTE: { label: 'En attente', tone: 'text-warning-700' },
+  REJETE: { label: 'Rejeté', tone: 'text-error-700' },
+  NON_VERIFIE: { label: 'Non vérifié', tone: 'text-foreground-muted' },
+  A_RENOUVELER: { label: 'À renouveler', tone: 'text-warning-700' },
+  SUSPENDU: { label: 'Suspendu', tone: 'text-error-700' },
+};
 
-function formatDate(d?: string | null) {
-  if (!d) return "—";
-  return new Date(d).toLocaleDateString("fr-FR", { day: "2-digit", month: "short", year: "numeric", hour: "2-digit", minute: "2-digit" });
-}
+const STATUT_LOGEMENT: Record<string, string> = {
+  PUBLISHED: 'Publiée', PENDING_REVIEW: 'En révision', DRAFT: 'Brouillon',
+  PAUSED: 'En pause', REJECTED: 'Rejetée',
+};
+
+/* `style: 'currency'` avec XOF produit « 45 000 F CFA » avec une espace
+   insécable variable selon le navigateur. Format cohérent avec le reste
+   de l'app. */
+const fcfa = (n?: number | null) =>
+  n == null ? '—' : `${new Intl.NumberFormat('fr-FR').format(Math.round(n))} FCFA`;
+
+const formatDate = (d?: string | null) => {
+  if (!d) return '—';
+  const date = new Date(d);
+  return Number.isNaN(date.getTime())
+    ? '—'
+    : date.toLocaleDateString('fr-FR', {
+        day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit',
+      });
+};
 
 export function AdminUserDetailModal({
-  user,
-  isOpen,
-  onClose,
-  onBlockToggle,
-  onResetFaults,
-}: AdminUserDetailModalProps) {
-  const [details, setDetails] = useState<any | null>(null);
+  user, isOpen, onClose, onBlockToggle, onResetFaults,
+}: Props) {
+  const [details, setDetails] = useState<UserDetails | null>(null);
   const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState(false);
+
+  const titleId = useId();
+  const panelRef = useRef<HTMLDivElement>(null);
+  const closeRef = useRef<HTMLButtonElement>(null);
+  const previouslyFocused = useRef<HTMLElement | null>(null);
+  const mounted = useRef(true);
 
   useEffect(() => {
-    if (!user?.id || !isOpen) {
-      setDetails(null);
-      return;
-    }
+    mounted.current = true;
+    return () => { mounted.current = false; };
+  }, []);
+
+  useEffect(() => {
+    if (!user?.id || !isOpen) { setDetails(null); setError(false); return; }
     setIsLoading(true);
+    setError(false);
     adminApi.getUserById(user.id)
-      .then((data) => setDetails(data))
-      .catch(() => setDetails(null))
-      .finally(() => setIsLoading(false));
+      .then((data) => { if (mounted.current) setDetails(data as UserDetails); })
+      .catch(() => { if (mounted.current) setError(true); })
+      .finally(() => { if (mounted.current) setIsLoading(false); });
   }, [user?.id, isOpen]);
+
+  /* Aucun Échap, aucun piège à focus, aucun verrou de scroll, et le clic sur
+     le fond ne fermait pas. */
+  useEffect(() => {
+    if (!isOpen) return;
+    const previousOverflow = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+    previouslyFocused.current = document.activeElement as HTMLElement | null;
+    closeRef.current?.focus();
+
+    const onKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') { onClose(); return; }
+      if (e.key !== 'Tab') return;
+      const items = panelRef.current?.querySelectorAll<HTMLElement>('button:not([disabled])');
+      if (!items?.length) return;
+      const first = items[0];
+      const last = items[items.length - 1];
+      if (e.shiftKey && document.activeElement === first) { e.preventDefault(); last.focus(); }
+      else if (!e.shiftKey && document.activeElement === last) { e.preventDefault(); first.focus(); }
+    };
+
+    window.addEventListener('keydown', onKeyDown);
+    return () => {
+      window.removeEventListener('keydown', onKeyDown);
+      document.body.style.overflow = previousOverflow;
+      previouslyFocused.current?.focus();
+    };
+  }, [isOpen, onClose]);
+
+  const handleBlock = useCallback(() => {
+    if (!user) return;
+    onClose();
+    onBlockToggle(user);
+  }, [user, onClose, onBlockToggle]);
 
   if (!isOpen || !user) return null;
 
-  const data = details ?? user;
-  const profile = data.profile;
-  const wallet = data.wallet;
-  const logements: Array<{ id: string; titre: string; type?: string; ville?: string; prixBase?: number; statut: string; creeLe?: string }> = data.logements ?? [];
-  const fautes: Array<{ id: string; type: string; description?: string; creeLe?: string; traitee?: boolean }> = data.compteursFautes ?? [];
-  const totalFautes = (user.nbAnnulations ?? 0) + (user.nbAbsencesJourJ ?? 0) + (user.nbNonConformites ?? 0);
+  /* Les données complémentaires ne viennent QUE de l'API. Le repli sur
+     `user` faisait afficher « aucune faute » et « portefeuille non
+     initialisé » en cas d'échec réseau, comme si c'était la réalité. */
+  const profile = details?.profile;
+  const wallet = details?.wallet;
+  const logements = details?.logements ?? [];
+  const fautes = details?.compteursFautes ?? [];
+  const nomComplet = [user.prenom, user.nom].filter(Boolean).join(' ') || 'Utilisateur';
+  const kyc = KYC_LABELS[user.statutKyc] ?? KYC_LABELS.NON_VERIFIE;
+  const totalFautes =
+    (user.nbAnnulations ?? 0) + (user.nbAbsencesJourJ ?? 0) + (user.nbNonConformites ?? 0);
+  const soldeBloque = Number(wallet?.soldeBloque) || 0;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-forest-950/60 backdrop-blur-xs overflow-y-auto no-scrollbar">
-      <div className="relative w-full max-w-4xl max-h-[90vh] overflow-y-auto no-scrollbar rounded-card border border-border bg-background-card p-6 shadow-2xl space-y-6">
-        {/* Header */}
-        <div className="flex items-start justify-between border-b border-border pb-4">
-          <div className="flex items-center gap-3">
-            <div className="h-12 w-12 shrink-0 overflow-hidden rounded-pill border border-border bg-forest-100 flex items-center justify-center font-bold text-forest-800 text-lg">
-              {data.avatarUrl ? (
-                <img src={data.avatarUrl} alt="Avatar" className="h-full w-full object-cover" />
+    <div
+      className="fixed inset-0 z-100 flex items-center justify-center overflow-y-auto bg-forest-950/70 p-4 backdrop-blur-sm"
+      onClick={onClose}
+    >
+      <div
+        ref={panelRef}
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby={titleId}
+        onClick={(e) => e.stopPropagation()}
+        className="no-scrollbar relative max-h-[90vh] w-full max-w-4xl space-y-6 overflow-y-auto rounded-card border border-border bg-background-card p-6 shadow-xl"
+      >
+        {/* ── En-tête ──────────────────────────────────────────────────── */}
+
+        <header className="flex items-start justify-between gap-3 border-b border-border pb-4">
+          <div className="flex min-w-0 items-center gap-3">
+            <div className="relative flex h-12 w-12 shrink-0 items-center justify-center overflow-hidden rounded-pill border border-border bg-forest-100 text-lg font-semibold text-forest-800">
+              {user.avatarUrl ? (
+                <Image src={user.avatarUrl} alt="" fill sizes="48px" unoptimized className="object-cover" />
               ) : (
-                `${data.prenom?.charAt(0) ?? ""}${data.nom?.charAt(0) ?? ""}`
+                `${user.prenom?.charAt(0) ?? ''}${user.nom?.charAt(0) ?? ''}`.toUpperCase() || '?'
               )}
             </div>
-            <div>
-              <h2 className="font-display text-lg font-bold text-foreground">
-                {data.prenom} {data.nom}
+            <div className="min-w-0">
+              <h2 id={titleId} className="truncate font-display text-lg font-semibold text-foreground">
+                {nomComplet}
               </h2>
               <p className="text-xs text-foreground-muted">
-                Dossier Utilisateur — {data.estProprietaire ? "Hôte & Propriétaire" : "Locataire"}
+                {user.estProprietaire ? 'Hôte' : 'Locataire'} · inscrit le {formatDate(user.creeLe)}
               </p>
             </div>
           </div>
-          <button type="button" onClick={onClose} className="rounded-inner p-1.5 text-foreground-muted hover:bg-background-alt hover:text-foreground">
+
+          <button
+            ref={closeRef}
+            type="button"
+            onClick={onClose}
+            aria-label="Fermer"
+            className="shrink-0 rounded-pill border border-border p-1.5 text-foreground-muted transition-colors hover:bg-background-alt hover:text-foreground"
+          >
             <X className="h-5 w-5" />
           </button>
-        </div>
+        </header>
 
         {isLoading ? (
-          <div className="flex items-center justify-center py-16">
-            <Loader2 className="h-8 w-8 animate-spin text-forest-700" />
+          <div className="space-y-4" aria-busy="true">
+            <div className="grid gap-4 sm:grid-cols-3">
+              {[0, 1, 2].map((i) => (
+                <div key={i} className="h-24 animate-pulse rounded-inner bg-background-alt" />
+              ))}
+            </div>
+            <div className="h-32 animate-pulse rounded-inner bg-background-alt" />
           </div>
         ) : (
           <>
-            {/* Aperçu Synthétique */}
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-              {/* Statut Compte */}
-              <div className="rounded-inner border border-border bg-background-alt/40 p-4 space-y-1">
-                <p className="text-[0.6875rem] font-bold uppercase tracking-wider text-foreground-muted flex items-center gap-1.5">
-                  <User className="h-3.5 w-3.5" /> Statut du compte
+            {error && (
+              <div role="alert" className="flex items-start gap-2.5 rounded-inner border border-error-500/20 bg-error-50 p-3.5">
+                <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0 text-error-600" aria-hidden="true" />
+                <p className="text-xs leading-relaxed text-error-700">
+                  Le dossier complet n’a pas pu être chargé. Le portefeuille, les logements et
+                  l’historique des fautes ne sont pas affichés — ils ne sont pas vides pour
+                  autant. Fermez et rouvrez la fiche.
                 </p>
-                <p className={cn("text-xs font-bold", data.actif ? "text-forest-700" : "text-error-700")}>
-                  {data.actif ? "Compte Actif" : "Compte Bloqué"}
-                </p>
-                <p className="text-[0.6875rem] text-foreground-muted">Membre depuis {formatDate(data.creeLe)}</p>
-              </div>
-
-              {/* KYC Status */}
-              <div className="rounded-inner border border-border bg-background-alt/40 p-4 space-y-1">
-                <p className="text-[0.6875rem] font-bold uppercase tracking-wider text-foreground-muted flex items-center gap-1.5">
-                  <CheckCircle2 className="h-3.5 w-3.5" /> Statut KYC
-                </p>
-                <p className="text-xs font-bold text-foreground">{data.statutKyc}</p>
-                <p className="text-[0.6875rem] text-foreground-muted">
-                  {data.statutKyc === "VERIFIE" ? "Pièce d'identité et selfie validés" : "Vérification complémentaire requise"}
-                </p>
-              </div>
-
-              {/* Portefeuille / Wallet */}
-              <div className="rounded-inner border border-border bg-background-alt/40 p-4 space-y-1">
-                <p className="text-[0.6875rem] font-bold uppercase tracking-wider text-foreground-muted flex items-center gap-1.5">
-                  <Wallet className="h-3.5 w-3.5" /> Portefeuille Klef
-                </p>
-                <p className="font-display text-sm font-bold text-foreground tabular-nums">
-                  {wallet ? formatPrice(wallet.solde) : "Non initialisé"}
-                </p>
-                {wallet?.soldeBloque > 0 && (
-                  <p className="text-[0.6875rem] text-warning-800 font-semibold">
-                    Bloqué: {formatPrice(wallet.soldeBloque)}
-                  </p>
-                )}
-              </div>
-            </div>
-
-            {/* Infos Civiles & Contact */}
-            <div className="rounded-inner border border-border bg-background-card p-4 space-y-3">
-              <h3 className="font-display text-xs font-bold uppercase tracking-wider text-foreground">Coordonnées et Profil</h3>
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-xs">
-                <div>
-                  <p className="text-foreground-muted text-[0.6875rem]">Email :</p>
-                  <p className="font-bold text-foreground">{data.email}</p>
-                </div>
-                <div>
-                  <p className="text-foreground-muted text-[0.6875rem]">Téléphone :</p>
-                  <p className="font-bold text-foreground">{data.telephone ?? "Non renseigné"}</p>
-                </div>
-                {profile?.adresse && (
-                  <div>
-                    <p className="text-foreground-muted text-[0.6875rem]">Adresse :</p>
-                    <p className="font-bold text-foreground">{profile.adresse}{profile.ville ? `, ${profile.ville}` : ""}</p>
-                  </div>
-                )}
-                {profile?.nationalite && (
-                  <div>
-                    <p className="text-foreground-muted text-[0.6875rem]">Nationalité :</p>
-                    <p className="font-bold text-foreground">{profile.nationalite}</p>
-                  </div>
-                )}
-              </div>
-            </div>
-
-            {/* Catalogue de Logements (si proprio) */}
-            {logements.length > 0 && (
-              <div className="space-y-2">
-                <h3 className="font-display text-xs font-bold uppercase tracking-wider text-foreground flex items-center gap-1.5">
-                  <Building2 className="h-4 w-4 text-foreground-muted" /> Catalogue de logements ({logements.length})
-                </h3>
-                <div className="overflow-x-auto rounded-inner border border-border bg-background-card">
-                  <table className="w-full text-left text-xs">
-                    <thead className="border-b border-border bg-background-alt/60 text-[0.6875rem] uppercase font-semibold text-foreground-muted">
-                      <tr>
-                        <th className="py-2.5 px-3">Titre</th>
-                        <th className="py-2.5 px-3">Type</th>
-                        <th className="py-2.5 px-3">Ville</th>
-                        <th className="py-2.5 px-3">Prix/Nuit</th>
-                        <th className="py-2.5 px-3">Statut</th>
-                      </tr>
-                    </thead>
-                    <tbody className="divide-y divide-border">
-                      {logements.map((l) => (
-                        <tr key={l.id} className="hover:bg-background-alt/40">
-                          <td className="py-2.5 px-3 font-semibold text-foreground">{l.titre}</td>
-                          <td className="py-2.5 px-3 text-foreground-muted">{l.type ?? "Logement"}</td>
-                          <td className="py-2.5 px-3 text-foreground-muted">{l.ville ?? "—"}</td>
-                          <td className="py-2.5 px-3 font-bold text-foreground">{formatPrice(l.prixBase)}</td>
-                          <td className="py-2.5 px-3 font-semibold">{l.statut}</td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
               </div>
             )}
 
-            {/* Historique des Fautes & Pénalités */}
-            <div className="space-y-2">
-              <div className="flex items-center justify-between">
-                <h3 className="font-display text-xs font-bold uppercase tracking-wider text-foreground flex items-center gap-1.5">
-                  <ShieldAlert className="h-4 w-4 text-warning-600" /> Historique des Fautes & Pénalités ({fautes.length})
+            {/* ── Synthèse ─────────────────────────────────────────────── */}
+
+            <dl className="grid grid-cols-1 gap-4 sm:grid-cols-3">
+              <div className="space-y-1 rounded-inner border border-border bg-background-alt p-4">
+                <dt className="flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wider text-foreground-muted">
+                  <User className="h-3.5 w-3.5" aria-hidden="true" /> Compte
+                </dt>
+                <dd className={cn('text-sm font-semibold', user.actif ? 'text-forest-700' : 'text-error-700')}>
+                  {user.actif ? 'Actif' : 'Bloqué'}
+                </dd>
+                {!user.actif && user.bloqueJusqua && (
+                  <p className="text-xs font-semibold text-error-700">
+                    Jusqu’au {formatDate(user.bloqueJusqua)}
+                  </p>
+                )}
+              </div>
+
+              <div className="space-y-1 rounded-inner border border-border bg-background-alt p-4">
+                <dt className="flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wider text-foreground-muted">
+                  <CheckCircle2 className="h-3.5 w-3.5" aria-hidden="true" /> KYC
+                </dt>
+                {/* Le statut brut s'affichait tel quel : `A_RENOUVELER`. */}
+                <dd className={cn('text-sm font-semibold', kyc.tone)}>{kyc.label}</dd>
+                <p className="text-xs text-foreground-muted">
+                  {user.statutKyc === 'VERIFIE'
+                    ? 'Pièce d’identité validée'
+                    : 'Vérification à compléter'}
+                </p>
+              </div>
+
+              <div className="space-y-1 rounded-inner border border-border bg-background-alt p-4">
+                <dt className="flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wider text-foreground-muted">
+                  <Wallet className="h-3.5 w-3.5" aria-hidden="true" /> Portefeuille
+                </dt>
+                <dd className="font-display text-sm font-semibold tabular-nums text-foreground">
+                  {error ? 'Indisponible' : wallet ? fcfa(wallet.solde) : 'Non initialisé'}
+                </dd>
+                {/* `wallet?.soldeBloque > 0` : comparaison sur un
+                   `number | undefined`, TypeScript strict le refuse. */}
+                {soldeBloque > 0 && (
+                  <p className="text-xs font-semibold tabular-nums text-warning-700">
+                    Dont {fcfa(soldeBloque)} bloqués
+                  </p>
+                )}
+              </div>
+            </dl>
+
+            {/* ── Coordonnées ──────────────────────────────────────────── */}
+
+            <section className="space-y-3 rounded-inner border border-border p-4">
+              <h3 className="text-xs font-semibold uppercase tracking-wider text-foreground">
+                Coordonnées
+              </h3>
+              <dl className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                {[
+                  { label: 'E-mail', value: user.email ?? '—' },
+                  { label: 'Téléphone', value: user.telephone ?? 'Non renseigné' },
+                  profile?.adresse && {
+                    label: 'Adresse',
+                    value: [profile.adresse, profile.ville].filter(Boolean).join(', '),
+                  },
+                  profile?.nationalite && { label: 'Nationalité', value: profile.nationalite },
+                ].filter(Boolean).map((f) => {
+                  const field = f as { label: string; value: string };
+                  return (
+                    <div key={field.label}>
+                      <dt className="text-xs text-foreground-muted">{field.label}</dt>
+                      <dd className="text-sm font-semibold text-foreground">{field.value}</dd>
+                    </div>
+                  );
+                })}
+              </dl>
+            </section>
+
+            {/* ── Logements ────────────────────────────────────────────── */}
+
+            {user.estProprietaire && !error && (
+              <section className="space-y-2">
+                <h3 className="flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wider text-foreground">
+                  <Building2 className="h-4 w-4 text-foreground-muted" aria-hidden="true" />
+                  Logements <span className="tabular-nums">{logements.length}</span>
+                </h3>
+
+                {logements.length === 0 ? (
+                  <p className="rounded-inner border border-border bg-background-alt p-3 text-xs text-foreground-muted">
+                    Aucun logement publié.
+                  </p>
+                ) : (
+                  <div className="overflow-x-auto rounded-inner border border-border">
+                    <table className="w-full text-left text-sm">
+                      <thead className="border-b border-border bg-background-alt text-xs font-semibold uppercase text-foreground-muted">
+                        <tr>
+                          <th scope="col" className="px-3 py-2.5">Titre</th>
+                          <th scope="col" className="px-3 py-2.5">Ville</th>
+                          <th scope="col" className="px-3 py-2.5">Prix / nuit</th>
+                          <th scope="col" className="px-3 py-2.5">Statut</th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-border">
+                        {logements.map((l) => (
+                          <tr key={l.id}>
+                            <td className="px-3 py-2.5 font-semibold text-foreground">{l.titre}</td>
+                            <td className="px-3 py-2.5 text-foreground-muted">{l.ville ?? '—'}</td>
+                            <td className="px-3 py-2.5 tabular-nums text-foreground">
+                              {fcfa(l.prixBase)}
+                            </td>
+                            <td className="px-3 py-2.5 text-foreground-muted">
+                              {STATUT_LOGEMENT[l.statut] ?? l.statut}
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                )}
+              </section>
+            )}
+
+            {/* ── Fautes ───────────────────────────────────────────────── */}
+
+            <section className="space-y-2">
+              <div className="flex flex-wrap items-center justify-between gap-2">
+                <h3 className="flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wider text-foreground">
+                  <ShieldAlert className="h-4 w-4 text-warning-600" aria-hidden="true" />
+                  Fautes <span className="tabular-nums">{totalFautes}</span>
                 </h3>
                 {totalFautes > 0 && (
                   <button
                     type="button"
                     onClick={() => onResetFaults(user)}
-                    className="inline-flex h-7 items-center gap-1 rounded-pill border border-warning-300 bg-warning-50 px-2.5 text-[0.6875rem] font-bold text-warning-900 hover:bg-warning-100"
+                    className="inline-flex h-7 items-center gap-1 rounded-pill border border-warning-500/25 bg-warning-50 px-2.5 text-xs font-semibold text-warning-700 transition-colors hover:bg-warning-50/70"
                   >
-                    <RotateCcw className="h-3 w-3" />
-                    <span>Réinitialiser les fautes</span>
+                    <RotateCcw className="h-3 w-3" aria-hidden="true" />
+                    Réinitialiser
                   </button>
                 )}
               </div>
 
-              {fautes.length === 0 ? (
-                <p className="text-xs text-foreground-muted italic bg-background-alt/40 p-3 rounded-inner border border-border">
-                  Aucun historique de faute enregistré pour cet utilisateur.
+              {/* Le compteur d'en-tête utilisait `fautes.length` (l'historique
+                 détaillé), le bouton `totalFautes` (les compteurs) : deux
+                 chiffres différents pour la même notion sur la même ligne. */}
+              {totalFautes > 0 && (
+                <p className="text-xs text-foreground-muted">
+                  {[
+                    (user.nbAnnulations ?? 0) > 0 && `${user.nbAnnulations} annulation${user.nbAnnulations! > 1 ? 's' : ''}`,
+                    (user.nbAbsencesJourJ ?? 0) > 0 && `${user.nbAbsencesJourJ} absence${user.nbAbsencesJourJ! > 1 ? 's' : ''}`,
+                    (user.nbNonConformites ?? 0) > 0 && `${user.nbNonConformites} non-conformité${user.nbNonConformites! > 1 ? 's' : ''}`,
+                  ].filter(Boolean).join(' · ')}
+                </p>
+              )}
+
+              {error ? (
+                <p className="rounded-inner border border-border bg-background-alt p-3 text-xs text-foreground-muted">
+                  Historique indisponible.
+                </p>
+              ) : fautes.length === 0 ? (
+                <p className="rounded-inner border border-border bg-background-alt p-3 text-xs text-foreground-muted">
+                  Aucun incident enregistré.
                 </p>
               ) : (
-                <div className="space-y-2 max-h-48 overflow-y-auto pr-1">
+                <ul className="max-h-48 space-y-2 overflow-y-auto pr-1">
                   {fautes.map((f) => (
-                    <div key={f.id} className="rounded-inner border border-border bg-background-alt/40 p-3 text-xs space-y-1">
-                      <div className="flex items-center justify-between">
-                        <span className="font-bold text-foreground">{f.type}</span>
-                        <span className="text-[0.6875rem] text-foreground-muted">{formatDate(f.creeLe)}</span>
+                    <li key={f.id} className="space-y-1 rounded-inner border border-border bg-background-alt p-3">
+                      <div className="flex items-center justify-between gap-2">
+                        <span className="text-sm font-semibold text-foreground">
+                          {f.type.replace(/_/g, ' ').toLowerCase()}
+                        </span>
+                        <span className="shrink-0 text-xs text-foreground-muted">
+                          {formatDate(f.creeLe)}
+                        </span>
                       </div>
-                      {f.description && <p className="text-foreground-muted">{f.description}</p>}
-                    </div>
+                      {f.description && (
+                        <p className="text-xs text-foreground-muted">{f.description}</p>
+                      )}
+                    </li>
                   ))}
-                </div>
+                </ul>
               )}
-            </div>
+            </section>
           </>
         )}
 
-        {/* Footer Actions */}
-        <div className="flex items-center justify-end gap-3 border-t border-border pt-4">
-          <button type="button" onClick={onClose} className="h-9 rounded-inner border border-border bg-background-card px-4 text-xs font-semibold text-foreground hover:bg-background-alt">
-            Fermer
-          </button>
+        {/* ── Actions ──────────────────────────────────────────────────── */}
 
+        <footer className="flex items-center justify-end gap-3 border-t border-border pt-4">
           <button
             type="button"
-            onClick={() => { onClose(); onBlockToggle(user); }}
+            onClick={onClose}
+            className="rounded-pill border border-border bg-background-card px-4 py-2 text-sm font-semibold text-foreground transition-colors hover:bg-background-alt"
+          >
+            Fermer
+          </button>
+          <button
+            type="button"
+            onClick={handleBlock}
             className={cn(
-              "h-9 rounded-inner px-4 text-xs font-semibold text-neutral-0",
-              user.actif ? "bg-error-600 hover:bg-error-700" : "bg-forest-700 hover:bg-forest-800"
+              'rounded-pill px-4 py-2 text-sm font-semibold text-neutral-0 transition-colors',
+              user.actif ? 'bg-error-600 hover:bg-error-700' : 'bg-button-primary hover:bg-button-primary-hover',
             )}
           >
-            {user.actif ? "Bloquer le compte" : "Débloquer le compte"}
+            {user.actif ? 'Bloquer le compte' : 'Débloquer le compte'}
           </button>
-        </div>
+        </footer>
       </div>
     </div>
   );

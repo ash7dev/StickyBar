@@ -15,8 +15,12 @@ export class DashboardService {
    * Statistiques globales pour le propriétaire
    */
   async getOwnerStats(ownerId: string) {
+    const now = new Date();
+    const monthsBack = 6;
+    const startDate = new Date(now.getFullYear(), now.getMonth() - (monthsBack - 1), 1);
+
     // Exécuter toutes les requêtes indépendantes en parallèle via Promise.all
-    const [wallet, earnings, pendingReservations, allBookings, listingsCount, user] = await Promise.all([
+    const [wallet, earnings, pendingDeposit, pendingFull, allBookings, listingsCount, user, monthlyRaw] = await Promise.all([
       // 1. Solde du Wallet
       this.prisma.wallet.findUnique({
         where: { utilisateurId: ownerId },
@@ -31,11 +35,21 @@ export class DashboardService {
         _sum: { netProprietaire: true },
         _count: { id: true },
       }),
-      // 2b. Montant en séquestre
+      // 2b. Montant en séquestre pour réservations DEPOSIT (acomptes payés en ligne AVANT check-in)
       this.prisma.reservation.aggregate({
         where: {
           proprietaireId: ownerId,
-          statut: { in: [StatutReservation.PAID, StatutReservation.CONFIRMED, StatutReservation.CHECKED_IN] }
+          typePaiement: 'DEPOSIT',
+          statut: { in: [StatutReservation.PAID, StatutReservation.CONFIRMED] }
+        },
+        _sum: { montantAcompte: true }
+      }),
+      // 2c. Montant en séquestre pour réservations FULL (100% payé en ligne AVANT check-in)
+      this.prisma.reservation.aggregate({
+        where: {
+          proprietaireId: ownerId,
+          typePaiement: 'FULL',
+          statut: { in: [StatutReservation.PAID, StatutReservation.CONFIRMED] }
         },
         _sum: { netProprietaire: true }
       }),
@@ -56,9 +70,21 @@ export class DashboardService {
         where: { id: ownerId },
         select: { noteProprietaire: true, totalAvis: true },
       }),
+      // 6. Historique des réservations des 6 derniers mois pour la courbe de revenus
+      this.prisma.reservation.findMany({
+        where: {
+          proprietaireId: ownerId,
+          statut: { in: [StatutReservation.PAID, StatutReservation.CONFIRMED, StatutReservation.CHECKED_IN, StatutReservation.COMPLETED] },
+          dateDebut: { gte: startDate },
+        },
+        select: {
+          dateDebut: true,
+          netProprietaire: true,
+        },
+      }),
     ]);
 
-    const pendingAmount = Number(pendingReservations._sum.netProprietaire || 0);
+    const pendingAmount = Number(pendingDeposit._sum.montantAcompte || 0) + Number(pendingFull._sum.netProprietaire || 0);
 
     // Retraits en cours s'il existe un wallet
     let processingWithdrawals = 0;
@@ -83,6 +109,23 @@ export class DashboardService {
 
     const conversionRate = totalProcessed > 0 ? Math.round((totalSuccessful / totalProcessed) * 100) : 0;
 
+    // Calculer les points mensuels réels pour le graphique hôte
+    const monthNames = ['janv.', 'févr.', 'mars', 'avr.', 'mai', 'juin', 'juil.', 'août', 'sept.', 'oct.', 'nov.', 'déc.'];
+    const monthlyRevenue: { label: string; value: number; isCurrent: boolean }[] = [];
+
+    for (let i = monthsBack - 1; i >= 0; i--) {
+      const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
+      const label = monthNames[d.getMonth()];
+      const value = monthlyRaw
+        .filter(r => {
+          const rd = new Date(r.dateDebut);
+          return rd.getFullYear() === d.getFullYear() && rd.getMonth() === d.getMonth();
+        })
+        .reduce((sum, r) => sum + Number(r.netProprietaire || 0), 0);
+
+      monthlyRevenue.push({ label, value, isCurrent: i === 0 });
+    }
+
     return {
       wallet: {
         balance: Number(wallet?.soldeDisponible || 0),
@@ -102,7 +145,8 @@ export class DashboardService {
         active: listingsCount.find(l => l.statut === StatutLogement.PUBLISHED)?._count || 0,
         drafts: listingsCount.find(l => l.statut === StatutLogement.DRAFT)?._count || 0,
         pending: listingsCount.find(l => l.statut === StatutLogement.PENDING_REVIEW)?._count || 0,
-      }
+      },
+      monthlyRevenue,
     };
   }
 

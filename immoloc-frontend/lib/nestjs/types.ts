@@ -509,6 +509,7 @@ export interface ReservationDetail {
     avatarUrl?: string | null;
     statutKyc: StatutKyc;
     noteLocataire: number;
+    terangaTier?: string | null;
   };
   proprietaire: {
     id: string;
@@ -606,6 +607,12 @@ export interface WalletTransaction {
   description: string | null;
   reservationId: string | null;
   creeLe: string;
+  reservation?: {
+    typePaiement?: string | null;
+    montantAcompte?: number | null;
+    netProprietaire?: number | null;
+    montantSoldeRestant?: number | null;
+  } | null;
 }
 
 export interface WalletData {
@@ -629,4 +636,48 @@ export interface RetraitResponse {
   destinataire: string;
   statut: StatutRetrait;
   demandeeLe: string;
+}
+
+// ── Teranga Club ──────────────────────────────────────────────────────────────
+
+export type TerangaTier = 'BRONZE' | 'SILVER' | 'GOLD';
+
+export interface TerangaBadge {
+  id: string;
+  codeBadge: string;
+  libelle: string;
+  description: string;
+  icone: string;
+  debloqueLe: string;
+}
+
+export interface TerangaTransaction {
+  id: string;
+  montantCoins: number;
+  type: string;
+  description: string;
+  reservationId?: string | null;
+  soldeApres: number;
+  creeLe: string;
+}
+
+export interface TerangaAccountData {
+  soldeCoins: number;
+  tier: TerangaTier;
+  cashbackPct: number;
+  gmv12Mois: number;
+  nbSejours: number;
+  nextTier: TerangaTier | null;
+  gmvRemainingForNextTier: number;
+  badges: TerangaBadge[];
+  transactions: TerangaTransaction[];
+}
+
+export interface TerangaQuest {
+  code: string;
+  libelle: string;
+  description: string;
+  bonusCoins: number;
+  icone: string;
+  unlocked: boolean;
 }

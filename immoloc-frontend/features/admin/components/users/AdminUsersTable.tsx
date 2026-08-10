@@ -1,6 +1,10 @@
 'use client';
 
-import { Eye, ShieldAlert, Lock, Unlock, RotateCcw, User, Home, CheckCircle2, Clock, XCircle, AlertTriangle, Calendar } from 'lucide-react';
+import Image from 'next/image';
+import {
+  Eye, Lock, Unlock, RotateCcw, User, Home, CheckCircle2, XCircle,
+  AlertTriangle, Calendar,
+} from 'lucide-react';
 import { cn } from '@/lib/utils/cn';
 
 export interface UserItem {
@@ -26,7 +30,7 @@ export interface UserItem {
   };
 }
 
-interface AdminUsersTableProps {
+interface Props {
   users: UserItem[];
   isLoading?: boolean;
   onInspect: (user: UserItem) => void;
@@ -35,38 +39,38 @@ interface AdminUsersTableProps {
   onToggleRole: (user: UserItem) => void;
 }
 
-const KYC_CONFIG: Record<string, { label: string; badgeClass: string }> = {
-  VERIFIE: { label: "KYC Vérifié", badgeClass: "bg-forest-50 border-forest-200 text-forest-800" },
-  EN_ATTENTE: { label: "KYC En Attente", badgeClass: "bg-warning-50 border-warning-200 text-warning-800" },
-  REJETE: { label: "KYC Rejeté", badgeClass: "bg-error-50 border-error-200 text-error-800" },
-  NON_VERIFIE: { label: "Non Vérifié", badgeClass: "bg-background-alt border-border text-foreground-muted" },
-  A_RENOUVELER: { label: "À Renouveler", badgeClass: "bg-warning-50 border-warning-200 text-warning-800" },
+/* ⚠️ `warning-200`, `warning-300`, `warning-800`, `warning-900`, `error-200`,
+   `error-800`, `forest-200`, `purple-*` et `blue-*` : aucune n'existe dans la
+   palette (les rampes sémantiques s'arrêtent à 50/500/600/700). La plupart
+   des badges de ce tableau s'affichaient sans bordure ni couleur. */
+const KYC_CONFIG: Record<string, { label: string; badge: string }> = {
+  VERIFIE: { label: 'Vérifié', badge: 'border-gold-200 bg-gold-50 text-gold-700' },
+  EN_ATTENTE: { label: 'En attente', badge: 'border-warning-500/25 bg-warning-50 text-warning-700' },
+  REJETE: { label: 'Rejeté', badge: 'border-error-500/25 bg-error-50 text-error-700' },
+  NON_VERIFIE: { label: 'Non vérifié', badge: 'border-border bg-background-alt text-foreground-muted' },
+  A_RENOUVELER: { label: 'À renouveler', badge: 'border-warning-500/25 bg-warning-50 text-warning-700' },
+  SUSPENDU: { label: 'Suspendu', badge: 'border-error-500/25 bg-error-50 text-error-700' },
 };
 
-function formatDate(d?: string | null) {
-  if (!d) return "—";
-  return new Date(d).toLocaleDateString("fr-FR", { day: "2-digit", month: "short", year: "numeric" });
-}
+const formatDate = (d?: string | null) => {
+  if (!d) return '—';
+  const date = new Date(d);
+  return Number.isNaN(date.getTime())
+    ? '—'
+    : date.toLocaleDateString('fr-FR', { day: '2-digit', month: 'short', year: 'numeric' });
+};
 
-function getInitials(prenom?: string, nom?: string) {
-  const p = prenom?.charAt(0).toUpperCase() ?? "";
-  const n = nom?.charAt(0).toUpperCase() ?? "";
-  return `${p}${n}` || "U";
-}
+const initials = (prenom?: string, nom?: string) =>
+  `${prenom?.charAt(0) ?? ''}${nom?.charAt(0) ?? ''}`.toUpperCase() || '?';
 
 export function AdminUsersTable({
-  users,
-  isLoading = false,
-  onInspect,
-  onBlockToggle,
-  onResetFaults,
-  onToggleRole,
-}: AdminUsersTableProps) {
+  users, isLoading = false, onInspect, onBlockToggle, onResetFaults, onToggleRole,
+}: Props) {
   if (isLoading) {
     return (
-      <div className="space-y-3 rounded-card border border-border bg-background-card p-6">
-        {[1, 2, 3, 4, 5].map((n) => (
-          <div key={n} className="h-16 animate-pulse rounded-inner bg-background-alt" />
+      <div className="space-y-3 rounded-card border border-border bg-background-card p-6" aria-busy="true">
+        {Array.from({ length: 5 }).map((_, i) => (
+          <div key={i} className="h-16 animate-pulse rounded-inner bg-background-alt" />
         ))}
       </div>
     );
@@ -74,199 +78,229 @@ export function AdminUsersTable({
 
   if (users.length === 0) {
     return (
-      <div className="flex flex-col items-center justify-center rounded-card border border-dashed border-border bg-background-card p-12 text-center space-y-3">
-        <span className="flex h-12 w-12 items-center justify-center rounded-pill bg-forest-50 border border-forest-200 text-forest-700">
-          <User className="h-6 w-6" />
+      <div className="flex flex-col items-center justify-center space-y-3 rounded-card border border-dashed border-border bg-background-card p-12 text-center">
+        <span className="flex h-12 w-12 items-center justify-center rounded-pill border border-border bg-background-alt text-foreground-muted">
+          <User className="h-6 w-6" aria-hidden="true" />
         </span>
         <div>
-          <p className="font-display text-base font-semibold text-foreground">Aucun utilisateur trouvé</p>
-          <p className="text-xs text-foreground-muted">Aucun utilisateur ne correspond à la recherche ou aux filtres sélectionnés.</p>
+          <p className="font-display text-base font-semibold text-foreground">
+            Aucun utilisateur trouvé
+          </p>
+          <p className="text-xs text-foreground-muted">
+            Ajustez votre recherche ou vos filtres.
+          </p>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="overflow-hidden rounded-card border border-border bg-background-card shadow-xs">
+    <div className="overflow-hidden rounded-card border border-border bg-background-card shadow-sm">
       <div className="overflow-x-auto">
-        <table className="w-full text-left text-xs">
-          <thead className="border-b border-border bg-background-alt/60 text-[0.6875rem] uppercase font-semibold text-foreground-muted tracking-wider">
+        <table className="w-full text-left text-sm">
+          <thead className="border-b border-border bg-background-alt text-xs font-semibold uppercase tracking-wider text-foreground-muted">
             <tr>
-              <th className="py-3.5 px-4 sm:px-6">Utilisateur</th>
-              <th className="py-3.5 px-4">Rôle & KYC</th>
-              <th className="py-3.5 px-4">Statut Compte</th>
-              <th className="py-3.5 px-4">Activité</th>
-              <th className="py-3.5 px-4">Fautes / Pénalités</th>
-              <th className="py-3.5 px-4 text-right sm:px-6">Actions</th>
+              <th scope="col" className="px-4 py-3.5 sm:px-6">Utilisateur</th>
+              <th scope="col" className="px-4 py-3.5">Rôle et KYC</th>
+              <th scope="col" className="px-4 py-3.5">Compte</th>
+              <th scope="col" className="px-4 py-3.5">Activité</th>
+              <th scope="col" className="px-4 py-3.5">Fautes</th>
+              <th scope="col" className="px-4 py-3.5 text-right sm:px-6">Actions</th>
             </tr>
           </thead>
 
           <tbody className="divide-y divide-border">
             {users.map((u) => {
-              const kycCfg = KYC_CONFIG[u.statutKyc] ?? KYC_CONFIG.NON_VERIFIE;
-              const totalFautes = (u.nbAnnulations ?? 0) + (u.nbAbsencesJourJ ?? 0) + (u.nbNonConformites ?? 0);
+              const kyc = KYC_CONFIG[u.statutKyc] ?? KYC_CONFIG.NON_VERIFIE;
+              const fautes =
+                (u.nbAnnulations ?? 0) + (u.nbAbsencesJourJ ?? 0) + (u.nbNonConformites ?? 0);
+              const nomComplet = [u.prenom, u.nom].filter(Boolean).join(' ') || 'Utilisateur';
+              const logements = u._count?.logements ?? 0;
+              const resasProprio = u._count?.reservationsProprietaire ?? 0;
+              const resasLoc = u._count?.reservationsLocataire ?? 0;
+              /* `bloqueJusqua` était dans le type sans jamais être affiché :
+                 un blocage temporaire ressemblait à un blocage définitif. */
+              const blocageTemporaire = !u.actif && u.bloqueJusqua
+                ? formatDate(u.bloqueJusqua)
+                : null;
 
               return (
-                <tr key={u.id} className="transition-colors hover:bg-background-alt/40">
-                  {/* Utilisateur Identity */}
-                  <td className="py-4 px-4 sm:px-6">
+                <tr key={u.id} className="transition-colors hover:bg-background-alt">
+
+                  <td className="px-4 py-4 sm:px-6">
                     <div className="flex items-center gap-3">
-                      <div className="relative h-10 w-10 shrink-0 overflow-hidden rounded-pill border border-border bg-forest-100 flex items-center justify-center font-bold text-forest-800 text-sm">
+                      <div className="relative flex h-10 w-10 shrink-0 items-center justify-center overflow-hidden rounded-pill border border-border bg-forest-100 text-sm font-semibold text-forest-800">
                         {u.avatarUrl ? (
-                          <img src={u.avatarUrl} alt={`${u.prenom} ${u.nom}`} className="h-full w-full object-cover" />
-                        ) : (
-                          getInitials(u.prenom, u.nom)
-                        )}
+                          <Image src={u.avatarUrl} alt="" fill sizes="40px" className="object-cover" unoptimized />
+                        ) : initials(u.prenom, u.nom)}
                       </div>
                       <div className="min-w-0">
-                        <p className="font-semibold text-foreground truncate">{u.prenom} {u.nom}</p>
-                        <p className="text-[0.6875rem] text-foreground-muted truncate max-w-[180px]">{u.email}</p>
+                        <p className="truncate font-semibold text-foreground">{nomComplet}</p>
+                        <p className="max-w-[180px] truncate text-xs text-foreground-muted">
+                          {u.email ?? '—'}
+                        </p>
                         {u.telephone && (
-                          <p className="text-[0.6875rem] text-foreground-muted">{u.telephone}</p>
+                          <p className="text-xs tabular-nums text-foreground-muted">{u.telephone}</p>
                         )}
                       </div>
                     </div>
                   </td>
 
-                  {/* Rôle & KYC */}
-                  <td className="py-4 px-4">
-                    <div className="space-y-1">
-                      <div className="flex items-center gap-1.5 flex-wrap">
-                        <span className={cn(
-                          "inline-flex items-center gap-1 rounded-pill border px-2 py-0.5 text-[0.625rem] font-semibold",
-                          u.estProprietaire
-                            ? "bg-purple-50 border-purple-200 text-purple-800"
-                            : "bg-blue-50 border-blue-200 text-blue-800",
-                        )}>
-                          {u.estProprietaire ? <Home className="h-3 w-3" /> : <User className="h-3 w-3" />}
-                          {u.estProprietaire ? "Hôte & Proprio" : "Locataire"}
-                        </span>
-                      </div>
-                      <div>
-                        <span className={cn(
-                          "inline-flex items-center rounded-pill border px-2 py-0.5 text-[0.625rem] font-semibold",
-                          kycCfg.badgeClass,
-                        )}>
-                          {kycCfg.label}
-                        </span>
-                      </div>
-                    </div>
-                  </td>
-
-                  {/* Statut Compte */}
-                  <td className="py-4 px-4">
-                    <div className="space-y-0.5">
+                  <td className="px-4 py-4">
+                    <div className="flex flex-col items-start gap-1">
                       <span className={cn(
-                        "inline-flex items-center gap-1 rounded-pill border px-2.5 py-1 text-xs font-semibold",
-                        u.actif
-                          ? "bg-forest-50 border-forest-200 text-forest-800"
-                          : "bg-error-50 border-error-200 text-error-800",
+                        'inline-flex items-center gap-1 rounded-pill border px-2 py-0.5 text-xs font-semibold',
+                        u.estProprietaire
+                          ? 'border-forest-100 bg-forest-50 text-forest-700'
+                          : 'border-border bg-background-alt text-foreground-muted',
                       )}>
-                        {u.actif ? <CheckCircle2 className="h-3.5 w-3.5" /> : <XCircle className="h-3.5 w-3.5" />}
-                        {u.actif ? "Compte Actif" : "Compte Bloqué"}
+                        {u.estProprietaire
+                          ? <Home className="h-3 w-3" aria-hidden="true" />
+                          : <User className="h-3 w-3" aria-hidden="true" />}
+                        {u.estProprietaire ? 'Hôte' : 'Locataire'}
                       </span>
-                      {u.creeLe && (
-                        <p className="text-[0.6875rem] text-foreground-muted flex items-center gap-1 mt-0.5">
-                          <Calendar className="h-3 w-3" /> Inscrit le {formatDate(u.creeLe)}
-                        </p>
-                      )}
+                      <span className={cn(
+                        'inline-flex items-center rounded-pill border px-2 py-0.5 text-xs font-semibold',
+                        kyc.badge,
+                      )}>
+                        {kyc.label}
+                      </span>
                     </div>
                   </td>
 
-                  {/* Activité */}
-                  <td className="py-4 px-4">
-                    <div className="space-y-0.5 text-xs text-foreground">
-                      {u.estProprietaire ? (
-                        <>
-                          <p className="font-bold text-foreground">
-                            {u._count?.logements ?? 0} logement{(u._count?.logements ?? 0) > 1 ? "s" : ""}
-                          </p>
-                          <p className="text-[0.6875rem] text-foreground-muted">
-                            Résas reçues : <span className="font-semibold text-foreground">{u._count?.reservationsProprietaire ?? 0}</span>
-                            {(u._count?.reservationsLocataire ?? 0) > 0 && (
-                              <span> | Loc : <span className="font-semibold text-foreground">{u._count?.reservationsLocataire}</span></span>
-                            )}
-                          </p>
-                        </>
-                      ) : (
-                        <>
-                          <p className="font-bold text-foreground">
-                            {u._count?.reservationsLocataire ?? 0} réservation{(u._count?.reservationsLocataire ?? 0) > 1 ? "s" : ""}
-                          </p>
-                          <p className="text-[0.6875rem] text-foreground-muted">Compte Locataire</p>
-                        </>
-                      )}
-                    </div>
-                  </td>
+                  <td className="px-4 py-4">
+                    <span className={cn(
+                      'inline-flex items-center gap-1 rounded-pill border px-2.5 py-1 text-xs font-semibold',
+                      u.actif
+                        ? 'border-forest-100 bg-forest-50 text-forest-700'
+                        : 'border-error-500/25 bg-error-50 text-error-700',
+                    )}>
+                      {u.actif
+                        ? <CheckCircle2 className="h-3.5 w-3.5" aria-hidden="true" />
+                        : <XCircle className="h-3.5 w-3.5" aria-hidden="true" />}
+                      {u.actif ? 'Actif' : 'Bloqué'}
+                    </span>
 
-                  {/* Fautes / Pénalités */}
-                  <td className="py-4 px-4">
-                    {totalFautes > 0 ? (
-                      <div className="space-y-0.5">
-                        <span className="inline-flex items-center gap-1 rounded-pill border border-warning-300 bg-warning-50 px-2 py-0.5 text-[0.6875rem] font-bold text-warning-900">
-                          <AlertTriangle className="h-3 w-3 text-warning-700" />
-                          {totalFautes} faute{totalFautes > 1 ? "s" : ""}
-                        </span>
-                        <p className="text-[0.625rem] text-foreground-muted">
-                          Annul: {u.nbAnnulations ?? 0} | Abs: {u.nbAbsencesJourJ ?? 0} | Conf: {u.nbNonConformites ?? 0}
-                        </p>
-                      </div>
-                    ) : (
-                      <span className="text-xs text-foreground-muted italic">Aucune faute</span>
+                    {blocageTemporaire && (
+                      <p className="mt-1 text-xs font-semibold text-error-700">
+                        Jusqu’au {blocageTemporaire}
+                      </p>
+                    )}
+
+                    {u.creeLe && (
+                      <p className="mt-1 flex items-center gap-1 text-xs text-foreground-muted">
+                        <Calendar className="h-3 w-3 shrink-0" aria-hidden="true" />
+                        {formatDate(u.creeLe)}
+                      </p>
                     )}
                   </td>
 
-                  {/* Actions */}
-                  <td className="py-4 px-4 text-right sm:px-6">
-                    <div className="flex items-center justify-end gap-1.5 flex-wrap">
-                      {/* Profil & Détails */}
+                  <td className="px-4 py-4">
+                    {u.estProprietaire ? (
+                      <>
+                        <p className="font-semibold tabular-nums text-foreground">
+                          {logements} logement{logements > 1 ? 's' : ''}
+                        </p>
+                        <p className="text-xs text-foreground-muted">
+                          <span className="tabular-nums">{resasProprio}</span> reçue
+                          {resasProprio > 1 ? 's' : ''}
+                          {resasLoc > 0 && (
+                            <> · <span className="tabular-nums">{resasLoc}</span> effectuée{resasLoc > 1 ? 's' : ''}</>
+                          )}
+                        </p>
+                      </>
+                    ) : (
+                      <>
+                        <p className="font-semibold tabular-nums text-foreground">
+                          {resasLoc} réservation{resasLoc > 1 ? 's' : ''}
+                        </p>
+                        <p className="text-xs text-foreground-muted">Compte locataire</p>
+                      </>
+                    )}
+                  </td>
+
+                  <td className="px-4 py-4">
+                    {fautes > 0 ? (
+                      <>
+                        <span className="inline-flex items-center gap-1 rounded-pill border border-warning-500/25 bg-warning-50 px-2 py-0.5 text-xs font-semibold text-warning-700">
+                          <AlertTriangle className="h-3 w-3" aria-hidden="true" />
+                          <span className="tabular-nums">{fautes}</span>
+                        </span>
+                        {/* « Annul: 2 | Abs: 1 | Conf: 0 » — des abréviations
+                           que seul l'auteur du code comprend. */}
+                        <p className="mt-1 text-xs text-foreground-muted">
+                          {[
+                            (u.nbAnnulations ?? 0) > 0 && `${u.nbAnnulations} annulation${u.nbAnnulations! > 1 ? 's' : ''}`,
+                            (u.nbAbsencesJourJ ?? 0) > 0 && `${u.nbAbsencesJourJ} absence${u.nbAbsencesJourJ! > 1 ? 's' : ''}`,
+                            (u.nbNonConformites ?? 0) > 0 && `${u.nbNonConformites} non-conformité${u.nbNonConformites! > 1 ? 's' : ''}`,
+                          ].filter(Boolean).join(' · ')}
+                        </p>
+                      </>
+                    ) : (
+                      <span className="text-xs text-foreground-muted">Aucune</span>
+                    )}
+                  </td>
+
+                  <td className="px-4 py-4 text-right sm:px-6">
+                    <div className="flex flex-wrap items-center justify-end gap-1.5">
                       <button
                         type="button"
                         onClick={() => onInspect(u)}
-                        className="inline-flex h-8 items-center gap-1 rounded-inner border border-border bg-background-card px-2.5 text-xs font-semibold text-foreground hover:bg-background-alt"
-                        title="Consulter la fiche détaillée"
+                        aria-label={`Consulter la fiche de ${nomComplet}`}
+                        className="inline-flex h-8 items-center gap-1 rounded-pill border border-border bg-background-card px-2.5 text-xs font-semibold text-foreground transition-colors hover:bg-background-alt"
                       >
-                        <Eye className="h-3.5 w-3.5 text-foreground-muted" />
+                        <Eye className="h-3.5 w-3.5" aria-hidden="true" />
                         <span className="hidden sm:inline">Profil</span>
                       </button>
 
-                      {/* Changer rôle hôte */}
                       <button
                         type="button"
                         onClick={() => onToggleRole(u)}
-                        className="inline-flex h-8 items-center gap-1 rounded-inner border border-border bg-background-card px-2.5 text-xs font-semibold text-foreground hover:bg-background-alt"
-                        title={u.estProprietaire ? "Rétrograder en Locataire" : "Promouvoir en Hôte/Propriétaire"}
+                        aria-label={
+                          u.estProprietaire
+                            ? `Retirer le rôle d’hôte à ${nomComplet}`
+                            : `Donner le rôle d’hôte à ${nomComplet}`
+                        }
+                        className="inline-flex h-8 items-center gap-1 rounded-pill border border-border bg-background-card px-2.5 text-xs font-semibold text-foreground transition-colors hover:bg-background-alt"
                       >
-                        <Home className="h-3.5 w-3.5 text-purple-600" />
-                        <span className="hidden sm:inline">{u.estProprietaire ? "- Hôte" : "+ Hôte"}</span>
+                        <Home className="h-3.5 w-3.5" aria-hidden="true" />
+                        {/* « - Hôte » / « + Hôte » : illisible, et l'action
+                           n'est pas anodine — elle retire l'accès aux
+                           annonces publiées. */}
+                        <span className="hidden sm:inline">
+                          {u.estProprietaire ? 'Retirer hôte' : 'Passer hôte'}
+                        </span>
                       </button>
 
-                      {/* Réinitialiser fautes si présent */}
-                      {totalFautes > 0 && (
+                      {fautes > 0 && (
                         <button
                           type="button"
                           onClick={() => onResetFaults(u)}
-                          className="inline-flex h-8 items-center gap-1 rounded-inner border border-warning-300 bg-warning-50 px-2 text-xs font-semibold text-warning-900 hover:bg-warning-100"
-                          title="Réinitialiser les fautes et réactiver les logements suspendus"
+                          aria-label={`Réinitialiser les fautes de ${nomComplet}`}
+                          className="inline-flex h-8 items-center gap-1 rounded-pill border border-warning-500/25 bg-warning-50 px-2.5 text-xs font-semibold text-warning-700 transition-colors hover:bg-warning-50/70"
                         >
-                          <RotateCcw className="h-3.5 w-3.5" />
+                          <RotateCcw className="h-3.5 w-3.5" aria-hidden="true" />
+                          <span className="hidden lg:inline">Réinitialiser</span>
                         </button>
                       )}
 
-                      {/* Bloquer / Débloquer */}
                       <button
                         type="button"
                         onClick={() => onBlockToggle(u)}
+                        aria-label={
+                          u.actif ? `Bloquer le compte de ${nomComplet}` : `Débloquer ${nomComplet}`
+                        }
                         className={cn(
-                          "inline-flex h-8 items-center gap-1 rounded-inner border px-2.5 text-xs font-semibold",
+                          'inline-flex h-8 items-center gap-1 rounded-pill border px-2.5 text-xs font-semibold transition-colors',
                           u.actif
-                            ? "border-error-200 bg-error-50 text-error-700 hover:bg-error-100"
-                            : "border-forest-200 bg-forest-50 text-forest-800 hover:bg-forest-100",
+                            ? 'border-error-500/25 bg-background-card text-error-700 hover:bg-error-50'
+                            : 'border-forest-100 bg-forest-50 text-forest-700 hover:bg-forest-100',
                         )}
-                        title={u.actif ? "Bloquer le compte" : "Débloquer le compte"}
                       >
-                        {u.actif ? <Lock className="h-3.5 w-3.5" /> : <Unlock className="h-3.5 w-3.5" />}
-                        <span className="hidden sm:inline">{u.actif ? "Bloquer" : "Débloquer"}</span>
+                        {u.actif
+                          ? <Lock className="h-3.5 w-3.5" aria-hidden="true" />
+                          : <Unlock className="h-3.5 w-3.5" aria-hidden="true" />}
+                        <span className="hidden sm:inline">{u.actif ? 'Bloquer' : 'Débloquer'}</span>
                       </button>
                     </div>
                   </td>

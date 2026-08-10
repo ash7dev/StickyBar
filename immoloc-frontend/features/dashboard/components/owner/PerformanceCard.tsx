@@ -4,12 +4,12 @@ import Link from 'next/link';
 import { useEffect, useState } from 'react';
 import { ArrowRight, Trophy } from 'lucide-react';
 import { cn } from '@/lib/utils/cn';
-import { netHost } from '@/lib/dashboard/owner-tokens';
 
 const nf = new Intl.NumberFormat('fr-FR', { maximumFractionDigits: 0 });
 
 interface Booking {
   totalLocataire: number;
+  netProprietaire: number;
   statut: string;
   /* Le regroupement se faisait sur le TITRE : deux annonces homonymes —
      « Studio Ngor », « Villa Saly » — fusionnaient en une seule ligne.
@@ -67,7 +67,7 @@ export function PerformanceCard({ bookings, activeListings, isLoading = false, l
     if (!COUNTED.has(b.statut)) continue;
     const key = b.logement.id ?? b.logement.titre;
     const cur = map.get(key) ?? { key, titre: b.logement.titre, ville: b.logement.ville, revenue: 0, nights: 0 };
-    cur.revenue += netHost(Number(b.totalLocataire) || 0);
+    cur.revenue += Number(b.netProprietaire) || 0;
     cur.nights += 1;
     map.set(key, cur);
   }

@@ -71,8 +71,8 @@ export function Navbar() {
   }, []);
 
   // Fermer le menu au changement de route
-  useEffect(() => { 
-    setIsOpen(false); 
+  useEffect(() => {
+    setIsOpen(false);
     setDropdownOpen(false);
   }, [pathname]);
 
@@ -265,7 +265,7 @@ export function Navbar() {
                           </div>
                         </div>
                       </div>
-                      
+
                       <div className="p-1.5 space-y-0.5">
                         {/* Lien spécifique au rôle */}
                         {activeRole === 'PROPRIETAIRE' ? (
@@ -310,7 +310,17 @@ export function Navbar() {
                           </div>
                           Mes réservations
                         </Link>
-                        
+
+                        <Link
+                          href="/teranga-club"
+                          className="dropdown-item flex items-center gap-3 px-3 py-2.5 text-sm font-semibold text-gold-700 dark:text-gold-400 bg-gold-50/50 dark:bg-gold-950/40 rounded-xl"
+                        >
+                          <div className="w-8 h-8 rounded-lg bg-gold-100 dark:bg-gold-900/60 flex items-center justify-center">
+                            <Sparkles className="h-4 w-4 text-gold-600 dark:text-gold-400" />
+                          </div>
+                          Klef Teranga Club 🪙
+                        </Link>
+
                         <Link
                           href="/parametres"
                           className="dropdown-item flex items-center gap-3 px-3 py-2.5 text-sm text-neutral-600 rounded-xl"
@@ -322,7 +332,7 @@ export function Navbar() {
                         </Link>
 
                         <div className="h-px bg-gradient-to-r from-transparent via-neutral-200 to-transparent my-1.5" />
-                        
+
                         <button
                           onClick={() => logout()}
                           className="w-full dropdown-item flex items-center gap-3 px-3 py-2.5 text-sm font-medium text-red-500 rounded-xl hover:!bg-red-50/60"

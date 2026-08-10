@@ -12,6 +12,8 @@ import {
   LogOut,
   User,
   Loader2,
+  Coins,
+  Sparkles,
 } from 'lucide-react';
 import { useIsAuthenticated, useRoleStore } from '@/stores/role.store';
 import { useAuth } from '@/features/auth/hooks/use-auth';
@@ -291,7 +293,20 @@ export function Navbar() {
                         <span>Mes Réservations</span>
                       </Link>
 
-                      {/* 3. Paramètres */}
+                      {/* 3. Klef Teranga Club */}
+                      <Link
+                        role="menuitem"
+                        href="/teranga-club"
+                        onClick={() => setDropdownOpen(false)}
+                        className="flex items-center gap-3 px-3 py-2 text-xs sm:text-sm font-semibold text-forest-800 rounded-xl hover:bg-lime-50 hover:text-forest-900 transition-colors"
+                      >
+                        <div className="w-7 h-7 rounded-lg bg-forest-50 flex items-center justify-center text-forest-700 shrink-0">
+                          <Coins className="w-4 h-4" />
+                        </div>
+                        <span>Klef Teranga Club 🪙</span>
+                      </Link>
+
+                      {/* 4. Paramètres */}
                       <Link
                         role="menuitem"
                         href="/parametres"

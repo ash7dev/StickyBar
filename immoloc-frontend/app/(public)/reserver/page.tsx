@@ -9,7 +9,7 @@ import Link from 'next/link';
 import {
   ChevronLeft, MapPin, Users, ArrowRight,
   Loader2, AlertCircle, CheckCircle2, Lock, CalendarDays,
-  Minus, Plus, ShieldCheck, X, Smartphone,
+  Minus, Plus, ShieldCheck, X, Smartphone, Coins,
 } from 'lucide-react';
 import { nestFetch } from '@/lib/nestjs/api-client';
 import { listingsApi } from '@/lib/nestjs';
@@ -23,6 +23,7 @@ import { AvailabilityCalendar } from '@/features/listings/components/web/Availab
 import type { DateRange } from 'react-day-picker';
 import { cn } from '@/lib/utils/cn';
 import { getPrixPublic } from '@/lib/pricing';
+import { useTerangaClub } from '@/features/teranga-club/hooks/use-teranga-club';
 
 type Fournisseur = 'WAVE' | 'ORANGE_MONEY';
 
@@ -60,8 +61,11 @@ export default function ReserverPage({ searchParams }: Props) {
   const [fournisseur, setFournisseur] = useState<Fournisseur>('WAVE');
   const [telephone, setTelephone] = useState('');
   const [cguAccepted, setCguAccepted] = useState(true); // Pré-coché depuis desktop si déjà validé dans PricePreviewWidget
+  const [useCoins, setUseCoins] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+
+  const { data: teranga } = useTerangaClub();
 
   const { data: listing, isLoading: listingLoading } = useQuery({
     queryKey: ['listing-reserver', listingId],
@@ -145,6 +149,16 @@ export default function ReserverPage({ searchParams }: Props) {
     ?? getPrixPublic(listing?.prixBase);
 
   const supplementAmount = pricePreview?.supplementPersonnes ?? 0;
+
+  const acomptePct = listing?.acomptePourcentage ?? 30;
+  const isDepositMode = typePaiement === 'DEPOSIT' && acomptePct < 100;
+  const montantBrutADebiter = isDepositMode
+    ? Math.round(estimatedTotal * (acomptePct / 100))
+    : Math.round(estimatedTotal);
+
+  const maxCoinsRedeemable = teranga?.soldeCoins ? Math.min(teranga.soldeCoins, montantBrutADebiter) : 0;
+  const coinsDeduction = useCoins ? maxCoinsRedeemable : 0;
+  const finalMontantADebiter = Math.max(0, montantBrutADebiter - coinsDeduction);
 
   const fmt = (n: any) => {
     if (n === null || n === undefined) return '—';
@@ -539,9 +553,19 @@ export default function ReserverPage({ searchParams }: Props) {
                   {nights} nuit{nights > 1 ? 's' : ''} · {nbPersonnes} pers.
                 </span>
               </div>
-              <div className="font-display text-3xl font-extrabold text-on-inverse-marker">
-                {fmt(typePaiement === 'DEPOSIT' && (listing?.acomptePourcentage ?? 30) < 100 ? Math.round(estimatedTotal * ((listing?.acomptePourcentage ?? 30) / 100)) : estimatedTotal)} FCFA
+              <div className="font-display text-3xl font-extrabold text-on-inverse-marker flex items-baseline gap-2">
+                <span>{fmt(finalMontantADebiter)} FCFA</span>
+                {useCoins && coinsDeduction > 0 && (
+                  <span className="text-xs font-semibold text-lime-300 line-through">
+                    {fmt(montantBrutADebiter)} FCFA
+                  </span>
+                )}
               </div>
+              {useCoins && coinsDeduction > 0 && (
+                <p className="text-xs font-bold text-lime-300 flex items-center gap-1">
+                  <Coins className="w-3.5 h-3.5" /> −{fmt(coinsDeduction)} FCFA déduits de l’acompte via Klef Coins
+                </p>
+              )}
               {typePaiement === 'DEPOSIT' && (listing?.acomptePourcentage ?? 30) < 100 && (
                 <p className="text-xs font-semibold text-on-inverse-marker">
                   + Solde de {fmt(Math.round(estimatedTotal * ((100 - (listing?.acomptePourcentage ?? 30)) / 100)))} FCFA à régler à l&apos;arrivée (Total : {fmt(estimatedTotal)} FCFA)
@@ -611,6 +635,49 @@ export default function ReserverPage({ searchParams }: Props) {
                       Rien à régler sur place
                     </p>
                   </button>
+                </div>
+              )}
+
+              {/* Option Déduction Klef Coins Teranga */}
+              {teranga && teranga.soldeCoins > 0 && (
+                <div className="p-4 rounded-inner border border-lime-500/40 bg-gradient-to-br from-lime-500/10 via-forest-50/40 to-background-card space-y-3">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <div className="w-8 h-8 rounded-lg bg-lime-400/20 border border-lime-400/30 flex items-center justify-center text-forest-800 shrink-0">
+                        <Coins className="w-4 h-4 text-forest-800" />
+                      </div>
+                      <div>
+                        <h4 className="text-xs font-extrabold uppercase tracking-wider text-forest-950">
+                          Klef Teranga Club 🪙
+                        </h4>
+                        <p className="text-xs font-medium text-foreground-muted">
+                          Solde disponible : <strong className="text-forest-900 font-bold">{teranga.soldeCoins.toLocaleString('fr-FR')} Coins</strong>
+                        </p>
+                      </div>
+                    </div>
+                    {useCoins && (
+                      <span className="text-xs font-bold text-forest-800 bg-lime-400/30 px-2.5 py-1 rounded-pill border border-lime-400/40 animate-in fade-in duration-150">
+                        −{fmt(maxCoinsRedeemable)} FCFA
+                      </span>
+                    )}
+                  </div>
+
+                  <label className="flex items-center gap-3 p-3 rounded-inner bg-white/80 border border-forest-100 cursor-pointer hover:bg-white transition-colors">
+                    <input
+                      type="checkbox"
+                      checked={useCoins}
+                      onChange={(e) => setUseCoins(e.target.checked)}
+                      className="h-4.5 w-4.5 rounded border-forest-300 text-forest-700 focus:ring-forest-600 cursor-pointer"
+                    />
+                    <div className="text-xs">
+                      <span className="font-bold text-forest-950 block">
+                        Utiliser mes Klef Coins pour déduire l’acompte
+                      </span>
+                      <span className="text-foreground-muted">
+                        Réduction immédiate de <strong className="text-forest-700 font-bold">−{fmt(maxCoinsRedeemable)} FCFA</strong> sur le paiement
+                      </span>
+                    </div>
+                  </label>
                 </div>
               )}
 
@@ -747,7 +814,7 @@ export default function ReserverPage({ searchParams }: Props) {
                   `Séjour minimum requis : ${minNights} nuits`
                 ) : (
                   <>
-                    Payer {fmt(typePaiement === 'DEPOSIT' && (listing?.acomptePourcentage ?? 30) < 100 ? Math.round(estimatedTotal * ((listing?.acomptePourcentage ?? 30) / 100)) : estimatedTotal)} FCFA avec {fournisseur === 'WAVE' ? 'Wave' : 'Orange Money'}
+                    Payer {fmt(finalMontantADebiter)} FCFA avec {fournisseur === 'WAVE' ? 'Wave' : 'Orange Money'}
                   </>
                 )}
               </button>

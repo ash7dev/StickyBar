@@ -5,7 +5,7 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import {
   Users, Moon, ShieldCheck, Loader2, ChevronRight,
-  CalendarDays, Lock, Info, Check, CheckCircle2, Minus, Plus, AlertCircle, Zap,
+  CalendarDays, Lock, Info, Check, CheckCircle2, Minus, Plus, AlertCircle, Zap, Coins,
 } from 'lucide-react';
 import { listingsApi } from '@/lib/nestjs';
 import type { DateRange } from 'react-day-picker';
@@ -481,6 +481,14 @@ export function PricePreviewWidget({
                   <span className="text-xl font-semibold tabular-nums tracking-tight text-on-inverse">
                     {fmt(estimatedTotal)} FCFA
                   </span>
+                </span>
+              </div>
+
+              {/* Badge Cashback Teranga Club */}
+              <div className="flex items-center gap-2 rounded-inner border border-lime-400/30 bg-lime-400/10 px-3 py-2 text-xs text-lime-300">
+                <Coins className="h-4 w-4 text-lime-300 shrink-0" />
+                <span>
+                  Gagnez <strong className="font-bold text-lime-200">+{Math.round(Number(estimatedTotal) * 0.015).toLocaleString('fr-FR')} Klef Coins</strong> sur cette réservation
                 </span>
               </div>
 

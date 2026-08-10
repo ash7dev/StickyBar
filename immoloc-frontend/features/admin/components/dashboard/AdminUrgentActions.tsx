@@ -1,7 +1,11 @@
 'use client';
 
+import { useMemo } from 'react';
 import Link from 'next/link';
-import { ShieldCheck, Building2, Wallet, Scale, LifeBuoy, ArrowRight, AlertTriangle } from 'lucide-react';
+import {
+  ShieldCheck, Building2, Wallet, Scale, LifeBuoy, ArrowRight,
+  AlertTriangle, CheckCircle2,
+} from 'lucide-react';
 import { cn } from '@/lib/utils/cn';
 
 interface PendingSummary {
@@ -13,125 +17,166 @@ interface PendingSummary {
   totalUrgentActions: number;
 }
 
-interface AdminUrgentActionsProps {
+interface Props {
   summary?: PendingSummary;
   isLoading?: boolean;
 }
 
-export function AdminUrgentActions({ summary, isLoading }: AdminUrgentActionsProps) {
+export function AdminUrgentActions({ summary, isLoading }: Props) {
+  const { items, total } = useMemo(() => {
+    const list = [
+      {
+        key: 'kyc',
+        title: 'Dossiers KYC',
+        count: summary?.pendingKyc ?? 0,
+        href: '/admin/kyc',
+        icon: ShieldCheck,
+        description: 'Pièces d’identité en attente de vérification',
+      },
+      {
+        key: 'listings',
+        title: 'Annonces à modérer',
+        count: summary?.pendingListings ?? 0,
+        href: '/admin/annonces?statut=PENDING_REVIEW',
+        icon: Building2,
+        description: 'Nouvelles publications en attente de validation',
+      },
+      {
+        key: 'withdrawals',
+        title: 'Retraits à traiter',
+        count: summary?.pendingWithdrawals ?? 0,
+        href: '/admin/finances?onglet=retraits',
+        icon: Wallet,
+        description: 'Demandes de versement Wave et Orange Money',
+      },
+      {
+        key: 'disputes',
+        title: 'Litiges à arbitrer',
+        count: summary?.pendingDisputes ?? 0,
+        href: '/admin/litiges',
+        icon: Scale,
+        description: 'Fonds gelés en attente de décision',
+      },
+      {
+        key: 'tickets',
+        title: 'Tickets prioritaires',
+        count: summary?.urgentTickets ?? 0,
+        href: '/admin/support?priorite=URGENTE',
+        icon: LifeBuoy,
+        description: 'Demandes d’assistance à traiter en priorité',
+      },
+    ];
+
+    /* Ce qui demande une action remonte : cinq blocs identiques obligeaient
+       à lire chaque compteur pour savoir où intervenir. */
+    return {
+      items: [...list].sort((a, b) => b.count - a.count),
+      /* `totalUrgentActions` venait de l'API sans garantie de correspondre
+         à la somme des cinq compteurs affichés juste en dessous. */
+      total: list.reduce((sum, i) => sum + i.count, 0),
+    };
+  }, [summary]);
+
   if (isLoading) {
-    return (
-      <div className="h-48 animate-pulse rounded-card border border-border bg-background-alt p-6" />
-    );
+    return <div className="h-48 animate-pulse rounded-card border border-border bg-background-alt" />;
   }
 
-  const urgentItems = [
-    {
-      title: 'Dossiers KYC à vérifier',
-      count: summary?.pendingKyc ?? 0,
-      href: '/admin/kyc',
-      icon: ShieldCheck,
-      colorClass: 'border-forest-200 bg-forest-50 text-forest-800',
-      description: 'Pièces d’identité et selfies faciaux en attente',
-    },
-    {
-      title: 'Annonces à modérer',
-      count: summary?.pendingListings ?? 0,
-      href: '/admin/annonces',
-      icon: Building2,
-      colorClass: 'border-lime-200 bg-lime-100 text-forest-900',
-      description: 'Nouvelles annonces créées en PENDING_REVIEW',
-    },
-    {
-      title: 'Retraits Mobile Money',
-      count: summary?.pendingWithdrawals ?? 0,
-      href: '/admin/finances',
-      icon: Wallet,
-      colorClass: 'border-purple-200 bg-purple-50 text-purple-800',
-      description: 'Demandes de retraits hôtes (Wave / OM)',
-    },
-    {
-      title: 'Litiges à arbitrer',
-      count: summary?.pendingDisputes ?? 0,
-      href: '/admin/litiges',
-      icon: Scale,
-      colorClass: 'border-error-200 bg-error-50 text-error-700',
-      description: 'Litiges déclarés sur réservation active',
-    },
-    {
-      title: 'Tickets support urgents',
-      count: summary?.urgentTickets ?? 0,
-      href: '/admin/support',
-      icon: LifeBuoy,
-      colorClass: 'border-warning-200 bg-warning-50 text-warning-700',
-      description: 'Demandes prioritaires assistance voyageurs/hôtes',
-    },
-  ];
+  const rien = total === 0;
 
   return (
-    <div className="rounded-card border border-border bg-background-card p-5 shadow-xs sm:p-6 space-y-4">
-      <div className="flex items-center justify-between gap-3 border-b border-border pb-4">
-        <div className="flex items-center gap-2.5">
-          <span className="flex h-9 w-9 items-center justify-center rounded-inner bg-error-50 border border-error-200 text-error-600">
-            <AlertTriangle className="h-4.5 w-4.5" />
+    <section className="space-y-4 rounded-card border border-border bg-background-card p-5 shadow-sm sm:p-6">
+
+      <header className="flex flex-wrap items-center justify-between gap-3 border-b border-border pb-4">
+        <div className="flex min-w-0 items-center gap-2.5">
+          <span className={cn(
+            'flex h-9 w-9 shrink-0 items-center justify-center rounded-inner border',
+            rien
+              ? 'border-forest-100 bg-forest-50 text-forest-700'
+              : 'border-error-500/25 bg-error-50 text-error-600',
+          )}>
+            {rien
+              ? <CheckCircle2 className="h-4 w-4" aria-hidden="true" />
+              : <AlertTriangle className="h-4 w-4" aria-hidden="true" />}
           </span>
-          <div>
+          <div className="min-w-0">
             <h2 className="font-display text-base font-semibold text-foreground">
-              Actions urgentes requises
+              File d’attente
             </h2>
             <p className="text-xs text-foreground-muted">
-              {summary?.totalUrgentActions ?? 0} élément(s) nécessitant une intervention d'administration
+              {rien
+                ? 'Rien en attente de traitement'
+                : `${total} élément${total > 1 ? 's' : ''} à traiter`}
             </p>
           </div>
         </div>
 
-        {summary && summary.totalUrgentActions > 0 && (
-          <span className="rounded-pill bg-error-600 px-3 py-1 text-xs font-bold text-neutral-0 tabular-nums">
-            {summary.totalUrgentActions} en attente
+        {!rien && (
+          <span className="shrink-0 rounded-pill bg-error-600 px-3 py-1 text-xs font-semibold tabular-nums text-neutral-0">
+            {total}
           </span>
         )}
-      </div>
+      </header>
 
-      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
-        {urgentItems.map((item) => (
-          <Link
-            key={item.title}
-            href={item.href}
-            className="group flex flex-col justify-between rounded-inner border border-border bg-background-alt/50 p-4 transition-all duration-150 hover:border-border-hover hover:bg-background-alt hover:shadow-xs"
-          >
-            <div>
-              <div className="flex items-center justify-between gap-2">
-                <span className={cn('flex h-8 w-8 items-center justify-center rounded-inner border', item.colorClass)}>
-                  <item.icon className="h-4 w-4" aria-hidden="true" />
-                </span>
+      <ul className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
+        {items.map(({ key, title, count, href, icon: Icon, description }) => {
+          const actif = count > 0;
 
-                <span
-                  className={cn(
-                    'rounded-pill px-2.5 py-0.5 text-xs font-bold tabular-nums border',
-                    item.count > 0
-                      ? 'bg-error-50 text-error-700 border-error-200'
-                      : 'bg-background-card text-foreground-muted border-border',
-                  )}
-                >
-                  {item.count}
-                </span>
-              </div>
+          return (
+            <li key={key}>
+              <Link
+                href={href}
+                className={cn(
+                  'group flex h-full flex-col justify-between rounded-inner border p-4 transition-[border-color,background-color] duration-150',
+                  actif
+                    ? 'border-error-500/25 bg-error-50 hover:border-error-500/40'
+                    : 'border-border bg-background-alt hover:border-border-hover hover:bg-background-card',
+                )}
+              >
+                <div>
+                  <div className="flex items-center justify-between gap-2">
+                    {/* `purple` absent de la palette, `lime-100` sur une
+                       carte sans conversion, et cinq couleurs différentes
+                       qui ne portaient aucune information : la seule qui
+                       compte est « il y a quelque chose ou non ». */}
+                    <span className={cn(
+                      'flex h-8 w-8 shrink-0 items-center justify-center rounded-inner border',
+                      actif
+                        ? 'border-error-500/25 bg-background-card text-error-600'
+                        : 'border-border bg-background-card text-foreground-muted',
+                    )}>
+                      <Icon className="h-4 w-4" aria-hidden="true" />
+                    </span>
 
-              <h3 className="mt-3 text-xs font-semibold text-foreground group-hover:text-forest-800">
-                {item.title}
-              </h3>
-              <p className="mt-1 line-clamp-2 text-[0.75rem] text-foreground-muted">
-                {item.description}
-              </p>
-            </div>
+                    <span className={cn(
+                      'font-display text-2xl font-semibold tabular-nums',
+                      actif ? 'text-error-700' : 'text-foreground-muted',
+                    )}>
+                      {count}
+                    </span>
+                  </div>
 
-            <div className="mt-4 flex items-center gap-1 text-[0.75rem] font-semibold text-forest-700 transition-transform group-hover:translate-x-1">
-              <span>Traiter maintenant</span>
-              <ArrowRight className="h-3.5 w-3.5" aria-hidden="true" />
-            </div>
-          </Link>
-        ))}
-      </div>
-    </div>
+                  <h3 className="mt-3 text-sm font-semibold text-foreground">{title}</h3>
+                  <p className="mt-1 text-xs leading-relaxed text-foreground-muted">
+                    {description}
+                  </p>
+                </div>
+
+                {/* « Traiter maintenant » sur une carte à zéro n'a pas de sens. */}
+                <p className={cn(
+                  'mt-4 flex items-center gap-1 text-xs font-semibold',
+                  actif ? 'text-error-700' : 'text-foreground-muted',
+                )}>
+                  {actif ? 'Traiter' : 'Ouvrir'}
+                  <ArrowRight
+                    className="h-3.5 w-3.5 transition-transform group-hover:translate-x-0.5"
+                    aria-hidden="true"
+                  />
+                </p>
+              </Link>
+            </li>
+          );
+        })}
+      </ul>
+    </section>
   );
 }

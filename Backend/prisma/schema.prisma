@@ -99,6 +99,7 @@ model Utilisateur {
   avisEnvoyes              Avis[]              @relation("auteur")
   avisRecus                Avis[]              @relation("cible")
   wallet                   Wallet?
+  terangaAccount           TerangaAccount?
   pushSubscriptions        PushSubscription[]
   compteursFautes          CompteurFaute[]
   notificationLogs         NotificationLog[]
@@ -596,6 +597,56 @@ model Retrait {
 }
 
 // =============================================================================
+// TERANGA CLUB (FIDÉLITÉ & GAMIFICATION)
+// =============================================================================
+
+model TerangaAccount {
+  id            String      @id @default(uuid())
+  utilisateurId String      @unique
+  soldeCoins    Int         @default(0)
+  tier          TerangaTier @default(BRONZE)
+  gmv12Mois     Decimal     @default(0) @db.Decimal(10, 2)
+  creeLe        DateTime    @default(now())
+  misAJourLe    DateTime    @updatedAt
+
+  utilisateur  Utilisateur          @relation(fields: [utilisateurId], references: [id], onDelete: Cascade)
+  transactions TerangaTransaction[]
+  badges       TerangaBadge[]
+
+  @@index([utilisateurId])
+}
+
+model TerangaTransaction {
+  id               String                 @id @default(uuid())
+  terangaAccountId String
+  montantCoins     Int
+  type             TypeTransactionTeranga
+  description      String
+  reservationId    String?
+  soldeApres       Int
+  creeLe           DateTime               @default(now())
+
+  terangaAccount TerangaAccount @relation(fields: [terangaAccountId], references: [id], onDelete: Cascade)
+
+  @@index([terangaAccountId])
+  @@index([terangaAccountId, creeLe(sort: Desc)])
+}
+
+model TerangaBadge {
+  id               String           @id @default(uuid())
+  terangaAccountId String
+  codeBadge        CodeBadgeTeranga
+  libelle          String
+  description      String
+  icone            String
+  debloqueLe       DateTime         @default(now())
+
+  terangaAccount TerangaAccount @relation(fields: [terangaAccountId], references: [id], onDelete: Cascade)
+
+  @@unique([terangaAccountId, codeBadge])
+}
+
+// =============================================================================
 // LITIGE
 // =============================================================================
 
@@ -999,5 +1050,26 @@ enum CategorieTicket {
   LOGEMENT
   LITIGE
   AUTRE
+}
+
+enum TerangaTier {
+  BRONZE
+  SILVER
+  GOLD
+}
+
+enum TypeTransactionTeranga {
+  CREDIT_BOOKING
+  CREDIT_REVIEW
+  CREDIT_PARRAINAGE
+  CREDIT_BONUS_QUEST
+  DEBIT_RESERVATION
+}
+
+enum CodeBadgeTeranga {
+  FIRST_STAY
+  AVIS_STAR
+  PETITE_COTE_CAPTAIN
+  SUPER_PARRAIN
 }
 

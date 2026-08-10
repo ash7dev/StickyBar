@@ -1,9 +1,11 @@
 'use client';
 
-import { CheckCircle2, Home, ShieldCheck, ArrowUpRight } from 'lucide-react';
+import Link from 'next/link';
+import { CheckCircle2, Home, ShieldCheck, ArrowUpRight, Sparkles } from 'lucide-react';
 import { cn } from '@/lib/utils/cn';
 import type { UserProfile } from '../types';
 import { KYC_CONFIG } from '../types';
+import { useTerangaClub } from '@/features/teranga-club/hooks/use-teranga-club';
 
 interface Props {
   user: UserProfile;
@@ -16,12 +18,6 @@ const ROLE_LABELS: Record<string, string> = {
   ADMIN: 'Administrateur',
 };
 
-/* La pastille de statut KYC était en `bg-lime-400 animate-pulse` en dur : un
-   compte refusé ou en attente affichait le même signal vert clignotant qu'un
-   compte vérifié, juste à côté d'un bouton demandant de refaire la
-   vérification. La couleur suit maintenant le statut réel.
-
-   ⚠️ Adapter les clés à celles de `KYC_CONFIG` si elles diffèrent. */
 const KYC_DOT: Record<string, { dot: string; live?: boolean }> = {
   VERIFIE: { dot: 'bg-success-500' },
   EN_ATTENTE: { dot: 'bg-warning-500', live: true },
@@ -29,16 +25,23 @@ const KYC_DOT: Record<string, { dot: string; live?: boolean }> = {
   NON_SOUMIS: { dot: 'bg-forest-400' },
 };
 
+const TIER_LABELS: Record<string, { label: string; icon: string }> = {
+  BRONZE: { label: 'Clé de Bronze', icon: '🗝️' },
+  SILVER: { label: 'Clé d’Argent', icon: '🔑' },
+  GOLD: { label: 'Clé d’Or', icon: '👑' },
+};
+
 export function ProfileHero({ user, onKycClick }: Props) {
   const kyc = KYC_CONFIG[user.statutKyc];
   const isVerified = user.statutKyc === 'VERIFIE';
   const dot = KYC_DOT[user.statutKyc] ?? { dot: 'bg-forest-400' };
+  const { data: teranga } = useTerangaClub();
 
-  /* `prenom.charAt(0)` sur une chaîne vide renvoie '' — sûr, mais deux
-     champs vides produisaient un carré blanc sans repli. */
   const initials =
     `${user.prenom?.charAt(0) ?? ''}${user.nom?.charAt(0) ?? ''}`.toUpperCase() || '?';
   const fullName = [user.prenom, user.nom].filter(Boolean).join(' ') || 'Votre profil';
+
+  const tierInfo = TIER_LABELS[teranga?.tier ?? 'BRONZE'] ?? TIER_LABELS.BRONZE;
 
   return (
     <section className="section-inverse relative overflow-hidden p-6 sm:p-8">
@@ -80,7 +83,7 @@ export function ProfileHero({ user, onKycClick }: Props) {
               <p className="truncate text-xs text-on-inverse-muted">{user.email}</p>
             )}
 
-            <div className="flex flex-wrap items-center gap-2 pt-1">
+            <div className="flex flex-wrap items-center gap-2 pt-1.5">
               <span className="inline-flex items-center gap-1.5 rounded-pill border border-border-inverse bg-white/5 px-3 py-1 text-xs font-semibold text-on-inverse">
                 <Home className="h-3.5 w-3.5 text-on-inverse-muted" aria-hidden="true" />
                 {ROLE_LABELS[user.activeRole] ?? user.activeRole}
@@ -93,11 +96,23 @@ export function ProfileHero({ user, onKycClick }: Props) {
                 />
                 {kyc.label}
               </span>
+
+              {/* Badge Teranga Club intégré dans le Header */}
+              <Link
+                href="/teranga-club"
+                className="inline-flex items-center gap-1.5 rounded-pill border border-lime-400/40 bg-lime-400/15 px-3 py-1 text-xs font-bold text-lime-300 hover:bg-lime-400/25 transition-all shadow-2xs"
+              >
+                <span>{tierInfo.icon}</span>
+                <span>{tierInfo.label}</span>
+                {teranga && (
+                  <span className="text-on-inverse-muted font-normal">• {teranga.soldeCoins.toLocaleString('fr-FR')} Coins</span>
+                )}
+              </Link>
             </div>
           </div>
         </div>
 
-        {/* ★ Seul aplat lime de la carte : l'action attendue. */}
+        {/* Action KYC */}
         {kyc.cta && (
           <button
             type="button"

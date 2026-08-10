@@ -8,6 +8,7 @@ export { listingsApi } from './listings.api';
 export { walletApi } from './wallet.api';
 export { dashboardApi } from './dashboard.api';
 export { adminApi } from './admin.api';
+export { terangaClubApi } from './teranga-club.api';
 export type {
   // Primitives
   UserRole,
@@ -51,4 +52,10 @@ export type {
   WalletData,
   WithdrawalPayload,
   RetraitResponse,
+  // Teranga Club
+  TerangaTier,
+  TerangaBadge,
+  TerangaTransaction,
+  TerangaAccountData,
+  TerangaQuest,
 } from './types';

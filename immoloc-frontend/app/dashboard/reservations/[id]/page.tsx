@@ -538,10 +538,10 @@ export default function ReservationDetailPage({ params }: { params: Promise<{ id
                 <p className="mb-0.5 text-xs font-semibold uppercase tracking-wider text-foreground-muted">
                   Réservataire
                 </p>
-                <h3 className="truncate font-display text-base font-semibold leading-tight text-foreground">
+                <h3 className="truncate font-display text-base font-bold leading-tight text-foreground">
                   {res.locataire.prenom} {res.locataire.nom}
                 </h3>
-                <div className="mt-1.5">
+                <div className="mt-2 flex flex-wrap items-center gap-2">
                   {res.locataire.statutKyc === 'VERIFIE' ? (
                     <span className="inline-flex items-center gap-1 rounded-pill border border-gold-200 bg-gold-50 px-2.5 py-0.5 text-xs font-semibold text-gold-700">
                       <ShieldCheck className="h-3 w-3" aria-hidden="true" />
@@ -553,6 +553,24 @@ export default function ReservationDetailPage({ params }: { params: Promise<{ id
                       Identité non vérifiée
                     </span>
                   )}
+
+                  {/* Qualification Teranga Club */}
+                  <span className="inline-flex items-center gap-1 rounded-pill border border-lime-500/40 bg-lime-500/15 px-2.5 py-0.5 text-xs font-extrabold text-forest-900 shadow-2xs">
+                    <span>
+                      {res.locataire.terangaTier === 'GOLD'
+                        ? '👑'
+                        : res.locataire.terangaTier === 'SILVER'
+                        ? '🔑'
+                        : '🗝️'}
+                    </span>
+                    <span>
+                      {res.locataire.terangaTier === 'GOLD'
+                        ? "Clé d'Or"
+                        : res.locataire.terangaTier === 'SILVER'
+                        ? "Clé d'Argent"
+                        : 'Clé de Bronze'}
+                    </span>
+                  </span>
                 </div>
               </div>
             </div>
@@ -590,13 +608,16 @@ export default function ReservationDetailPage({ params }: { params: Promise<{ id
                 </div>
               )}
 
-              <div className="flex items-center gap-2.5 rounded-inner border border-gold-200 bg-gold-50 p-3">
-                <Star className="h-4 w-4 shrink-0 fill-gold-400 text-gold-400" aria-hidden="true" />
-                <span className="text-xs text-gold-700">Note du locataire</span>
-                <span className="ml-auto text-xs font-semibold tabular-nums text-gold-700">
-                  {res.locataire.noteLocataire != null
-                    ? `${res.locataire.noteLocataire.toFixed(1)} / 5`
-                    : 'Nouveau'}
+              {/* Note / Étoile du locataire ultra visible */}
+              <div className="flex items-center gap-2.5 rounded-inner border border-gold-300/40 bg-gradient-to-r from-gold-500/10 to-amber-500/5 p-3">
+                <div className="flex items-center gap-1.5">
+                  <Star className="h-4 w-4 shrink-0 fill-gold-400 text-gold-500" aria-hidden="true" />
+                  <span className="text-xs font-bold text-gold-950">Note globale locataire</span>
+                </div>
+                <span className="ml-auto text-xs font-black tabular-nums text-gold-900 bg-gold-400/20 px-2.5 py-0.5 rounded-pill border border-gold-400/30">
+                  {res.locataire.noteLocataire != null && res.locataire.noteLocataire > 0
+                    ? `⭐ ${res.locataire.noteLocataire.toFixed(1)} / 5`
+                    : '⭐ Nouveau locataire'}
                 </span>
               </div>
             </div>

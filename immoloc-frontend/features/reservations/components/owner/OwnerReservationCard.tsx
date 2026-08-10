@@ -6,7 +6,7 @@ import { useState } from 'react';
 import { Calendar, CheckCircle2, ChevronRight, ImageOff, XCircle } from 'lucide-react';
 import type { Reservation } from '@/features/reservations/components/reservation-card';
 import { cn } from '@/lib/utils/cn';
-import { fcfa, fmtDateShort, netHost, STATUT_CFG_LIGHT } from '@/lib/dashboard/owner-tokens';
+import { fcfa, fmtDateShort, STATUT_CFG_LIGHT } from '@/lib/dashboard/owner-tokens';
 
 interface Props {
   reservation: Reservation;
@@ -36,8 +36,8 @@ export function OwnerReservationCard({
   const nuits = reservation.nbNuits
     ?? Math.max(1, Math.round((dateFin.getTime() - dateDeb.getTime()) / 86_400_000));
 
-  // Le 0.85 etait reecrit ici pour la troisieme fois dans la base.
-  const hostAmount = netHost(reservation.totalLocataire);
+  // Le montant net propriétaire est déjà calculé dans le backend
+  const hostAmount = Number(reservation.netProprietaire ?? reservation.totalLocataire ?? 0);
 
   const isPending = reservation.statut === 'PENDING';
   const href = `/dashboard/reservations/${reservation.id}`;

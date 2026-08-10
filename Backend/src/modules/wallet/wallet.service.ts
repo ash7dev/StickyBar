@@ -44,7 +44,46 @@ export class WalletService {
       return { soldeDisponible: 0, dettePenalites: 0, transactions: [] };
     }
 
-    return wallet;
+    const reservationIds = wallet.transactions
+      .map((t) => t.reservationId)
+      .filter((id): id is string => Boolean(id));
+
+    const reservationsMap = new Map<
+      string,
+      { typePaiement: string; montantAcompte: number; netProprietaire: number; montantSoldeRestant: number }
+    >();
+
+    if (reservationIds.length > 0) {
+      const reservations = await this.prisma.reservation.findMany({
+        where: { id: { in: reservationIds } },
+        select: {
+          id: true,
+          typePaiement: true,
+          montantAcompte: true,
+          netProprietaire: true,
+          montantSoldeRestant: true,
+        },
+      });
+
+      for (const r of reservations) {
+        reservationsMap.set(r.id, {
+          typePaiement: r.typePaiement,
+          montantAcompte: Number(r.montantAcompte || 0),
+          netProprietaire: Number(r.netProprietaire || 0),
+          montantSoldeRestant: Number(r.montantSoldeRestant || 0),
+        });
+      }
+    }
+
+    const transactionsEnriched = wallet.transactions.map((t) => ({
+      ...t,
+      reservation: t.reservationId ? reservationsMap.get(t.reservationId) ?? null : null,
+    }));
+
+    return {
+      ...wallet,
+      transactions: transactionsEnriched,
+    };
   }
 
   async requestWithdrawal(userId: string, dto: RequestWithdrawalDto) {
