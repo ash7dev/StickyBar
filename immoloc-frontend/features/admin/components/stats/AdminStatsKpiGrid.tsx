@@ -1,6 +1,6 @@
 'use client';
 
-import { TrendingUp, DollarSign, Percent, ShieldAlert, CheckCircle2 } from 'lucide-react';
+import { TrendingUp, DollarSign, Percent, ShieldAlert, CheckCircle2, ShoppingBag, Wallet } from 'lucide-react';
 import { cn } from '@/lib/utils/cn';
 
 interface SummaryData {
@@ -23,78 +23,119 @@ function formatPrice(amount?: number | null) {
 }
 
 export function AdminStatsKpiGrid({ summary, isLoading }: AdminStatsKpiGridProps) {
+  const gmv = summary?.totalGmv ?? 0;
+  const count = summary?.reservationCount ?? 0;
+  const averageBasket = count > 0 ? Math.round(gmv / count) : 0;
+  const hostPayouts = summary?.hostPayoutsTotal ?? 0;
+
   return (
-    <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
+    <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6">
       {/* 1. Revenu Net Klef */}
-      <div className="rounded-card border border-forest-300 bg-forest-50/40 p-5 shadow-2xs space-y-2">
+      <div className="rounded-card border border-forest-300 bg-forest-50/50 p-5 shadow-2xs space-y-2">
         <div className="flex items-center justify-between">
-          <span className="text-[0.6875rem] font-bold uppercase tracking-wider text-forest-800">
-            Revenu Net Plateforme (Klef)
+          <span className="text-[10px] font-extrabold uppercase tracking-wider text-forest-900">
+            Revenu Net Klef
           </span>
-          <span className="flex h-9 w-9 items-center justify-center rounded-inner bg-forest-600 text-neutral-0 shadow-2xs">
-            <TrendingUp className="h-5 w-5" />
+          <span className="flex h-8 w-8 items-center justify-center rounded-inner bg-forest-600 text-neutral-0 shadow-2xs">
+            <TrendingUp className="h-4 w-4" />
           </span>
         </div>
-        <p className="font-display text-2xl font-bold text-forest-950">
+        <p className="font-display text-xl font-extrabold text-forest-950 tabular-nums">
           {isLoading ? "..." : formatPrice(summary?.netKlefRevenue)}
         </p>
-        <p className="text-[0.6875rem] text-forest-700 font-medium flex items-center gap-1">
-          <CheckCircle2 className="h-3.5 w-3.5 text-forest-600" />
-          Commissions (7%) + Pénalités perçues
+        <p className="text-[10px] text-forest-700 font-semibold flex items-center gap-1">
+          <CheckCircle2 className="h-3 w-3 text-forest-600 shrink-0" />
+          Commissions (7%) + Pénalités
         </p>
       </div>
 
-      {/* 2. Commissions Réservations */}
+      {/* 2. Volume Brut Total (GMV) */}
       <div className="rounded-card border border-border bg-background-card p-5 shadow-2xs space-y-2">
         <div className="flex items-center justify-between">
-          <span className="text-[0.6875rem] font-bold uppercase tracking-wider text-foreground-muted">
-            Commissions Réservations (7%)
+          <span className="text-[10px] font-bold uppercase tracking-wider text-foreground-muted">
+            Volume Brut (GMV)
           </span>
-          <span className="flex h-9 w-9 items-center justify-center rounded-inner bg-background-alt border border-border text-forest-700">
-            <Percent className="h-5 w-5" />
+          <span className="flex h-8 w-8 items-center justify-center rounded-inner bg-background-alt border border-border text-foreground-muted">
+            <DollarSign className="h-4 w-4" />
           </span>
         </div>
-        <p className="font-display text-2xl font-bold text-foreground">
+        <p className="font-display text-xl font-extrabold text-foreground tabular-nums">
+          {isLoading ? "..." : formatPrice(gmv)}
+        </p>
+        <p className="text-[10px] text-foreground-muted">
+          Sur {count} séjour{count > 1 ? 's' : ''} traités
+        </p>
+      </div>
+
+      {/* 3. Reversé aux Hôtes (93% Net) */}
+      <div className="rounded-card border border-border bg-background-card p-5 shadow-2xs space-y-2">
+        <div className="flex items-center justify-between">
+          <span className="text-[10px] font-bold uppercase tracking-wider text-foreground-muted">
+            Reversé Hôtes (93%)
+          </span>
+          <span className="flex h-8 w-8 items-center justify-center rounded-inner bg-forest-50 border border-forest-100 text-forest-700">
+            <Wallet className="h-4 w-4" />
+          </span>
+        </div>
+        <p className="font-display text-xl font-extrabold text-forest-900 tabular-nums">
+          {isLoading ? "..." : formatPrice(hostPayouts)}
+        </p>
+        <p className="text-[10px] text-foreground-muted">
+          100% garanti et versé
+        </p>
+      </div>
+
+      {/* 4. Panier Moyen (Ticket Moyen) */}
+      <div className="rounded-card border border-border bg-background-card p-5 shadow-2xs space-y-2">
+        <div className="flex items-center justify-between">
+          <span className="text-[10px] font-bold uppercase tracking-wider text-foreground-muted">
+            Panier Moyen / Séjour
+          </span>
+          <span className="flex h-8 w-8 items-center justify-center rounded-inner bg-gold-400/20 border border-gold-400/30 text-gold-700">
+            <ShoppingBag className="h-4 w-4" />
+          </span>
+        </div>
+        <p className="font-display text-xl font-extrabold text-foreground tabular-nums">
+          {isLoading ? "..." : formatPrice(averageBasket)}
+        </p>
+        <p className="text-[10px] text-foreground-muted">
+          Valeur moyenne d’une réservation
+        </p>
+      </div>
+
+      {/* 5. Commissions Séjours (7%) */}
+      <div className="rounded-card border border-border bg-background-card p-5 shadow-2xs space-y-2">
+        <div className="flex items-center justify-between">
+          <span className="text-[10px] font-bold uppercase tracking-wider text-foreground-muted">
+            Commissions 7%
+          </span>
+          <span className="flex h-8 w-8 items-center justify-center rounded-inner bg-background-alt border border-border text-forest-700">
+            <Percent className="h-4 w-4" />
+          </span>
+        </div>
+        <p className="font-display text-xl font-extrabold text-foreground tabular-nums">
           {isLoading ? "..." : formatPrice(summary?.commissionsTotal)}
         </p>
-        <p className="text-[0.6875rem] text-foreground-muted">
-          Sur {summary?.reservationCount ?? 0} séjours confirmés/effectués
+        <p className="text-[10px] text-foreground-muted">
+          Frais de service plateforme
         </p>
       </div>
 
-      {/* 3. Pénalités & Retentions */}
+      {/* 6. Pénalités & Annulations */}
       <div className="rounded-card border border-border bg-background-card p-5 shadow-2xs space-y-2">
         <div className="flex items-center justify-between">
-          <span className="text-[0.6875rem] font-bold uppercase tracking-wider text-foreground-muted">
-            Pénalités & Annulations
+          <span className="text-[10px] font-bold uppercase tracking-wider text-foreground-muted">
+            Pénalités Retenues
           </span>
-          <span className="flex h-9 w-9 items-center justify-center rounded-inner bg-warning-50 border border-warning-200 text-warning-800">
-            <ShieldAlert className="h-5 w-5" />
+          <span className="flex h-8 w-8 items-center justify-center rounded-inner bg-warning-50 border border-warning-200 text-warning-800">
+            <ShieldAlert className="h-4 w-4" />
           </span>
         </div>
-        <p className="font-display text-2xl font-bold text-foreground">
+        <p className="font-display text-xl font-extrabold text-foreground tabular-nums">
           {isLoading ? "..." : formatPrice(summary?.penaltiesTotal)}
         </p>
-        <p className="text-[0.6875rem] text-foreground-muted">
-          Débits pour pénalités et frais d'arbitrage
-        </p>
-      </div>
-
-      {/* 4. Volume Brut Transacté (GMV) */}
-      <div className="rounded-card border border-border bg-background-card p-5 shadow-2xs space-y-2">
-        <div className="flex items-center justify-between">
-          <span className="text-[0.6875rem] font-bold uppercase tracking-wider text-foreground-muted">
-            Volume Brut Total (GMV)
-          </span>
-          <span className="flex h-9 w-9 items-center justify-center rounded-inner bg-background-alt border border-border text-foreground-muted">
-            <DollarSign className="h-5 w-5" />
-          </span>
-        </div>
-        <p className="font-display text-2xl font-bold text-foreground">
-          {isLoading ? "..." : formatPrice(summary?.totalGmv)}
-        </p>
-        <p className="text-[0.6875rem] text-foreground-muted">
-          Dont {formatPrice(summary?.hostPayoutsTotal)} reversés aux hôtes
+        <p className="text-[10px] text-foreground-muted">
+          Arbitrage & Annulations
         </p>
       </div>
     </div>

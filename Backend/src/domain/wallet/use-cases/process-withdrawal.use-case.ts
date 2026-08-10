@@ -109,7 +109,7 @@ export class ProcessWithdrawalUseCase {
       await tx.transactionWallet.create({
         data: {
           walletId: retrait.walletId,
-          type: TypeTransactionWallet.CREDIT_LOCATION, // Remboursement = crédit
+          type: TypeTransactionWallet.REMBOURSEMENT,
           montant,
           sens: SensTransaction.CREDIT,
           soldeApres,

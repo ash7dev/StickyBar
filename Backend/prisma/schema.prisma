@@ -336,6 +336,11 @@ model Reservation {
   montantAcompte      Decimal? @db.Decimal(10, 2)
   montantSoldeRestant Decimal? @db.Decimal(10, 2)
 
+  // Subventions Teranga Club & Paiement Effectif
+  coinsDeduites   Decimal @default(0) @db.Decimal(10, 2)
+  montantPayeCash Decimal @default(0) @db.Decimal(10, 2)
+  subventionKlef  Decimal @default(0) @db.Decimal(10, 2)
+
   // Dette penalite (si wallet proprio insuffisant lors d'une penalite)
   dettePenalite Decimal @default(0) @db.Decimal(10, 2)
 
@@ -594,6 +599,33 @@ model Retrait {
   @@index([statut])
   @@index([walletId, statut])
   @@index([statut, demandeeLe])
+}
+
+// =============================================================================
+// GRAND LIVRE SYSTÈME & TRÉSORERIE PLATFORME KLEF (SYSTEM LEDGER & ESCROW)
+// =============================================================================
+
+model SystemLedger {
+  id                        String   @id @default("KLEF_SYSTEM_LEDGER_SINGLETON")
+  soldeSequestre            Decimal  @default(0) @db.Decimal(12, 2)
+  soldeCommissionsCumulees  Decimal  @default(0) @db.Decimal(12, 2)
+  soldePoolTeranga          Decimal  @default(0) @db.Decimal(12, 2)
+  misAJourLe                DateTime @updatedAt
+}
+
+model TransactionSystemLedger {
+  id                  String                 @id @default(uuid())
+  reservationId       String?
+  type                TypeTransactionSysteme
+  montant             Decimal                @db.Decimal(12, 2)
+  sens                SensTransaction
+  soldeSequestreApres Decimal                @db.Decimal(12, 2)
+  description         String?
+  creeLe              DateTime               @default(now())
+
+  @@index([reservationId])
+  @@index([type])
+  @@index([creeLe(sort: Desc)])
 }
 
 // =============================================================================
@@ -917,6 +949,16 @@ enum TypeTransactionWallet {
   DEBIT_DETTE
 }
 
+enum TypeTransactionSysteme {
+  ENCAISSEMENT_SEQUESTRE_CASH
+  SUBVENTION_TERANGA_INJECTEE
+  REVERSEMENT_PROPRIETAIRE
+  COMMISSION_ACQUISE
+  REMBOURSEMENT_LOCATAIRE_CASH
+  REMBOURSEMENT_LOCATAIRE_COINS
+  PENALITE_PROPRIETAIRE
+}
+
 enum SensTransaction {
   CREDIT
   DEBIT
@@ -1065,6 +1107,7 @@ enum TypeTransactionTeranga {
   CREDIT_PARRAINAGE
   CREDIT_BONUS_QUEST
   DEBIT_RESERVATION
+  CREDIT_ANNULATION
 }
 
 enum CodeBadgeTeranga {

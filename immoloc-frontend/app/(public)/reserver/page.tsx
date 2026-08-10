@@ -192,6 +192,7 @@ export default function ReserverPage({ searchParams }: Props) {
           nbPersonnes,
           typePaiement,
           fournisseur,
+          useCoins,
         }),
       });
       router.push(`/reservations/${res.reservationId}`);

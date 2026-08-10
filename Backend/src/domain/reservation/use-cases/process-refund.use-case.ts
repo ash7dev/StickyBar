@@ -1,6 +1,7 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { PrismaService } from '../../../infrastructure/prisma/prisma.service';
-import { ResultatAnnulation, StatutRefund, Prisma } from '@prisma/client';
+import { ResultatAnnulation, StatutRefund, Prisma, TypeTransactionTeranga } from '@prisma/client';
+import { SystemLedgerService } from '../../system-ledger/system-ledger.service';
 
 /**
  * USE CASE: Process Refund
@@ -30,7 +31,10 @@ export class ProcessRefundUseCase {
   // Commission ImmoLoc: 7%
   private readonly COMMISSION_RATE = 0.07;
 
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly systemLedger: SystemLedgerService,
+  ) {}
 
   /**
    * Détermine le résultat d'annulation selon le contexte
@@ -349,15 +353,59 @@ export class ProcessRefundUseCase {
     // TODO: Appeler Wave/Orange Money API ici
     // const transaction = await this.paymentService.refund(...)
 
-    // Simuler succès
-    await this.prisma.refund.update({
-      where: { id: refundId },
-      data: {
-        statut: 'EXECUTE',
-        executeLe: new Date(),
-        methodeRemboursement: refund.paiement.fournisseur,
-        idTransactionRefund: `SIMULATION_REFUND_${Date.now()}`,
-      },
+    // Calcul de la répartition Remboursement Cash vs Recrédit Klef Coins
+    const montantTotalRefund = Number(refund.montantLocataire);
+    const cashPaye = Number(refund.reservation.montantPayeCash || 0);
+    const coinsDeduites = Number(refund.reservation.coinsDeduites || 0);
+
+    const cashRefund = Math.min(montantTotalRefund, cashPaye > 0 ? cashPaye : montantTotalRefund);
+    const coinsRefund = Math.max(0, Math.min(coinsDeduites, montantTotalRefund - cashRefund));
+
+    await this.prisma.$transaction(async (tx) => {
+      // Simuler succès du refund
+      await tx.refund.update({
+        where: { id: refundId },
+        data: {
+          statut: 'EXECUTE',
+          executeLe: new Date(),
+          methodeRemboursement: refund.paiement.fournisseur,
+          idTransactionRefund: `SIMULATION_REFUND_${Date.now()}`,
+        },
+      });
+
+      // Recréditer les Klef Coins au locataire si des coins avaient été déduites
+      if (coinsRefund > 0) {
+        const terangaAccount = await tx.terangaAccount.findUnique({
+          where: { utilisateurId: refund.reservation.locataireId },
+        });
+
+        if (terangaAccount) {
+          const soldeApres = terangaAccount.soldeCoins + coinsRefund;
+          await tx.terangaAccount.update({
+            where: { id: terangaAccount.id },
+            data: { soldeCoins: soldeApres },
+          });
+
+          await tx.terangaTransaction.create({
+            data: {
+              terangaAccountId: terangaAccount.id,
+              montantCoins: coinsRefund,
+              type: TypeTransactionTeranga.CREDIT_ANNULATION,
+              description: `Recrédit Klef Coins suite à l'annulation de la réservation #${refund.reservationId.slice(0, 8).toUpperCase()}`,
+              reservationId: refund.reservationId,
+              soldeApres,
+            },
+          });
+        }
+      }
+
+      // Enregistrement au Grand Livre Système Klef
+      await this.systemLedger.recordRefund(
+        tx,
+        refund.reservationId,
+        cashRefund,
+        coinsRefund,
+      );
     });
 
     // Si pénalité proprio > 0, débiter son wallet

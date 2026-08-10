@@ -27,6 +27,7 @@ import { WalletDomainModule } from '../wallet/wallet.domain.module';
 import { PaymentDomainModule } from '../payment/payment.domain.module';
 import { ContratModule } from '../../infrastructure/contrat/contrat.module';
 import { RedisModule } from '../../infrastructure/redis/redis.module';
+import { SystemLedgerService } from '../system-ledger/system-ledger.service';
 
 const USE_CASES = [
   CreateReservationUseCase,
@@ -51,6 +52,7 @@ const USE_CASES = [
   CheckinProprioUseCase,
   CheckoutProprioUseCase,
   ReservationStateMachine,
+  SystemLedgerService,
 ];
 
 @Module({

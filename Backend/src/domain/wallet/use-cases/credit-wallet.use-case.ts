@@ -2,12 +2,16 @@ import { Injectable, Logger, NotFoundException } from '@nestjs/common';
 import { SensTransaction, TypeTransactionWallet } from '@prisma/client';
 import { PrismaService } from '../../../infrastructure/prisma/prisma.service';
 import { AwardBookingCashbackUseCase } from '../../teranga-club/use-cases/award-booking-cashback.use-case';
+import { SystemLedgerService } from '../../system-ledger/system-ledger.service';
 
 @Injectable()
 export class CreditWalletUseCase {
   private readonly logger = new Logger(CreditWalletUseCase.name);
 
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly systemLedger: SystemLedgerService,
+  ) {}
 
   async execute(reservationId: string): Promise<void> {
     await this.prisma.$transaction(async (tx) => {
@@ -17,8 +21,11 @@ export class CreditWalletUseCase {
           proprietaireId: true,
           locataireId: true,
           netProprietaire: true,
+          montantCommission: true,
           typePaiement: true,
           montantAcompte: true,
+          montantPayeCash: true,
+          subventionKlef: true,
         },
       });
 
@@ -101,6 +108,19 @@ export class CreditWalletUseCase {
               : ''),
         },
       });
+
+      // Libération des fonds depuis le Grand Livre Système Klef
+      const commNum = Number(reservation.montantCommission || 0);
+      const hostEscrowPayout = isDeposit
+        ? Math.max(0, Number(reservation.montantAcompte || 0) - commNum)
+        : Number(reservation.netProprietaire || 0);
+
+      await this.systemLedger.recordCheckinRelease(
+        tx,
+        reservationId,
+        hostEscrowPayout,
+        commNum,
+      );
 
       this.logger.log(
         `Wallet crédité [proprio: ${reservation.proprietaireId}] ` +

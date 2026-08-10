@@ -27,6 +27,8 @@ import { AdminReviewsService } from './admin-reviews.service';
 import { AdminNotificationsController } from './admin-notifications.controller';
 import { AdminNotificationsService } from './admin-notifications.service';
 
+import { SystemLedgerService } from '../../domain/system-ledger/system-ledger.service';
+
 @Module({
   imports: [PrismaModule, RedisModule, PaymentDomainModule],
   controllers: [
@@ -48,6 +50,7 @@ import { AdminNotificationsService } from './admin-notifications.service';
     AdminEquipementsService,
     AdminReviewsService,
     AdminNotificationsService,
+    SystemLedgerService,
   ],
 })
 export class AdminModule {}

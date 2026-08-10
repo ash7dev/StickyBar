@@ -13,8 +13,9 @@ import { PricingService } from '../../../shared/pricing/pricing.service';
 import { QueueService } from '../../../infrastructure/queue/queue.service';
 import { AuthUser } from '../../../shared/types/jwt-payload.type';
 import { ContratService } from '../../../infrastructure/contrat/contrat.service';
-
 import { NotificationsService } from '../../../modules/notifications/notifications.service';
+import { SystemLedgerService } from '../../system-ledger/system-ledger.service';
+import { RedeemCoinsUseCase } from '../../teranga-club/use-cases/redeem-coins.use-case';
 
 export interface CreateReservationInput {
   logementId: string;
@@ -23,6 +24,7 @@ export interface CreateReservationInput {
   nbPersonnes: number;
   typePaiement?: string;
   fournisseur?: FournisseurPaiement;
+  useCoins?: boolean;
 }
 
 @Injectable()
@@ -35,6 +37,7 @@ export class CreateReservationUseCase {
     private readonly queue: QueueService,
     private readonly contrat: ContratService,
     private readonly notifications: NotificationsService,
+    private readonly systemLedger: SystemLedgerService,
   ) {}
 
   async execute(user: AuthUser, input: CreateReservationInput, idempotencyKey?: string) {
@@ -161,8 +164,23 @@ export class CreateReservationUseCase {
       const isDeposit = input.typePaiement?.toUpperCase() === 'DEPOSIT' && acomptePct < 100;
       const typePaiement = isDeposit ? 'DEPOSIT' : 'FULL';
       const totalLocataireNum = Number(breakdown.totalLocataire);
-      const montantAcompte = isDeposit ? Math.round(totalLocataireNum * (acomptePct / 100)) : totalLocataireNum;
-      const montantSoldeRestant = isDeposit ? totalLocataireNum - montantAcompte : 0;
+      const montantBrutAEncaisser = isDeposit ? Math.round(totalLocataireNum * (acomptePct / 100)) : totalLocataireNum;
+      const montantSoldeRestant = isDeposit ? totalLocataireNum - montantBrutAEncaisser : 0;
+
+      // Calcul Déduction Klef Coins Teranga
+      let coinsDeduites = 0;
+      if (input.useCoins) {
+        const terangaAccount = await tx.terangaAccount.findUnique({
+          where: { utilisateurId: user.id },
+        });
+
+        if (terangaAccount && terangaAccount.soldeCoins > 0) {
+          coinsDeduites = Math.min(terangaAccount.soldeCoins, montantBrutAEncaisser);
+        }
+      }
+
+      const subventionKlef = coinsDeduites;
+      const montantPayeCash = Math.max(0, montantBrutAEncaisser - coinsDeduites);
 
       const reservation = await tx.reservation.create({
         data: {
@@ -183,12 +201,30 @@ export class CreateReservationUseCase {
           totalLocataire: breakdown.totalLocataire,
           netProprietaire: breakdown.netProprietaire,
           typePaiement,
-          montantAcompte,
+          montantAcompte: montantBrutAEncaisser,
           montantSoldeRestant,
+          coinsDeduites,
+          montantPayeCash,
+          subventionKlef,
           statut: StatutReservation.PAID,
           delaiConfirmation,
         },
       });
+
+      // Débit effectif des Klef Coins si utilisés
+      if (coinsDeduites > 0) {
+        const redeemUseCase = new RedeemCoinsUseCase(tx as any);
+        await redeemUseCase.execute(user.id, coinsDeduites, reservation.id);
+      }
+
+      // Enregistrement au Grand Livre Système Klef (Séquestre + Subvention)
+      await this.systemLedger.recordEncaissementSequestre(
+        tx,
+        reservation.id,
+        montantPayeCash,
+        subventionKlef,
+        typePaiement === 'DEPOSIT' ? `(Acompte ${acomptePct}%)` : '(Paiement 100%)',
+      );
 
       await tx.reservationHistorique.createMany({
         data: [

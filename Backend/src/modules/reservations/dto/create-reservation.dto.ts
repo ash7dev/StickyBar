@@ -34,4 +34,8 @@ export class CreateReservationDto {
   @IsOptional()
   @IsString()
   fournisseur?: string;
+
+  @ApiProperty({ example: true, required: false })
+  @IsOptional()
+  useCoins?: boolean;
 }

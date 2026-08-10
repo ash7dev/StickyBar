@@ -1,6 +1,7 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../../infrastructure/prisma/prisma.service';
 import { RefundPaymentUseCase } from '../../domain/payment/use-cases/refund-payment.use-case';
+import { SystemLedgerService } from '../../domain/system-ledger/system-ledger.service';
 import { AdminFinanceQueryDto, AdminRefundsQueryDto, AdminWebhooksQueryDto } from './dto/admin-finance-query.dto';
 import { Prisma } from '@prisma/client';
 
@@ -9,6 +10,7 @@ export class AdminFinanceService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly refundPayment: RefundPaymentUseCase,
+    private readonly systemLedger: SystemLedgerService,
   ) {}
 
   async listTransactions(dto: AdminFinanceQueryDto) {
@@ -331,6 +333,8 @@ export class AdminFinanceService {
       typeMap[t].count += 1;
     }
 
+    const systemLedgerSummary = await this.systemLedger.getLedgerSummary();
+
     return {
       summary: {
         netKlefRevenue,
@@ -340,6 +344,7 @@ export class AdminFinanceService {
         hostPayoutsTotal,
         reservationCount: aggregateRes._count.id,
       },
+      systemLedger: systemLedgerSummary,
       timeSeries: Object.values(timeMap).sort((a, b) => a.date.localeCompare(b.date)),
       breakdownByCity: sortedCities,
       breakdownByType: Object.values(typeMap).sort((a, b) => b.commissions - a.commissions),

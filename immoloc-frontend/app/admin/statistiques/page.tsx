@@ -3,8 +3,10 @@
 import { useEffect, useState, useCallback, useMemo } from 'react';
 import { AdminShell } from '@/components/admin/admin-shell';
 import { AdminStatsHeaderBar, DatePreset } from '@/features/admin/components/stats/AdminStatsHeaderBar';
+import { AdminSystemLedgerCard } from '@/features/admin/components/stats/AdminSystemLedgerCard';
 import { AdminStatsKpiGrid } from '@/features/admin/components/stats/AdminStatsKpiGrid';
 import { AdminStatsCharts } from '@/features/admin/components/stats/AdminStatsCharts';
+import { AdminFinanceBreakdownDistribution } from '@/features/admin/components/stats/AdminFinanceBreakdownDistribution';
 import { AdminStatsKlefLedgerTable, KlefLedgerEntry } from '@/features/admin/components/stats/AdminStatsKlefLedgerTable';
 import { adminApi } from '@/lib/nestjs';
 
@@ -18,12 +20,18 @@ export default function AdminStatistiquesPage() {
 
   const [statsData, setStatsData] = useState<{
     summary?: any;
+    systemLedger?: {
+      soldeSequestre: number;
+      soldeCommissionsCumulees: number;
+      soldePoolTeranga: number;
+    };
     timeSeries: any[];
     breakdownByCity: any[];
     breakdownByType: any[];
     recentKlefLedger: KlefLedgerEntry[];
   }>({
     summary: undefined,
+    systemLedger: undefined,
     timeSeries: [],
     breakdownByCity: [],
     breakdownByType: [],
@@ -77,6 +85,7 @@ export default function AdminStatistiquesPage() {
       if (res) {
         setStatsData({
           summary: res.summary,
+          systemLedger: res.systemLedger,
           timeSeries: res.timeSeries ?? [],
           breakdownByCity: res.breakdownByCity ?? [],
           breakdownByType: res.breakdownByType ?? [],
@@ -101,7 +110,7 @@ export default function AdminStatistiquesPage() {
       return;
     }
 
-    const headers = ["ID Réservation", "Date", "Logement", "Ville", "Voyageur", "Montant Brut (XOF)", "Part Hôte (90%)", "Commission Net Klef (10%)"];
+    const headers = ["ID Réservation", "Date", "Logement", "Ville", "Voyageur", "Montant Brut (XOF)", "Part Hôte (93%)", "Commission Net Klef (7%)"];
     const rows = statsData.recentKlefLedger.map((item) => [
       item.id,
       item.date ? new Date(item.date).toLocaleDateString("fr-FR") : "",
@@ -134,7 +143,7 @@ export default function AdminStatistiquesPage() {
           </div>
         )}
 
-        {/* Header Bar */}
+        {/* Header Bar avec Filtres & Export CSV */}
         <AdminStatsHeaderBar
           datePreset={datePreset}
           onPresetChange={setDatePreset}
@@ -150,13 +159,19 @@ export default function AdminStatistiquesPage() {
           onExportCsv={handleExportCsv}
         />
 
-        {/* Top Summary KPI Grid */}
+        {/* NOUVEAU COMPOSANT : Widget Grand Livre & Séquestre Trésorerie Système */}
+        <AdminSystemLedgerCard
+          data={statsData.systemLedger}
+          isLoading={isLoading}
+        />
+
+        {/* Top Summary KPI Grid Enrichie (6 Indicateurs) */}
         <AdminStatsKpiGrid
           summary={statsData.summary}
           isLoading={isLoading}
         />
 
-        {/* Interactive Charts & City Breakdown */}
+        {/* Interactive Charts (Chiffre d'Affaires Net & Courbes) */}
         <AdminStatsCharts
           timeSeries={statsData.timeSeries}
           breakdownByCity={statsData.breakdownByCity}
@@ -164,7 +179,14 @@ export default function AdminStatistiquesPage() {
           isLoading={isLoading}
         />
 
-        {/* Detailed Klef Revenue Ledger Table */}
+        {/* NOUVEAU COMPOSANT : Répartition Financière Détaillée par Ville & Catégorie */}
+        <AdminFinanceBreakdownDistribution
+          breakdownByCity={statsData.breakdownByCity}
+          breakdownByType={statsData.breakdownByType}
+          isLoading={isLoading}
+        />
+
+        {/* Detailed Klef Revenue Ledger Table avec Recherche et Filtres */}
         <AdminStatsKlefLedgerTable
           entries={statsData.recentKlefLedger}
           isLoading={isLoading}
