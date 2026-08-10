@@ -190,13 +190,43 @@ export class SystemLedgerService {
 
   /**
    * Obtient l'état courant de la trésorerie plateforme Klef
+   * Calcule dynamiquement le séquestre réel, le cumul des commissions et le pool Teranga
    */
   async getLedgerSummary() {
     const ledger = await this.ensureLedgerExists();
+
+    const [pendingEscrowDeposit, pendingEscrowFull, checkedInCommissions, totalPenalties, totalSubventions] = await Promise.all([
+      this.prisma.reservation.aggregate({
+        where: { statut: { in: ['PAID', 'CONFIRMED'] }, typePaiement: 'DEPOSIT' },
+        _sum: { montantAcompte: true },
+      }),
+      this.prisma.reservation.aggregate({
+        where: { statut: { in: ['PAID', 'CONFIRMED'] }, typePaiement: 'FULL' },
+        _sum: { totalLocataire: true },
+      }),
+      this.prisma.reservation.aggregate({
+        where: { statut: { in: ['CHECKED_IN', 'COMPLETED'] } },
+        _sum: { montantCommission: true },
+      }),
+      this.prisma.transactionWallet.aggregate({
+        where: { type: 'DEBIT_PENALITE' },
+        _sum: { montant: true },
+      }),
+      this.prisma.reservation.aggregate({
+        where: { subventionKlef: { gt: 0 } },
+        _sum: { subventionKlef: true },
+      }),
+    ]);
+
+    const realSequestre = Number(pendingEscrowDeposit._sum.montantAcompte || 0) + Number(pendingEscrowFull._sum.totalLocataire || 0) + Number(ledger.soldeSequestre);
+    const realCommissions = Number(checkedInCommissions._sum.montantCommission || 0) + Number(totalPenalties._sum.montant || 0) + Number(ledger.soldeCommissionsCumulees);
+    const INITIAL_POOL = 10000000;
+    const realPool = INITIAL_POOL - Number(totalSubventions._sum.subventionKlef || 0);
+
     return {
-      soldeSequestre: Number(ledger.soldeSequestre),
-      soldeCommissionsCumulees: Number(ledger.soldeCommissionsCumulees),
-      soldePoolTeranga: Number(ledger.soldePoolTeranga),
+      soldeSequestre: Math.max(0, realSequestre),
+      soldeCommissionsCumulees: Math.max(0, realCommissions),
+      soldePoolTeranga: Math.max(0, realPool),
     };
   }
 }
