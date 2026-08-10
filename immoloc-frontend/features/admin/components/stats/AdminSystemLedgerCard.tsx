@@ -106,7 +106,7 @@ export function AdminSystemLedgerCard({ data, isLoading }: AdminSystemLedgerCard
               {fmt(soldeCommissions)}
             </p>
             <p className="text-[11px] text-on-inverse-muted leading-relaxed">
-              Chiffre d'affaires net perçu sur les séjours clôturés.
+              Chiffre d'affaires net total perçu (Commissions 7% + Pénalités).
             </p>
           </div>
 
