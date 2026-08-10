@@ -9,7 +9,7 @@ import { StatutPaiement, StatutReservation } from '@prisma/client';
 import { PrismaService } from '../../../infrastructure/prisma/prisma.service';
 import { QueueService } from '../../../infrastructure/queue/queue.service';
 import { ReservationStateMachine } from '../reservation.state-machine';
-
+import { CalculateTierUseCase } from '../../teranga-club/use-cases/calculate-tier.use-case';
 import { NotificationsService } from '../../../modules/notifications/notifications.service';
 
 @Injectable()
@@ -84,5 +84,34 @@ export class CheckInConfirmUseCase {
       'Le locataire a validé l\'état des lieux d\'entrée. Le séjour a commencé !',
       '/reservations'
     ).catch((err) => this.logger.error(`Erreur Push checkin: ${err.message}`));
+
+    // 4. Calculer et retourner le montant de Klef Coins estimés gagnés
+    const twelveMonthsAgo = new Date();
+    twelveMonthsAgo.setFullYear(twelveMonthsAgo.getFullYear() - 1);
+
+    const sejoursStats = await this.prisma.reservation.aggregate({
+      where: {
+        locataireId: userId,
+        statut: { in: ['CHECKED_IN', 'COMPLETED'] },
+        dateDebut: { gte: twelveMonthsAgo },
+      },
+      _count: { id: true },
+      _sum: { totalLocataire: true },
+    });
+
+    const nbSejours = sejoursStats._count.id;
+    const gmv12Mois = Number(sejoursStats._sum.totalLocataire || 0);
+
+    const tierInfo = CalculateTierUseCase.execute(gmv12Mois, nbSejours);
+    const montantTotal = Number(reservation.totalLocataire || 0);
+    const coinsGagnes = Math.round((montantTotal * tierInfo.cashbackPct) / 100);
+
+    this.logger.log(`Klef Coins estimés pour résa ${reservationId}: ${coinsGagnes} Coins (${tierInfo.cashbackPct}%)`);
+
+    return {
+      success: true,
+      earnedCoins: coinsGagnes,
+      message: 'Check-in validé avec succès',
+    };
   }
 }

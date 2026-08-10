@@ -32,7 +32,7 @@ const TIER_GOALS: Record<string, { nextTier: string; icon: string; goalText: str
 };
 
 export function TerangaRewardModal({ isOpen, onClose, earnedCoins = 1500 }: Props) {
-  const { data: teranga } = useTerangaClub();
+  const { data: teranga, isLoading } = useTerangaClub();
 
   if (!isOpen) return null;
 
@@ -86,7 +86,7 @@ export function TerangaRewardModal({ isOpen, onClose, earnedCoins = 1500 }: Prop
             </div>
             
             <p className="text-xs text-foreground-muted leading-relaxed">
-              Vos Klef Coins seront débloqués sur votre compte dès la fin de ce séjour pour réduire la facture de vos <strong className="text-forest-900 font-bold">prochaines vacances</strong> !
+              Vos Klef Coins sont <strong className="text-forest-900 font-semibold">disponibles maintenant</strong> ! Rendez-vous sur votre compte Teranga Club pour les utiliser lors de vos <strong className="text-forest-900 font-bold">prochaines réservations</strong>.
             </p>
           </div>
 

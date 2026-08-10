@@ -51,10 +51,8 @@ export default function TerangaClubPage() {
         {/* 6. Quêtes interactives & Badges de la communauté */}
         <TerangaQuestsCard quests={quests} isAuthenticated={isAuthenticated} />
 
-        {/* 7. Historique des transactions (Si connecté) */}
-        {isAuthenticated && data && (
-          <TerangaHistoryCard transactions={data.transactions} />
-        )}
+        {/* 7. Historique des transactions */}
+        <TerangaHistoryCard transactions={data?.transactions || []} />
       </div>
     </main>
   );

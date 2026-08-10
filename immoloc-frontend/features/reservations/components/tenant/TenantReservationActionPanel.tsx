@@ -117,8 +117,14 @@ export function TenantReservationActionPanel({ id, res, onRefetch }: Props) {
     return () => clearTimeout(timer);
   }, [successMsg]);
 
+  const [earnedCoins, setEarnedCoins] = useState<number>(0);
+
   const handleConfirmCheckin = () => run(async () => {
-    await nestFetch(NEST_API.RESERVATIONS.CONFIRM_CHECKIN(id), { method: 'POST' });
+    const response = await nestFetch<{ success: boolean; earnedCoins: number; message: string }>(
+      NEST_API.RESERVATIONS.CONFIRM_CHECKIN(id),
+      { method: 'POST' }
+    );
+    setEarnedCoins(response.earnedCoins || 0);
     setShowRewardModal(true);
   }, 'Check-in validé. Bon séjour !');
 
@@ -720,7 +726,7 @@ export function TenantReservationActionPanel({ id, res, onRefetch }: Props) {
         <TerangaRewardModal
           isOpen={showRewardModal}
           onClose={() => setShowRewardModal(false)}
-          earnedCoins={Math.round((res.totalLocataire ?? 0) * 0.015)}
+          earnedCoins={earnedCoins}
         />
       )}
     </>
