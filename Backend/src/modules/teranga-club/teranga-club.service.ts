@@ -147,4 +147,121 @@ export class TerangaClubService {
 
     return quests;
   }
+
+  async claimQuest(userId: string, code: CodeBadgeTeranga) {
+    const account = await this.prisma.terangaAccount.findUnique({
+      where: { utilisateurId: userId },
+      include: { badges: true },
+    });
+
+    const isAlreadyUnlocked = account?.badges.some((b) => b.codeBadge === code);
+    if (isAlreadyUnlocked) {
+      return {
+        success: true,
+        claimed: false,
+        alreadyClaimed: true,
+        message: 'Vous avez déjà débloqué ce badge !',
+      };
+    }
+
+    let isEligible = false;
+    let bonusCoins = 0;
+    let libelle = '';
+    let description = '';
+    let icone = '';
+    let actionRequired: 'RESERVE' | 'REVIEW' | 'EXPLORE' | 'SHARE' = 'RESERVE';
+
+    switch (code) {
+      case CodeBadgeTeranga.FIRST_STAY: {
+        libelle = 'Premier Voyage';
+        description = 'Félicitations pour votre 1er séjour réservé et validé sur Klef !';
+        icone = '🔑';
+        bonusCoins = 1000;
+        actionRequired = 'RESERVE';
+        const staysCount = await this.prisma.reservation.count({
+          where: {
+            locataireId: userId,
+            statut: { in: ['CHECKED_IN', 'COMPLETED'] },
+          },
+        });
+        isEligible = staysCount >= 1;
+        break;
+      }
+      case CodeBadgeTeranga.AVIS_STAR: {
+        libelle = 'Avis Étoilé';
+        description = 'Merci d\'avoir partagé votre expérience avec la communauté Klef !';
+        icone = '⭐';
+        bonusCoins = 500;
+        actionRequired = 'REVIEW';
+        const reviewsCount = await this.prisma.avis.count({
+          where: { auteurId: userId },
+        });
+        isEligible = reviewsCount >= 1;
+        break;
+      }
+      case CodeBadgeTeranga.PETITE_COTE_CAPTAIN: {
+        libelle = 'Capitaine de la Petite Côte';
+        description = 'Séjour Petite Côte validé !';
+        icone = '🌊';
+        bonusCoins = 1500;
+        actionRequired = 'EXPLORE';
+        const petiteCoteRes = await this.prisma.reservation.findFirst({
+          where: {
+            locataireId: userId,
+            statut: { in: ['CHECKED_IN', 'COMPLETED'] },
+            logement: {
+              OR: [
+                { ville: { contains: 'Saly', mode: 'insensitive' } },
+                { ville: { contains: 'Somone', mode: 'insensitive' } },
+                { ville: { contains: 'Popenguine', mode: 'insensitive' } },
+                { ville: { contains: 'Mbour', mode: 'insensitive' } },
+              ],
+            },
+          },
+        });
+        isEligible = !!petiteCoteRes;
+        break;
+      }
+      case CodeBadgeTeranga.SUPER_PARRAIN: {
+        libelle = 'Super Parrain Teranga';
+        description = 'Votre parrainage a été validé !';
+        icone = '🤝';
+        bonusCoins = 2500;
+        actionRequired = 'SHARE';
+        isEligible = true;
+        break;
+      }
+      default:
+        return { success: false, claimed: false, message: 'Code de quête inconnu' };
+    }
+
+    if (!isEligible) {
+      return {
+        success: false,
+        claimed: false,
+        actionRequired,
+        message: `Condition non remplie pour débloquer "${libelle}".`,
+      };
+    }
+
+    const unlocked = await this.unlockBadge(
+      userId,
+      code,
+      bonusCoins,
+      libelle,
+      description,
+      icone,
+    );
+
+    return {
+      success: true,
+      claimed: unlocked,
+      bonusCoins,
+      libelle,
+      icone,
+      message: unlocked
+        ? `Bravo ! Vous avez débloqué "${libelle}" et gagné +${bonusCoins} Klef Coins ! 🎉`
+        : 'Badge déjà débloqué.',
+    };
+  }
 }

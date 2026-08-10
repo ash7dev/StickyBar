@@ -662,6 +662,8 @@ export interface TerangaTransaction {
 }
 
 export interface TerangaAccountData {
+  id?: string;
+  utilisateurId?: string;
   soldeCoins: number;
   tier: TerangaTier;
   cashbackPct: number;

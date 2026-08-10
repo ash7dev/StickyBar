@@ -23,10 +23,13 @@ export class RecalculerNotesUseCase {
       _avg: { note: true },
     });
 
-    // note logement = avg des avis associés au logement
+    // note logement = avg des avis associés au logement (laissés par les locataires)
     const logementGroups = await this.prisma.avis.groupBy({
       by: ['logementId'],
-      where: { logementId: { not: null } },
+      where: {
+        logementId: { not: null },
+        typeAvis: TypeAvis.LOCATAIRE_NOTE_LOGEMENT_ET_PROPRIO,
+      },
       _avg: { note: true },
     });
 

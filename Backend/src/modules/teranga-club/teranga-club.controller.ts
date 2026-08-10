@@ -1,6 +1,7 @@
-import { Controller, Get, Req, UseGuards } from '@nestjs/common';
+import { Controller, Get, Post, Param, Req, UseGuards } from '@nestjs/common';
 import { TerangaClubService } from './teranga-club.service';
 import { JwtAuthGuard } from '../../shared/guards/jwt-auth.guard';
+import { CodeBadgeTeranga } from '@prisma/client';
 
 @Controller('teranga-club')
 export class TerangaClubController {
@@ -17,5 +18,12 @@ export class TerangaClubController {
   async getQuests(@Req() req: any) {
     const userId = req.user?.id;
     return this.terangaClubService.getQuestsStatus(userId);
+  }
+
+  @Post('quests/:code/claim')
+  @UseGuards(JwtAuthGuard)
+  async claimQuest(@Req() req: any, @Param('code') code: string) {
+    const userId = req.user.id;
+    return this.terangaClubService.claimQuest(userId, code as CodeBadgeTeranga);
   }
 }

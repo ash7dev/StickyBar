@@ -172,4 +172,9 @@ export const NEST_API = {
     UNSUBSCRIBE:      `${BASE}/notifications/unsubscribe`,
     TEST:             `${BASE}/notifications/test`,
   },
+  TERANGA_CLUB: {
+    ME:          `${BASE}/teranga-club/me`,
+    QUESTS:      `${BASE}/teranga-club/quests`,
+    CLAIM_QUEST: (code: string) => `${BASE}/teranga-club/quests/${code}/claim`,
+  },
 } as const;

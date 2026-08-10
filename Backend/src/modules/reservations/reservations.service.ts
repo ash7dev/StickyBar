@@ -341,13 +341,13 @@ export class ReservationsService {
         throw new BadRequestException('Vous avez déjà noté ce locataire pour cette réservation');
       }
 
-      // Create rating
+      // Create rating for tenant (logementId is null because owner rates the tenant, not the listing)
       await tx.avis.create({
         data: {
           reservationId,
           auteurId: userId,
           cibleId: reservation.locataireId,
-          logementId: reservation.logementId,
+          logementId: null,
           note,
           commentaire,
           typeAvis: TypeAvis.PROPRIO_NOTE_LOCATAIRE,

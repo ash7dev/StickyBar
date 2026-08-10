@@ -1,146 +1,244 @@
 'use client';
 
+import { useCallback, useEffect, useId, useMemo, useRef } from 'react';
 import Link from 'next/link';
-import { Sparkles, Coins, Trophy, ChevronRight, X, ShieldCheck } from 'lucide-react';
+import { Coins, Trophy, ChevronRight, X, ShieldCheck, PartyPopper, Check } from 'lucide-react';
+import { cn } from '@/lib/utils/cn';
 import { useTerangaClub } from '../hooks/use-teranga-club';
 
 interface Props {
   isOpen: boolean;
   onClose: () => void;
+  /* Pas de valeur par défaut : `= 1500` faisait annoncer un gain de
+     1 500 coins dès que le parent oubliait la prop. */
   earnedCoins?: number;
 }
 
-const TIER_GOALS: Record<string, { nextTier: string; icon: string; goalText: string; perkText: string }> = {
+/* Les emojis 🔑 👑 🎉 dans les libellés : rendu variable selon la plateforme,
+   annoncés littéralement par les lecteurs d'écran, et incohérents avec les
+   icônes lucide utilisées à côté. */
+const TIER_GOALS: Record<string, {
+  nextTier: string | null;
+  goalText: string;
+  perkText: string;
+}> = {
   BRONZE: {
-    nextTier: "Clé d'Argent 🔑",
-    icon: '🔑',
-    goalText: 'Atteignez 3 séjours ou 300 000 FCFA dépensés',
-    perkText: 'Débloquez 2.0% de cashback (+33% de bonus) + Traitement prioritaire',
+    nextTier: 'Clé d’Argent',
+    goalText: '3 séjours ou 300 000 FCFA dépensés',
+    perkText: '2 % de cashback et traitement prioritaire',
   },
   SILVER: {
-    nextTier: "Clé d'Or Teranga 👑",
-    icon: '👑',
-    goalText: 'Atteignez 8 séjours ou 1 000 000 FCFA dépensés',
-    perkText: 'Débloquez 3.0% de cashback maximal + Priorité absolue auprès des hôtes',
+    nextTier: 'Clé d’Or',
+    goalText: '8 séjours ou 1 000 000 FCFA dépensés',
+    perkText: '3 % de cashback et priorité auprès des hôtes',
   },
   GOLD: {
-    nextTier: 'Membre d’Élite Gold 👑',
-    icon: '👑',
-    goalText: 'Statut maximal Clé d’Or atteint',
-    perkText: 'Vous profitez du cashback maximal de 3.0% et du statut Certifié Gold !',
+    /* `null` : le palier maximal n'a pas d'objectif suivant. La version
+       précédente affichait quand même « Objectif Privilège » avec une barre
+       de progression, en contradiction avec son propre texte. */
+    nextTier: null,
+    goalText: 'Statut maximal atteint',
+    perkText: 'Vous bénéficiez du cashback maximal de 3 %',
   },
 };
 
-export function TerangaRewardModal({ isOpen, onClose, earnedCoins = 1500 }: Props) {
-  const { data: teranga, isLoading } = useTerangaClub();
+const nombre = (n: number) => new Intl.NumberFormat('fr-FR').format(Math.round(n));
+
+export function TerangaRewardModal({ isOpen, onClose, earnedCoins }: Props) {
+  const { data: teranga } = useTerangaClub();
+
+  const titleId = useId();
+  const panelRef = useRef<HTMLDivElement>(null);
+  const closeRef = useRef<HTMLButtonElement>(null);
+  const previouslyFocused = useRef<HTMLElement | null>(null);
+
+  /* Ni Échap, ni piège à focus, ni verrou de scroll, ni fermeture au clic
+     sur le fond. */
+  useEffect(() => {
+    if (!isOpen) return;
+    const previousOverflow = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+    previouslyFocused.current = document.activeElement as HTMLElement | null;
+    closeRef.current?.focus();
+
+    const onKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') { onClose(); return; }
+      if (e.key !== 'Tab') return;
+      const items = panelRef.current?.querySelectorAll<HTMLElement>('button, a[href]');
+      if (!items?.length) return;
+      const first = items[0];
+      const last = items[items.length - 1];
+      if (e.shiftKey && document.activeElement === first) { e.preventDefault(); last.focus(); }
+      else if (!e.shiftKey && document.activeElement === last) { e.preventDefault(); first.focus(); }
+    };
+
+    window.addEventListener('keydown', onKeyDown);
+    return () => {
+      window.removeEventListener('keydown', onKeyDown);
+      document.body.style.overflow = previousOverflow;
+      previouslyFocused.current?.focus();
+    };
+  }, [isOpen, onClose]);
+
+  const tier = teranga?.tier ?? 'BRONZE';
+  const info = TIER_GOALS[tier] ?? TIER_GOALS.BRONZE;
+
+  /* La barre était figée à `w-3/5` : elle affichait 60 % à tout le monde,
+     quel que soit le nombre de séjours ou le montant dépensé. Elle n'apparaît
+     désormais que si l'API fournit une progression réelle. */
+  const progression = useMemo(() => {
+    const p = Number((teranga as { progressionTier?: number } | undefined)?.progressionTier);
+    return Number.isFinite(p) ? Math.min(100, Math.max(0, p)) : null;
+  }, [teranga]);
+
+  const handleBackdrop = useCallback(() => onClose(), [onClose]);
 
   if (!isOpen) return null;
 
-  const currentTier = teranga?.tier ?? 'BRONZE';
-  const tierInfo = TIER_GOALS[currentTier] ?? TIER_GOALS.BRONZE;
+  const coins = Number(earnedCoins) || 0;
 
   return (
-    <div className="fixed inset-0 z-50 bg-black/70 backdrop-blur-sm flex items-center justify-center p-4 animate-in fade-in duration-200">
-      <div className="bg-background-card w-full max-w-md rounded-2xl border border-forest-100 shadow-2xl overflow-hidden animate-in zoom-in-95 duration-200 relative">
-        
-        {/* Bouton fermeture */}
+    <div
+      className="fixed inset-0 z-100 flex items-center justify-center bg-forest-950/70 p-4 backdrop-blur-sm"
+      onClick={handleBackdrop}
+    >
+      <div
+        ref={panelRef}
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby={titleId}
+        onClick={(e) => e.stopPropagation()}
+        className="relative w-full max-w-md overflow-hidden rounded-card border border-border bg-background-card shadow-xl"
+      >
         <button
+          ref={closeRef}
           type="button"
           onClick={onClose}
-          className="absolute top-3.5 right-3.5 z-10 w-8 h-8 rounded-full bg-white/80 dark:bg-forest-900/80 border border-forest-100 flex items-center justify-center text-forest-800 hover:bg-white transition-colors"
           aria-label="Fermer"
+          className="glass absolute top-3.5 right-3.5 z-10 flex h-8 w-8 items-center justify-center rounded-pill text-forest-900"
         >
-          <X className="w-4 h-4" />
+          <X className="h-4 w-4" />
         </button>
 
-        {/* En-tête festif avec dégradé vert & or */}
-        <div className="bg-gradient-to-br from-forest-950 via-forest-900 to-forest-800 text-white p-6 pt-8 text-center relative overflow-hidden">
-          <div className="pointer-events-none absolute -top-12 -right-12 h-40 w-40 rounded-full bg-lime-400/20 blur-2xl" />
-          <div className="pointer-events-none absolute -bottom-12 -left-12 h-40 w-40 rounded-full bg-gold-400/20 blur-2xl" />
+        {/* ── En-tête ──────────────────────────────────────────────────── */}
 
-          {/* Badge animation */}
-          <div className="relative mx-auto mb-3 w-16 h-16 rounded-2xl bg-gradient-to-tr from-lime-400 to-gold-300 p-0.5 shadow-lg animate-bounce">
-            <div className="w-full h-full rounded-[14px] bg-forest-950 flex items-center justify-center text-lime-300">
-              <Sparkles className="w-8 h-8" />
-            </div>
+        <div className="section-inverse relative overflow-hidden rounded-none p-6 pt-8 text-center">
+          {/* Deux halos superposés dont un lime, plus un dégradé, plus une
+             pastille en dégradé lime→or : quatre couches pour un en-tête. */}
+          <div
+            aria-hidden="true"
+            className="pointer-events-none absolute -top-12 -right-12 h-40 w-40 rounded-pill bg-forest-700/40 blur-3xl"
+          />
+
+          <div className="relative">
+            {/* `animate-bounce` en boucle infinie sur la pastille. */}
+            <span className="mx-auto mb-3 flex h-16 w-16 items-center justify-center rounded-inner border border-gold-400/30 bg-gold-400/15 text-gold-300">
+              <PartyPopper className="h-8 w-8" aria-hidden="true" />
+            </span>
+
+            <h2 id={titleId} className="font-display text-xl font-semibold text-on-inverse-display">
+              Check-in validé
+            </h2>
+            <p className="mt-1 text-xs text-on-inverse-muted">
+              Votre installation est confirmée. Bon séjour.
+            </p>
           </div>
-
-          <h3 className="font-display text-xl font-extrabold text-white">
-            🎉 Check-in Validé !
-          </h3>
-          <p className="text-xs text-forest-200 mt-1 font-medium">
-            Votre installation est confirmée. Bon séjour dans votre logement !
-          </p>
         </div>
 
-        <div className="p-6 space-y-5">
-          {/* Recompense Coins */}
-          <div className="p-4 rounded-xl border border-lime-500/30 bg-gradient-to-br from-lime-500/10 via-forest-50/40 to-background-card space-y-2 text-center">
-            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-pill bg-lime-400/20 border border-lime-400/30 text-forest-800 text-xs font-bold">
-              <Coins className="w-4 h-4 text-forest-800" />
-              <span>CASHBACK ACCUMULÉ</span>
+        <div className="space-y-5 p-6">
+
+          {/* ── Cashback ───────────────────────────────────────────────── */}
+
+          {coins > 0 && (
+            <div className="space-y-2 rounded-card border border-gold-200 bg-gold-50 p-4 text-center">
+              <span className="inline-flex items-center gap-2 rounded-pill border border-gold-200 bg-background-card px-3 py-1 text-xs font-semibold text-gold-700">
+                <Coins className="h-4 w-4" aria-hidden="true" />
+                Cashback crédité
+              </span>
+
+              <p className="font-display text-3xl font-semibold tracking-tight tabular-nums text-gold-700">
+                +{nombre(coins)}
+              </p>
+              <p className="text-sm font-semibold text-foreground">Klef Coins</p>
+
+              <p className="text-xs leading-relaxed text-foreground-muted">
+                Vos coins sont disponibles immédiatement et utilisables sur vos prochaines
+                réservations.
+              </p>
             </div>
-            
-            <div className="font-display text-3xl font-black text-forest-900 tracking-tight">
-              +{earnedCoins.toLocaleString('fr-FR')} Coins
-            </div>
-            
-            <p className="text-xs text-foreground-muted leading-relaxed">
-              Vos Klef Coins sont <strong className="text-forest-900 font-semibold">disponibles maintenant</strong> ! Rendez-vous sur votre compte Teranga Club pour les utiliser lors de vos <strong className="text-forest-900 font-bold">prochaines réservations</strong>.
+          )}
+
+          {/* ── Progression ────────────────────────────────────────────── */}
+
+          <div className="space-y-3 rounded-card border border-border bg-background-alt p-4">
+            {info.nextTier ? (
+              <>
+                <div className="flex items-center justify-between gap-3">
+                  <span className="text-xs font-semibold uppercase tracking-wider text-foreground-muted">
+                    Prochain statut
+                  </span>
+                  <span className="flex items-center gap-1 text-xs font-semibold text-gold-700">
+                    <Trophy className="h-3.5 w-3.5" aria-hidden="true" />
+                    {info.nextTier}
+                  </span>
+                </div>
+
+                <p className="text-sm font-semibold text-foreground">{info.goalText}</p>
+
+                {progression !== null && (
+                  <div className="space-y-1">
+                    <div
+                      role="img"
+                      aria-label={`Progression : ${Math.round(progression)} pour cent`}
+                      className="h-2 w-full overflow-hidden rounded-pill bg-background-card"
+                    >
+                      <div
+                        className="h-full rounded-pill bg-gold-400 transition-[width] duration-700"
+                        style={{ width: `${progression}%` }}
+                      />
+                    </div>
+                    <p className="text-right text-xs tabular-nums text-foreground-muted">
+                      {Math.round(progression)} %
+                    </p>
+                  </div>
+                )}
+              </>
+            ) : (
+              <div className="flex items-center gap-2">
+                <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-pill border border-gold-200 bg-gold-50 text-gold-700">
+                  <Check className="h-4 w-4" aria-hidden="true" />
+                </span>
+                <p className="text-sm font-semibold text-foreground">{info.goalText}</p>
+              </div>
+            )}
+
+            <p className="flex items-start gap-1.5 border-t border-border pt-3 text-xs leading-relaxed text-foreground-muted">
+              <ShieldCheck className="mt-0.5 h-3.5 w-3.5 shrink-0 text-forest-600" aria-hidden="true" />
+              {info.perkText}
             </p>
           </div>
 
-          {/* Gamification : Progression vers le statut supérieur */}
-          <div className="p-4 rounded-xl border border-border bg-background-alt space-y-3">
-            <div className="flex items-center justify-between">
-              <span className="text-[10px] font-extrabold uppercase tracking-wider text-foreground-faint">
-                Objectif Privilège
-              </span>
-              <span className="text-xs font-bold text-forest-800 flex items-center gap-1">
-                <Trophy className="w-3.5 h-3.5 text-gold-500" />
-                {tierInfo.nextTier}
-              </span>
-            </div>
+          {/* ── Actions ────────────────────────────────────────────────── */}
 
-            <div className="space-y-1.5">
-              <div className="flex items-center justify-between text-xs font-semibold">
-                <span className="text-foreground">{tierInfo.goalText}</span>
-                <span className="text-forest-700 font-bold">En cours</span>
-              </div>
-
-              {/* Progress bar */}
-              <div className="w-full h-2 rounded-full bg-neutral-200 dark:bg-neutral-800 overflow-hidden">
-                <div className="h-full rounded-full bg-gradient-to-r from-forest-600 to-lime-500 w-3/5" />
-              </div>
-            </div>
-
-            <p className="text-[11px] text-foreground-muted flex items-center gap-1.5 pt-1">
-              <ShieldCheck className="w-3.5 h-3.5 text-forest-600 shrink-0" />
-              <span>{tierInfo.perkText}</span>
-            </p>
-          </div>
-
-          {/* Action buttons */}
-          <div className="space-y-2 pt-1">
+          <div className="space-y-2">
             <Link
               href="/teranga-club"
               onClick={onClose}
-              className="w-full flex items-center justify-center gap-2 py-3.5 px-5 rounded-pill bg-forest-900 hover:bg-forest-950 text-white font-bold text-sm shadow-md transition-all active:scale-98"
+              className="flex w-full items-center justify-center gap-2 rounded-pill bg-button-primary px-5 py-3.5 text-sm font-semibold text-on-button-primary transition-[background-color,transform] hover:bg-button-primary-hover active:scale-[0.98]"
             >
-              <span>Découvrir le Klef Teranga Club</span>
-              <ChevronRight className="w-4 h-4 text-lime-300" />
+              Voir mon Teranga Club
+              <ChevronRight className="h-4 w-4" aria-hidden="true" />
             </Link>
 
             <button
               type="button"
               onClick={onClose}
-              className="w-full py-2.5 px-4 text-xs font-semibold text-foreground-muted hover:text-foreground transition-colors text-center"
+              className="w-full px-4 py-2.5 text-center text-xs font-semibold text-foreground-muted transition-colors hover:text-foreground"
             >
-              Fermer et profiter de mon séjour
+              Fermer
             </button>
           </div>
         </div>
-
       </div>
     </div>
   );

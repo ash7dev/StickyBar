@@ -12,7 +12,7 @@ import { ArrowLeft } from 'lucide-react';
 import Link from 'next/link';
 
 export default function TerangaClubPage() {
-  const { data, quests, isLoading, isAuthenticated } = useTerangaClub();
+  const { data, quests, isLoading, isAuthenticated, refetch } = useTerangaClub();
 
   return (
     <main className="bg-canvas min-h-screen py-8 sm:py-12">
@@ -49,7 +49,12 @@ export default function TerangaClubPage() {
         <TerangaTiersComparison data={data} />
 
         {/* 6. Quêtes interactives & Badges de la communauté */}
-        <TerangaQuestsCard quests={quests} isAuthenticated={isAuthenticated} />
+        <TerangaQuestsCard
+          quests={quests}
+          isAuthenticated={isAuthenticated}
+          onClaimSuccess={refetch}
+          userId={data?.id}
+        />
 
         {/* 7. Historique des transactions */}
         <TerangaHistoryCard transactions={data?.transactions || []} />

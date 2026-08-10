@@ -116,7 +116,7 @@ export default function ReserverPage({ searchParams }: Props) {
       <ActionGateModal
         steps={gate.steps}
         block={gate.block}
-        onComplete={() => {}}
+        onComplete={() => { }}
         onCancel={() => router.back()}
       />
     );
@@ -442,11 +442,10 @@ export default function ReserverPage({ searchParams }: Props) {
               <div className="flex-shrink-0 mt-0.5">
                 <div
                   onClick={() => setCguAccepted((v) => !v)}
-                  className={`w-5 h-5 rounded-md border-2 flex items-center justify-center transition-all duration-200 ${
-                    cguAccepted
+                  className={`w-5 h-5 rounded-md border-2 flex items-center justify-center transition-all duration-200 ${cguAccepted
                       ? 'bg-forest-700 border-forest-700 shadow-[0_0_0_3px_rgba(20,101,76,0.15)]'
                       : 'border-border bg-background-card group-hover:border-forest-600'
-                  }`}
+                    }`}
                 >
                   {cguAccepted && <CheckCircle2 className="w-3.5 h-3.5 text-white fill-white" />}
                 </div>
@@ -499,7 +498,7 @@ export default function ReserverPage({ searchParams }: Props) {
             MODE DESKTOP & MOBILE ÉTAPE 2/2 : Finalisation du Paiement (Wave / Orange Money)
            ═══════════════════════════════════════════════════════════════════════════ */}
         <div className={cn('grid grid-cols-1 lg:grid-cols-12 gap-8 items-start', step === 2 ? 'block' : 'hidden lg:grid')}>
-          
+
           {/* Colonne Gauche (Desktop / Mobile 2/2) : Carte synthétique du Logement & Dates */}
           <div className="lg:col-span-5 space-y-6">
             {/* Card Logement */}
@@ -767,11 +766,10 @@ export default function ReserverPage({ searchParams }: Props) {
                   <div className="flex-shrink-0 mt-0.5">
                     <div
                       onClick={() => setCguAccepted((v) => !v)}
-                      className={`w-5 h-5 rounded-md border-2 flex items-center justify-center transition-all duration-200 ${
-                        cguAccepted
+                      className={`w-5 h-5 rounded-md border-2 flex items-center justify-center transition-all duration-200 ${cguAccepted
                           ? 'bg-forest-700 border-forest-700 shadow-[0_0_0_3px_rgba(20,101,76,0.15)]'
                           : 'border-border bg-background-card group-hover:border-forest-600'
-                      }`}
+                        }`}
                     >
                       {cguAccepted && <CheckCircle2 className="w-3.5 h-3.5 text-white fill-white" />}
                     </div>

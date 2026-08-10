@@ -16,45 +16,32 @@ export function useTerangaClub() {
   const [quests, setQuests] = useState<TerangaQuest[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
+  const loadData = async () => {
+    setIsLoading(true);
+    try {
+      const [questsRes, accountRes] = await Promise.allSettled([
+        terangaClubApi.getQuests(),
+        isAuthenticated ? terangaClubApi.getMyAccount() : Promise.resolve(null),
+      ]);
+
+      if (questsRes.status === 'fulfilled') {
+        setQuests(questsRes.value);
+      }
+      if (accountRes.status === 'fulfilled' && accountRes.value) {
+        setData(accountRes.value);
+      } else {
+        setData(null);
+      }
+    } catch {
+      setData(null);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   useEffect(() => {
     if (!hasHydrated) return;
-
-    let isMounted = true;
-
-    async function load() {
-      setIsLoading(true);
-      try {
-        const [questsRes, accountRes] = await Promise.allSettled([
-          terangaClubApi.getQuests(),
-          isAuthenticated ? terangaClubApi.getMyAccount() : Promise.resolve(null),
-        ]);
-
-        if (isMounted) {
-          if (questsRes.status === 'fulfilled') {
-            setQuests(questsRes.value);
-          }
-          if (accountRes.status === 'fulfilled' && accountRes.value) {
-            setData(accountRes.value);
-          } else {
-            setData(null);
-          }
-        }
-      } catch {
-        if (isMounted) {
-          setData(null);
-        }
-      } finally {
-        if (isMounted) {
-          setIsLoading(false);
-        }
-      }
-    }
-
-    load();
-
-    return () => {
-      isMounted = false;
-    };
+    loadData();
   }, [hasHydrated, isAuthenticated, nestToken]);
 
   return {
@@ -62,5 +49,6 @@ export function useTerangaClub() {
     quests,
     isLoading: !hasHydrated || isLoading,
     isAuthenticated,
+    refetch: loadData,
   };
 }
