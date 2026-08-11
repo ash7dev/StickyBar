@@ -17,6 +17,7 @@ import { useGatedAction } from '@/features/gate/hooks/use-gated-action';
 import { ActionGateModal } from '@/features/gate/components/ActionGateModal';
 import { AvailabilityCalendar } from './AvailabilityCalendar';
 import { useToastError } from '@/lib/hooks/use-toast-error';
+import { KlefTrustBadge } from '@/components/ui/KlefTrustBadge';
 
 /**
  * Date civile locale au format YYYY-MM-DD.
@@ -623,25 +624,10 @@ export function PricePreviewWidget({
             )}
           </div>
 
-          {/* ── Garanties ────────────────────────────────────────────────── */}
+          {/* ── Garantie Séquestre Klef 100% ────────────────────────────── */}
+          <KlefTrustBadge variant="compact" className="mt-2" />
 
-          <div className="grid grid-cols-3 gap-2 border-t border-border pt-4 text-center">
-            {[
-              { icon: ShieldCheck, text: 'Séquestre', sub: 'garanti' },
-              { icon: Lock, text: 'Paiement', sub: 'sécurisé' },
-              { icon: CheckCircle2, text: 'Annulation', sub: 'flexible' },
-            ].map(({ icon: Icon, text, sub }) => (
-              <div key={text} className="flex flex-col items-center gap-1">
-                <span className="flex h-8 w-8 items-center justify-center rounded-inner border border-forest-100 bg-forest-50">
-                  <Icon className="h-4 w-4 text-forest-600" />
-                </span>
-                <span className="text-xs font-semibold text-foreground">{text}</span>
-                <span className="text-xs text-foreground-muted">{sub}</span>
-              </div>
-            ))}
-          </div>
-
-          <p className="text-center text-xs text-foreground-muted">
+          <p className="text-center text-[11px] text-foreground-muted">
             Aucun débit avant confirmation du propriétaire
           </p>
         </div>

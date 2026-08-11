@@ -9,6 +9,8 @@ import { SectionCard, OptionCard, Checkbox, Alerte, Montant } from './primitives
 import { masquerTelephone, pluriel } from '@/features/reservations/lib/reservation';
 import type { Fournisseur, ReservationState } from '@/features/reservations/hooks/use-reservation';
 
+import { KlefTrustBadge } from '@/components/ui/KlefTrustBadge';
+
 const OPERATEURS: { id: Fournisseur; nom: string; logo: string; note: string }[] = [
     { id: 'WAVE', nom: 'Wave', logo: '/wavelogo.jpeg', note: 'Sans frais' },
     { id: 'ORANGE_MONEY', nom: 'Orange Money', logo: '/orangeMoneylogo.png', note: 'Frais opérateur' },
@@ -19,6 +21,9 @@ export function PaymentSection({ r, montreErreurs }: { r: ReservationState; mont
 
     return (
         <div className="space-y-4">
+            {/* ── Badge de Garantie Séquestre Klef 100% ───────────────────────── */}
+            <KlefTrustBadge variant="card" />
+
             {/* ── Répartition du paiement ──────────────────────────────────────── */}
             {pricing.acompteDisponible && (
                 <SectionCard title="Quand payer" icon={Wallet}>

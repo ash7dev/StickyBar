@@ -1,118 +1,136 @@
 'use client';
 
-import { useState, useEffect, useMemo, useRef, useCallback } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState, type ComponentType } from 'react';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import {
-  Bell,
-  Menu,
-  Search,
-  ChevronDown,
-  Settings,
-  LogOut,
-  ArrowLeftRight,
-  ShieldAlert,
-  ExternalLink,
-  Megaphone,
-  CheckCircle2,
+  ArrowLeftRight, Bell, ChevronDown, ExternalLink, LogOut, Megaphone, Menu, Scale,
+  Search, Settings, ShieldAlert, ShieldCheck, Wallet,
 } from 'lucide-react';
 import { createClient } from '@/lib/supabase/client';
 import { useRoleStore } from '@/stores/role.store';
 import { useCurrentUser } from '@/hooks/use-current-user';
 import { cn } from '@/lib/utils/cn';
 
-const ADMIN_PAGE_TITLES: Array<[string, string]> = [
-  ['/admin/dashboard', 'Vue d’ensemble Administrateur'],
-  ['/admin/statistiques', 'Statistiques Financières & Gains Klef'],
-  ['/admin/kyc', 'Vérification KYC & Identité'],
-  ['/admin/annonces', 'Modération du Catalogue d’Annonces'],
-  ['/admin/litiges', 'Centre de Résolution des Litiges'],
-  ['/admin/support', 'Centre de Support & Tickets Assistance'],
-  ['/admin/avis', 'Modération des Avis & Notes'],
-  ['/admin/hotes', 'Gestion des Hôtes & Propriétaires'],
-  ['/admin/locataires', 'Annuaire des Locataires & Voyageurs'],
-  ['/admin/logements', 'Tous les Logements & Parc Immobilier'],
-  ['/admin/utilisateurs', 'Gestion des Utilisateurs'],
-  ['/admin/reservations', 'Supervision des Réservations'],
-  ['/admin/finances', 'Finance, Retraits & Webhooks'],
-  ['/admin/notifications', 'Diffusion de Notifications Broadcast'],
-  ['/admin/equipements', 'Référentiel des Équipements'],
-  ['/admin/parametres', 'Paramètres d’Administration'],
-  ['/admin', 'Portail Administration'],
+/* Casse de phrase, comme partout ailleurs dans le système. Les intitulés
+   étaient aussi redondants : la page /admin/statistiques n'a pas besoin de
+   rappeler « Klef » dans son titre. */
+const TITRES: Array<[string, string]> = [
+  ['/admin/dashboard', 'Vue d’ensemble'],
+  ['/admin/statistiques', 'Revenus et performance'],
+  ['/admin/kyc', 'Vérification d’identité'],
+  ['/admin/annonces', 'Modération des annonces'],
+  ['/admin/litiges', 'Litiges'],
+  ['/admin/support', 'Support'],
+  ['/admin/avis', 'Modération des avis'],
+  ['/admin/hotes', 'Hôtes'],
+  ['/admin/locataires', 'Locataires'],
+  ['/admin/logements', 'Logements'],
+  ['/admin/utilisateurs', 'Utilisateurs'],
+  ['/admin/reservations', 'Réservations'],
+  ['/admin/finances', 'Finances et retraits'],
+  ['/admin/notifications', 'Diffusion de notifications'],
+  ['/admin/equipements', 'Référentiel des équipements'],
+  ['/admin/parametres', 'Paramètres'],
+  ['/admin', 'Administration'],
 ];
+
+export interface UrgentBreakdown {
+  kyc?: number;
+  annonces?: number;
+  retraits?: number;
+  litiges?: number;
+}
 
 interface AdminHeaderProps {
   onMenuToggle: () => void;
-  /** Nombre d'actions urgentes en attente (KYC, Annonces, Retraits, Litiges) */
+  /** Total des actions urgentes. Calculé depuis `urgentDetails` s'il est fourni. */
   urgentCount?: number;
+  /**
+   * Répartition par file. Sans elle, le menu liste des catégories sans dire
+   * laquelle est en retard : « 7 urgences » et trois liens muets.
+   * Le commentaire d'origine annonçait quatre files dont les litiges, qui
+   * n'avaient aucune entrée dans le menu.
+   */
+  urgentDetails?: UrgentBreakdown;
 }
 
-export function AdminHeader({ onMenuToggle, urgentCount = 0 }: AdminHeaderProps) {
+const FILES: Array<{
+  cle: keyof UrgentBreakdown;
+  href: string;
+  label: string;
+  Icon: ComponentType<{ className?: string }>;
+}> = [
+    { cle: 'kyc', href: '/admin/kyc', label: 'Dossiers d’identité', Icon: ShieldCheck },
+    { cle: 'annonces', href: '/admin/annonces', label: 'Annonces à modérer', Icon: ShieldAlert },
+    { cle: 'litiges', href: '/admin/litiges', label: 'Litiges à arbitrer', Icon: Scale },
+    { cle: 'retraits', href: '/admin/finances', label: 'Retraits à valider', Icon: Wallet },
+  ];
+
+export function AdminHeader({ onMenuToggle, urgentCount, urgentDetails }: AdminHeaderProps) {
   const pathname = usePathname();
   const router = useRouter();
 
   const clearSession = useRoleStore((s) => s.clearSession);
   const { data: user } = useCurrentUser();
 
-  const [menuOpen, setMenuOpen] = useState<'none' | 'notif' | 'account'>('none');
-  const [searchValue, setSearchValue] = useState('');
-  const [isMac, setIsMac] = useState(false);
+  const [menu, setMenu] = useState<'none' | 'notif' | 'compte'>('none');
+  const [recherche, setRecherche] = useState('');
+  const [estMac, setEstMac] = useState(false);
 
   const notifRef = useRef<HTMLDivElement>(null);
-  const accountRef = useRef<HTMLDivElement>(null);
-  const searchRef = useRef<HTMLInputElement>(null);
+  const compteRef = useRef<HTMLDivElement>(null);
+  const champRef = useRef<HTMLInputElement>(null);
 
   const supabase = useMemo(() => createClient(), []);
 
   useEffect(() => {
-    setIsMac(/Mac|iPhone|iPad/.test(navigator.platform || navigator.userAgent));
+    setEstMac(/Mac|iPhone|iPad/.test(navigator.userAgent));
   }, []);
 
-  /* Fermeture des menus contextuels au clic extérieur ou touche Échap */
   useEffect(() => {
-    if (menuOpen === 'none') return;
-
-    const onPointerDown = (e: PointerEvent) => {
-      const target = e.target as Node;
-      const ref = menuOpen === 'notif' ? notifRef : accountRef;
-      if (ref.current && !ref.current.contains(target)) setMenuOpen('none');
+    if (menu === 'none') return;
+    const auPointeur = (e: PointerEvent) => {
+      const ref = menu === 'notif' ? notifRef : compteRef;
+      if (ref.current && !ref.current.contains(e.target as Node)) setMenu('none');
     };
-    const onKeyDown = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') setMenuOpen('none');
+    const auClavier = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') setMenu('none');
     };
-
-    document.addEventListener('pointerdown', onPointerDown);
-    document.addEventListener('keydown', onKeyDown);
+    document.addEventListener('pointerdown', auPointeur);
+    document.addEventListener('keydown', auClavier);
     return () => {
-      document.removeEventListener('pointerdown', onPointerDown);
-      document.removeEventListener('keydown', onKeyDown);
+      document.removeEventListener('pointerdown', auPointeur);
+      document.removeEventListener('keydown', auClavier);
     };
-  }, [menuOpen]);
+  }, [menu]);
 
-  useEffect(() => setMenuOpen('none'), [pathname]);
+  useEffect(() => setMenu('none'), [pathname]);
 
-  /* Raccourci clavier de recherche (⌘K ou Ctrl K) */
   useEffect(() => {
-    const onKeyDown = (e: KeyboardEvent) => {
+    const auClavier = (e: KeyboardEvent) => {
       if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'k') {
         e.preventDefault();
-        searchRef.current?.focus();
+        champRef.current?.focus();
       }
     };
-    document.addEventListener('keydown', onKeyDown);
-    return () => document.removeEventListener('keydown', onKeyDown);
+    document.addEventListener('keydown', auClavier);
+    return () => document.removeEventListener('keydown', auClavier);
   }, []);
 
-  const handleSearchSubmit = useCallback((e: React.FormEvent) => {
-    e.preventDefault();
-    const q = searchValue.trim();
-    if (!q) return;
-    router.push(`/admin/utilisateurs?search=${encodeURIComponent(q)}`);
-    searchRef.current?.blur();
-  }, [searchValue, router]);
+  const rechercher = useCallback(
+    (e: React.FormEvent) => {
+      e.preventDefault();
+      const q = recherche.trim();
+      if (!q) return;
+      router.push(`/admin/utilisateurs?search=${encodeURIComponent(q)}`);
+      champRef.current?.blur();
+    },
+    [recherche, router],
+  );
 
-  const handleLogout = useCallback(async () => {
-    setMenuOpen('none');
+  const deconnexion = useCallback(async () => {
+    setMenu('none');
     try {
       await supabase.auth.signOut();
     } finally {
@@ -121,235 +139,237 @@ export function AdminHeader({ onMenuToggle, urgentCount = 0 }: AdminHeaderProps)
     }
   }, [supabase, clearSession]);
 
-  const title =
-    ADMIN_PAGE_TITLES.find(([key]) => pathname === key || pathname.startsWith(`${key}/`))?.[1]
-    ?? 'Administration Klef';
+  const titre =
+    TITRES.find(([cle]) => pathname === cle || pathname.startsWith(`${cle}/`))?.[1] ??
+    'Administration';
 
   const prenom = user?.prenom?.trim();
   const nom = user?.nom?.trim();
-  const initials = (prenom?.[0] ?? user?.email?.[0] ?? 'A').toUpperCase();
+  const initiales =
+    `${prenom?.[0] ?? ''}${nom?.[0] ?? ''}`.toUpperCase() ||
+    (user?.email?.[0] ?? 'A').toUpperCase();
+
+  const files = FILES.map((f) => ({ ...f, nombre: urgentDetails?.[f.cle] ?? 0 }));
+  const total =
+    urgentDetails
+      ? files.reduce((a, f) => a + f.nombre, 0)
+      : (urgentCount ?? 0);
+
+  const entreeMenu =
+    'flex items-center gap-3 rounded-pill px-3 py-2 text-xs font-semibold text-foreground transition-colors hover:bg-background-alt';
 
   return (
-    <header className="sticky top-0 z-40 border-b border-border bg-background-card/95 text-foreground backdrop-blur-md">
-      <div className="px-4 py-3.5 sm:px-6 lg:px-8">
+    /* `backdrop-blur-md` derrière un fond à 95 % d'opacité : le filtre ne
+       produit rien de visible et coûte du GPU à chaque scroll. */
+    <header className="sticky top-0 z-40 border-b border-border bg-background-card text-foreground">
+      <div className="px-4 py-3 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between gap-4">
-
-          {/* Gauche : Bouton menu mobile + Titre de section admin */}
-          <div className="flex min-w-0 items-center gap-3.5">
+          {/* ── Gauche ─────────────────────────────────────────────────── */}
+          <div className="flex min-w-0 items-center gap-3">
             <button
               type="button"
               onClick={onMenuToggle}
-              aria-label="Ouvrir le menu d'administration"
-              className="rounded-inner border border-border bg-background-alt p-2 text-foreground transition-colors hover:bg-background-card lg:hidden"
+              aria-label="Ouvrir le menu d’administration"
+              className="rounded-pill border border-border bg-background-alt p-2 text-foreground transition-colors hover:bg-background-card lg:hidden"
             >
-              <Menu className="h-5 w-5" />
+              <Menu className="h-5 w-5" aria-hidden />
             </button>
 
             <div className="min-w-0">
-              <div className="flex items-center gap-2">
-                <span className="hidden sm:inline-flex items-center gap-1 rounded-pill bg-purple-50 border border-purple-200/80 px-2 py-0.5 text-[0.625rem] font-semibold uppercase tracking-wider text-purple-800">
-                  <ShieldAlert className="h-3 w-3" />
-                  Portail Administrateur
-                </span>
-              </div>
-              <h1 className="truncate font-display text-base font-semibold leading-tight tracking-tight text-foreground sm:text-xl">
-                {title}
+              {/* `purple-50 / 200 / 800` n'existent pas : ce badge rendait sans
+                  fond, sans bordure et sans couleur de texte. */}
+              <span className="hidden items-center gap-1 rounded-pill border border-border bg-background-alt px-2 py-0.5 text-xs font-semibold uppercase tracking-wider text-foreground-muted sm:inline-flex">
+                <ShieldAlert className="h-3 w-3" aria-hidden />
+                Administration
+              </span>
+              <h1 className="truncate font-display text-base font-semibold leading-tight text-foreground sm:text-xl">
+                {titre}
               </h1>
             </div>
           </div>
 
-          {/* Recherche Admin (Desktop) */}
+          {/* ── Recherche ──────────────────────────────────────────────── */}
           <div className="mx-4 hidden max-w-md flex-1 items-center md:flex">
-            <form onSubmit={handleSearchSubmit} role="search" className="relative w-full">
+            <form onSubmit={rechercher} role="search" className="relative w-full">
               <label htmlFor="admin-search" className="sr-only">
-                Rechercher un utilisateur, un logement ou une réservation
+                Rechercher un utilisateur
               </label>
               <Search
-                className="pointer-events-none absolute top-1/2 left-3.5 h-4 w-4 -translate-y-1/2 text-foreground-muted"
-                aria-hidden="true"
+                className="pointer-events-none absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-foreground-muted"
+                aria-hidden
               />
+              {/* Le placeholder annonçait « un logement, un code » alors que la
+                  soumission part toujours sur /admin/utilisateurs. */}
               <input
                 id="admin-search"
-                ref={searchRef}
-                type="text"
-                value={searchValue}
-                onChange={(e) => setSearchValue(e.target.value)}
-                placeholder="Rechercher un utilisateur, un logement, un code..."
-                className="h-9.5 w-full rounded-pill border border-border bg-background-alt pr-14 pl-10 text-xs text-foreground placeholder:text-foreground-faint focus:border-forest-500 focus:outline-none"
+                ref={champRef}
+                type="search"
+                value={recherche}
+                onChange={(e) => setRecherche(e.target.value)}
+                placeholder="Rechercher un utilisateur…"
+                /* `text-foreground-faint` (neutral-400, 2,22:1) sur un
+                   placeholder : c'est du texte, pas un séparateur. */
+                className="h-10 w-full rounded-pill border border-border bg-background-alt pl-10 pr-16 text-foreground placeholder:text-neutral-500 transition-colors focus:border-forest-600 focus:outline-none"
               />
               <kbd
-                aria-hidden="true"
-                className="pointer-events-none absolute top-1/2 right-3 -translate-y-1/2 rounded-pill border border-border bg-background-card px-2 py-0.5 text-[0.6875rem] font-semibold text-foreground-muted"
+                aria-hidden
+                className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 rounded-pill border border-border bg-background-card px-2 py-0.5 text-xs font-semibold text-foreground-muted"
               >
-                {isMac ? '⌘K' : 'Ctrl K'}
+                {estMac ? '⌘K' : 'Ctrl K'}
               </kbd>
             </form>
           </div>
 
-          {/* Droite : Broadcast Quick CTA + Notifications Urgentes + Menu Compte Admin */}
-          <div className="flex shrink-0 items-center gap-3">
-
-            {/* CTA Broadcast Notification */}
+          {/* ── Droite ─────────────────────────────────────────────────── */}
+          <div className="flex shrink-0 items-center gap-2.5">
             <Link
               href="/admin/notifications"
-              className="hidden sm:inline-flex h-9 items-center gap-2 rounded-pill border border-border bg-background-alt px-3.5 text-xs font-semibold text-foreground transition-colors hover:bg-background-card"
+              className="hidden h-9 items-center gap-2 rounded-pill border border-border bg-background-alt px-3.5 text-xs font-semibold text-foreground transition-colors hover:bg-background-card sm:inline-flex"
             >
-              <Megaphone className="h-3.5 w-3.5 text-forest-700" aria-hidden="true" />
-              <span>Broadcast</span>
+              <Megaphone className="h-3.5 w-3.5 text-forest-600" aria-hidden />
+              Diffusion
             </Link>
 
-            {/* Menu Alertes Urgences Admin */}
+            {/* ── Alertes ───────────────────────────────────────────────── */}
             <div ref={notifRef} className="relative">
               <button
                 type="button"
-                onClick={() => setMenuOpen((m) => (m === 'notif' ? 'none' : 'notif'))}
-                aria-expanded={menuOpen === 'notif'}
+                onClick={() => setMenu((m) => (m === 'notif' ? 'none' : 'notif'))}
+                aria-expanded={menu === 'notif'}
                 aria-haspopup="menu"
-                aria-label="Actions urgentes admin"
-                className="relative flex h-9 w-9 items-center justify-center rounded-inner border border-border bg-background-alt text-foreground transition-colors hover:bg-background-card"
+                aria-label={
+                  total > 0
+                    ? `Actions urgentes : ${total} en attente`
+                    : 'Actions urgentes : aucune'
+                }
+                className="relative flex h-9 w-9 items-center justify-center rounded-pill border border-border bg-background-alt text-foreground transition-colors hover:bg-background-card"
               >
-                <Bell className="h-4 w-4" aria-hidden="true" />
-                {urgentCount > 0 && (
+                <Bell className="h-4 w-4" aria-hidden />
+                {total > 0 && (
                   <span
-                    aria-hidden="true"
-                    className="absolute -top-1 -right-1 flex h-4 min-w-4 items-center justify-center rounded-pill bg-error-600 px-1 text-[0.625rem] font-bold text-neutral-0 tabular-nums shadow-xs"
+                    aria-hidden
+                    className="absolute -right-1 -top-1 flex h-4 min-w-4 items-center justify-center rounded-pill bg-error-600 px-1 text-xs font-semibold tabular-nums text-neutral-0"
                   >
-                    {urgentCount > 9 ? '9+' : urgentCount}
+                    {total > 9 ? '9+' : total}
                   </span>
                 )}
               </button>
 
-              {menuOpen === 'notif' && (
+              {menu === 'notif' && (
                 <div
                   role="menu"
-                  className="absolute top-full right-0 z-50 mt-2.5 w-80 overflow-hidden rounded-card border border-border bg-background-card shadow-xl"
+                  className="absolute right-0 top-full z-50 mt-2.5 w-80 overflow-hidden rounded-card border border-border bg-background-card shadow-xl"
                 >
-                  <div className="flex items-center justify-between border-b border-border bg-background-alt px-4 py-3">
-                    <p className="font-display text-xs font-semibold text-foreground uppercase tracking-wider">
-                      Actions urgentes en attente
-                    </p>
-                    {urgentCount > 0 && (
-                      <span className="rounded-pill bg-error-50 border border-error-200 px-2 py-0.5 text-[0.625rem] font-bold text-error-700">
-                        {urgentCount} urgence{urgentCount > 1 ? 's' : ''}
+                  <div className="flex items-center justify-between gap-2 border-b border-border bg-background-alt px-4 py-3">
+                    <p className="eyebrow text-[0.6875rem]">Actions en attente</p>
+                    {total > 0 && (
+                      <span className="rounded-pill border border-error-500/25 bg-error-50 px-2 py-0.5 text-xs font-semibold tabular-nums text-error-700">
+                        {total}
                       </span>
                     )}
                   </div>
 
                   <div className="divide-y divide-border">
-                    <Link
-                      href="/admin/kyc"
-                      className="flex items-center justify-between p-3.5 text-xs transition-colors hover:bg-background-alt"
-                    >
-                      <div className="flex items-center gap-2.5">
-                        <CheckCircle2 className="h-4 w-4 text-forest-600" />
-                        <span className="font-medium text-foreground">Dossiers KYC à valider</span>
-                      </div>
-                      <span className="font-semibold text-forest-700">Consulter</span>
-                    </Link>
+                    {files.map(({ cle, href, label, Icon, nombre }) => (
+                      <Link
+                        key={cle}
+                        href={href}
+                        role="menuitem"
+                        /* Les entrées ne fermaient pas le menu : sur un lien
+                           vers la page courante, il restait ouvert. */
+                        onClick={() => setMenu('none')}
+                        className="flex items-center justify-between gap-3 p-3.5 text-xs transition-colors hover:bg-background-alt"
+                      >
+                        <span className="flex min-w-0 items-center gap-2.5">
+                          <Icon className="h-4 w-4 shrink-0 text-foreground-muted" aria-hidden />
+                          <span className="truncate font-medium text-foreground">{label}</span>
+                        </span>
 
-                    <Link
-                      href="/admin/annonces"
-                      className="flex items-center justify-between p-3.5 text-xs transition-colors hover:bg-background-alt"
-                    >
-                      <div className="flex items-center gap-2.5">
-                        <ShieldAlert className="h-4 w-4 text-warning-600" />
-                        <span className="font-medium text-foreground">Annonces à modérer</span>
-                      </div>
-                      <span className="font-semibold text-forest-700">Consulter</span>
-                    </Link>
-
-                    <Link
-                      href="/admin/finances"
-                      className="flex items-center justify-between p-3.5 text-xs transition-colors hover:bg-background-alt"
-                    >
-                      <div className="flex items-center gap-2.5">
-                        <Bell className="h-4 w-4 text-purple-600" />
-                        <span className="font-medium text-foreground">Retraits Mobile Money</span>
-                      </div>
-                      <span className="font-semibold text-forest-700">Valider</span>
-                    </Link>
+                        {urgentDetails ? (
+                          <span
+                            className={cn(
+                              'shrink-0 rounded-pill px-2 py-0.5 text-xs font-semibold tabular-nums',
+                              nombre > 0
+                                ? 'bg-error-50 text-error-700'
+                                : 'bg-background-alt text-foreground-muted',
+                            )}
+                          >
+                            {nombre}
+                          </span>
+                        ) : (
+                          <span className="shrink-0 font-semibold text-link">Ouvrir</span>
+                        )}
+                      </Link>
+                    ))}
                   </div>
                 </div>
               )}
             </div>
 
-            {/* Menu Compte Administrateur */}
-            <div ref={accountRef} className="relative">
+            {/* ── Compte ────────────────────────────────────────────────── */}
+            <div ref={compteRef} className="relative">
               <button
                 type="button"
-                onClick={() => setMenuOpen((m) => (m === 'account' ? 'none' : 'account'))}
-                aria-expanded={menuOpen === 'account'}
+                onClick={() => setMenu((m) => (m === 'compte' ? 'none' : 'compte'))}
+                aria-expanded={menu === 'compte'}
                 aria-haspopup="menu"
-                aria-label="Menu administrateur"
-                className="flex h-9 items-center gap-2 rounded-pill border border-border bg-background-alt pr-2.5 pl-1.5 transition-colors hover:bg-background-card"
+                aria-label="Menu du compte administrateur"
+                className="flex h-9 items-center gap-2 rounded-pill border border-border bg-background-alt pl-1.5 pr-2.5 transition-colors hover:bg-background-card"
               >
-                <span className="flex h-6.5 w-6.5 items-center justify-center rounded-inner bg-forest-800 font-display text-[0.6875rem] font-bold text-neutral-0">
-                  {initials}
+                {/* `h-6.5 w-6.5` n'est pas une classe Tailwind : la pastille
+                    n'avait aucune dimension. */}
+                <span className="flex h-7 w-7 items-center justify-center rounded-inner bg-forest-800 font-display text-xs font-semibold text-neutral-0">
+                  {initiales}
                 </span>
-                <span className="hidden md:inline text-xs font-semibold text-foreground max-w-[100px] truncate">
-                  {prenom ? prenom : 'Admin'}
+                <span className="hidden max-w-[100px] truncate text-xs font-semibold text-foreground md:inline">
+                  {prenom || 'Admin'}
                 </span>
                 <ChevronDown
                   className={cn(
                     'h-3.5 w-3.5 text-foreground-muted transition-transform',
-                    menuOpen === 'account' && 'rotate-180',
+                    menu === 'compte' && 'rotate-180',
                   )}
-                  aria-hidden="true"
+                  aria-hidden
                 />
               </button>
 
-              {menuOpen === 'account' && (
+              {menu === 'compte' && (
                 <div
                   role="menu"
-                  className="absolute top-full right-0 z-50 mt-2.5 w-64 overflow-hidden rounded-card border border-border bg-background-card shadow-xl"
+                  className="absolute right-0 top-full z-50 mt-2.5 w-64 overflow-hidden rounded-card border border-border bg-background-card shadow-xl"
                 >
                   <div className="border-b border-border bg-background-alt px-4 py-3">
-                    <p className="text-[0.6875rem] font-semibold uppercase tracking-wider text-foreground-muted">
-                      Compte Administrateur
+                    <p className="eyebrow text-[0.6875rem]">Connecté en tant que</p>
+                    <p className="mt-0.5 truncate text-xs font-semibold text-foreground">
+                      {user?.email ?? '—'}
                     </p>
-                    <p className="truncate text-xs font-semibold text-foreground">{user?.email}</p>
                   </div>
 
-                  <div className="space-y-1 p-2">
-                    <Link
-                      href="/dashboard"
-                      role="menuitem"
-                      onClick={() => setMenuOpen('none')}
-                      className="flex items-center gap-3 rounded-inner px-3 py-2 text-xs font-semibold text-foreground transition-colors hover:bg-background-alt"
-                    >
-                      <ArrowLeftRight className="h-4 w-4 text-foreground-muted" aria-hidden="true" />
-                      Tableau de bord Hôte
+                  <div className="space-y-0.5 p-2">
+                    <Link href="/dashboard" role="menuitem" onClick={() => setMenu('none')} className={entreeMenu}>
+                      <ArrowLeftRight className="h-4 w-4 text-foreground-muted" aria-hidden />
+                      Tableau de bord hôte
                     </Link>
 
-                    <Link
-                      href="/"
-                      role="menuitem"
-                      onClick={() => setMenuOpen('none')}
-                      className="flex items-center gap-3 rounded-inner px-3 py-2 text-xs font-semibold text-foreground transition-colors hover:bg-background-alt"
-                    >
-                      <ExternalLink className="h-4 w-4 text-foreground-muted" aria-hidden="true" />
-                      Site public Klef
+                    <Link href="/" role="menuitem" onClick={() => setMenu('none')} className={entreeMenu}>
+                      <ExternalLink className="h-4 w-4 text-foreground-muted" aria-hidden />
+                      Site public
                     </Link>
 
-                    <Link
-                      href="/admin/parametres"
-                      role="menuitem"
-                      onClick={() => setMenuOpen('none')}
-                      className="flex items-center gap-3 rounded-inner px-3 py-2 text-xs font-semibold text-foreground transition-colors hover:bg-background-alt"
-                    >
-                      <Settings className="h-4 w-4 text-foreground-muted" aria-hidden="true" />
-                      Paramètres d’Admin
+                    <Link href="/admin/parametres" role="menuitem" onClick={() => setMenu('none')} className={entreeMenu}>
+                      <Settings className="h-4 w-4 text-foreground-muted" aria-hidden />
+                      Paramètres
                     </Link>
 
-                    <div className="my-1 h-px bg-border" />
+                    <div aria-hidden className="my-1 h-px bg-border" />
 
                     <button
                       type="button"
                       role="menuitem"
-                      onClick={handleLogout}
-                      className="flex w-full items-center gap-3 rounded-inner px-3 py-2 text-xs font-semibold text-error-700 transition-colors hover:bg-error-50"
+                      onClick={deconnexion}
+                      className={cn(entreeMenu, 'w-full text-error-700 hover:bg-error-50')}
                     >
-                      <LogOut className="h-4 w-4 text-error-600" aria-hidden="true" />
+                      <LogOut className="h-4 w-4" aria-hidden />
                       Déconnexion
                     </button>
                   </div>
@@ -357,7 +377,6 @@ export function AdminHeader({ onMenuToggle, urgentCount = 0 }: AdminHeaderProps)
               )}
             </div>
           </div>
-
         </div>
       </div>
     </header>

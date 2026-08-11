@@ -11,7 +11,7 @@ import { adminApi } from '@/lib/nestjs';
 export default function AdminLitigesPage() {
   const [allDisputes, setAllDisputes] = useState<DisputeItem[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-  const [activeTab, setActiveTab] = useState<DisputeStatusTab>('EN_ATTENTE');
+  const [activeTab, setActiveTab] = useState<DisputeStatusTab>('ALL');
   const [searchQuery, setSearchQuery] = useState('');
 
   // Modals
@@ -94,9 +94,16 @@ export default function AdminLitigesPage() {
   }, [allDisputes, searchQuery]);
 
   // Action d'arbitrage
-  const handleConfirmResolve = async (dispute: DisputeItem, statut: 'FONDE' | 'NON_FONDE', decisionAdmin: string) => {
+  const handleConfirmResolve = async (
+    dispute: DisputeItem,
+    statut: 'FONDE' | 'NON_FONDE',
+    decisionAdmin: string,
+    montantCompensation?: number,
+  ) => {
     try {
-      await adminApi.resolveDispute(dispute.id, statut, decisionAdmin);
+      await adminApi.resolveDispute(dispute.id, statut, decisionAdmin, {
+        montantCompensation,
+      });
       showToast(`Décision enregistrée avec succès : Litige ${statut === 'FONDE' ? 'Fondé' : 'Non Fondé'}`);
       loadDisputes();
       loadGlobalCounts();

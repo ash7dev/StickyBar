@@ -1,7 +1,9 @@
 'use client';
 
-import { useState } from 'react';
-import { DollarSign, Search, Building2, User, Loader2, ArrowUpRight } from 'lucide-react';
+import { useMemo, useState } from 'react';
+import {
+  AlertTriangle, ArrowUpRight, Building2, Download, Receipt, Search, User,
+} from 'lucide-react';
 import { cn } from '@/lib/utils/cn';
 
 export interface KlefLedgerEntry {
@@ -21,125 +23,272 @@ interface AdminStatsKlefLedgerTableProps {
   isLoading: boolean;
 }
 
-function formatPrice(amount?: number | null) {
-  if (amount == null) return "0 FCFA";
-  return new Intl.NumberFormat("fr-SN", { style: "currency", currency: "XOF", maximumFractionDigits: 0 }).format(amount);
-}
+/* Aligné sur le reste de l'app. `Intl` en style `currency` XOF rendait
+   « 12 345 F CFA » ; ailleurs c'est « 12 345 FCFA ». Sur un journal comptable
+   comparé à d'autres écrans, l'unité ne doit pas changer de forme.
 
-function formatDate(d?: string | null) {
-  if (!d) return "—";
-  return new Date(d).toLocaleDateString("fr-FR", { day: "2-digit", month: "short", year: "numeric" });
-}
+   `null` renvoie « — » et non « 0 FCFA » : afficher un zéro comptable là où la
+   donnée manque est la pire confusion possible sur un livre de comptes. */
+const fmtMontant = (n?: number | null) =>
+  n == null || Number.isNaN(Number(n))
+    ? '—'
+    : `${new Intl.NumberFormat('fr-FR').format(Math.round(Number(n)))} FCFA`;
+
+const fmtDate = (d?: string | null) => {
+  if (!d) return '—';
+  const date = new Date(d);
+  return Number.isNaN(date.getTime())
+    ? '—'
+    : date.toLocaleDateString('fr-FR', { day: '2-digit', month: 'short', year: 'numeric' });
+};
+
+/** Écart toléré sur l'égalité brut = hôte + Klef, en francs. */
+const TOLERANCE = 1;
 
 export function AdminStatsKlefLedgerTable({ entries, isLoading }: AdminStatsKlefLedgerTableProps) {
-  const [search, setSearch] = useState('');
+  const [recherche, setRecherche] = useState('');
 
-  const filtered = entries.filter((e) => {
-    if (!search.trim()) return true;
-    const q = search.toLowerCase();
-    const t = (e.title ?? '').toLowerCase();
-    const v = (e.ville ?? '').toLowerCase();
-    const l = (e.locataire ?? '').toLowerCase();
-    return t.includes(q) || v.includes(q) || l.includes(q) || e.id.toLowerCase().includes(q);
-  });
+  const lignes = useMemo(() => {
+    const q = recherche.trim().toLowerCase();
+    if (!q) return entries;
+    return entries.filter((e) =>
+      [e.title, e.ville, e.locataire, e.typeGain, e.id]
+        .some((champ) => (champ ?? '').toLowerCase().includes(q)),
+    );
+  }, [entries, recherche]);
+
+  /* Un journal sans totaux n'est pas un journal : c'était la première chose
+     qu'un comptable allait chercher, et il fallait sortir la calculatrice.
+     Le taux effectif est CALCULÉ, jamais écrit en dur — voir plus bas. */
+  const totaux = useMemo(() => {
+    const t = lignes.reduce(
+      (acc, e) => ({
+        brut: acc.brut + (Number(e.totalBrut) || 0),
+        hote: acc.hote + (Number(e.partHote) || 0),
+        klef: acc.klef + (Number(e.partKlef) || 0),
+      }),
+      { brut: 0, hote: 0, klef: 0 },
+    );
+    return { ...t, taux: t.brut > 0 ? (t.klef / t.brut) * 100 : null };
+  }, [lignes]);
+
+  function exporterCsv() {
+    const enTetes = ['Date', 'Reference', 'Logement', 'Ville', 'Locataire', 'Type', 'Brut', 'Part hote', 'Part Klef'];
+    const echapper = (v: unknown) => `"${String(v ?? '').replace(/"/g, '""')}"`;
+    const corps = lignes.map((e) =>
+      [e.date, e.id, e.title, e.ville, e.locataire, e.typeGain, e.totalBrut, e.partHote, e.partKlef]
+        .map(echapper)
+        .join(';'),
+    );
+    // BOM : sans lui, Excel ouvre les accents en mojibake.
+    const blob = new Blob([`\uFEFF${[enTetes.map(echapper).join(';'), ...corps].join('\n')}`], {
+      type: 'text/csv;charset=utf-8;',
+    });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `klef-journal-commissions-${new Date().toISOString().slice(0, 10)}.csv`;
+    a.click();
+    URL.revokeObjectURL(url);
+  }
 
   if (isLoading) {
     return (
-      <div className="flex items-center justify-center py-16">
-        <Loader2 className="h-8 w-8 animate-spin text-forest-700" />
+      <div className="space-y-3 rounded-card border border-border bg-background-card p-6" aria-busy="true">
+        {[0, 1, 2, 3, 4].map((i) => (
+          <div key={i} className="h-12 animate-pulse rounded-inner bg-background-alt" />
+        ))}
       </div>
     );
   }
 
+  const cellule = 'px-4 py-4';
+  const chiffre = 'text-right tabular-nums';
+
   return (
-    <div className="rounded-card border border-border bg-background-card p-6 shadow-2xs space-y-4">
-      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between border-b border-border pb-3">
+    <div className="space-y-4 rounded-card border border-border bg-background-card p-6 shadow-xs">
+      {/* ── En-tête ───────────────────────────────────────────────────────
+          Le titre annonçait « Commissions (7%) » et une colonne « Part Hôte
+          (93%) ». Rien ne garantit ce taux : il varie par accord, et le ×1,07
+          du prix public est une MAJORATION, pas la commission. Deux notions
+          différentes que ce libellé confondait. Le taux affiché est
+          désormais celui que produisent réellement les écritures. */}
+      <div className="flex flex-col gap-3 border-b border-border pb-4 sm:flex-row sm:items-start sm:justify-between">
         <div>
-          <h3 className="font-display text-base font-bold text-foreground flex items-center gap-2">
-            <DollarSign className="h-5 w-5 text-forest-700" /> Journal Détaillé des Commissions (7%) & Gains Klef
+          <h3 className="flex items-center gap-2 font-display text-base font-semibold text-foreground">
+            <Receipt className="h-5 w-5 text-forest-600" aria-hidden />
+            Journal des commissions
           </h3>
-          <p className="text-xs text-foreground-muted">Historique transaction par transaction de la part nette perçue par la plateforme</p>
+          <p className="mt-0.5 text-xs text-foreground-muted">
+            Part nette perçue par la plateforme, écriture par écriture.
+          </p>
         </div>
 
-        <div className="relative w-full sm:w-64">
-          <Search className="absolute left-3 top-2.5 h-4 w-4 text-foreground-muted" />
-          <input
-            type="text"
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            placeholder="Filtrer (logement, ville, client)..."
-            className="h-9 w-full rounded-pill border border-border bg-background-card pl-9 pr-4 text-xs text-foreground placeholder:text-foreground-muted focus:border-forest-600 focus:outline-hidden"
-          />
+        <div className="flex w-full shrink-0 items-center gap-2 sm:w-auto">
+          <div className="relative w-full sm:w-60">
+            <Search
+              className="pointer-events-none absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-foreground-muted"
+              aria-hidden
+            />
+            {/* Pas de `text-xs` : la couche base force 16 px, un utilitaire de
+                taille ici ferait zoomer Safari iOS au focus. */}
+            <input
+              type="search"
+              value={recherche}
+              onChange={(e) => setRecherche(e.target.value)}
+              aria-label="Filtrer le journal par logement, ville, locataire ou référence"
+              placeholder="Logement, ville, client…"
+              className="h-10 w-full rounded-pill border border-border bg-background-alt pl-10 pr-4 text-foreground placeholder:text-neutral-500 transition-colors focus:border-forest-600 focus:outline-none"
+            />
+          </div>
+
+          <button
+            type="button"
+            onClick={exporterCsv}
+            disabled={lignes.length === 0}
+            aria-label="Exporter le journal filtré au format CSV"
+            className="inline-flex h-10 shrink-0 items-center gap-1.5 rounded-pill border border-border bg-background-card px-3.5 text-xs font-semibold text-foreground transition-colors hover:bg-background-alt disabled:cursor-not-allowed disabled:opacity-40"
+          >
+            <Download className="h-3.5 w-3.5 text-foreground-muted" aria-hidden />
+            <span className="hidden sm:inline">CSV</span>
+          </button>
         </div>
       </div>
 
-      {filtered.length === 0 ? (
-        <div className="py-12 text-center text-xs text-foreground-muted space-y-1">
-          <DollarSign className="h-10 w-10 text-foreground-muted mx-auto opacity-30" />
-          <p className="font-bold text-foreground">Aucune écriture comptable trouvée</p>
-          <p>Aucun gain n'a été enregistré pour la période ou les filtres sélectionnés.</p>
+      {lignes.length === 0 ? (
+        <div className="space-y-1.5 py-12 text-center">
+          <Receipt className="mx-auto h-8 w-8 text-neutral-400" aria-hidden />
+          <p className="text-sm font-semibold text-foreground">Aucune écriture</p>
+          <p className="text-xs text-foreground-muted">
+            {recherche
+              ? 'Aucune écriture ne correspond à ce filtre.'
+              : 'Aucun gain enregistré sur la période.'}
+          </p>
         </div>
       ) : (
         <div className="overflow-x-auto">
           <table className="w-full text-left text-xs">
-            <thead className="border-b border-border bg-background-alt/50 font-display text-[0.6875rem] font-bold uppercase tracking-wider text-foreground-muted">
+            <caption className="sr-only">
+              Journal des commissions Klef, {lignes.length} écritures
+            </caption>
+
+            <thead className="border-b border-border bg-background-alt text-[0.6875rem] font-semibold uppercase tracking-wider text-foreground-muted">
               <tr>
-                <th className="py-3 px-4">Date & Réf.</th>
-                <th className="py-3 px-4">Bien & Emplacement</th>
-                <th className="py-3 px-4">Locataire Voyageur</th>
-                <th className="py-3 px-4">Montant Total Brut</th>
-                <th className="py-3 px-4">Part Hôte (93%)</th>
-                <th className="py-3 px-4 text-right">Commission Net Klef (7%)</th>
+                <th scope="col" className="px-4 py-3">Date et référence</th>
+                <th scope="col" className="px-4 py-3">Logement</th>
+                <th scope="col" className="px-4 py-3">Locataire</th>
+                {/* Les montants s'alignent à droite : c'est ce qui permet de
+                    comparer des ordres de grandeur en balayant la colonne. */}
+                <th scope="col" className={cn('px-4 py-3', chiffre)}>Brut</th>
+                <th scope="col" className={cn('px-4 py-3', chiffre)}>Part hôte</th>
+                <th scope="col" className={cn('px-4 py-3', chiffre)}>Part Klef</th>
               </tr>
             </thead>
+
             <tbody className="divide-y divide-border">
-              {filtered.map((item) => (
-                <tr key={item.id} className="transition-colors hover:bg-background-alt/30">
-                  {/* Date */}
-                  <td className="py-4 px-4 font-mono">
-                    <p className="font-bold text-foreground">{formatDate(item.date)}</p>
-                    <p className="text-[0.6875rem] text-foreground-muted">{item.id.slice(0, 8)}...</p>
-                  </td>
+              {lignes.map((item) => {
+                const brut = Number(item.totalBrut) || 0;
+                const klef = Number(item.partKlef) || 0;
+                const hote = Number(item.partHote) || 0;
+                const taux = brut > 0 ? (klef / brut) * 100 : null;
+                /* Sur un livre de comptes, une écriture qui ne s'équilibre pas
+                   doit se voir. Rien ne le contrôlait. */
+                const desequilibre = Math.abs(brut - hote - klef) > TOLERANCE;
 
-                  {/* Bien */}
-                  <td className="py-4 px-4">
-                    <div className="space-y-0.5 max-w-xs">
-                      <p className="font-bold text-foreground flex items-center gap-1 truncate">
-                        <Building2 className="h-3.5 w-3.5 text-forest-600 shrink-0" />
-                        {item.title ?? "Logement"}
+                return (
+                  <tr key={item.id} className="transition-colors hover:bg-background-alt">
+                    <td className={cellule}>
+                      <p className="font-semibold tabular-nums text-foreground">
+                        {fmtDate(item.date)}
                       </p>
-                      {item.ville && <p className="text-[0.6875rem] text-foreground-muted">{item.ville}</p>}
-                    </div>
-                  </td>
+                      {/* `slice(0, 8) + '...'` donnait une référence qu'on ne
+                          pouvait ni lire ni copier. */}
+                      <p className="font-mono text-xs text-foreground-muted" title={item.id}>
+                        {item.id}
+                      </p>
+                    </td>
 
-                  {/* Locataire */}
-                  <td className="py-4 px-4">
-                    <p className="font-semibold text-foreground flex items-center gap-1">
-                      <User className="h-3.5 w-3.5 text-forest-700" />
-                      {item.locataire || "Voyageur"}
-                    </p>
-                  </td>
+                    <td className={cellule}>
+                      <p className="flex max-w-[240px] items-center gap-1.5 font-semibold text-foreground">
+                        <Building2 className="h-3.5 w-3.5 shrink-0 text-forest-600" aria-hidden />
+                        <span className="truncate">{item.title ?? 'Logement'}</span>
+                      </p>
+                      <p className="mt-0.5 text-xs text-foreground-muted">
+                        {item.ville ?? '—'}
+                        {/* `typeGain` était dans le type et n'apparaissait
+                            nulle part : un journal doit dire la nature du
+                            gain, pas seulement son montant. */}
+                        {item.typeGain ? ` · ${item.typeGain.toLowerCase()}` : ''}
+                      </p>
+                    </td>
 
-                  {/* Total Brut */}
-                  <td className="py-4 px-4 font-display font-bold text-xs text-foreground">
-                    {formatPrice(item.totalBrut)}
-                  </td>
+                    <td className={cellule}>
+                      <p className="flex items-center gap-1.5 text-foreground">
+                        <User className="h-3.5 w-3.5 shrink-0 text-foreground-muted" aria-hidden />
+                        {item.locataire || 'Voyageur'}
+                      </p>
+                    </td>
 
-                  {/* Part Hôte */}
-                  <td className="py-4 px-4 font-display text-xs text-foreground-muted">
-                    {formatPrice(item.partHote)}
-                  </td>
+                    <td className={cn(cellule, chiffre, 'font-display font-semibold text-foreground')}>
+                      {fmtMontant(item.totalBrut)}
+                      {desequilibre && (
+                        <span
+                          title="Brut ≠ part hôte + part Klef"
+                          className="ml-1.5 inline-flex align-middle text-error-600"
+                        >
+                          <AlertTriangle className="h-3.5 w-3.5" aria-hidden />
+                          <span className="sr-only">Écriture déséquilibrée</span>
+                        </span>
+                      )}
+                    </td>
 
-                  {/* Commission Net Klef */}
-                  <td className="py-4 px-4 text-right">
-                    <span className="inline-flex items-center gap-1 font-display font-bold text-sm text-forest-800 bg-forest-50 px-2.5 py-1 rounded-pill border border-forest-200">
-                      <ArrowUpRight className="h-3.5 w-3.5 text-forest-600" />
-                      +{formatPrice(item.partKlef)}
-                    </span>
-                  </td>
-                </tr>
-              ))}
+                    <td className={cn(cellule, chiffre, 'text-foreground-muted')}>
+                      {fmtMontant(item.partHote)}
+                    </td>
+
+                    <td className={cn(cellule, chiffre)}>
+                      <span className="inline-flex items-center gap-1 rounded-pill border border-forest-100 bg-forest-50 px-2.5 py-1 font-display text-sm font-semibold text-forest-700">
+                        <ArrowUpRight className="h-3.5 w-3.5" aria-hidden />
+                        {fmtMontant(item.partKlef)}
+                      </span>
+                      {taux != null && (
+                        <p className="mt-1 text-xs tabular-nums text-foreground-muted">
+                          {taux.toFixed(1).replace('.', ',')} %
+                        </p>
+                      )}
+                    </td>
+                  </tr>
+                );
+              })}
             </tbody>
+
+            <tfoot className="border-t-2 border-border bg-background-alt">
+              <tr>
+                <th scope="row" colSpan={3} className="px-4 py-3.5 text-left font-semibold text-foreground">
+                  Total
+                  <span className="ml-1.5 font-normal tabular-nums text-foreground-muted">
+                    {lignes.length} écriture{lignes.length > 1 ? 's' : ''}
+                    {recherche ? ' (filtré)' : ''}
+                  </span>
+                </th>
+                <td className={cn('px-4 py-3.5', chiffre, 'font-display font-semibold text-foreground')}>
+                  {fmtMontant(totaux.brut)}
+                </td>
+                <td className={cn('px-4 py-3.5', chiffre, 'font-display text-foreground-muted')}>
+                  {fmtMontant(totaux.hote)}
+                </td>
+                <td className={cn('px-4 py-3.5', chiffre)}>
+                  <p className="font-display text-sm font-semibold text-forest-700">
+                    {fmtMontant(totaux.klef)}
+                  </p>
+                  {totaux.taux != null && (
+                    <p className="mt-0.5 text-xs tabular-nums text-foreground-muted">
+                      {totaux.taux.toFixed(1).replace('.', ',')} % en moyenne
+                    </p>
+                  )}
+                </td>
+              </tr>
+            </tfoot>
           </table>
         </div>
       )}

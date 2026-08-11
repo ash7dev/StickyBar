@@ -14,8 +14,8 @@ interface AdminReservationDetailModalProps {
 }
 
 function formatPrice(amount?: number | null) {
-  if (amount == null) return "—";
-  return new Intl.NumberFormat("fr-SN", { style: "currency", currency: "XOF", maximumFractionDigits: 0 }).format(amount);
+  if (amount == null || Number.isNaN(Number(amount))) return "—";
+  return `${new Intl.NumberFormat("fr-FR").format(Math.round(Number(amount)))} FCFA`;
 }
 
 function formatDate(d?: string | null) {

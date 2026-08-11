@@ -27,10 +27,10 @@ const TABS: Array<{
   Icon: typeof Clock;
   activeClasses: string;
 }> = [
-  { key: 'ALL', label: 'Tous', countKey: 'all', Icon: Scale, activeClasses: 'border-purple-300 bg-purple-50/40 shadow-2xs' },
-  { key: 'EN_ATTENTE', label: 'En attente', countKey: 'enAttente', Icon: Clock, activeClasses: 'border-warning-300 bg-warning-50/40 shadow-2xs' },
-  { key: 'FONDE', label: 'Fondés', countKey: 'fonde', Icon: CheckCircle2, activeClasses: 'border-forest-300 bg-forest-50/40 shadow-2xs' },
-  { key: 'NON_FONDE', label: 'Non fondés', countKey: 'nonFonde', Icon: XCircle, activeClasses: 'border-error-300 bg-error-50/40 shadow-2xs' },
+  { key: 'ALL', label: 'Tous', countKey: 'all', Icon: Scale, activeClasses: 'border-border bg-background-alt text-foreground shadow-xs' },
+  { key: 'EN_ATTENTE', label: 'En attente', countKey: 'enAttente', Icon: Clock, activeClasses: 'border-warning-500/30 bg-warning-50 text-warning-900 shadow-xs' },
+  { key: 'FONDE', label: 'Fondés', countKey: 'fonde', Icon: CheckCircle2, activeClasses: 'border-forest-200 bg-forest-50 text-forest-900 shadow-xs' },
+  { key: 'NON_FONDE', label: 'Non fondés', countKey: 'nonFonde', Icon: XCircle, activeClasses: 'border-error-500/30 bg-error-50 text-error-900 shadow-xs' },
 ];
 
 export function AdminDisputesHeaderBar({

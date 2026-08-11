@@ -3,7 +3,7 @@
 import { useEffect, useId, useMemo, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { Info, Moon, Plus, ScrollText, TrendingDown, Users, X } from 'lucide-react';
+import { Info, Moon, Plus, ScrollText, TrendingDown, Users, X, Smartphone, Wifi, KeyRound, LogIn } from 'lucide-react';
 import {
   stepConditionsSchema, type StepConditionsInput,
   type TarifPersonnes, type TarifNuits,
@@ -30,8 +30,6 @@ function TarifRow({
   return (
     <li className="flex items-center justify-between gap-3 rounded-inner border border-border bg-background-alt px-4 py-3">
       <span className="flex min-w-0 items-center gap-3">
-        {/* Le squircle etait en forest-950 avec icone lime, repete sur chaque
-            palier. Une ligne de tarif n'a pas besoin d'un bloc sombre. */}
         <Icon className="h-4 w-4 shrink-0 text-foreground-faint" aria-hidden="true" />
         <span className="truncate text-sm text-foreground">{label}</span>
       </span>
@@ -65,29 +63,6 @@ export function StepConditions({ onNext, submitRef }: Props) {
   const [showPersonnes, setShowPersonnes] = useState(tarifsPersonnes.length > 0);
   const [showNuits, setShowNuits] = useState(tarifsNuits.length > 0);
 
-  /*
-    L'effet d'origine :
-
-      useEffect(() => {
-        tarifsPersonnes.forEach((t, i) => {
-          if (t.personnesMin <= capaciteMax) removeTarifPersonnes(i);
-        });
-      }, [capaciteMax, tarifsPersonnes, removeTarifPersonnes, ...]);
-
-    Deux fautes :
-
-    1. Il depend de tarifsPersonnes ET le modifie a l'interieur. Chaque
-       suppression change la reference du tableau, l'effet se redeclenche,
-       et on tourne en boucle.
-
-    2. forEach + suppression par index vers l'avant : retirer l'element 0
-       decale tous les suivants, donc l'index 1 pointe deja sur un autre
-       element. Les mauvais paliers etaient effaces.
-
-    Corrige : on ne depend plus que des seuils, on parcourt a l'envers pour
-    que les index restent valides, et on ne touche au store que s'il y a
-    reellement quelque chose a retirer.
-  */
   useEffect(() => {
     const store = useListingFormStore.getState();
 
@@ -108,11 +83,22 @@ export function StepConditions({ onNext, submitRef }: Props) {
   const [errP, setErrP] = useState<string | null>(null);
   const [errN, setErrN] = useState<string | null>(null);
 
-  const ids = { pMin: useId(), pMax: useId(), pSup: useId(), nMin: useId(), nMax: useId(), nPrix: useId(), regles: useId() };
+  const ids = {
+    pMin: useId(), pMax: useId(), pSup: useId(),
+    nMin: useId(), nMax: useId(), nPrix: useId(),
+    regles: useId(), instructions: useId(),
+    wifiSsid: useId(), wifiPass: useId(), digicode: useId(),
+  };
 
   const { register, handleSubmit, watch } = useForm<StepConditionsInput>({
     resolver: zodResolver(stepConditionsSchema),
-    defaultValues: { reglesMaison: conditions.reglesMaison ?? '' },
+    defaultValues: {
+      reglesMaison: conditions.reglesMaison ?? '',
+      instructionsAcces: conditions.instructionsAcces ?? '',
+      nomReseauWifi: conditions.nomReseauWifi ?? '',
+      codeWifi: conditions.codeWifi ?? '',
+      instructionsDigicode: conditions.instructionsDigicode ?? '',
+    },
   });
 
   const reglesLength = watch('reglesMaison')?.length ?? 0;
@@ -333,6 +319,66 @@ export function StepConditions({ onNext, submitRef }: Props) {
             <Plus className="h-4 w-4" aria-hidden="true" />
             Ajouter ce palier
           </button>
+        </div>
+      </SectionCard>
+
+      {/* -- Livret d'accueil digital --------------------------------------- */}
+      <SectionCard
+        icon={Smartphone}
+        title="Livret d'accueil digital & Accès"
+        description="Informations transmises en toute sécurité au voyageur après confirmation"
+        badge="Recommandé"
+      >
+        <p className="flex items-start gap-2.5 rounded-inner bg-forest-50 border border-forest-100 p-3.5 text-xs leading-relaxed text-forest-800">
+          <Info className="mt-0.5 h-4 w-4 shrink-0 text-forest-600" aria-hidden="true" />
+          Ces informations ne sont transmises qu'au voyageur disposant d'une réservation confirmée pour ce logement.
+        </p>
+
+        <div className="grid gap-4 sm:grid-cols-2">
+          <div>
+            <FieldLabel htmlFor={ids.wifiSsid} optional>Nom du réseau Wi-Fi</FieldLabel>
+            <input
+              {...register('nomReseauWifi')}
+              id={ids.wifiSsid}
+              type="text"
+              placeholder="Ex : Klef_Guest_5G"
+              className={INPUT_CLS}
+            />
+          </div>
+
+          <div>
+            <FieldLabel htmlFor={ids.wifiPass} optional>Mot de passe Wi-Fi</FieldLabel>
+            <input
+              {...register('codeWifi')}
+              id={ids.wifiPass}
+              type="text"
+              placeholder="Ex : Dakar2026!"
+              className={INPUT_CLS}
+            />
+          </div>
+        </div>
+
+        <div>
+          <FieldLabel htmlFor={ids.digicode} optional>Digicode / Boîte à clés</FieldLabel>
+          <input
+            {...register('instructionsDigicode')}
+            id={ids.digicode}
+            type="text"
+            placeholder="Ex : Code portail #4829 - Boîte à clés code 1234"
+            className={INPUT_CLS}
+          />
+        </div>
+
+        <div>
+          <FieldLabel htmlFor={ids.instructions} optional>Instructions d'accès & arrivée</FieldLabel>
+          <textarea
+            {...register('instructionsAcces')}
+            id={ids.instructions}
+            rows={3}
+            maxLength={1000}
+            placeholder="Ex : Prenez l'ascenseur jusqu'au 3ème étage, porte de droite. La clé est dans la boîte sécurisée."
+            className={cn(INPUT_CLS, 'resize-none leading-relaxed')}
+          />
         </div>
       </SectionCard>
 

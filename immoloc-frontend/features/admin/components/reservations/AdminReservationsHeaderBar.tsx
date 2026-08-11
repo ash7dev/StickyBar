@@ -29,12 +29,12 @@ const TABS: Array<{
   Icon: typeof CalendarDays;
   activeClasses: string;
 }> = [
-  { key: 'ALL', label: 'Toutes', countKey: 'all', Icon: CalendarDays, activeClasses: 'border-purple-300 bg-purple-50/40 shadow-2xs' },
-  { key: 'PENDING', label: 'En attente', countKey: 'pending', Icon: Clock, activeClasses: 'border-warning-300 bg-warning-50/40 shadow-2xs' },
-  { key: 'CONFIRMED', label: 'Confirmées', countKey: 'confirmed', Icon: CheckCircle2, activeClasses: 'border-forest-300 bg-forest-50/40 shadow-2xs' },
-  { key: 'CHECKED_IN', label: 'En séjour', countKey: 'checkedIn', Icon: CheckCheck, activeClasses: 'border-blue-300 bg-blue-50/40 shadow-2xs' },
-  { key: 'COMPLETED', label: 'Terminées', countKey: 'completed', Icon: CheckCircle2, activeClasses: 'border-forest-300 bg-forest-50/40 shadow-2xs' },
-  { key: 'CANCELLED', label: 'Annulées', countKey: 'cancelled', Icon: XCircle, activeClasses: 'border-error-300 bg-error-50/40 shadow-2xs' },
+  { key: 'ALL', label: 'Toutes', countKey: 'all', Icon: CalendarDays, activeClasses: 'border-border bg-background-alt text-foreground shadow-xs' },
+  { key: 'PENDING', label: 'En attente', countKey: 'pending', Icon: Clock, activeClasses: 'border-warning-500/30 bg-warning-50 text-warning-900 shadow-xs' },
+  { key: 'CONFIRMED', label: 'Confirmées', countKey: 'confirmed', Icon: CheckCircle2, activeClasses: 'border-forest-200 bg-forest-50 text-forest-900 shadow-xs' },
+  { key: 'CHECKED_IN', label: 'En séjour', countKey: 'checkedIn', Icon: CheckCheck, activeClasses: 'border-info-500/30 bg-info-50 text-info-900 shadow-xs' },
+  { key: 'COMPLETED', label: 'Terminées', countKey: 'completed', Icon: CheckCircle2, activeClasses: 'border-border bg-background-alt text-foreground shadow-xs' },
+  { key: 'CANCELLED', label: 'Annulées', countKey: 'cancelled', Icon: XCircle, activeClasses: 'border-error-500/30 bg-error-50 text-error-900 shadow-xs' },
 ];
 
 export function AdminReservationsHeaderBar({

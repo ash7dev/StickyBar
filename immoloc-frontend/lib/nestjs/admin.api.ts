@@ -106,10 +106,20 @@ export const adminApi = {
   getDisputeDetails: (id: string) =>
     nestFetch<any>(NEST_API.ADMIN.DISPUTE_DETAILS(id)),
 
-  resolveDispute: (id: string, statut: 'FONDE' | 'NON_FONDE', decisionAdmin: string) =>
+  resolveDispute: (
+    id: string,
+    statut: 'FONDE' | 'NON_FONDE',
+    decisionAdmin: string,
+    options?: { tauxRemboursement?: number; montantCompensation?: number },
+  ) =>
     nestFetch<any>(NEST_API.ADMIN.DISPUTE_RESOLVE(id), {
       method: 'PATCH',
-      body: JSON.stringify({ statut, decisionAdmin }),
+      body: JSON.stringify({
+        statut,
+        decisionAdmin,
+        ...(options?.tauxRemboursement != null && { tauxRemboursement: options.tauxRemboursement }),
+        ...(options?.montantCompensation != null && { montantCompensation: options.montantCompensation }),
+      }),
     }),
 
   // ─── Withdrawals (Retraits) & Finances ───────────────────────────────────────

@@ -106,6 +106,10 @@ export function ListingWizard({ editMode = false }: Props) {
         prixBase: annonce.prixBase,
         nuitesMinimum: annonce.nuitesMinimum ?? 1,
         reglesMaison: conditions.reglesMaison || null,
+        instructionsAcces: conditions.instructionsAcces || null,
+        nomReseauWifi: conditions.nomReseauWifi || null,
+        codeWifi: conditions.codeWifi || null,
+        instructionsDigicode: conditions.instructionsDigicode || null,
       };
 
       if (!listingId) {

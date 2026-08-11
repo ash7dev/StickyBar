@@ -1,6 +1,7 @@
 'use client';
 
-import { ShieldCheck, Lock, Coins, TrendingUp, Sparkles, AlertCircle } from 'lucide-react';
+import type { ComponentType } from 'react';
+import { AlertTriangle, Coins, Lock, ShieldCheck, TrendingUp } from 'lucide-react';
 import { cn } from '@/lib/utils/cn';
 
 interface SystemLedgerData {
@@ -14,121 +15,160 @@ interface AdminSystemLedgerCardProps {
   isLoading: boolean;
 }
 
-function fmt(n?: number) {
-  if (n == null) return '0 FCFA';
-  return new Intl.NumberFormat('fr-SN', { style: 'currency', currency: 'XOF', maximumFractionDigits: 0 }).format(n);
+/* `null` → « — », jamais « 0 FCFA ». Sur un compte de séquestre, afficher un
+   solde nul là où la donnée n'est pas arrivée est le pire affichage possible :
+   c'est indiscernable d'un compte réellement vide.
+   `Intl` en style currency XOF rendait « 12 345 F CFA » ; le reste de l'app
+   écrit « 12 345 FCFA ». */
+const fmt = (n?: number | null) =>
+  n == null || Number.isNaN(Number(n))
+    ? '—'
+    : `${new Intl.NumberFormat('fr-FR').format(Math.round(Number(n)))} FCFA`;
+
+interface Compte {
+  cle: string;
+  icon: ComponentType<{ className?: string }>;
+  titre: string;
+  etiquette: string;
+  montant?: number;
+  note: string;
 }
 
 export function AdminSystemLedgerCard({ data, isLoading }: AdminSystemLedgerCardProps) {
   if (isLoading) {
     return (
-      <div className="section-inverse p-6 sm:p-8 animate-pulse space-y-4">
-        <div className="h-6 bg-white/10 rounded-pill w-1/3" />
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          <div className="h-24 bg-white/10 rounded-card" />
-          <div className="h-24 bg-white/10 rounded-card" />
-          <div className="h-24 bg-white/10 rounded-card" />
+      <div className="section-inverse space-y-5 p-6 sm:p-8" aria-busy="true">
+        <div className="h-7 w-1/3 animate-pulse rounded-pill bg-border-inverse-strong" />
+        <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
+          {[0, 1, 2].map((i) => (
+            <div key={i} className="h-28 animate-pulse rounded-card bg-border-inverse-strong" />
+          ))}
         </div>
       </div>
     );
   }
 
-  const soldeSequestre = data?.soldeSequestre ?? 0;
-  const soldeCommissions = data?.soldeCommissionsCumulees ?? 0;
-  const soldePool = data?.soldePoolTeranga ?? 0;
+  /* `data?.soldeSequestre ?? 0` transformait une absence de réponse en solde à
+     zéro. Les valeurs restent `undefined` et l'écran le dit. */
+  const indisponible = !data;
+
+  const comptes: Compte[] = [
+    {
+      cle: 'sequestre',
+      icon: Lock,
+      titre: 'Séquestre actif',
+      etiquette: 'En attente de check-in',
+      montant: data?.soldeSequestre,
+      note: 'Fonds des réservations en cours, non encore reversés aux hôtes.',
+    },
+    {
+      cle: 'commissions',
+      icon: TrendingUp,
+      titre: 'Commissions acquises',
+      etiquette: 'Revenu net',
+      montant: data?.soldeCommissionsCumulees,
+      /* « Commissions 7% » était écrit en dur — le taux varie et n'est pas
+         connu de ce composant. Le ×1,07 du prix public est par ailleurs une
+         majoration, pas la commission : deux notions que le libellé
+         confondait. */
+      note: 'Chiffre d’affaires net perçu, commissions et pénalités.',
+    },
+    {
+      cle: 'pool',
+      icon: Coins,
+      titre: 'Pool Teranga Club',
+      etiquette: 'Budget fidélité',
+      montant: data?.soldePoolTeranga,
+      note: 'Provision Klef finançant les Klef Coins émis.',
+    },
+  ];
+
+  const total = indisponible
+    ? undefined
+    : comptes.reduce((acc, c) => acc + (Number(c.montant) || 0), 0);
 
   return (
-    <section className="section-inverse relative overflow-hidden p-6 sm:p-8 shadow-xl transition-all duration-300">
-      {/* Halo lumineux vert forêt */}
+    <section className="section-inverse relative overflow-hidden p-6 shadow-lg sm:p-8">
       <div
-        aria-hidden="true"
-        className="pointer-events-none absolute -top-24 -right-24 h-72 w-72 rounded-pill bg-forest-700/40 blur-3xl"
+        aria-hidden
+        className="pointer-events-none absolute -right-24 -top-24 h-72 w-72 rounded-pill bg-forest-700/40 blur-3xl"
       />
 
       <div className="relative z-10 space-y-6">
-        {/* En-tête : Titre + Badge de solvabilité */}
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        {/* ── En-tête ────────────────────────────────────────────────────── */}
+        <header className="flex flex-col justify-between gap-4 sm:flex-row sm:items-end">
           <div>
-            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-pill bg-white/10 border border-white/20 text-xs font-semibold text-on-inverse-marker mb-2">
-              <ShieldCheck className="w-4 h-4 text-lime-300" />
-              <span>Grand Livre Système & Séquestre Klef</span>
-            </div>
-            <h2 className="font-display text-xl sm:text-2xl font-semibold text-on-inverse-display">
-              Trésorerie & Fonds Sous Séquestre
+            <p className="eyebrow flex items-center gap-1.5 text-[0.6875rem]">
+              {/* L'accent marque : il tient dans l'icône, pas dans la phrase. */}
+              <ShieldCheck className="h-3.5 w-3.5 text-on-inverse-marker" aria-hidden />
+              Grand livre système
+            </p>
+            <h2 className="mt-1.5 font-display text-xl font-semibold text-on-inverse-display sm:text-2xl">
+              Trésorerie et fonds sous séquestre
             </h2>
-            <p className="text-xs text-on-inverse-muted mt-0.5">
-              Suivi en temps réel des encaissements en attente de check-in et des revenus acquis.
+            <p className="mt-1 text-xs text-on-inverse-muted">
+              Encaissements en attente de check-in et revenus acquis.
             </p>
           </div>
 
-          <div className="inline-flex items-center gap-2 px-3.5 py-2 rounded-pill bg-forest-950/80 border border-lime-400/30 text-lime-300 text-xs font-bold shrink-0 self-start sm:self-center shadow-2xs">
-            <span className="relative flex h-2 w-2">
-              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-lime-400 opacity-75" />
-              <span className="relative inline-flex rounded-full h-2 w-2 bg-lime-400" />
-            </span>
-            <span>Trésorerie 100% Équilibrée & Solvable</span>
+          {/* ⚠️ Ici se trouvait un badge « Trésorerie 100% Équilibrée &
+              Solvable », avec un point vert clignotant — affirmé en dur, jamais
+              calculé, et donc affiché à l'identique sur une trésorerie en
+              déficit. Sur un écran de séquestre, une garantie de solvabilité
+              qui ne vérifie rien est pire que pas de badge du tout.
+              Remplacé par le seul chiffre que ce composant peut établir : la
+              somme des trois comptes. Une vraie mesure de solvabilité exige
+              le passif (dû aux hôtes), qui n'est pas dans ce type. */}
+          <div className="shrink-0 rounded-card border border-border-inverse bg-surface-inverse-alt px-4 py-3">
+            <p className="eyebrow text-[0.6875rem]">Total en trésorerie</p>
+            <p className="mt-1 font-display text-xl font-semibold tabular-nums text-on-inverse-display">
+              {fmt(total)}
+            </p>
           </div>
-        </div>
+        </header>
 
-        {/* Grille des 3 comptes de trésorerie */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          {/* 1. Compte Séquestre */}
-          <div className="rounded-card border border-border-inverse bg-white/5 p-5 space-y-2 hover:bg-white/10 transition-colors">
-            <div className="flex items-center justify-between">
-              <span className="text-[11px] font-bold uppercase tracking-wider text-on-inverse-muted flex items-center gap-1.5">
-                <Lock className="w-3.5 h-3.5 text-lime-300" />
-                Séquestre Actif
-              </span>
-              <span className="px-2 py-0.5 rounded-pill bg-lime-400/20 text-lime-300 text-[10px] font-extrabold border border-lime-400/30">
-                En attente check-in
-              </span>
+        {indisponible && (
+          <p className="flex items-start gap-2 rounded-inner border border-border-inverse bg-surface-inverse-alt px-3.5 py-2.5 text-xs text-on-inverse-muted">
+            <AlertTriangle className="mt-px h-4 w-4 shrink-0 text-on-inverse-marker" aria-hidden />
+            Les soldes n’ont pas pu être chargés. Aucun montant n’est affiché — ne pas les
+            interpréter comme nuls.
+          </p>
+        )}
+
+        {/* ── Comptes ────────────────────────────────────────────────────── */}
+        <dl className="grid grid-cols-1 gap-4 md:grid-cols-3">
+          {comptes.map(({ cle, icon: Icon, titre, etiquette, montant, note }) => (
+            <div
+              key={cle}
+              className="space-y-2 rounded-card border border-border-inverse bg-surface-inverse-alt p-5"
+            >
+              <div className="flex items-start justify-between gap-2">
+                <dt className="flex items-center gap-1.5 text-xs font-semibold text-on-inverse-muted">
+                  <Icon className="h-3.5 w-3.5 shrink-0 text-on-inverse-marker" aria-hidden />
+                  {titre}
+                </dt>
+                {/* Les trois étiquettes étaient écrites en lime ou en gold —
+                    l'accent portait des phrases, et le gold, qui signale le
+                    statut, chiffrait de l'argent. Toutes neutres. */}
+                <span className="shrink-0 rounded-pill border border-border-inverse px-2 py-0.5 text-xs text-on-inverse-muted">
+                  {etiquette}
+                </span>
+              </div>
+
+              <dd>
+                <p
+                  className={cn(
+                    'font-display text-2xl font-semibold tabular-nums',
+                    montant == null ? 'text-on-inverse-muted' : 'text-on-inverse-display',
+                  )}
+                >
+                  {fmt(montant)}
+                </p>
+                <p className="mt-1.5 text-xs leading-relaxed text-on-inverse-muted">{note}</p>
+              </dd>
             </div>
-            <p className="font-display text-2xl font-bold text-on-inverse-display tabular-nums">
-              {fmt(soldeSequestre)}
-            </p>
-            <p className="text-[11px] text-on-inverse-muted leading-relaxed">
-              Fonds réservations en cours + subventions injectées.
-            </p>
-          </div>
-
-          {/* 2. Commissions Acquises */}
-          <div className="rounded-card border border-border-inverse bg-white/5 p-5 space-y-2 hover:bg-white/10 transition-colors">
-            <div className="flex items-center justify-between">
-              <span className="text-[11px] font-bold uppercase tracking-wider text-on-inverse-muted flex items-center gap-1.5">
-                <TrendingUp className="w-3.5 h-3.5 text-gold-300" />
-                Commissions Acquises
-              </span>
-              <span className="px-2 py-0.5 rounded-pill bg-gold-400/20 text-gold-300 text-[10px] font-extrabold border border-gold-400/30">
-                Revenu Net Klef
-              </span>
-            </div>
-            <p className="font-display text-2xl font-bold text-gold-300 tabular-nums">
-              {fmt(soldeCommissions)}
-            </p>
-            <p className="text-[11px] text-on-inverse-muted leading-relaxed">
-              Chiffre d'affaires net total perçu (Commissions 7% + Pénalités).
-            </p>
-          </div>
-
-          {/* 3. Pool Teranga Club */}
-          <div className="rounded-card border border-border-inverse bg-white/5 p-5 space-y-2 hover:bg-white/10 transition-colors">
-            <div className="flex items-center justify-between">
-              <span className="text-[11px] font-bold uppercase tracking-wider text-on-inverse-muted flex items-center gap-1.5">
-                <Coins className="w-3.5 h-3.5 text-lime-300" />
-                Pool Teranga Club
-              </span>
-              <span className="px-2 py-0.5 rounded-pill bg-white/10 text-on-inverse text-[10px] font-extrabold border border-white/20">
-                Budget Fidélité
-              </span>
-            </div>
-            <p className="font-display text-2xl font-bold text-on-inverse-display tabular-nums">
-              {fmt(soldePool)}
-            </p>
-            <p className="text-[11px] text-on-inverse-muted leading-relaxed">
-              Fonds d'investissement Klef pour financer les Klef Coins.
-            </p>
-          </div>
-        </div>
+          ))}
+        </dl>
       </div>
     </section>
   );

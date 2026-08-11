@@ -1,6 +1,9 @@
 'use client';
 
-import { TrendingUp, DollarSign, Percent, ShieldAlert, CheckCircle2, ShoppingBag, Wallet } from 'lucide-react';
+import type { ComponentType } from 'react';
+import {
+  AlertTriangle, Percent, Receipt, ShieldAlert, ShoppingBag, TrendingUp, Wallet,
+} from 'lucide-react';
 import { cn } from '@/lib/utils/cn';
 
 interface SummaryData {
@@ -17,127 +20,164 @@ interface AdminStatsKpiGridProps {
   isLoading: boolean;
 }
 
-function formatPrice(amount?: number | null) {
-  if (amount == null) return "0 FCFA";
-  return new Intl.NumberFormat("fr-SN", { style: "currency", currency: "XOF", maximumFractionDigits: 0 }).format(amount);
+/* `null` → « — », jamais « 0 FCFA ». Sur un tableau de bord financier, un zéro
+   affiché à la place d'une donnée absente se lit comme un résultat nul.
+   `Intl` en style currency XOF rendait « 12 345 F CFA » ; ailleurs c'est
+   « 12 345 FCFA ». */
+const fmt = (n?: number | null) =>
+  n == null || Number.isNaN(Number(n))
+    ? '—'
+    : `${new Intl.NumberFormat('fr-FR').format(Math.round(Number(n)))} FCFA`;
+
+const pct = (part?: number, total?: number) => {
+  const p = Number(part);
+  const t = Number(total);
+  if (!Number.isFinite(p) || !Number.isFinite(t) || t <= 0) return null;
+  return `${((p / t) * 100).toFixed(1).replace('.', ',')} %`;
+};
+
+interface Kpi {
+  cle: string;
+  titre: string;
+  icon: ComponentType<{ className?: string }>;
+  montant?: number;
+  note: string;
+  accent?: boolean;
 }
 
 export function AdminStatsKpiGrid({ summary, isLoading }: AdminStatsKpiGridProps) {
-  const gmv = summary?.totalGmv ?? 0;
-  const count = summary?.reservationCount ?? 0;
-  const averageBasket = count > 0 ? Math.round(gmv / count) : 0;
-  const hostPayouts = summary?.hostPayoutsTotal ?? 0;
+  /* `summary?.x ?? 0` transformait une absence de réponse en résultat nul.
+     Les valeurs restent `undefined` et l'écran affiche « — ». */
+  const gmv = summary?.totalGmv;
+  const nbSejours = summary?.reservationCount;
+  const reverseHotes = summary?.hostPayoutsTotal;
+  const commissions = summary?.commissionsTotal;
+  const penalites = summary?.penaltiesTotal;
+  const netKlef = summary?.netKlefRevenue;
+
+  const panierMoyen =
+    gmv != null && nbSejours != null && nbSejours > 0 ? Math.round(gmv / nbSejours) : undefined;
+
+  /* Les libellés annonçaient « Commissions (7%) » et « Reversé Hôtes (93%) »
+     en dur. Le taux varie, et le ×1,07 du prix public est une MAJORATION —
+     pas la commission. Le taux affiché est celui que produisent les chiffres. */
+  const tauxCommission = pct(commissions, gmv);
+  const tauxHotes = pct(reverseHotes, gmv);
+
+  /* netKlef doit valoir commissions + pénalités. Rien ne le vérifiait. */
+  const ecart =
+    netKlef != null && commissions != null && penalites != null
+      ? Math.abs(netKlef - commissions - penalites)
+      : 0;
+  const incoherent = ecart > 1;
+
+  const kpis: Kpi[] = [
+    {
+      cle: 'net',
+      titre: 'Revenu net Klef',
+      icon: TrendingUp,
+      montant: netKlef,
+      note: 'Commissions et pénalités',
+      accent: true,
+    },
+    {
+      cle: 'gmv',
+      titre: 'Volume brut',
+      icon: Receipt,
+      montant: gmv,
+      note:
+        nbSejours != null
+          ? `Sur ${nbSejours} séjour${nbSejours > 1 ? 's' : ''}`
+          : 'Nombre de séjours indisponible',
+    },
+    {
+      cle: 'hotes',
+      titre: 'Reversé aux hôtes',
+      icon: Wallet,
+      montant: reverseHotes,
+      /* « 100% garanti et versé » n'était vérifié par rien : la carte
+         l'affirmait quel que soit l'état réel des versements. */
+      note: tauxHotes ? `${tauxHotes} du volume brut` : 'Part du volume brut indisponible',
+    },
+    {
+      cle: 'panier',
+      titre: 'Panier moyen',
+      icon: ShoppingBag,
+      montant: panierMoyen,
+      note: 'Par séjour',
+    },
+    {
+      cle: 'commissions',
+      titre: 'Commissions',
+      icon: Percent,
+      montant: commissions,
+      note: tauxCommission ? `${tauxCommission} du volume brut` : 'Frais de service',
+    },
+    {
+      cle: 'penalites',
+      titre: 'Pénalités retenues',
+      icon: ShieldAlert,
+      montant: penalites,
+      note: 'Arbitrages et annulations',
+    },
+  ];
 
   return (
-    <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6">
-      {/* 1. Revenu Net Klef */}
-      <div className="rounded-card border border-forest-300 bg-forest-50/50 p-5 shadow-2xs space-y-2">
-        <div className="flex items-center justify-between">
-          <span className="text-[10px] font-extrabold uppercase tracking-wider text-forest-900">
-            Revenu Net Klef
-          </span>
-          <span className="flex h-8 w-8 items-center justify-center rounded-inner bg-forest-600 text-neutral-0 shadow-2xs">
-            <TrendingUp className="h-4 w-4" />
-          </span>
-        </div>
-        <p className="font-display text-xl font-extrabold text-forest-950 tabular-nums">
-          {isLoading ? "..." : formatPrice(summary?.netKlefRevenue)}
+    <div className="space-y-3">
+      {incoherent && (
+        <p
+          role="alert"
+          className="flex items-start gap-2 rounded-inner bg-error-50 px-3.5 py-2.5 text-xs text-error-700"
+        >
+          <AlertTriangle className="mt-px h-4 w-4 shrink-0" aria-hidden />
+          Le revenu net ne correspond pas à la somme des commissions et des pénalités (écart de{' '}
+          {fmt(ecart)}). Vérifier l’agrégation avant de communiquer ces chiffres.
         </p>
-        <p className="text-[10px] text-forest-700 font-semibold flex items-center gap-1">
-          <CheckCircle2 className="h-3 w-3 text-forest-600 shrink-0" />
-          Commissions (7%) + Pénalités
-        </p>
-      </div>
+      )}
 
-      {/* 2. Volume Brut Total (GMV) */}
-      <div className="rounded-card border border-border bg-background-card p-5 shadow-2xs space-y-2">
-        <div className="flex items-center justify-between">
-          <span className="text-[10px] font-bold uppercase tracking-wider text-foreground-muted">
-            Volume Brut (GMV)
-          </span>
-          <span className="flex h-8 w-8 items-center justify-center rounded-inner bg-background-alt border border-border text-foreground-muted">
-            <DollarSign className="h-4 w-4" />
-          </span>
-        </div>
-        <p className="font-display text-xl font-extrabold text-foreground tabular-nums">
-          {isLoading ? "..." : formatPrice(gmv)}
-        </p>
-        <p className="text-[10px] text-foreground-muted">
-          Sur {count} séjour{count > 1 ? 's' : ''} traités
-        </p>
-      </div>
+      <dl className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6">
+        {kpis.map(({ cle, titre, icon: Icon, montant, note, accent }) => (
+          <div
+            key={cle}
+            className={cn(
+              'space-y-2 rounded-card border p-5 shadow-xs',
+              accent ? 'border-forest-100 bg-forest-50' : 'border-border bg-background-card',
+            )}
+          >
+            <div className="flex items-start justify-between gap-2">
+              <dt className="eyebrow text-[0.6875rem]">{titre}</dt>
+              <span
+                className={cn(
+                  'flex h-8 w-8 shrink-0 items-center justify-center rounded-inner',
+                  accent
+                    ? 'bg-forest-600 text-neutral-0'
+                    : 'border border-border bg-background-alt text-foreground-muted',
+                )}
+              >
+                <Icon className="h-4 w-4" aria-hidden />
+              </span>
+            </div>
 
-      {/* 3. Reversé aux Hôtes (93% Net) */}
-      <div className="rounded-card border border-border bg-background-card p-5 shadow-2xs space-y-2">
-        <div className="flex items-center justify-between">
-          <span className="text-[10px] font-bold uppercase tracking-wider text-foreground-muted">
-            Reversé Hôtes (93%)
-          </span>
-          <span className="flex h-8 w-8 items-center justify-center rounded-inner bg-forest-50 border border-forest-100 text-forest-700">
-            <Wallet className="h-4 w-4" />
-          </span>
-        </div>
-        <p className="font-display text-xl font-extrabold text-forest-900 tabular-nums">
-          {isLoading ? "..." : formatPrice(hostPayouts)}
-        </p>
-        <p className="text-[10px] text-foreground-muted">
-          100% garanti et versé
-        </p>
-      </div>
-
-      {/* 4. Panier Moyen (Ticket Moyen) */}
-      <div className="rounded-card border border-border bg-background-card p-5 shadow-2xs space-y-2">
-        <div className="flex items-center justify-between">
-          <span className="text-[10px] font-bold uppercase tracking-wider text-foreground-muted">
-            Panier Moyen / Séjour
-          </span>
-          <span className="flex h-8 w-8 items-center justify-center rounded-inner bg-gold-400/20 border border-gold-400/30 text-gold-700">
-            <ShoppingBag className="h-4 w-4" />
-          </span>
-        </div>
-        <p className="font-display text-xl font-extrabold text-foreground tabular-nums">
-          {isLoading ? "..." : formatPrice(averageBasket)}
-        </p>
-        <p className="text-[10px] text-foreground-muted">
-          Valeur moyenne d’une réservation
-        </p>
-      </div>
-
-      {/* 5. Commissions Séjours (7%) */}
-      <div className="rounded-card border border-border bg-background-card p-5 shadow-2xs space-y-2">
-        <div className="flex items-center justify-between">
-          <span className="text-[10px] font-bold uppercase tracking-wider text-foreground-muted">
-            Commissions 7%
-          </span>
-          <span className="flex h-8 w-8 items-center justify-center rounded-inner bg-background-alt border border-border text-forest-700">
-            <Percent className="h-4 w-4" />
-          </span>
-        </div>
-        <p className="font-display text-xl font-extrabold text-foreground tabular-nums">
-          {isLoading ? "..." : formatPrice(summary?.commissionsTotal)}
-        </p>
-        <p className="text-[10px] text-foreground-muted">
-          Frais de service plateforme
-        </p>
-      </div>
-
-      {/* 6. Pénalités & Annulations */}
-      <div className="rounded-card border border-border bg-background-card p-5 shadow-2xs space-y-2">
-        <div className="flex items-center justify-between">
-          <span className="text-[10px] font-bold uppercase tracking-wider text-foreground-muted">
-            Pénalités Retenues
-          </span>
-          <span className="flex h-8 w-8 items-center justify-center rounded-inner bg-warning-50 border border-warning-200 text-warning-800">
-            <ShieldAlert className="h-4 w-4" />
-          </span>
-        </div>
-        <p className="font-display text-xl font-extrabold text-foreground tabular-nums">
-          {isLoading ? "..." : formatPrice(summary?.penaltiesTotal)}
-        </p>
-        <p className="text-[10px] text-foreground-muted">
-          Arbitrage & Annulations
-        </p>
-      </div>
+            <dd>
+              {/* « ... » comme état de chargement laissait la carte à sa
+                  hauteur finale sans rien dire ; un fantôme le fait mieux. */}
+              {isLoading ? (
+                <span className="block h-7 w-24 animate-pulse rounded-pill bg-background-alt" />
+              ) : (
+                <p
+                  className={cn(
+                    'font-display text-xl font-semibold tabular-nums',
+                    montant == null ? 'text-foreground-muted' : 'text-foreground',
+                  )}
+                >
+                  {fmt(montant)}
+                </p>
+              )}
+              <p className="mt-1 text-xs text-foreground-muted">{note}</p>
+            </dd>
+          </div>
+        ))}
+      </dl>
     </div>
   );
 }

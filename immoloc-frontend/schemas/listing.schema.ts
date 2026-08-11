@@ -238,6 +238,10 @@ export type StepEquipementsInput = z.infer<typeof stepEquipementsSchema>;
 
 export const stepConditionsSchema = z.object({
   reglesMaison: z.string().max(1000).optional(),
+  instructionsAcces: z.string().max(1000).optional(),
+  nomReseauWifi: z.string().max(100).optional(),
+  codeWifi: z.string().max(100).optional(),
+  instructionsDigicode: z.string().max(500).optional(),
 });
 
 export type StepConditionsInput = z.infer<typeof stepConditionsSchema>;

@@ -1,12 +1,47 @@
 'use client';
 
-import { Search, User, Clock, AlertTriangle, CheckCircle2, MessageSquare, Filter } from 'lucide-react';
+import { useRef, type ComponentType } from 'react';
+import {
+  AlertTriangle, CalendarCheck, Home, MessageSquare, Search, Wallet, Scale,
+  ShieldCheck, HelpCircle,
+} from 'lucide-react';
 import { cn } from '@/lib/utils/cn';
 
+export type StatutTicket = 'OUVERT' | 'EN_COURS' | 'EN_ATTENTE_UTILISATEUR' | 'RESOLU' | 'FERME';
+export type PrioriteTicket = 'BASSE' | 'MOYENNE' | 'HAUTE' | 'URGENTE';
+export type CategorieTicket = 'RESERVATION' | 'PAIEMENT' | 'KYC' | 'LOGEMENT' | 'LITIGE' | 'AUTRE';
+
+export interface TicketMessageItem {
+  id: string;
+  ticketId: string;
+  auteurId: string;
+  estAdmin: boolean;
+  message: string;
+  creeLe: string;
+  auteur?: { id: string; nom?: string; prenom?: string; email?: string };
+}
+
+export interface TicketSupportItem {
+  id: string;
+  code: string;
+  utilisateurId: string;
+  reservationId?: string | null;
+  logementId?: string | null;
+  sujet: string;
+  categorie: CategorieTicket;
+  priorite: PrioriteTicket;
+  statut: StatutTicket;
+  creeLe: string;
+  misAJourLe: string;
+  resoluLe?: string | null;
+  utilisateur?: { id: string; nom?: string; prenom?: string; email?: string; telephone?: string };
+  messages?: TicketMessageItem[];
+}
+
 interface AdminSupportTicketsListProps {
-  tickets: any[];
+  tickets: TicketSupportItem[];
   selectedTicketId: string | null;
-  onSelectTicket: (ticket: any) => void;
+  onSelectTicket: (ticket: TicketSupportItem) => void;
   search: string;
   onSearchChange: (val: string) => void;
   statusFilter: string;
@@ -15,6 +50,76 @@ interface AdminSupportTicketsListProps {
   onCategoryFilterChange: (val: string) => void;
   isLoading: boolean;
 }
+
+/* ─── Référentiels ────────────────────────────────────────────────────────
+   Une seule table par énumération, partagée entre le <select> et le badge.
+   Les libellés lisibles n'existaient que dans le select : la carte affichait
+   `EN_ATTENTE_UTILISATEUR` brut, en majuscules, dans un badge de 10 px.
+
+   ⚠ `sand-*` appartenait à la palette ImmoLoc, retirée en v2 parce qu'elle
+   faisait virer le lime au moutarde. `error-200`, `forest-300` en bordure de
+   badge : le statut EN_COURS rendait entièrement à nu. */
+
+const STATUTS: Record<StatutTicket, { label: string; badge: string }> = {
+  OUVERT: { label: 'Ouvert', badge: 'border-error-500/25 bg-error-50 text-error-700' },
+  EN_COURS: { label: 'En cours', badge: 'border-warning-500/25 bg-warning-50 text-warning-700' },
+  EN_ATTENTE_UTILISATEUR: { label: 'Attente client', badge: 'border-info-500/25 bg-info-50 text-info-700' },
+  RESOLU: { label: 'Résolu', badge: 'border-forest-100 bg-forest-50 text-forest-700' },
+  FERME: { label: 'Fermé', badge: 'border-border bg-background-alt text-foreground-muted' },
+};
+
+const CATEGORIES: Record<CategorieTicket, { label: string; Icon: ComponentType<{ className?: string }> }> = {
+  RESERVATION: { label: 'Réservation', Icon: CalendarCheck },
+  PAIEMENT: { label: 'Paiement', Icon: Wallet },
+  KYC: { label: 'Vérification KYC', Icon: ShieldCheck },
+  LOGEMENT: { label: 'Logement', Icon: Home },
+  LITIGE: { label: 'Litige', Icon: Scale },
+  AUTRE: { label: 'Autre', Icon: HelpCircle },
+};
+
+/* `priorite` était dans le type et n'apparaissait nulle part — c'est pourtant
+   le premier critère de tri d'une file de support. Seules HAUTE et URGENTE
+   s'affichent : marquer les quatre niveaux revient à n'en marquer aucun. */
+const PRIORITES: Partial<Record<PrioriteTicket, { label: string; classe: string }>> = {
+  URGENTE: { label: 'Urgent', classe: 'bg-error-500' },
+  HAUTE: { label: 'Priorité haute', classe: 'bg-warning-500' },
+};
+
+/* ─── Utilitaires ─────────────────────────────────────────────────────────── */
+
+const JOUR = 86_400_000;
+
+/** « il y a 3 h », « il y a 5 j » — l'ancienneté prime sur la date exacte. */
+function depuis(iso?: string): string {
+  if (!iso) return '—';
+  const t = new Date(iso).getTime();
+  if (Number.isNaN(t)) return '—';
+  const ecart = Date.now() - t;
+  if (ecart < 3_600_000) return `il y a ${Math.max(1, Math.round(ecart / 60_000))} min`;
+  if (ecart < JOUR) return `il y a ${Math.round(ecart / 3_600_000)} h`;
+  const jours = Math.round(ecart / JOUR);
+  if (jours < 31) return `il y a ${jours} j`;
+  return new Date(iso).toLocaleDateString('fr-FR', { day: '2-digit', month: 'short' });
+}
+
+const joursDepuis = (iso?: string) => {
+  if (!iso) return 0;
+  const t = new Date(iso).getTime();
+  return Number.isNaN(t) ? 0 : Math.floor((Date.now() - t) / JOUR);
+};
+
+/** Dernier message par date, sans supposer l'ordre du tableau. */
+function dernierMessage(messages?: TicketMessageItem[]): TicketMessageItem | undefined {
+  if (!messages?.length) return undefined;
+  return messages.reduce((a, b) =>
+    new Date(b.creeLe).getTime() > new Date(a.creeLe).getTime() ? b : a,
+  );
+}
+
+const nomUtilisateur = (u?: { prenom?: string; nom?: string }) =>
+  `${u?.prenom ?? ''} ${u?.nom ?? ''}`.trim() || 'Utilisateur';
+
+/* ─── Composant ───────────────────────────────────────────────────────────── */
 
 export function AdminSupportTicketsList({
   tickets,
@@ -28,107 +133,226 @@ export function AdminSupportTicketsList({
   onCategoryFilterChange,
   isLoading,
 }: AdminSupportTicketsListProps) {
+  const liste = useRef<HTMLDivElement>(null);
+
+  /* Les tickets étaient des <div onClick> : ni focus, ni Entrée, ni flèches.
+     Un agent qui enchaîne quarante dossiers travaille au clavier — c'était le
+     composant qui en avait le plus besoin et le seul à l'interdire. */
+  const naviguer = (e: React.KeyboardEvent) => {
+    if (!['ArrowDown', 'ArrowUp', 'Home', 'End'].includes(e.key)) return;
+    const options = Array.from(
+      liste.current?.querySelectorAll<HTMLElement>('[role="option"]') ?? [],
+    );
+    if (!options.length) return;
+    const i = options.indexOf(document.activeElement as HTMLElement);
+    e.preventDefault();
+    const suivant =
+      e.key === 'Home' ? 0
+        : e.key === 'End' ? options.length - 1
+          : e.key === 'ArrowDown' ? Math.min(i + 1, options.length - 1)
+            : Math.max(i - 1, 0);
+    options[suivant]?.focus();
+  };
+
+  /* La hauteur fixe à 720 px débordait sur un portable 1366×768 et laissait un
+     vide sur grand écran. */
+  const hauteur = 'h-[clamp(26rem,calc(100vh-13rem),46rem)]';
+
+  const champ =
+    'w-full rounded-field border border-border bg-background-alt px-3 text-foreground transition-colors focus:border-forest-600 focus:outline-none';
+
   return (
-    <div className="rounded-card border border-border bg-background-card p-4 shadow-2xs space-y-3 flex flex-col h-[720px]">
-      {/* Header Search & Filters */}
-      <div className="space-y-2 pb-2 border-b border-border">
+    <div
+      className={cn(
+        'flex flex-col gap-3 rounded-card border border-border bg-background-card p-4 shadow-xs',
+        hauteur,
+      )}
+    >
+      {/* ── Recherche et filtres ─────────────────────────────────────────
+          Aucune utilitaire de taille sur les champs : la couche `base` force
+          16 px, et un `text-xs` ici fait zoomer Safari iOS au focus. */}
+      <div className="shrink-0 space-y-2 border-b border-border pb-3">
         <div className="relative">
-          <Search className="absolute left-3 top-2.5 h-4 w-4 text-foreground-muted" />
+          <Search
+            className="pointer-events-none absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-foreground-muted"
+            aria-hidden
+          />
           <input
-            type="text"
+            type="search"
             value={search}
             onChange={(e) => onSearchChange(e.target.value)}
-            placeholder="Rechercher par code TCK-..., nom, sujet..."
-            className="h-9 w-full rounded-inner border border-border bg-background-alt pl-9 pr-3 text-xs text-foreground placeholder:text-foreground-muted focus:border-forest-600 focus:outline-hidden"
+            aria-label="Rechercher un ticket par code, nom ou sujet"
+            placeholder="Code, nom, sujet…"
+            className={cn(champ, 'h-11 rounded-pill pl-10')}
           />
         </div>
 
-        {/* Filters Grid */}
         <div className="grid grid-cols-2 gap-2">
-          <select
-            value={statusFilter}
-            onChange={(e) => onStatusFilterChange(e.target.value)}
-            className="h-8 w-full rounded-inner border border-border bg-background-alt px-2 text-[0.75rem] font-semibold text-foreground focus:border-forest-600 focus:outline-hidden"
-          >
-            <option value="ALL">Tous les statuts</option>
-            <option value="OUVERT">🔴 Ouvert</option>
-            <option value="EN_COURS">🟡 En cours</option>
-            <option value="EN_ATTENTE_UTILISATEUR">🔵 Attente Client</option>
-            <option value="RESOLU">🟢 Résolu</option>
-            <option value="FERME">⚪ Fermé</option>
-          </select>
+          <div>
+            <label htmlFor="filtre-statut" className="sr-only">Filtrer par statut</label>
+            <select
+              id="filtre-statut"
+              value={statusFilter}
+              onChange={(e) => onStatusFilterChange(e.target.value)}
+              className={cn(champ, 'h-10')}
+            >
+              <option value="ALL">Tous les statuts</option>
+              {/* Les émojis 🔴🟡🔵 ne sont pas stylables, rendent différemment
+                  selon l'OS et sont lus à voix haute (« cercle rouge »). La
+                  couleur du statut appartient au badge. */}
+              {(Object.keys(STATUTS) as StatutTicket[]).map((s) => (
+                <option key={s} value={s}>{STATUTS[s].label}</option>
+              ))}
+            </select>
+          </div>
 
-          <select
-            value={categoryFilter}
-            onChange={(e) => onCategoryFilterChange(e.target.value)}
-            className="h-8 w-full rounded-inner border border-border bg-background-alt px-2 text-[0.75rem] font-semibold text-foreground focus:border-forest-600 focus:outline-hidden"
-          >
-            <option value="ALL">Toutes catégories</option>
-            <option value="RESERVATION">Réservation</option>
-            <option value="PAIEMENT">Paiement / Wallet</option>
-            <option value="KYC">Vérification KYC</option>
-            <option value="LOGEMENT">Logement</option>
-            <option value="LITIGE">Litige</option>
-            <option value="AUTRE">Autre</option>
-          </select>
+          <div>
+            <label htmlFor="filtre-categorie" className="sr-only">Filtrer par catégorie</label>
+            <select
+              id="filtre-categorie"
+              value={categoryFilter}
+              onChange={(e) => onCategoryFilterChange(e.target.value)}
+              className={cn(champ, 'h-10')}
+            >
+              <option value="ALL">Toutes catégories</option>
+              {(Object.keys(CATEGORIES) as CategorieTicket[]).map((c) => (
+                <option key={c} value={c}>{CATEGORIES[c].label}</option>
+              ))}
+            </select>
+          </div>
         </div>
       </div>
 
-      {/* Tickets Scrollable Stream */}
-      <div className="flex-1 overflow-y-auto space-y-2 pr-1 no-scrollbar">
-        {isLoading ? (
-          <div className="py-12 text-center text-xs text-foreground-muted">Chargement des tickets...</div>
-        ) : tickets.length === 0 ? (
-          <div className="py-12 text-center text-xs text-foreground-muted space-y-1">
-            <MessageSquare className="h-8 w-8 text-foreground-muted mx-auto opacity-30" />
-            <p className="font-bold text-foreground">Aucun ticket trouvé</p>
-            <p>Modifiez vos filtres pour afficher des demandes.</p>
-          </div>
-        ) : (
-          tickets.map((t) => {
-            const isSelected = selectedTicketId === t.id;
-            const userName = `${t.utilisateur?.prenom ?? ''} ${t.utilisateur?.nom ?? ''}`.trim() || 'Utilisateur';
+      {/* ── File ─────────────────────────────────────────────────────────── */}
+      {isLoading ? (
+        <div className="flex-1 space-y-2 overflow-hidden" aria-busy="true">
+          {[0, 1, 2, 3, 4].map((i) => (
+            <div key={i} className="h-24 animate-pulse rounded-inner bg-background-alt" />
+          ))}
+        </div>
+      ) : tickets.length === 0 ? (
+        <div className="flex flex-1 flex-col items-center justify-center gap-2 text-center">
+          <MessageSquare className="h-8 w-8 text-neutral-400" aria-hidden />
+          <p className="text-sm font-semibold text-foreground">Aucun ticket</p>
+          <p className="max-w-[220px] text-xs text-foreground-muted">
+            Aucune demande ne correspond à la recherche ou aux filtres.
+          </p>
+        </div>
+      ) : (
+        <div
+          ref={liste}
+          role="listbox"
+          aria-label="File des tickets"
+          aria-activedescendant={selectedTicketId ? `ticket-${selectedTicketId}` : undefined}
+          onKeyDown={naviguer}
+          className="no-scrollbar flex-1 space-y-2 overflow-y-auto pr-1"
+        >
+          {tickets.map((t) => {
+            const selectionne = selectedTicketId === t.id;
+            const statut = STATUTS[t.statut] ?? STATUTS.FERME;
+            const categorie = CATEGORIES[t.categorie] ?? CATEGORIES.AUTRE;
+            const CatIcon = categorie.Icon;
+            const priorite = PRIORITES[t.priorite];
+
+            const dernier = dernierMessage(t.messages);
+            /* Un ticket dont le dernier message vient du client attend une
+               réponse. C'est l'information qui trie une file de support, et
+               elle était calculable depuis `messages` sans être affichée. */
+            const attendReponse =
+              t.statut !== 'RESOLU' &&
+              t.statut !== 'FERME' &&
+              (dernier ? !dernier.estAdmin : t.statut === 'OUVERT');
+
+            const anciennete = joursDepuis(t.misAJourLe || t.creeLe);
+            const dort = attendReponse && anciennete >= 2;
 
             return (
               <div
                 key={t.id}
+                id={`ticket-${t.id}`}
+                role="option"
+                aria-selected={selectionne}
+                tabIndex={selectionne ? 0 : -1}
                 onClick={() => onSelectTicket(t)}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter' || e.key === ' ') {
+                    e.preventDefault();
+                    onSelectTicket(t);
+                  }
+                }}
                 className={cn(
-                  'cursor-pointer rounded-inner border p-3 transition-all space-y-1.5',
-                  isSelected
-                    ? 'border-forest-600 bg-forest-50/60 shadow-2xs'
-                    : 'border-border bg-background-alt/30 hover:bg-background-alt hover:border-border/80'
+                  'relative cursor-pointer rounded-inner border p-3 transition-colors',
+                  'focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring',
+                  selectionne
+                    ? 'border-forest-600 bg-forest-50'
+                    : 'border-border bg-background-card hover:border-border-hover hover:bg-background-alt',
                 )}
               >
-                {/* Code & Statut */}
-                <div className="flex items-center justify-between text-xs">
-                  <span className="font-mono font-bold text-forest-800 text-[0.75rem]">{t.code}</span>
+                {/* Ligne 1 — code, priorité, statut */}
+                <div className="flex items-center justify-between gap-2">
+                  <span className="flex min-w-0 items-center gap-1.5">
+                    {priorite && (
+                      <span
+                        aria-hidden
+                        title={priorite.label}
+                        className={cn('h-1.5 w-1.5 shrink-0 rounded-pill', priorite.classe)}
+                      />
+                    )}
+                    <span className="truncate font-mono text-xs font-semibold text-forest-700">
+                      {t.code}
+                    </span>
+                    {priorite && <span className="sr-only">{priorite.label}</span>}
+                  </span>
+
                   <span
                     className={cn(
-                      'rounded-pill px-2 py-0.5 text-[0.625rem] font-bold uppercase border',
-                      t.statut === 'OUVERT' ? 'bg-error-50 border-error-200 text-error-700' :
-                      t.statut === 'EN_COURS' ? 'bg-sand-100 border-sand-300 text-sand-900' :
-                      t.statut === 'RESOLU' ? 'bg-forest-100 border-forest-300 text-forest-800' :
-                      'bg-background-card border-border text-foreground-muted'
+                      'shrink-0 rounded-pill border px-2 py-0.5 text-xs font-semibold',
+                      statut.badge,
                     )}
                   >
-                    {t.statut}
+                    {statut.label}
                   </span>
                 </div>
 
-                {/* Sujet */}
-                <p className="font-bold text-xs text-foreground truncate">{t.sujet}</p>
+                {/* Ligne 2 — sujet */}
+                <p className="mt-1.5 truncate text-sm font-semibold text-foreground">{t.sujet}</p>
 
-                {/* User & Date */}
-                <div className="flex items-center justify-between text-[0.6875rem] text-foreground-muted pt-1 border-t border-border/50">
-                  <span className="truncate font-medium">{userName}</span>
-                  <span className="font-mono">{new Date(t.misAJourLe || t.creeLe).toLocaleDateString('fr-FR')}</span>
+                {/* Ligne 3 — catégorie et rattachement */}
+                <p className="mt-1 flex items-center gap-1.5 text-xs text-foreground-muted">
+                  <CatIcon className="h-3.5 w-3.5 shrink-0" aria-hidden />
+                  <span className="truncate">
+                    {categorie.label}
+                    {t.reservationId ? ' · réservation liée' : t.logementId ? ' · logement lié' : ''}
+                  </span>
+                </p>
+
+                {/* Ligne 4 — auteur, ancienneté */}
+                <div className="mt-2 flex items-center justify-between gap-2 border-t border-border pt-1.5 text-xs">
+                  <span className="truncate text-foreground-muted">
+                    {nomUtilisateur(t.utilisateur)}
+                  </span>
+                  <span
+                    className={cn(
+                      'shrink-0 tabular-nums',
+                      dort ? 'font-semibold text-warning-700' : 'text-foreground-muted',
+                    )}
+                  >
+                    {depuis(t.misAJourLe || t.creeLe)}
+                  </span>
                 </div>
+
+                {/* Une file de support se lit par ce qui attend une réponse. */}
+                {attendReponse && (
+                  <p className="mt-1.5 flex items-center gap-1.5 text-xs font-semibold text-warning-700">
+                    <AlertTriangle className="h-3.5 w-3.5 shrink-0" aria-hidden />
+                    En attente de réponse
+                  </p>
+                )}
               </div>
             );
-          })
-        )}
-      </div>
+          })}
+        </div>
+      )}
     </div>
   );
 }

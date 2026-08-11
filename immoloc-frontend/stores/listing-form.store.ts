@@ -221,7 +221,13 @@ export const useListingFormStore = create<ListingFormState>((set, get) => ({
       },
       equipements: { equipements: listing.equipements.map((e) => e.nom) },
       equipementIds: listing.equipements.map((e) => e.id),
-      conditions: { reglesMaison: listing.reglesMaison ?? undefined },
+      conditions: {
+        reglesMaison: listing.reglesMaison ?? undefined,
+        instructionsAcces: listing.instructionsAcces ?? undefined,
+        nomReseauWifi: listing.nomReseauWifi ?? undefined,
+        codeWifi: listing.codeWifi ?? undefined,
+        instructionsDigicode: listing.instructionsDigicode ?? undefined,
+      },
       tarifsPersonnes: listing.tarifsPersonnes.map((t) => ({
         personnesMin: t.personnesMin,
         personnesMax: t.personnesMax,
