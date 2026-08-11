@@ -22,6 +22,8 @@ export type {
   MeResponse,
   LoginEmailPayload,
   RegisterPayload,
+  OtpChannelType,
+  VerifyRegisterOtpPayload,
   SendOtpPayload,
   VerifyOtpPayload,
   CompleteProfilePayload,
@@ -58,4 +60,6 @@ export type {
   TerangaTransaction,
   TerangaAccountData,
   TerangaQuest,
+  TerangaReferralInfo,
+  TerangaReferralFilleul,
 } from './types';

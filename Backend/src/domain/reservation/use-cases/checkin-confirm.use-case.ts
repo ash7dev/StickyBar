@@ -11,6 +11,7 @@ import { QueueService } from '../../../infrastructure/queue/queue.service';
 import { ReservationStateMachine } from '../reservation.state-machine';
 import { CalculateTierUseCase } from '../../teranga-club/use-cases/calculate-tier.use-case';
 import { NotificationsService } from '../../../modules/notifications/notifications.service';
+import { TerangaClubService } from '../../../modules/teranga-club/teranga-club.service';
 
 @Injectable()
 export class CheckInConfirmUseCase {
@@ -21,6 +22,7 @@ export class CheckInConfirmUseCase {
     private readonly queue: QueueService,
     private readonly stateMachine: ReservationStateMachine,
     private readonly notifications: NotificationsService,
+    private readonly terangaClubService: TerangaClubService,
   ) {}
 
   async execute(reservationId: string, userId: string) {
@@ -107,6 +109,29 @@ export class CheckInConfirmUseCase {
     const coinsGagnes = Math.round((montantTotal * tierInfo.cashbackPct) / 100);
 
     this.logger.log(`Klef Coins estimés pour résa ${reservationId}: ${coinsGagnes} Coins (${tierInfo.cashbackPct}%)`);
+
+    // 5. Bonus Parrainage — si c'est le 1er séjour du locataire et qu'il a un parrain
+    if (nbSejours === 1) {
+      const locataire = await this.prisma.utilisateur.findUnique({
+        where: { id: userId },
+        select: { parrainId: true, prenom: true },
+      });
+      if (locataire?.parrainId) {
+        this.terangaClubService.awardParrainageBonus(
+          locataire.parrainId,
+          locataire.prenom,
+        ).then(() => {
+          this.notifications.sendReservationPush(
+            locataire.parrainId!,
+            'Parrainage validé ! 🤝',
+            `Votre filleul ${locataire.prenom} a effectué son 1er séjour. +2 500 Klef Coins !`,
+            '/teranga-club'
+          ).catch((err) => this.logger.error(`Erreur Push parrainage: ${err.message}`));
+        }).catch((err) => {
+          this.logger.error(`Erreur attribution parrainage pour parrain ${locataire.parrainId}: ${err.message}`);
+        });
+      }
+    }
 
     return {
       success: true,

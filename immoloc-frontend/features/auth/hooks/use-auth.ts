@@ -5,7 +5,7 @@ import { createClient } from '@/lib/supabase/client';
 import { authApi } from '@/lib/nestjs';
 import { useRoleStore } from '@/stores/role.store';
 import type { RoleState } from '@/stores/role.store';
-import type { AuthTokensResponse } from '@/lib/nestjs';
+import type { AuthTokensResponse, OtpChannelType } from '@/lib/nestjs';
 import type { LoginInput, RegisterInput, CompleteProfileInput } from '@/schemas/auth.schema';
 
 const SUPABASE_ERRORS: Record<string, string> = {
@@ -143,6 +143,17 @@ export function useAuth() {
     if (error) throw new Error(mapSupabaseError(error.message));
   }
 
+  async function verifyRegisterOtp(
+    opts: { email?: string; phone?: string; token: string; type: OtpChannelType },
+    next?: string | null,
+  ) {
+    const result = await authApi.verifyRegisterOtp(opts);
+    persistSession(result, setSession);
+    router.push(resolveRedirect(result.user, next));
+    router.refresh();
+    return result;
+  }
+
   return {
     loginEmail,
     register,
@@ -151,6 +162,7 @@ export function useAuth() {
     loginWithGoogle,
     completeGoogleProfile,
     resendConfirmation,
+    verifyRegisterOtp,
     logout,
   };
 }

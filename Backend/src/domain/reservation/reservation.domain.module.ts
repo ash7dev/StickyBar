@@ -28,6 +28,7 @@ import { PaymentDomainModule } from '../payment/payment.domain.module';
 import { ContratModule } from '../../infrastructure/contrat/contrat.module';
 import { RedisModule } from '../../infrastructure/redis/redis.module';
 import { SystemLedgerService } from '../system-ledger/system-ledger.service';
+import { TerangaClubModule } from '../../modules/teranga-club/teranga-club.module';
 
 const USE_CASES = [
   CreateReservationUseCase,
@@ -63,6 +64,7 @@ const USE_CASES = [
     PaymentDomainModule,
     ContratModule,
     RedisModule,
+    TerangaClubModule,
   ],
   providers: [...USE_CASES],
   exports: [...USE_CASES],

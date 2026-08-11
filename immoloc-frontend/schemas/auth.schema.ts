@@ -21,6 +21,7 @@ export const registerSchema = z.object({
     .string()
     .min(8, 'Mot de passe : 8 caractères minimum')
     .max(72, 'Mot de passe trop long'),
+  codeParrain: z.string().optional(),
 });
 export type RegisterInput = z.infer<typeof registerSchema>;
 

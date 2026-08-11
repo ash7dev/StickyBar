@@ -6,6 +6,7 @@ import { TerangaPerksGrid } from '@/features/teranga-club/components/TerangaPerk
 import { TerangaSimulatorCard } from '@/features/teranga-club/components/TerangaSimulatorCard';
 import { TerangaTiersComparison } from '@/features/teranga-club/components/TerangaTiersComparison';
 import { TerangaQuestsCard } from '@/features/teranga-club/components/TerangaQuestsCard';
+import { TerangaReferralCard } from '@/features/teranga-club/components/TerangaReferralCard';
 import { TerangaHistoryCard } from '@/features/teranga-club/components/TerangaHistoryCard';
 import { useTerangaClub } from '@/features/teranga-club/hooks/use-teranga-club';
 import { ArrowLeft } from 'lucide-react';
@@ -54,6 +55,12 @@ export default function TerangaClubPage() {
           isAuthenticated={isAuthenticated}
           onClaimSuccess={refetch}
           userId={data?.id}
+        />
+
+        {/* 6.5. Super Parrain Teranga — Programme de parrainage */}
+        <TerangaReferralCard
+          isAuthenticated={isAuthenticated}
+          codeParrainageFallback={data?.codeParrainage}
         />
 
         {/* 7. Historique des transactions */}

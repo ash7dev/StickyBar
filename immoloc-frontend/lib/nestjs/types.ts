@@ -96,6 +96,15 @@ export interface RegisterPayload {
   password: string;
 }
 
+export type OtpChannelType = 'SMS' | 'EMAIL';
+
+export interface VerifyRegisterOtpPayload {
+  email?: string;
+  phone?: string;
+  token: string;
+  type: OtpChannelType;
+}
+
 export interface SendOtpPayload {
   phone: string;
 }
@@ -673,6 +682,7 @@ export interface TerangaAccountData {
   gmvRemainingForNextTier: number;
   badges: TerangaBadge[];
   transactions: TerangaTransaction[];
+  codeParrainage?: string | null;
 }
 
 export interface TerangaQuest {
@@ -682,4 +692,19 @@ export interface TerangaQuest {
   bonusCoins: number;
   icone: string;
   unlocked: boolean;
+}
+
+export interface TerangaReferralFilleul {
+  id: string;
+  prenom: string;
+  initiale: string;
+  inscritLe: string;
+  aReserve: boolean;
+}
+
+export interface TerangaReferralInfo {
+  codeParrainage: string | null;
+  nbFilleuls: number;
+  nbFilleulsActifs: number;
+  filleuls: TerangaReferralFilleul[];
 }

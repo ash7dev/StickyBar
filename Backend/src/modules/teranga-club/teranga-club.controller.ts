@@ -26,4 +26,11 @@ export class TerangaClubController {
     const userId = req.user.id;
     return this.terangaClubService.claimQuest(userId, code as CodeBadgeTeranga);
   }
+
+  @Get('referral')
+  @UseGuards(JwtAuthGuard)
+  async getReferralInfo(@Req() req: any) {
+    const userId = req.user.id;
+    return this.terangaClubService.getReferralInfo(userId);
+  }
 }

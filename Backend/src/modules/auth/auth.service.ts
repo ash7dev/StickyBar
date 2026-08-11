@@ -27,6 +27,7 @@ import { CompleteGoogleProfileDto } from './dto/complete-google-profile.dto';
 import { BecomeHostDto } from './dto/become-host.dto';
 import { VerifyCurrentPhoneConfirmDto, VerifyCurrentPhoneSendDto } from './dto/verify-current-phone.dto';
 import { CompleteOnboardingDto } from './dto/complete-onboarding.dto';
+import { VerifyRegisterOtpDto, OtpChannelType } from './dto/verify-register-otp.dto';
 
 @Injectable()
 export class AuthService {
@@ -42,6 +43,26 @@ export class AuthService {
 
   private isFakeOtpEnabled() {
     return this.configService.get<string>('AUTH_FAKE_OTP_ENABLED', 'false') === 'true';
+  }
+
+  private async generateUniqueReferralCode(prenom?: string | null): Promise<string> {
+    const cleanPrenom = (prenom || 'KLEF')
+      .normalize('NFD')
+      .replace(/[\u0300-\u036f]/g, '')
+      .replace(/[^a-zA-Z]/g, '')
+      .toUpperCase()
+      .slice(0, 6) || 'KLEF';
+
+    for (let attempt = 0; attempt < 10; attempt++) {
+      const randomDigits = Math.floor(10 + Math.random() * 90);
+      const candidate = `${cleanPrenom}${randomDigits}`;
+      const exists = await this.prisma.utilisateur.findUnique({
+        where: { codeParrainage: candidate },
+        select: { id: true },
+      });
+      if (!exists) return candidate;
+    }
+    return `${cleanPrenom}${Date.now().toString().slice(-4)}`;
   }
 
   private async getSupabaseUserFromAccessToken(supabaseToken: string): Promise<any> {
@@ -152,6 +173,17 @@ export class AuthService {
 
     const supabaseUserId = data.user.id;
 
+    // Générer code de parrainage + résoudre parrain éventuel
+    const codeParrainage = await this.generateUniqueReferralCode(dto.prenom);
+    let parrainId: string | undefined = undefined;
+    if (dto.codeParrain) {
+      const parrain = await this.prisma.utilisateur.findUnique({
+        where: { codeParrainage: dto.codeParrain.trim().toUpperCase() },
+        select: { id: true },
+      });
+      if (parrain) parrainId = parrain.id;
+    }
+
     // Créer Profile + Utilisateur en transaction
     await this.prisma.$transaction([
       this.prisma.profile.create({
@@ -168,12 +200,130 @@ export class AuthService {
           telephone: dto.telephone,
           prenom: dto.prenom,
           nom: dto.nom,
+          codeParrainage,
+          ...(parrainId && { parrainId }),
         },
       }),
     ]);
 
     this.logger.log(`Nouvel utilisateur inscrit : ${dto.email}`);
     return { message: 'Compte créé. Vérifiez votre email pour confirmer votre inscription.' };
+  }
+
+  // ── Vérification OTP post-inscription ───────────────────────────────────────
+
+  async verifyRegisterOtp(dto: VerifyRegisterOtpDto) {
+    const identifier = dto.type === OtpChannelType.SMS ? dto.phone : dto.email;
+    if (!identifier) {
+      throw new BadRequestException(
+        dto.type === OtpChannelType.SMS
+          ? 'Numéro de téléphone requis pour la vérification SMS'
+          : 'Adresse email requise pour la vérification Email',
+      );
+    }
+
+    // Trouver l'utilisateur par email ou téléphone
+    const utilisateur = await this.prisma.utilisateur.findFirst({
+      where: dto.type === OtpChannelType.SMS
+        ? { telephone: dto.phone }
+        : { email: dto.email },
+      select: {
+        id: true,
+        userId: true,
+        email: true,
+        telephone: true,
+        prenom: true,
+        nom: true,
+        estProprietaire: true,
+        actif: true,
+        profileCompleted: true,
+        phoneVerified: true,
+        statutKyc: true,
+      },
+    });
+
+    if (!utilisateur) {
+      throw new NotFoundException('Aucun compte trouvé avec cet identifiant');
+    }
+
+    // Valider le code OTP (simulation en dev, Supabase en prod)
+    if (this.isFakeOtpEnabled()) {
+      if (dto.token !== '123456') {
+        throw new UnauthorizedException('Code OTP invalide (mode simulation : utilisez 123456)');
+      }
+      this.logger.log(`[OTP Simulation] Code vérifié pour ${identifier}`);
+    } else {
+      // En production : vérifier via Supabase
+      if (dto.type === OtpChannelType.SMS) {
+        const { error } = await this.supabase.getAnon().auth.verifyOtp({
+          phone: dto.phone!,
+          token: dto.token,
+          type: 'sms',
+        });
+        if (error) throw new UnauthorizedException('Code OTP SMS invalide ou expiré');
+      } else {
+        const { error } = await this.supabase.getAnon().auth.verifyOtp({
+          email: dto.email!,
+          token: dto.token,
+          type: 'email',
+        });
+        if (error) throw new UnauthorizedException('Code OTP Email invalide ou expiré');
+      }
+    }
+
+    // Activer le compte : phoneVerified + profileCompleted + actif
+    const updatedUser = await this.prisma.utilisateur.update({
+      where: { id: utilisateur.id },
+      data: {
+        ...(dto.type === OtpChannelType.SMS && { phoneVerified: true }),
+        profileCompleted: true,
+        actif: true,
+      },
+      select: {
+        id: true,
+        userId: true,
+        email: true,
+        telephone: true,
+        prenom: true,
+        nom: true,
+        estProprietaire: true,
+        profileCompleted: true,
+        phoneVerified: true,
+        statutKyc: true,
+        logements: {
+          where: { statut: 'PUBLISHED', archiveLe: null },
+          select: { id: true },
+        },
+      },
+    });
+
+    // Émettre les tokens souverains pour auto-login immédiat
+    const activeRole = updatedUser.estProprietaire ? Role.PROPRIETAIRE : Role.LOCATAIRE;
+    const tokens = await this.generateTokens({
+      id: updatedUser.id,
+      userId: updatedUser.userId,
+      email: updatedUser.email,
+      telephone: updatedUser.telephone,
+      estProprietaire: updatedUser.estProprietaire,
+      activeRole,
+    });
+
+    this.logger.log(`Compte activé via OTP ${dto.type} : ${updatedUser.email}`);
+
+    return {
+      ...tokens,
+      user: {
+        id: updatedUser.id,
+        prenom: updatedUser.prenom,
+        nom: updatedUser.nom,
+        activeRole,
+        estProprietaire: updatedUser.estProprietaire,
+        hasAnnonce: updatedUser.logements.length > 0,
+        profileCompleted: updatedUser.profileCompleted,
+        phoneVerified: updatedUser.phoneVerified,
+        statutKyc: updatedUser.statutKyc,
+      },
+    };
   }
 
   // ── Connexion email+password ───────────────────────────────────────────────
@@ -465,6 +615,9 @@ export class AuthService {
       throw new ConflictException('Un profil existe déjà avec ce numéro de téléphone');
     }
 
+    // Générer un code de parrainage unique pour le nouvel utilisateur
+    const codeParrainage = await this.generateUniqueReferralCode(dto.prenom);
+
     const [, utilisateur] = await this.prisma.$transaction([
       this.prisma.profile.upsert({
         where: { userId: user.id },
@@ -491,6 +644,7 @@ export class AuthService {
           profileCompleted: true,
           actif: true,
           estProprietaire: false,
+          codeParrainage,
         },
         update: {
           email,
@@ -578,6 +732,8 @@ export class AuthService {
     });
     if (existingPhone) throw new ConflictException('Numéro de téléphone déjà utilisé');
 
+    const codeParrainage = await this.generateUniqueReferralCode(dto.prenom);
+
     await this.prisma.$transaction([
       this.prisma.profile.upsert({
         where: { userId: supabaseUserId },
@@ -591,6 +747,7 @@ export class AuthService {
           telephone: dto.telephone,
           prenom: dto.prenom,
           nom: dto.nom,
+          codeParrainage,
         },
       }),
     ]);
@@ -916,12 +1073,15 @@ export class AuthService {
 
         if (!utilisateur) {
           const userMetadata = user.user_metadata || {};
-          const fullName = userMetadata.full_name || userMetadata.name || '';
+          const emailPrefix = email ? email.split('@')[0] : '';
+          const fullName = userMetadata.full_name || userMetadata.name || emailPrefix || 'Utilisateur';
           const [prenom, ...nomParts] = fullName.trim().split(' ');
-          const nom = nomParts.join(' ') || prenom;
+          const nom = nomParts.join(' ') || prenom || 'Klef';
           const avatarUrl = userMetadata.avatar_url || userMetadata.picture || null;
 
           this.logger.log(`Création automatique de l'utilisateur Google: ${user.id}, nom: ${fullName}, avatar: ${avatarUrl}`);
+
+          const codeParrainage = await this.generateUniqueReferralCode(prenom || emailPrefix || 'Utilisateur');
 
           const createdUser = await this.prisma.$transaction(async (tx) => {
             await tx.profile.upsert({
@@ -950,6 +1110,7 @@ export class AuthService {
                 profileCompleted: false,
                 phoneVerified: false,
                 avatarUrl: avatarUrl,
+                codeParrainage,
               },
               select: {
                 id: true,

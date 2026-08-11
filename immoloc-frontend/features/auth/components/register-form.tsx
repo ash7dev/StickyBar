@@ -14,13 +14,16 @@ import {
   PasswordStrength, SubmitButton, inputClass,
 } from './auth-form-primitives';
 
+import { ActivationVerificationModal } from './ActivationVerificationModal';
+
 interface Props {
   next?: string;
+  referralCode?: string;
 }
 
 const RESEND_DELAY = 60;
 
-export function RegisterForm({ next }: Props) {
+export function RegisterForm({ next, referralCode }: Props) {
   const { register: registerUser, loginWithGoogle, resendConfirmation } = useAuth();
   const router = useRouter();
 
@@ -31,12 +34,21 @@ export function RegisterForm({ next }: Props) {
   const [cooldown, setCooldown] = useState(0);
   const [resent, setResent] = useState(false);
 
+  // Modal verification state
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [registeredEmail, setRegisteredEmail] = useState('');
+  const [registeredPhone, setRegisteredPhone] = useState('');
+
   const ids = {
     prenom: useId(), nom: useId(), tel: useId(), email: useId(), password: useId(),
   };
 
   const { register, handleSubmit, watch, formState: { errors, isSubmitting } } =
-    useForm<RegisterInput>({ resolver: zodResolver(registerSchema), mode: 'onBlur' });
+    useForm<RegisterInput>({
+      resolver: zodResolver(registerSchema),
+      mode: 'onBlur',
+      defaultValues: { codeParrain: referralCode || '' },
+    });
 
   const password = watch('password') ?? '';
 
@@ -49,9 +61,10 @@ export function RegisterForm({ next }: Props) {
   async function onSubmit(data: RegisterInput) {
     setError(null);
     try {
-      const result = await registerUser(data);
-      setSentTo(result.email);
-      setCooldown(RESEND_DELAY);
+      await registerUser(data);
+      setRegisteredEmail(data.email);
+      setRegisteredPhone(data.telephone);
+      setIsModalOpen(true);
     } catch (e) {
       if (e instanceof ApiError) setError(e.message);
       else if (e instanceof Error) setError(mapSupabaseError(e.message));
@@ -160,10 +173,21 @@ export function RegisterForm({ next }: Props) {
         <h1 className="font-display text-[1.75rem] font-semibold tracking-[-0.02em] text-forest-900">
           Créer un compte
         </h1>
-        <p className="mt-1.5 text-sm text-foreground-muted">
-          Gratuit. Vous ne payez qu’au moment de réserver.
-        </p>
       </header>
+
+      {referralCode && (
+        <div className="flex items-center gap-3 rounded-card border border-gold-200 bg-gold-50/60 p-3.5 text-xs text-gold-900 dark:border-gold-800/40 dark:bg-gold-950/20 dark:text-gold-200">
+          <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-pill bg-gold-100 dark:bg-gold-900/60 text-base">
+            🤝
+          </span>
+          <div>
+            <p className="font-semibold text-gold-900 dark:text-gold-100">Invitation Klef Teranga Club</p>
+            <p className="text-foreground-muted">
+              Code parrain <strong className="font-mono text-foreground font-bold">{referralCode.toUpperCase()}</strong> détecté. Votre parrain recevra son bonus lors de votre 1er séjour !
+            </p>
+          </div>
+        </div>
+      )}
 
       <form onSubmit={handleSubmit(onSubmit)} className="space-y-4" noValidate>
 
@@ -287,6 +311,15 @@ export function RegisterForm({ next }: Props) {
           Se connecter
         </Link>
       </p>
+
+      {/* Verification Modal post-registration */}
+      <ActivationVerificationModal
+        isOpen={isModalOpen}
+        onClose={() => setIsModalOpen(false)}
+        email={registeredEmail}
+        phone={registeredPhone}
+        next={next}
+      />
     </div>
   );
 }

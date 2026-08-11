@@ -9,6 +9,7 @@ import type {
   RegisterPayload,
   SendOtpPayload,
   VerifyOtpPayload,
+  VerifyRegisterOtpPayload,
   VerifyCurrentPhoneSendPayload,
   VerifyCurrentPhoneConfirmPayload,
   VerifyCurrentPhoneResponse,
@@ -34,6 +35,14 @@ export const authApi = {
   /** Inscription d'un nouveau compte */
   register: (payload: RegisterPayload) =>
     nestFetch<void>(NEST_API.AUTH.REGISTER, {
+      method: 'POST',
+      body: JSON.stringify(payload),
+      skipAutoToken: true,
+    }),
+
+  /** Vérification OTP post-inscription → retourne tokens de session */
+  verifyRegisterOtp: (payload: VerifyRegisterOtpPayload) =>
+    nestFetch<AuthTokensResponse>(NEST_API.AUTH.VERIFY_REGISTER_OTP, {
       method: 'POST',
       body: JSON.stringify(payload),
       skipAutoToken: true,

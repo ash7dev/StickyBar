@@ -88,6 +88,12 @@ model Utilisateur {
   // Compteurs de fautes LOCATAIRE
   nbDepassementsPersonnes Int @default(0)
 
+  // Parrainage
+  codeParrainage String?       @unique
+  parrainId      String?
+  parrain        Utilisateur?  @relation("Parrainage", fields: [parrainId], references: [id])
+  filleuls       Utilisateur[] @relation("Parrainage")
+
   creeLe     DateTime @default(now())
   misAJourLe DateTime @updatedAt
 
@@ -110,6 +116,7 @@ model Utilisateur {
   @@index([statutKyc])
   @@index([estProprietaire])
   @@index([actif, statutKyc])
+  @@index([parrainId])
 }
 
 // Audit trail des fautes — chaque faute est tracee individuellement

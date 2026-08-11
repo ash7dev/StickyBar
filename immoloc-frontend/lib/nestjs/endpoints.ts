@@ -6,6 +6,7 @@ const BASE = typeof window !== 'undefined' ? '/api/v1' : SERVER_BASE;
 export const NEST_API = {
   AUTH: {
     REGISTER: `${BASE}/auth/register`,
+    VERIFY_REGISTER_OTP: `${BASE}/auth/register/verify-otp`,
     LOGIN_EMAIL: `${BASE}/auth/login/email`,
     LOGIN_PHONE_SEND: `${BASE}/auth/login/phone/send`,
     LOGIN_PHONE_VERIFY: `${BASE}/auth/login/phone/verify`,
@@ -176,5 +177,6 @@ export const NEST_API = {
     ME:          `${BASE}/teranga-club/me`,
     QUESTS:      `${BASE}/teranga-club/quests`,
     CLAIM_QUEST: (code: string) => `${BASE}/teranga-club/quests/${code}/claim`,
+    REFERRAL:    `${BASE}/teranga-club/referral`,
   },
 } as const;

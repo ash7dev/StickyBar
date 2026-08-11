@@ -1,5 +1,5 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { IsEmail, IsString, MinLength, MaxLength, Matches, IsNotEmpty } from 'class-validator';
+import { IsEmail, IsString, IsOptional, MinLength, MaxLength, Matches, IsNotEmpty } from 'class-validator';
 
 // E.164 : +[1-9][6-14 chiffres] — format international, pas limité au Sénégal
 const E164 = /^\+[1-9]\d{6,14}$/;
@@ -29,4 +29,10 @@ export class RegisterDto {
   @IsString()
   @MinLength(8, { message: 'Mot de passe : 8 caractères minimum' })
   password!: string;
+
+  @ApiProperty({ example: 'AMADOU26', required: false, description: 'Code de parrainage optionnel' })
+  @IsOptional()
+  @IsString()
+  @MaxLength(20)
+  codeParrain?: string;
 }

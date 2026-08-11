@@ -23,6 +23,7 @@ import { CompleteGoogleProfileDto } from './dto/complete-google-profile.dto';
 import { BecomeHostDto } from './dto/become-host.dto';
 import { VerifyCurrentPhoneConfirmDto, VerifyCurrentPhoneSendDto } from './dto/verify-current-phone.dto';
 import { CompleteOnboardingDto } from './dto/complete-onboarding.dto';
+import { VerifyRegisterOtpDto } from './dto/verify-register-otp.dto';
 import { Public } from '@shared/decorators/public.decorator';
 import { JwtAuthGuard } from '@shared/guards/jwt-auth.guard';
 import { CurrentUser } from '@shared/decorators/current-user.decorator';
@@ -42,6 +43,17 @@ export class AuthController {
   @ApiOperation({ summary: 'Inscription email+password (envoie OTP email)' })
   register(@Body() dto: RegisterDto) {
     return this.authService.register(dto);
+  }
+
+  // ── Vérification OTP post-inscription ──────────────────────────────────────
+
+  @Post('register/verify-otp')
+  @Public()
+  @Throttle({ default: { ttl: 3600000, limit: 10 } }) // 10 tentatives par heure par IP
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({ summary: 'Vérifier le code OTP (SMS/Email) après inscription → retourne session' })
+  verifyRegisterOtp(@Body() dto: VerifyRegisterOtpDto) {
+    return this.authService.verifyRegisterOtp(dto);
   }
 
   // ── Connexion email+password ───────────────────────────────────────────────

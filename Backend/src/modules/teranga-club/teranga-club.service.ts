@@ -62,6 +62,12 @@ export class TerangaClubService {
       });
     }
 
+    // Récupérer le code de parrainage de l'utilisateur
+    const utilisateur = await this.prisma.utilisateur.findUnique({
+      where: { id: userId },
+      select: { codeParrainage: true },
+    });
+
     return {
       soldeCoins: account.soldeCoins,
       tier: account.tier,
@@ -72,6 +78,7 @@ export class TerangaClubService {
       gmvRemainingForNextTier: tierInfo.gmvRemainingForNextTier,
       badges: account.badges,
       transactions: account.transactions,
+      codeParrainage: utilisateur?.codeParrainage ?? null,
     };
   }
 
@@ -228,7 +235,16 @@ export class TerangaClubService {
         icone = '🤝';
         bonusCoins = 2500;
         actionRequired = 'SHARE';
-        isEligible = true;
+        // Vérifier qu'au moins 1 filleul a un séjour validé (CHECKED_IN ou COMPLETED)
+        const filleulAvecSejour = await this.prisma.utilisateur.findFirst({
+          where: {
+            parrainId: userId,
+            reservationsLocataire: {
+              some: { statut: { in: ['CHECKED_IN', 'COMPLETED'] } },
+            },
+          },
+        });
+        isEligible = !!filleulAvecSejour;
         break;
       }
       default:
@@ -263,5 +279,103 @@ export class TerangaClubService {
         ? `Bravo ! Vous avez débloqué "${libelle}" et gagné +${bonusCoins} Klef Coins ! 🎉`
         : 'Badge déjà débloqué.',
     };
+  }
+
+  // ── Parrainage ──────────────────────────────────────────────────────────────
+
+  async getReferralInfo(userId: string) {
+    const utilisateur = await this.prisma.utilisateur.findUnique({
+      where: { id: userId },
+      select: {
+        codeParrainage: true,
+        filleuls: {
+          select: {
+            id: true,
+            prenom: true,
+            nom: true,
+            creeLe: true,
+            reservationsLocataire: {
+              where: { statut: { in: ['CHECKED_IN', 'COMPLETED'] } },
+              select: { id: true },
+              take: 1,
+            },
+          },
+          orderBy: { creeLe: 'desc' },
+        },
+      },
+    });
+
+    if (!utilisateur) return { codeParrainage: null, nbFilleuls: 0, filleuls: [] };
+
+    const filleuls = utilisateur.filleuls.map((f) => ({
+      id: f.id,
+      prenom: f.prenom,
+      initiale: f.nom.charAt(0).toUpperCase(),
+      inscritLe: f.creeLe,
+      aReserve: f.reservationsLocataire.length > 0,
+    }));
+
+    return {
+      codeParrainage: utilisateur.codeParrainage,
+      nbFilleuls: filleuls.length,
+      nbFilleulsActifs: filleuls.filter((f) => f.aReserve).length,
+      filleuls,
+    };
+  }
+
+  async awardParrainageBonus(parrainId: string, filleulPrenom: string) {
+    this.logger.log(`Déclenchement bonus parrainage pour parrain ${parrainId} (filleul: ${filleulPrenom})`);
+
+    // Vérifier si le badge SUPER_PARRAIN est déjà débloqué
+    const account = await this.prisma.terangaAccount.findUnique({
+      where: { utilisateurId: parrainId },
+      select: { badges: { where: { codeBadge: CodeBadgeTeranga.SUPER_PARRAIN }, select: { id: true } } },
+    });
+
+    // Le badge peut être attribué plusieurs fois ? Non : unique constraint.
+    // Mais on crédite quand même les coins pour chaque filleul.
+    const PARRAIN_BONUS = 2500;
+
+    // Créditer les coins au parrain via une transaction
+    let terangaAccount = await this.prisma.terangaAccount.findUnique({
+      where: { utilisateurId: parrainId },
+    });
+    if (!terangaAccount) {
+      terangaAccount = await this.prisma.terangaAccount.create({
+        data: { utilisateurId: parrainId },
+      });
+    }
+
+    await this.prisma.$transaction([
+      this.prisma.terangaAccount.update({
+        where: { id: terangaAccount.id },
+        data: { soldeCoins: { increment: PARRAIN_BONUS } },
+      }),
+      this.prisma.terangaTransaction.create({
+        data: {
+          terangaAccountId: terangaAccount.id,
+          montantCoins: PARRAIN_BONUS,
+          type: 'CREDIT_PARRAINAGE',
+          description: `Bonus parrainage : ${filleulPrenom} a effectué son 1er séjour`,
+          soldeApres: terangaAccount.soldeCoins + PARRAIN_BONUS,
+        },
+      }),
+    ]);
+
+    // Débloquer le badge SUPER_PARRAIN si pas encore fait
+    const alreadyHasBadge = account?.badges && account.badges.length > 0;
+    if (!alreadyHasBadge) {
+      await this.unlockBadge(
+        parrainId,
+        CodeBadgeTeranga.SUPER_PARRAIN,
+        0, // pas de bonus supplémentaire, déjà crédité ci-dessus
+        'Super Parrain Teranga',
+        'Votre filleul a effectué son 1er séjour sur Klef !',
+        '🤝',
+      );
+    }
+
+    this.logger.log(`Parrain ${parrainId} : +${PARRAIN_BONUS} coins (filleul ${filleulPrenom})`);
+    return { credited: PARRAIN_BONUS };
   }
 }
