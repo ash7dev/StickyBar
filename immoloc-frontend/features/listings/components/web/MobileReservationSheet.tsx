@@ -161,6 +161,7 @@ export function MobileReservationSheet({
         }
       }
 
+      setOpen(false);
       triggerGate();
     } catch (error) {
       console.error('[MobileReservationSheet] Erreur lors de la vérification:', error);
@@ -492,7 +493,10 @@ export function MobileReservationSheet({
         <ActionGateModal
           steps={gateState.steps}
           block={gateState.block}
-          onComplete={completeGate}
+          onComplete={async () => {
+            await syncFromSupabaseSession();
+            completeGate();
+          }}
           onCancel={cancelGate}
         />
       )}

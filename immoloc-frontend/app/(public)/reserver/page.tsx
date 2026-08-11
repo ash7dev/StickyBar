@@ -116,7 +116,9 @@ export default function ReserverPage({ searchParams }: Props) {
       <ActionGateModal
         steps={gate.steps}
         block={gate.block}
-        onComplete={() => { }}
+        onComplete={async () => {
+          await syncFromSupabaseSession();
+        }}
         onCancel={() => router.back()}
       />
     );
@@ -179,6 +181,15 @@ export default function ReserverPage({ searchParams }: Props) {
 
   async function handlePay() {
     if (!cguAccepted || !dateDebut || !dateFin || nights <= 0 || !hasValidMinNights) return;
+
+    if (!gate.isReady) {
+      await syncFromSupabaseSession();
+      if (!useRoleStore.getState().profileCompleted || !useRoleStore.getState().phoneVerified) {
+        setError('Veuillez compléter votre profil et la vérification de votre identité avant de procéder au paiement.');
+        return;
+      }
+    }
+
     setLoading(true); setError('');
     try {
       const token = (await refreshIfNeeded()) ?? '';
