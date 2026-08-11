@@ -12,7 +12,9 @@ import {
   StatutReservation,
   StatutLitige,
   RoleLitige,
-  TypeFaute
+  TypeFaute,
+  TypeTransactionWallet,
+  SensTransaction,
 } from '@prisma/client';
 import { RefundPaymentUseCase } from '../../domain/payment/use-cases/refund-payment.use-case';
 
@@ -49,15 +51,16 @@ export class DisputesService {
 
     // 1. Validations selon le rôle et le statut
     if (isLocataire) {
-      // Le locataire peut ouvrir un litige si CONFIRMED (refus check-in) ou COMPLETED
-      const autorise = (([StatutReservation.CONFIRMED, StatutReservation.COMPLETED] as StatutReservation[]).includes(reservation.statut));
+      // Le locataire peut ouvrir un litige si CONFIRMED (refus check-in), CHECKED_IN (problème pendant séjour) ou COMPLETED
+      const autorise = (([StatutReservation.CONFIRMED, StatutReservation.CHECKED_IN, StatutReservation.COMPLETED] as StatutReservation[]).includes(reservation.statut));
       if (!autorise) {
         throw new UnprocessableEntityException('Litige non autorisé pour ce statut de réservation');
       }
     } else {
-      // Le proprio peut ouvrir un litige UNIQUEMENT si COMPLETED
-      if (reservation.statut !== StatutReservation.COMPLETED) {
-        throw new UnprocessableEntityException('Le propriétaire ne peut ouvrir un litige que sur une réservation terminée');
+      // Le propriétaire peut ouvrir un litige si CHECKED_IN ou COMPLETED
+      const autorise = (([StatutReservation.CHECKED_IN, StatutReservation.COMPLETED] as StatutReservation[]).includes(reservation.statut));
+      if (!autorise) {
+        throw new UnprocessableEntityException('Le propriétaire ne peut ouvrir un litige que sur une réservation en séjour ou terminée');
       }
     }
 
@@ -146,7 +149,8 @@ export class DisputesService {
             locataire: { select: { id: true, prenom: true, nom: true, email: true, telephone: true } },
             proprietaire: { select: { id: true, prenom: true, nom: true, email: true, telephone: true } },
             logement: { select: { id: true, titre: true, ville: true } },
-            photosEtatLieu: true, // Pour comparaison
+            photosEtatLieu: true,
+            paiement: true,
           }
         }
       },
@@ -169,14 +173,35 @@ export class DisputesService {
     }
 
     const { reservation } = litige;
+    const totalMontant = Number(reservation.totalLocataire || 0);
+
+    // Calcul du montant de compensation et du taux effectif de remboursement
+    let effectiveTaux = 0;
+    let calculatedCompensation = 0;
+
+    if (dto.statut === StatutLitige.FONDE && litige.declarePar === RoleLitige.LOCATAIRE) {
+      if (dto.montantCompensation != null && totalMontant > 0) {
+        calculatedCompensation = Math.min(dto.montantCompensation, totalMontant);
+        effectiveTaux = Math.round((calculatedCompensation / totalMontant) * 100);
+      } else if (dto.tauxRemboursement != null) {
+        effectiveTaux = Math.min(Math.max(dto.tauxRemboursement, 0), 100);
+        calculatedCompensation = Math.round((totalMontant * effectiveTaux) / 100);
+      } else {
+        effectiveTaux = 100;
+        calculatedCompensation = totalMontant;
+      }
+    } else if (dto.montantCompensation != null) {
+      calculatedCompensation = dto.montantCompensation;
+    }
 
     const result = await this.prisma.$transaction(async (tx) => {
-      // 1. Mettre à jour le litige
+      // 1. Mettre à jour le litige avec le montant de compensation
       const updatedLitige = await tx.litige.update({
         where: { id },
         data: {
           statut: dto.statut,
           decisionAdmin: dto.decisionAdmin,
+          montantCompensation: calculatedCompensation > 0 ? calculatedCompensation : null,
           resoluLe: new Date(),
           resoluParAdminId: adminId,
         },
@@ -187,10 +212,11 @@ export class DisputesService {
         const estLocataireVictime = litige.declarePar === RoleLitige.LOCATAIRE;
 
         if (estLocataireVictime) {
-          // Marquer la réservation comme annulée
+          // Si remboursement 100%, annulation. Si partiel, marquer completed (séjour partiellement maintenu)
+          const nouveauStatutResa = effectiveTaux >= 100 ? StatutReservation.CANCELLED : StatutReservation.COMPLETED;
           await tx.reservation.update({
             where: { id: litige.reservationId },
-            data: { statut: StatutReservation.CANCELLED },
+            data: { statut: nouveauStatutResa },
           });
 
           // Ajouter une faute au propriétaire
@@ -199,7 +225,7 @@ export class DisputesService {
               utilisateurId: reservation.proprietaireId,
               type: TypeFaute.NON_CONFORMITE_LOGEMENT,
               reservationId: reservation.id,
-              description: `Litige FONDE : ${dto.decisionAdmin}`,
+              description: `Litige FONDE (${effectiveTaux}% remboursé) : ${dto.decisionAdmin}`,
             },
           });
         } else {
@@ -217,6 +243,31 @@ export class DisputesService {
               description: `Litige FONDE : ${dto.decisionAdmin}`,
             },
           });
+
+          // Si dédommagement accordé au propriétaire (ex: dégâts)
+          if (calculatedCompensation > 0) {
+            const hostWallet = await tx.wallet.findUnique({
+              where: { utilisateurId: reservation.proprietaireId },
+            });
+            if (hostWallet) {
+              const soldeApres = Number(hostWallet.soldeDisponible) + calculatedCompensation;
+              await tx.wallet.update({
+                where: { id: hostWallet.id },
+                data: { soldeDisponible: { increment: calculatedCompensation } },
+              });
+              await tx.transactionWallet.create({
+                data: {
+                  walletId: hostWallet.id,
+                  reservationId: reservation.id,
+                  type: TypeTransactionWallet.CREDIT_LOCATION,
+                  montant: calculatedCompensation,
+                  sens: SensTransaction.CREDIT,
+                  soldeApres,
+                  description: `Dédommagement litige FONDÉ (${calculatedCompensation.toLocaleString('fr-FR')} FCFA) — résa ${reservation.id.slice(0, 8).toUpperCase()}`,
+                },
+              });
+            }
+          }
         }
       } else {
         // 3. Si NON_FONDE : Retour à COMPLETED
@@ -226,23 +277,21 @@ export class DisputesService {
         });
       }
 
-      this.logger.log(`Litige [${id}] résolu par l'admin [${adminId}] : ${dto.statut}`);
+      this.logger.log(`Litige [${id}] résolu par l'admin [${adminId}] : ${dto.statut} (Taux: ${effectiveTaux}%)`);
       return { updatedLitige, litige };
     });
 
-    // 3. Après la transaction : Initier le remboursement si locataire victime
-    if (dto.statut === StatutLitige.FONDE && result.litige.declarePar === RoleLitige.LOCATAIRE) {
+    // 3. Après la transaction : Initier le remboursement selon le taux calculé
+    if (dto.statut === StatutLitige.FONDE && result.litige.declarePar === RoleLitige.LOCATAIRE && effectiveTaux > 0) {
       try {
-        await this.refundPayment.execute(result.litige.reservationId, 100);
-        this.logger.log(`Remboursement 100% initié pour la réservation ${result.litige.reservationId} suite au litige ${id}`);
+        await this.refundPayment.execute(result.litige.reservationId, effectiveTaux);
+        this.logger.log(`Remboursement de ${effectiveTaux}% (${calculatedCompensation} FCFA) initié pour la réservation ${result.litige.reservationId} suite au litige ${id}`);
       } catch (error) {
         const err = error as Error;
         this.logger.error(
           `Échec du remboursement pour le litige ${id} (réservation ${result.litige.reservationId}): ${err.message}`,
           err.stack
         );
-        // Ne pas faire échouer la résolution du litige si le remboursement échoue
-        // Le remboursement pourra être retenté manuellement
       }
     }
 

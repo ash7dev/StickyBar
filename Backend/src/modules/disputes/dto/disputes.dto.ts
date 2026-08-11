@@ -1,4 +1,4 @@
-import { IsNotEmpty, IsString, IsEnum, IsOptional, MaxLength } from 'class-validator';
+import { IsNotEmpty, IsString, IsEnum, IsOptional, IsNumber, Min, Max, MaxLength } from 'class-validator';
 import { MotifLitige, StatutLitige } from '@prisma/client';
 
 export class CreateDisputeDto {
@@ -25,4 +25,15 @@ export class ResolveDisputeDto {
   @IsString()
   @MaxLength(2000, { message: 'La décision ne peut pas dépasser 2000 caractères' })
   decisionAdmin!: string;
+
+  @IsOptional()
+  @IsNumber({}, { message: 'Le taux de remboursement doit être un nombre' })
+  @Min(0, { message: 'Le taux de remboursement ne peut pas être négatif' })
+  @Max(100, { message: 'Le taux de remboursement ne peut pas dépasser 100%' })
+  tauxRemboursement?: number;
+
+  @IsOptional()
+  @IsNumber({}, { message: 'Le montant de compensation doit être un nombre' })
+  @Min(0, { message: 'Le montant de compensation ne peut pas être négatif' })
+  montantCompensation?: number;
 }
