@@ -472,7 +472,10 @@
 
   html {
     -webkit-text-size-adjust: 100%;
+    text-size-adjust: 100%;
     scroll-behavior: smooth;
+    touch-action: manipulation;
+    -webkit-tap-highlight-color: transparent;
   }
 
   body {
@@ -482,6 +485,19 @@
     -webkit-font-smoothing: antialiased;
     text-rendering: optimizeLegibility;
     transition: background-color var(--dur-base) ease, color var(--dur-base) ease;
+    touch-action: manipulation;
+    -webkit-overflow-scrolling: touch;
+    overflow-x: hidden;
+  }
+
+  /* Empêche le zoom automatique sur iOS Safari lors du focus sur un champ d'entrée */
+  @media (max-width: 768px) {
+    input:not([type="checkbox"]):not([type="radio"]),
+    select,
+    textarea {
+      font-size: 16px !important;
+      touch-action: manipulation;
+    }
   }
 
   /* Le fond dégradé n'est PAS sur body : il est appliqué via .bg-canvas sur

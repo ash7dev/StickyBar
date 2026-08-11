@@ -60,23 +60,9 @@ export const metadata: Metadata = {
 export const viewport: Viewport = {
   width: 'device-width',
   initialScale: 1,
-
-  // ⛔ maximumScale: 1 et userScalable: false ont été RETIRÉS.
-  //    Ils bloquaient le zoom pincé — échec WCAG 1.4.4 (Resize Text).
-  //    Sur Klef, l'utilisateur lit un bail, un montant de séquestre et des
-  //    conditions de rétractation sur un écran de 5 pouces. Lui interdire de
-  //    zoomer est un problème d'accès réel, pas une coquetterie de norme.
-  //    Le zoom involontaire au focus d'un input se règle par font-size: 16px
-  //    sur les champs — c'est déjà fait dans globals.css.
-
-  // Nécessaire pour 'black-translucent' : l'app occupe toute la dalle,
-  // encoche comprise. À compenser avec env(safe-area-inset-*) en CSS.
+  maximumScale: 1,
+  userScalable: false,
   viewportFit: 'cover',
-
-  // Corrigé : '#166534' était le green-800 de Tailwind, absent du système.
-  // La couleur doit correspondre à ce que l'utilisateur voit réellement en
-  // haut de l'écran — soit le sommet du dégradé canvas en clair, soit la
-  // surface forest en sombre.
   themeColor: [
     { media: '(prefers-color-scheme: light)', color: '#F4FAEA' },
     { media: '(prefers-color-scheme: dark)',  color: '#041912' },
