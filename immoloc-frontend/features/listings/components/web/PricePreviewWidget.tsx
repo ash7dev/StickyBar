@@ -111,7 +111,6 @@ export function PricePreviewWidget({
 
   const [nbPersonnes, setNbPersonnes] = useState(1);
   const [range, setRange] = useState<DateRange | undefined>();
-  const [typePaiement, setTypePaiement] = useState<'DEPOSIT' | 'FULL'>('DEPOSIT');
   const [preview, setPreview] = useState<PricePreviewResponse | null>(null);
   const [previewFailed, setPreviewFailed] = useState(false);
   const [isPending, startTransition] = useTransition();
@@ -160,20 +159,18 @@ export function PricePreviewWidget({
 
   const prixBaseNum = typeof prixBase === 'string' ? parseFloat(prixBase) : prixBase;
   const prixAffiche = Math.round(prixBaseNum * MARKUP);
-  const prixDerniereMinute = Math.round(prixAffiche * 0.85);
 
   /* Sans réponse serveur, le total est une ESTIMATION locale : elle ignore
-     les tarifs dégressifs et les suppléments. Elle est signalée comme telle
-     et le choix du mode de règlement reste verrouillé — on ne fait pas
-     choisir un montant à débiter sur un chiffre qu'on sait faux.           */
+     les tarifs dégressifs et les suppléments. Elle est signalée comme telle.
+     Le montant réellement débité et sa répartition (acompte ou totalité) se
+     décident sur /reserver, une fois le devis serveur confirmé — ici on
+     annonce le coût du séjour, pas le geste de paiement.                   */
   const isEstimate = !preview;
   const estimatedTotal = preview
     ? preview.totalLocataire
     : prixAffiche * Math.max(nights, nuitesMinimum);
-  const montantADebiter =
-    typePaiement === 'DEPOSIT' && acomptePourcentage < 100
-      ? Math.round(Number(estimatedTotal) * (acomptePourcentage / 100))
-      : Math.round(Number(estimatedTotal));
+
+  const acompteDisponible = acomptePourcentage > 0 && acomptePourcentage < 100;
 
   const hasValidMinNights = nights >= nuitesMinimum;
   const canBook = hasRange && hasValidMinNights && cguAccepted && hasHydrated;
@@ -197,10 +194,9 @@ export function PricePreviewWidget({
       dateDebut: toLocalISODate(from),
       dateFin: toLocalISODate(to),
       personnes: String(nbPersonnes),
-      typePaiement,
     });
     router.push(`/reserver?${params.toString()}`);
-  }, [from, to, listingId, nbPersonnes, typePaiement, router]);
+  }, [from, to, listingId, nbPersonnes, router]);
 
   const { gateState, trigger: triggerGate, complete: completeGate, cancel: cancelGate } =
     useGatedAction(goToReserver);
@@ -243,8 +239,7 @@ export function PricePreviewWidget({
           `/reserver?listingId=${listingId}` +
           `&dateDebut=${toLocalISODate(from)}` +
           `&dateFin=${toLocalISODate(to)}` +
-          `&personnes=${nbPersonnes}` +
-          `&typePaiement=${typePaiement}`;
+          `&personnes=${nbPersonnes}`;
         router.push(`/login?next=${encodeURIComponent(reserverUrl)}`);
         return;
       }
@@ -282,7 +277,7 @@ export function PricePreviewWidget({
     }
   }, [
     hasHydrated, canBook, focusBlocker, nestToken, syncFromSupabaseSession,
-    from, to, listingId, nbPersonnes, typePaiement, router, ageMin, triggerGate, showError,
+    from, to, listingId, nbPersonnes, router, ageMin, triggerGate, showError,
   ]);
 
   const showTarifHint =
@@ -320,7 +315,7 @@ export function PricePreviewWidget({
                   </span>
                 )}
                 {derniereMinuteActive && (
-                  <span className="inline-flex items-center gap-1 rounded-pill border border-action-edge bg-lime-500/10 px-2.5 py-0.5 text-xs font-bold text-forest-900">
+                  <span className="inline-flex items-center gap-1 rounded-pill border border-action-edge bg-lime-500/10 px-2.5 py-0.5 text-xs font-semibold text-forest-900">
                     <Zap className="h-3 w-3 fill-lime-600 text-lime-600" />
                     −15 % dernière minute
                   </span>
@@ -345,12 +340,26 @@ export function PricePreviewWidget({
               minNights={nuitesMinimum}
               compact
             />
-            <div className="mt-2.5 flex flex-wrap items-center justify-between gap-1 rounded-inner border border-border bg-background-alt px-3 py-2 text-xs text-foreground-muted">
-              <span>🔑 Arrivée : <strong className="font-semibold text-foreground">dès 14:00</strong></span>
-              <span>🚪 Départ : <strong className="font-semibold text-foreground">avant 12:00</strong></span>
+
+            {/* Deux colonnes alignées plutôt qu'une ligne à émojis : les
+                horaires se comparent, ils ne se lisent pas en phrase.      */}
+            <div className="mt-3 grid grid-cols-2 divide-x divide-border overflow-hidden rounded-inner border border-border bg-background-alt">
+              <div className="px-3.5 py-2.5">
+                <span className="block text-xs text-foreground-muted">Arrivée</span>
+                <span className="mt-0.5 block text-sm font-semibold tabular-nums text-foreground">
+                  dès 14:00
+                </span>
+              </div>
+              <div className="px-3.5 py-2.5">
+                <span className="block text-xs text-foreground-muted">Départ</span>
+                <span className="mt-0.5 block text-sm font-semibold tabular-nums text-foreground">
+                  avant 12:00
+                </span>
+              </div>
             </div>
-            <p className="mt-1 text-[10px] text-foreground-faint text-center">
-              Horaires indicatifs — personnalisables par l&apos;hôte lors de la confirmation
+
+            <p className="mt-1.5 text-center text-xs text-foreground-muted">
+              Horaires indicatifs — ajustables avec l&apos;hôte à la confirmation
             </p>
           </div>
 
@@ -470,101 +479,57 @@ export function PricePreviewWidget({
                 </div>
               )}
 
-              <div className="flex items-center justify-between gap-3 border-t border-border-inverse pt-3">
-                <span className="font-semibold text-on-inverse">
+              {/* Le total est le point d'arrivée de la carte : Fraunces, aligné
+                  à droite, seul élément de cette taille dans le bloc.       */}
+              <div className="flex items-end justify-between gap-3 border-t border-border-inverse pt-3.5">
+                <span className="pb-0.5 text-sm font-semibold text-on-inverse">
                   {isEstimate ? 'Total estimé' : 'Total du séjour'}
                 </span>
                 <span className="flex items-center gap-2">
                   {isPending && (
                     <Loader2 className="h-3.5 w-3.5 animate-spin text-on-inverse-muted" />
                   )}
-                  <span className="text-xl font-semibold tabular-nums tracking-tight text-on-inverse">
+                  <span className="font-display text-2xl font-semibold leading-none tabular-nums text-on-inverse-display">
                     {fmt(estimatedTotal)} FCFA
                   </span>
                 </span>
               </div>
 
-              {/* Badge Cashback Teranga Club */}
-              <div className="flex items-center gap-2 rounded-inner border border-lime-400/30 bg-lime-400/10 px-3 py-2 text-xs text-lime-300">
-                <Coins className="h-4 w-4 text-lime-300 shrink-0" />
-                <span>
-                  Gagnez <strong className="font-bold text-lime-200">+{Math.round(Number(estimatedTotal) * 0.015).toLocaleString('fr-FR')} Klef Coins</strong> sur cette réservation
-                </span>
-              </div>
+              {/* Bas de bloc : ce qui informe, jamais ce qui décide. Le choix
+                  acompte / totalité se prend sur /reserver, une fois le devis
+                  serveur confirmé.                                          */}
+              <div className="space-y-2 border-t border-border-inverse pt-3">
+                {acompteDisponible && (
+                  <p className="text-xs leading-relaxed text-on-inverse-muted">
+                    Réservez dès maintenant avec{' '}
+                    <strong className="font-semibold text-on-inverse">
+                      {acomptePourcentage} % d’acompte
+                    </strong>
+                    , le solde à la remise des clés.
+                  </p>
+                )}
 
-              {previewFailed && (
-                <p className="text-xs leading-relaxed text-on-inverse-muted">
-                  Le calcul détaillé est momentanément indisponible. Le montant ci-dessus
-                  est une estimation : le total exact sera confirmé avant tout paiement.
-                </p>
-              )}
-
-              {/* Mode de règlement — verrouillé tant que le total n'est pas
-                  confirmé par le serveur. Choisir un acompte sur une
-                  estimation revient à annoncer un montant qu'on sait faux. */}
-              {acomptePourcentage < 100 && (
-                <div className="space-y-2 pt-1">
-                  <span
-                    id="mode-reglement-label"
-                    className="block text-xs font-semibold uppercase tracking-wider text-on-inverse-muted"
-                  >
-                    Mode de règlement
+                {/* L'accent tient dans l'icône. Écrire la phrase en lime en
+                    ferait une couleur de contenu et non plus d'action.      */}
+                <p className="flex items-start gap-2 text-xs leading-relaxed text-on-inverse-muted">
+                  <Coins className="mt-px h-4 w-4 shrink-0 text-on-inverse-marker" />
+                  <span>
+                    Ce séjour vous rapporte{' '}
+                    <strong className="font-semibold tabular-nums text-on-inverse">
+                      {Math.round(Number(estimatedTotal) * 0.015).toLocaleString('fr-FR')} Klef
+                      Coins
+                    </strong>
+                    .
                   </span>
-
-                  <div
-                    role="radiogroup"
-                    aria-labelledby="mode-reglement-label"
-                    className="grid grid-cols-2 gap-2"
-                  >
-                    {([
-                      {
-                        value: 'DEPOSIT' as const,
-                        label: `Acompte ${acomptePourcentage} %`,
-                        amount: Math.round(Number(estimatedTotal) * (acomptePourcentage / 100)),
-                        hint: 'Solde à l’arrivée',
-                      },
-                      {
-                        value: 'FULL' as const,
-                        label: 'Totalité',
-                        amount: Math.round(Number(estimatedTotal)),
-                        hint: 'Rien sur place',
-                      },
-                    ]).map(({ value, label, amount, hint }) => {
-                      const selected = typePaiement === value;
-                      return (
-                        <button
-                          key={value}
-                          type="button"
-                          role="radio"
-                          aria-checked={selected}
-                          disabled={isEstimate}
-                          onClick={() => setTypePaiement(value)}
-                          /* Sélection en surface claire, pas en lime : le seul
-                             aplat lime de l'écran est le CTA de réservation. */
-                          className={`rounded-inner border p-2.5 text-left transition-colors disabled:cursor-not-allowed disabled:opacity-45 ${selected
-                              ? 'border-neutral-50 bg-neutral-50 text-forest-900'
-                              : 'border-border-inverse bg-white/5 text-on-inverse-muted hover:border-border-inverse-strong'
-                            }`}
-                        >
-                          <span className="block text-xs font-semibold uppercase tracking-wider opacity-80">
-                            {label}
-                          </span>
-                          <span className="mt-0.5 block text-sm font-semibold leading-tight tabular-nums">
-                            {fmt(amount)} FCFA
-                          </span>
-                          <span className="mt-1 block text-xs opacity-80">{hint}</span>
-                        </button>
-                      );
-                    })}
-                  </div>
-                </div>
-              )}
-
-              {!isEstimate && (
-                <p className="text-right text-xs tabular-nums text-on-inverse-muted">
-                  Montant à débiter : {fmt(montantADebiter)} FCFA
                 </p>
-              )}
+
+                {previewFailed && (
+                  <p className="text-xs leading-relaxed text-on-inverse-muted">
+                    Le calcul détaillé est momentanément indisponible. Le montant ci-dessus est
+                    une estimation : le total exact sera confirmé avant tout paiement.
+                  </p>
+                )}
+              </div>
             </div>
           )}
 
@@ -611,8 +576,8 @@ export function PricePreviewWidget({
               className="flex items-start gap-3 rounded-inner border border-error-500/20 bg-error-50 p-4"
             >
               <AlertCircle className="mt-0.5 h-4 w-4 shrink-0 text-error-600" />
-              <p className="text-xs font-bold leading-relaxed text-error-700">
-                Séjour minimum requis : {nuitesMinimum} nuits. Vous avez sélectionné {nights} nuit{nights > 1 ? 's' : ''}. Veuillez ajouter des dates pour continuer.
+              <p className="text-xs font-semibold leading-relaxed text-error-700">
+                Séjour minimum requis : {nuitesMinimum} nuits. Vous avez sélectionné {nights} nuit{nights > 1 ? 's' : ''}. Ajoutez des dates pour continuer.
               </p>
             </div>
           )}
@@ -639,8 +604,8 @@ export function PricePreviewWidget({
               disabled={!canBook}
               aria-describedby={blockerMessage ? 'reserver-blocage' : undefined}
               className={`flex w-full items-center justify-center gap-2.5 rounded-pill px-6 py-4 text-base font-semibold transition-[background-color,box-shadow,transform] duration-200 ${canBook
-                  ? 'bg-action text-on-action shadow-action hover:bg-action-hover hover:shadow-action-hover active:scale-[0.99]'
-                  : 'cursor-not-allowed bg-background-alt text-foreground-muted'
+                ? 'border border-action-edge bg-action text-on-action shadow-action hover:bg-action-hover hover:shadow-action-hover active:scale-[0.99]'
+                : 'cursor-not-allowed bg-background-alt text-foreground-muted'
                 }`}
             >
               {canBook ? 'Réserver maintenant' : blockerMessage}
@@ -692,34 +657,40 @@ export function PricePreviewWidget({
           d'aujourd'hui et poussait directement vers /reserver : l'utilisateur
           arrivait sur un récapitulatif pour des dates qu'il n'avait jamais
           choisies, sans avoir accepté les CGU, sans contrôle d'âge et sans
-          passer par le gate d'authentification.                             */}
+          passer par le gate d'authentification.
 
-      <div
-        className="fixed inset-x-0 bottom-0 z-40 flex items-center justify-between gap-4 border-t border-forest-800/80 bg-forest-950 p-4 pb-[calc(1rem+env(safe-area-inset-bottom))] shadow-[0_-8px_32px_rgba(0,0,0,0.45)] backdrop-blur-xl lg:hidden"
-      >
-        <div className="min-w-0">
-          <TenantPriceDisplay
-            prixBase={prixBase}
-            derniereMinuteActive={derniereMinuteActive}
-            size="sm"
-            showBadge={false}
-            textColor="text-white"
-          />
-          <p className="truncate text-xs text-forest-200/90 font-medium">
-            {hasRange
-              ? `${nights} nuit${nights > 1 ? 's' : ''} · ${nbPersonnes} voyageur${nbPersonnes > 1 ? 's' : ''}`
-              : `Minimum ${nuitesMinimum} nuit${nuitesMinimum > 1 ? 's' : ''}`}
-          </p>
+          Pas de backdrop-blur ici : le fond est un aplat opaque, le filtre ne
+          produirait rien de visible et ferait chuter le scroll sur Android
+          d'entrée de gamme.                                                 */}
+
+      {/* Barre sticky mobile : conteneur flottant arrondi type carte (design identique au bouton hôte) */}
+      <div className="fixed inset-x-0 bottom-[calc(0.75rem+env(safe-area-inset-bottom,0px))] z-40 px-3 lg:hidden">
+        <div className="section-inverse flex items-center justify-between gap-4 border border-forest-800/80 p-3.5 shadow-2xl backdrop-blur-xl">
+          <div className="min-w-0">
+            <TenantPriceDisplay
+              prixBase={prixBase}
+              derniereMinuteActive={derniereMinuteActive}
+              size="md"
+              reserveSpace={false}
+              showBadge={false}
+              textColor="text-neutral-50 font-bold"
+            />
+            <p className="truncate text-xs font-medium text-forest-200">
+              {hasRange
+                ? `${nights} nuit${nights > 1 ? 's' : ''} · ${nbPersonnes} voyageur${nbPersonnes > 1 ? 's' : ''}`
+                : `Minimum ${nuitesMinimum} nuit${nuitesMinimum > 1 ? 's' : ''}`}
+            </p>
+          </div>
+
+          <button
+            type="button"
+            onClick={canBook ? handleBook : focusBlocker}
+            disabled={!hasHydrated}
+            className="flex shrink-0 items-center gap-1.5 rounded-pill border border-action-edge bg-action px-5 py-3 text-sm font-semibold text-on-action shadow-action transition-transform duration-200 hover:bg-action-hover active:scale-[0.98] disabled:opacity-50"
+          >
+            {canBook ? 'Réserver' : hasRange ? 'Accepter et réserver' : 'Choisir les dates'}
+          </button>
         </div>
-
-        <button
-          type="button"
-          onClick={canBook ? handleBook : focusBlocker}
-          disabled={!hasHydrated}
-          className="flex shrink-0 items-center gap-1.5 rounded-pill bg-action hover:bg-action-hover px-6 py-3.5 text-sm font-bold text-forest-950 shadow-md transition-transform active:scale-[0.98] disabled:opacity-50"
-        >
-          {canBook ? 'Réserver' : hasRange ? 'Accepter et réserver' : 'Choisir les dates'}
-        </button>
       </div>
 
       {gateState.open && (

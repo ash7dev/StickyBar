@@ -68,7 +68,6 @@ export const colors = {
     800: '#556D15',   // ★ texte lime courant sur clair — 5.61:1
     900: '#3A4A0E',   // 9.28:1
   },
-
   // ── Gold — le statut ───────────────────────────────────────────────────────
   // Usage strict : badge Vérifié, étoiles. Jamais un bouton.
   // Si l'or devient cliquable, l'utilisateur ne distingue plus statut et action.

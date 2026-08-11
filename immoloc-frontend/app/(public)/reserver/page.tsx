@@ -1,31 +1,28 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
 'use client';
 
-import { use, useState, useEffect } from 'react';
+import { use, useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { useQuery } from '@tanstack/react-query';
-import Image from 'next/image';
 import Link from 'next/link';
-import {
-  ChevronLeft, MapPin, Users, ArrowRight,
-  Loader2, AlertCircle, CheckCircle2, Lock, CalendarDays,
-  Minus, Plus, ShieldCheck, X, Smartphone, Coins,
-} from 'lucide-react';
+import { ArrowRight, ChevronLeft, Loader2 } from 'lucide-react';
+
 import { nestFetch } from '@/lib/nestjs/api-client';
-import { listingsApi } from '@/lib/nestjs';
 import { NEST_API } from '@/lib/nestjs/endpoints';
 import type { ReservationCreatedResponse } from '@/lib/nestjs/types';
 import { useRoleStore } from '@/stores/role.store';
 import { useNestToken } from '@/features/auth/hooks/use-nest-token';
 import { useActionGate } from '@/hooks/use-action-gate';
 import { ActionGateModal } from '@/features/gate/components/ActionGateModal';
-import { AvailabilityCalendar } from '@/features/listings/components/web/AvailabilityCalendar';
-import type { DateRange } from 'react-day-picker';
 import { cn } from '@/lib/utils/cn';
-import { getPrixPublic } from '@/lib/pricing';
-import { useTerangaClub } from '@/features/teranga-club/hooks/use-teranga-club';
 
-type Fournisseur = 'WAVE' | 'ORANGE_MONEY';
+import { useReservation } from '@/features/reservations/hooks/use-reservation';
+import { Alerte, Montant, SectionCard } from '@/features/reservations/components/primitives';
+import { StaySection, DateSheet } from '@/features/reservations/components/StaySection';
+import { PaymentSection, RappelSejour } from '@/features/reservations/components/PaymentSection';
+import {
+  BlocMontant,
+  DetailTarifaire,
+  SummaryRail,
+} from '@/features/reservations/components/Summary';
 
 interface Props {
   searchParams: Promise<{
@@ -42,72 +39,54 @@ export default function ReserverPage({ searchParams }: Props) {
   const router = useRouter();
   const { nestToken, hasHydrated, needsOnboarding } = useRoleStore();
   const { refreshIfNeeded, syncFromSupabaseSession } = useNestToken();
-
-  const listingId = sp.listingId ?? '';
-  const initialDateDebut = sp.dateDebut ?? '';
-  const initialDateFin = sp.dateFin ?? '';
-  const initialNbPersonnes = parseInt(sp.personnes ?? '1', 10);
-  const initialTypePaiement = (sp.typePaiement as 'DEPOSIT' | 'FULL') || 'DEPOSIT';
-
-  // Sur mobile : Étape 1/2 ou 2/2. Sur Desktop : passage direct à la finalisation (Step 2)
-  const [step, setStep] = useState<1 | 2>(1);
-
-  const [dateDebut, setDateDebut] = useState(initialDateDebut);
-  const [dateFin, setDateFin] = useState(initialDateFin);
-  const [nbPersonnes, setNbPersonnes] = useState(isNaN(initialNbPersonnes) ? 1 : initialNbPersonnes);
-  const [showCalendarModal, setShowCalendarModal] = useState(false);
-
-  const [typePaiement, setTypePaiement] = useState<'DEPOSIT' | 'FULL'>(initialTypePaiement);
-  const [fournisseur, setFournisseur] = useState<Fournisseur>('WAVE');
-  const [telephone, setTelephone] = useState('');
-  const [cguAccepted, setCguAccepted] = useState(true); // Pré-coché depuis desktop si déjà validé dans PricePreviewWidget
-  const [useCoins, setUseCoins] = useState(false);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState('');
-
-  const { data: teranga } = useTerangaClub();
-
-  const { data: listing, isLoading: listingLoading } = useQuery({
-    queryKey: ['listing-reserver', listingId],
-    queryFn: () => listingsApi.findOne(listingId),
-    enabled: !!listingId,
-  });
-
-  const nights = listingId && dateDebut && dateFin
-    ? Math.round((new Date(dateFin).getTime() - new Date(dateDebut).getTime()) / (1000 * 60 * 60 * 24))
-    : 0;
-
-  const { data: pricePreview } = useQuery({
-    queryKey: ['price-preview-reserver', listingId, dateDebut, dateFin, nbPersonnes],
-    queryFn: () => listingsApi.getPricePreview(listingId, {
-      dateDebut,
-      dateFin,
-      nbPersonnes,
-    }),
-    enabled: !!listingId && !!dateDebut && !!dateFin && nights > 0,
-  });
-
   const gate = useActionGate();
 
-  useEffect(() => {
-    if (!hasHydrated) return;
-    if (nestToken) return;
+  const listingId = sp.listingId ?? '';
+  const r = useReservation({ listingId, ...sp });
 
-    let cancelled = false;
+  // Mobile : si les dates sont déjà complètes (choisies sur la fiche annonce),
+  // on démarre DIRECTEMENT en Étape 2 (Paiement) sans repasser par le doublon du séjour !
+  const datesInitialesCompletes = !!(sp.dateDebut && sp.dateFin);
+  const [etape, setEtape] = useState<1 | 2>(datesInitialesCompletes ? 2 : 1);
+  const [calendrierOuvert, setCalendrierOuvert] = useState(false);
+  const [montreErreurs, setMontreErreurs] = useState(false);
+  const [envoi, setEnvoi] = useState(false);
+  const [erreurApi, setErreurApi] = useState('');
+
+  useEffect(() => {
+    if (!hasHydrated || nestToken) return;
+    let annule = false;
 
     void (async () => {
-      const recovered = await syncFromSupabaseSession();
-      const onboardingPending = useRoleStore.getState().needsOnboarding;
-      if (!recovered && !onboardingPending && !cancelled) {
-        const next = encodeURIComponent(`/reserver?listingId=${listingId}&dateDebut=${dateDebut}&dateFin=${dateFin}&personnes=${nbPersonnes}`);
+      const recupere = await syncFromSupabaseSession();
+      const onboardingEnCours = useRoleStore.getState().needsOnboarding;
+      if (!recupere && !onboardingEnCours && !annule) {
+        const next = encodeURIComponent(
+          `/reserver?listingId=${listingId}&dateDebut=${r.dateDebut}&dateFin=${r.dateFin}&personnes=${r.nbPersonnes}`,
+        );
         router.replace(`/login?next=${next}`);
       }
     })();
 
     return () => {
-      cancelled = true;
+      annule = true;
     };
-  }, [hasHydrated, nestToken, listingId, dateDebut, dateFin, nbPersonnes, router, syncFromSupabaseSession]);
+  }, [
+    hasHydrated,
+    nestToken,
+    listingId,
+    r.dateDebut,
+    r.dateFin,
+    r.nbPersonnes,
+    router,
+    syncFromSupabaseSession,
+  ]);
+
+  // Changer d'étape sans remonter laisse l'utilisateur au milieu de l'écran
+  // suivant, sur un contenu qu'il n'a pas encore lu.
+  useEffect(() => {
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }, [etape]);
 
   if (!hasHydrated) return null;
 
@@ -116,9 +95,7 @@ export default function ReserverPage({ searchParams }: Props) {
       <ActionGateModal
         steps={gate.steps}
         block={gate.block}
-        onComplete={async () => {
-          await syncFromSupabaseSession();
-        }}
+        onComplete={() => { }}
         onCancel={() => router.back()}
       />
     );
@@ -128,745 +105,216 @@ export default function ReserverPage({ searchParams }: Props) {
 
   if (!listingId) {
     return (
-      <div className="max-w-lg mx-auto px-4 py-16 text-center space-y-3">
-        <p className="text-sm text-foreground-muted">Paramètres de réservation manquants.</p>
-        <Link href="/explorer" className="text-sm font-bold text-forest-700 hover:underline">
-          Retour aux logements
+      <main className="mx-auto max-w-lg space-y-4 px-4 py-24 text-center">
+        <h1 className="font-display text-xl font-semibold text-foreground">
+          Cette réservation est incomplète
+        </h1>
+        <p className="text-sm text-foreground-muted">
+          Le logement n&apos;est pas identifié. Repartez d&apos;une annonce pour choisir vos dates.
+        </p>
+        <Link href="/explorer" className="btn-primary">
+          Voir les logements
         </Link>
-      </div>
+      </main>
     );
   }
 
-  const capaciteMax = listing?.capaciteMax ?? 10;
-  const personnesBase = listing?.personnesBase ?? listing?.capaciteMax ?? 1;
+  async function payer() {
+    setMontreErreurs(true);
+    if (!r.peutPayer || envoi) return;
 
-  const estimatedTotal = pricePreview
-    ? pricePreview.totalLocataire
-    : listing ? getPrixPublic(listing.prixBase) * Math.max(nights, 1) : 0;
-
-  const basePrice = pricePreview?.prixBase
-    ?? (pricePreview && pricePreview.totalLocataire && pricePreview.supplementPersonnes !== undefined
-      ? pricePreview.totalLocataire - pricePreview.supplementPersonnes
-      : undefined)
-    ?? getPrixPublic(listing?.prixBase);
-
-  const supplementAmount = pricePreview?.supplementPersonnes ?? 0;
-
-  const acomptePct = listing?.acomptePourcentage ?? 30;
-  const isDepositMode = typePaiement === 'DEPOSIT' && acomptePct < 100;
-  const montantBrutADebiter = isDepositMode
-    ? Math.round(estimatedTotal * (acomptePct / 100))
-    : Math.round(estimatedTotal);
-
-  const maxCoinsRedeemable = teranga?.soldeCoins ? Math.min(teranga.soldeCoins, montantBrutADebiter) : 0;
-  const coinsDeduction = useCoins ? maxCoinsRedeemable : 0;
-  const finalMontantADebiter = Math.max(0, montantBrutADebiter - coinsDeduction);
-
-  const fmt = (n: any) => {
-    if (n === null || n === undefined) return '—';
-    const s = typeof n === 'object' && typeof n.toString === 'function' ? n.toString() : String(n);
-    const v = parseFloat(s);
-    return !isNaN(v) ? Math.round(v).toLocaleString('fr-FR') : '—';
-  };
-
-  const fmtDate = (iso: string) => {
-    if (!iso) return 'Sélectionner';
-    return new Date(iso).toLocaleDateString('fr-FR', { day: 'numeric', month: 'short', year: 'numeric' });
-  };
-
-  const mainPhoto = listing?.photos.find((p) => p.estPrincipale) ?? listing?.photos[0];
-  const categoryLabel = listing?.sousType || listing?.type || 'Logement';
-  const minNights = listing?.nuitesMinimum ?? 1;
-  const hasValidMinNights = nights >= minNights;
-
-  async function handlePay() {
-    if (!cguAccepted || !dateDebut || !dateFin || nights <= 0 || !hasValidMinNights) return;
-
-    if (!gate.isReady) {
-      await syncFromSupabaseSession();
-      if (!useRoleStore.getState().profileCompleted || !useRoleStore.getState().phoneVerified) {
-        setError('Veuillez compléter votre profil et la vérification de votre identité avant de procéder au paiement.');
-        return;
-      }
-    }
-
-    setLoading(true); setError('');
+    setEnvoi(true);
+    setErreurApi('');
     try {
       const token = (await refreshIfNeeded()) ?? '';
       const res = await nestFetch<ReservationCreatedResponse>(NEST_API.RESERVATIONS.CREATE, {
         method: 'POST',
         token,
-        body: JSON.stringify({
-          logementId: listingId,
-          dateDebut,
-          dateFin,
-          nbPersonnes,
-          typePaiement,
-          fournisseur,
-          useCoins,
-        }),
+        body: JSON.stringify(r.payload),
       });
       router.push(`/reservations/${res.reservationId}`);
     } catch (e: unknown) {
-      setError((e as Error)?.message ?? 'Une erreur est survenue');
-      setLoading(false);
+      setErreurApi(
+        (e as Error)?.message ||
+        "Le paiement n'a pas pu être lancé. Vérifiez votre connexion et réessayez.",
+      );
+      setEnvoi(false);
     }
   }
 
-  function handleCalendarRangeSelect(r: DateRange | undefined) {
-    if (r?.from) {
-      setDateDebut(r.from.toISOString().split('T')[0]);
-    }
-    if (r?.to) {
-      setDateFin(r.to.toISOString().split('T')[0]);
+  function continuer() {
+    setMontreErreurs(true);
+    if (r.peutContinuer) {
+      setMontreErreurs(false);
+      setEtape(2);
     }
   }
+
+  const enAttentePrix = r.pricing.estEstimation || r.previewLoading;
 
   return (
-    <div className="min-h-screen bg-canvas text-foreground pb-32 pt-20 lg:pt-8">
-      {/* ── EN-TÊTE FIXE MOBILE UNIQUEMENT (lg:hidden) ────────────────────────────── */}
-      <div className="lg:hidden sticky top-20 z-30 bg-canvas/95 backdrop-blur-md px-4 py-3 border-b border-border/60 flex items-center justify-between gap-3 shadow-2xs">
-        <button
-          type="button"
-          onClick={() => {
-            if (step === 2) {
-              setStep(1);
-            } else {
-              router.back();
-            }
-          }}
-          className="w-9 h-9 rounded-full bg-background-card border border-border flex items-center justify-center text-foreground hover:bg-background-alt transition-colors"
-          aria-label="Retour"
-        >
-          <ChevronLeft className="w-5 h-5" />
-        </button>
-
-        <div className="text-center min-w-0">
-          <h1 className="font-display text-base font-bold text-forest-900 truncate">
-            {step === 1 ? 'Réserver' : 'Paiement'} <span className="text-foreground-faint font-normal">• {categoryLabel}</span>
+    <main className="bg-canvas min-h-screen pb-40 pt-3 sm:pt-4 lg:pb-20 lg:pt-8">
+      {/* ═══ EN-TÊTE MOBILE ═══════════════════════════════════════════════ */}
+      <header className="sticky top-[calc(env(safe-area-inset-top,0px)+3.75rem)] z-30 border-b border-border bg-background-card lg:hidden">
+        <div className="flex items-center gap-3 px-4 py-2.5">
+          <button
+            type="button"
+            onClick={() => router.back()}
+            className="flex h-9 w-9 shrink-0 items-center justify-center rounded-pill border border-border text-foreground transition-colors hover:bg-background-alt"
+            aria-label="Revenir au logement"
+          >
+            <ChevronLeft className="h-5 w-5" aria-hidden />
+          </button>
+          <h1 className="truncate font-display text-base font-semibold text-foreground">
+            Confirmer votre réservation
           </h1>
         </div>
 
-        <div className="px-3 py-1 rounded-pill bg-forest-50 border border-forest-100 text-forest-800 text-xs font-bold shrink-0">
-          {step}/2
+        {/* Progression : deux segments. Un « 1/2 » dit la même chose en
+            demandant une lecture — le filet se comprend sans être lu. */}
+        <div aria-hidden className="flex gap-1 px-4 pb-2">
+          <span className="h-0.5 flex-1 rounded-pill bg-forest-600" />
+          <span
+            className={cn(
+              'h-0.5 flex-1 rounded-pill transition-colors',
+              etape === 2 ? 'bg-forest-600' : 'bg-border',
+            )}
+          />
         </div>
-      </div>
+      </header>
 
-      {/* ── EN-TÊTE DESKTOP UNIQUEMENT (hidden lg:block) ───────────────────────────── */}
-      <div className="hidden lg:block max-w-5xl mx-auto px-6 pt-8 pb-4">
+      {/* ═══ EN-TÊTE DESKTOP ══════════════════════════════════════════════ */}
+      <div className="mx-auto hidden max-w-6xl px-6 pb-8 lg:block">
         <button
           type="button"
           onClick={() => router.back()}
-          className="inline-flex items-center gap-1.5 text-xs font-bold text-foreground-muted hover:text-forest-700 transition-colors mb-4"
+          className="mb-5 inline-flex items-center gap-1.5 text-xs font-semibold text-foreground-muted transition-colors hover:text-forest-700"
         >
-          <ChevronLeft className="w-4 h-4" />
-          Retour au logement
+          <ChevronLeft className="h-4 w-4" aria-hidden />
+          Revenir au logement
         </button>
-        <h1 className="font-display text-3xl font-bold text-forest-950">
-          Finaliser votre réservation
+        <h1 className="font-display text-[2.5rem] font-semibold leading-[1.05] text-foreground">
+          Confirmer votre réservation
         </h1>
-        <p className="text-sm text-foreground-muted mt-1">
-          Vérifiez le récapitulatif de votre séjour et validez votre moyen de paiement sécurisé.
+        <p className="mt-2 max-w-md text-sm text-foreground-muted">
+          Vérifiez les dates, choisissez votre moyen de paiement. Rien n&apos;est débité avant
+          validation depuis votre téléphone.
         </p>
       </div>
 
-      <div className="max-w-xl lg:max-w-5xl mx-auto px-4 lg:px-6 pt-4 space-y-6">
+      {/* ═══ CORPS ════════════════════════════════════════════════════════ */}
+      <div className="mx-auto max-w-6xl px-4 pt-3 lg:grid lg:grid-cols-12 lg:gap-10 lg:px-6 lg:pt-0">
+        <div className="space-y-4 lg:col-span-7">
+          {/* Étape 1 — le séjour (Mobile uniquement — sur Desktop le récapitulatif latéral contient déjà le séjour) */}
+          <div className={cn(etape === 1 ? 'block' : 'hidden', 'lg:hidden')}>
+            <StaySection r={r} ouvrirCalendrier={() => setCalendrierOuvert(true)} />
 
-        {/* ═══════════════════════════════════════════════════════════════════════════
-            MODE MOBILE — ÉTAPE 1/2 : Sélection dates, voyageurs & CGU
-           ═══════════════════════════════════════════════════════════════════════════ */}
-        <div className={cn('space-y-6', step === 1 ? 'block lg:hidden' : 'hidden')}>
-          {/* Photo + Nom du logement */}
-          <div className="bg-background-card rounded-card border border-border p-4 shadow-sm flex items-center gap-4">
-            <div className="relative w-20 h-20 rounded-inner overflow-hidden border border-border shrink-0">
-              {listingLoading ? (
-                <div className="w-full h-full bg-background-alt animate-pulse" />
-              ) : mainPhoto ? (
-                <Image src={mainPhoto.url} alt={listing?.titre ?? ''} fill className="object-cover" />
-              ) : (
-                <div className="w-full h-full bg-background-alt flex items-center justify-center">
-                  <CalendarDays className="w-6 h-6 text-foreground-faint" />
-                </div>
-              )}
-            </div>
-
-            <div className="min-w-0 flex-1">
-              <span className="text-[10px] font-bold uppercase tracking-wider text-forest-700 block">
-                {categoryLabel}
-              </span>
-              <h2 className="font-display text-base font-bold text-forest-950 truncate leading-snug">
-                {listing?.titre ?? 'Chargement...'}
-              </h2>
-              <p className="text-xs text-foreground-muted flex items-center gap-1 mt-0.5 truncate">
-                <MapPin className="w-3.5 h-3.5 text-forest-600 shrink-0" />
-                <span>{listing?.ville}{listing?.quartier ? `, ${listing.quartier}` : ''}</span>
-              </p>
-            </div>
-          </div>
-
-          {/* Dates : Date Début & Date Fin */}
-          <div className="bg-background-card rounded-card border border-border p-5 shadow-sm space-y-3">
-            <div className="flex items-center justify-between border-b border-border/80 pb-2">
-              <h3 className="font-display text-sm font-bold text-forest-900 flex items-center gap-2">
-                <CalendarDays className="w-4 h-4 text-forest-600" />
-                Dates du séjour
-              </h3>
-              {nights > 0 && (
-                <span className="text-xs font-bold text-forest-700 bg-forest-50 px-2.5 py-0.5 rounded-pill border border-forest-100">
-                  {nights} nuit{nights > 1 ? 's' : ''}
-                </span>
-              )}
-            </div>
-
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-              <button
-                type="button"
-                onClick={() => setShowCalendarModal(true)}
-                className="flex items-center justify-between p-3.5 rounded-inner bg-background-alt border border-border/80 hover:border-forest-300 transition-colors text-left"
-              >
-                <div>
-                  <span className="block text-[10px] font-extrabold uppercase tracking-wider text-foreground-faint">
-                    DATE DÉBUT
-                  </span>
-                  <span className="text-sm font-bold text-forest-950">
-                    {dateDebut ? fmtDate(dateDebut) : 'Sélectionner'}
-                  </span>
-                </div>
-                <CalendarDays className="w-4 h-4 text-forest-600 shrink-0" />
-              </button>
-
-              <button
-                type="button"
-                onClick={() => setShowCalendarModal(true)}
-                className="flex items-center justify-between p-3.5 rounded-inner bg-background-alt border border-border/80 hover:border-forest-300 transition-colors text-left"
-              >
-                <div>
-                  <span className="block text-[10px] font-extrabold uppercase tracking-wider text-foreground-faint">
-                    DATE FIN
-                  </span>
-                  <span className="text-sm font-bold text-forest-950">
-                    {dateFin ? fmtDate(dateFin) : 'Sélectionner'}
-                  </span>
-                </div>
-                <CalendarDays className="w-4 h-4 text-forest-600 shrink-0" />
-              </button>
-            </div>
-          </div>
-
-          {/* Voyageurs */}
-          <div className="bg-background-card rounded-card border border-border p-5 shadow-sm space-y-4">
-            <div className="flex items-center justify-between border-b border-border/80 pb-2">
-              <h3 className="font-display text-sm font-bold text-forest-900 flex items-center gap-2">
-                <Users className="w-4 h-4 text-forest-600" />
-                Voyageurs
-              </h3>
-              <span className="text-xs font-semibold text-foreground-muted">
-                max {capaciteMax}
-              </span>
-            </div>
-
-            <div className="flex items-center justify-between bg-background-alt p-3.5 rounded-inner border border-border/80">
-              <div>
-                <p className="text-sm font-bold text-forest-950">
-                  {nbPersonnes} voyageur{nbPersonnes > 1 ? 's' : ''}
-                </p>
-                <p className="text-xs text-foreground-muted">
-                  {nbPersonnes} voyageur{nbPersonnes > 1 ? 's' : ''} · max {capaciteMax}
-                </p>
-              </div>
-
-              <div className="flex items-center gap-3">
-                <button
-                  type="button"
-                  onClick={() => setNbPersonnes((v) => Math.max(1, v - 1))}
-                  disabled={nbPersonnes <= 1}
-                  className="w-9 h-9 rounded-full border border-border bg-background-card flex items-center justify-center text-foreground hover:bg-background-alt disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
-                >
-                  <Minus className="w-4 h-4" />
-                </button>
-
-                <span className="text-base font-extrabold text-forest-900 w-4 text-center">
-                  {nbPersonnes}
-                </span>
-
-                <button
-                  type="button"
-                  onClick={() => setNbPersonnes((v) => Math.min(capaciteMax, v + 1))}
-                  disabled={nbPersonnes >= capaciteMax}
-                  className="w-9 h-9 rounded-full border border-border bg-background-card flex items-center justify-center text-foreground hover:bg-background-alt disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
-                >
-                  <Plus className="w-4 h-4" />
-                </button>
-              </div>
-            </div>
-
-            <div className="p-3.5 rounded-inner bg-forest-50/70 border border-forest-100 text-xs text-forest-950 leading-relaxed">
-              <span className="font-semibold text-forest-900">Tarif dynamique : </span>
-              {supplementAmount > 0 ? (
-                <span>
-                  {personnesBase} voyageur{personnesBase > 1 ? 's' : ''} inclus dans le tarif de base — <strong className="font-bold text-forest-900">+{fmt(supplementAmount)} FCFA de supplément</strong> pour votre sélection.
-                </span>
-              ) : (
-                <span>
-                  {personnesBase} voyageur{personnesBase > 1 ? 's' : ''} inclus dans le tarif de base — aucun supplément pour votre sélection.
-                </span>
-              )}
-            </div>
-          </div>
-
-          {/* Récapitulatif tarifaire */}
-          <div className="bg-background-card rounded-card border border-border p-5 shadow-sm space-y-3">
-            <h3 className="font-display text-sm font-bold text-forest-900 border-b border-border/80 pb-2">
-              Récapitulatif tarifaire
-            </h3>
-
-            <div className="space-y-2.5 text-sm">
-              <div className="flex items-center justify-between text-foreground-muted">
-                <span>
-                  {fmt(basePrice)} FCFA × {nights > 0 ? nights : 1} {nights > 1 ? 'nuits' : 'nuit'}
-                </span>
-                <span className="font-bold text-forest-950">{fmt(basePrice * Math.max(nights, 1))} FCFA</span>
-              </div>
-
-              {supplementAmount > 0 && (
-                <div className="flex items-center justify-between text-foreground-muted">
-                  <span>
-                    Supplément voyageurs ({nbPersonnes} pers.)
-                  </span>
-                  <span className="font-bold text-gold-700">+{fmt(supplementAmount)} FCFA</span>
-                </div>
-              )}
-
-              <div className="h-px bg-border/60 my-1" />
-
-              <div className="flex items-center justify-between">
-                <span className="font-bold text-forest-950">Total estimé</span>
-                <span className="font-display text-lg font-extrabold text-forest-900">
-                  {fmt(estimatedTotal)} FCFA
-                </span>
-              </div>
-            </div>
-          </div>
-
-          {/* Checkbox CGU Conforme au style PricePreviewWidget */}
-          <div className="bg-background-card rounded-card border border-border p-4 shadow-sm">
-            <label className="flex items-start gap-3 cursor-pointer group">
-              <div className="flex-shrink-0 mt-0.5">
-                <div
-                  onClick={() => setCguAccepted((v) => !v)}
-                  className={`w-5 h-5 rounded-md border-2 flex items-center justify-center transition-all duration-200 ${cguAccepted
-                      ? 'bg-forest-700 border-forest-700 shadow-[0_0_0_3px_rgba(20,101,76,0.15)]'
-                      : 'border-border bg-background-card group-hover:border-forest-600'
-                    }`}
-                >
-                  {cguAccepted && <CheckCircle2 className="w-3.5 h-3.5 text-white fill-white" />}
-                </div>
-              </div>
-              <p className="text-xs font-medium text-foreground-muted leading-relaxed">
-                J&apos;accepte les{' '}
-                <Link href="/cgu" target="_blank" className="text-forest-700 font-bold hover:underline underline-offset-2">
-                  conditions de location
-                </Link>{' '}
-                et le{' '}
-                <span className="text-forest-700 font-bold">contrat de réservation</span>{' '}
-                qui seront envoyés à la confirmation.
-              </p>
-            </label>
-          </div>
-
-          {!hasValidMinNights && nights > 0 && (
-            <div className="flex items-start gap-3 bg-error-50 border border-error-200 rounded-inner p-4">
-              <AlertCircle className="w-4 h-4 text-error-600 shrink-0 mt-0.5" />
-              <p className="text-xs font-bold text-error-700 leading-relaxed">
-                ⚠️ Ce logement exige un séjour minimum de {minNights} nuits (vous avez sélectionné {nights} nuit{nights > 1 ? 's' : ''}). Veuillez modifier vos dates.
-              </p>
-            </div>
-          )}
-
-          {/* Bouton Continuer vers étape 2/2 (Mobile) */}
-          <button
-            type="button"
-            onClick={() => {
-              if (cguAccepted && dateDebut && dateFin && nights > 0 && hasValidMinNights) {
-                setStep(2);
-              }
-            }}
-            disabled={!cguAccepted || !dateDebut || !dateFin || nights <= 0 || !hasValidMinNights}
-            className={cn(
-              'w-full flex items-center justify-center gap-2 py-4 px-6 font-bold rounded-pill text-base shadow-md transition-all active:scale-98',
-              cguAccepted && dateDebut && dateFin && nights > 0 && hasValidMinNights
-                ? 'bg-action hover:bg-action-hover text-forest-950'
-                : 'bg-background-alt text-foreground-muted cursor-not-allowed',
+            {r.nights > 0 && (
+              <SectionCard title="Détail du prix" className="mt-4 lg:hidden">
+                <DetailTarifaire r={r} />
+              </SectionCard>
             )}
-          >
-            {!hasValidMinNights && nights > 0
-              ? `Min. ${minNights} nuits requises`
-              : 'Continuer vers le paiement'}
-            <ArrowRight className="w-5 h-5" />
-          </button>
+          </div>
+
+          {/* Étape 2 — le paiement */}
+          <div className={cn(etape === 2 ? 'block' : 'hidden', 'space-y-4 lg:block lg:pt-0')}>
+            <RappelSejour r={r} onModifier={() => setEtape(1)} className="lg:hidden" />
+            <PaymentSection r={r} montreErreurs={montreErreurs} />
+            <BlocMontant r={r} className="lg:hidden" />
+            {erreurApi && <Alerte>{erreurApi}</Alerte>}
+          </div>
         </div>
 
-        {/* ═══════════════════════════════════════════════════════════════════════════
-            MODE DESKTOP & MOBILE ÉTAPE 2/2 : Finalisation du Paiement (Wave / Orange Money)
-           ═══════════════════════════════════════════════════════════════════════════ */}
-        <div className={cn('grid grid-cols-1 lg:grid-cols-12 gap-8 items-start', step === 2 ? 'block' : 'hidden lg:grid')}>
-
-          {/* Colonne Gauche (Desktop / Mobile 2/2) : Carte synthétique du Logement & Dates */}
-          <div className="lg:col-span-5 space-y-6">
-            {/* Card Logement */}
-            <div className="bg-background-card rounded-card border border-border p-5 shadow-sm space-y-4">
-              <div className="relative h-44 rounded-inner overflow-hidden border border-border">
-                {listingLoading ? (
-                  <div className="w-full h-full bg-background-alt animate-pulse" />
-                ) : mainPhoto ? (
-                  <Image src={mainPhoto.url} alt={listing?.titre ?? ''} fill className="object-cover" />
-                ) : (
-                  <div className="w-full h-full bg-background-alt flex items-center justify-center">
-                    <CalendarDays className="w-8 h-8 text-foreground-faint" />
-                  </div>
-                )}
-              </div>
-
-              <div>
-                <span className="text-[10px] font-bold uppercase tracking-wider text-forest-700 block">
-                  {categoryLabel}
-                </span>
-                <h2 className="font-display text-lg font-bold text-forest-950 leading-snug">
-                  {listing?.titre ?? 'Chargement...'}
-                </h2>
-                <p className="text-xs text-foreground-muted flex items-center gap-1 mt-1">
-                  <MapPin className="w-3.5 h-3.5 text-forest-600 shrink-0" />
-                  <span>{listing?.ville}{listing?.quartier ? `, ${listing.quartier}` : ''}</span>
-                </p>
-              </div>
-
-              <div className="border-t border-border pt-4 space-y-2 text-xs">
-                <div className="flex items-center justify-between text-foreground-muted">
-                  <span>Dates :</span>
-                  <span className="font-bold text-forest-950">{fmtDate(dateDebut)} → {fmtDate(dateFin)}</span>
-                </div>
-                <div className="flex items-center justify-between text-foreground-muted">
-                  <span>Durée :</span>
-                  <span className="font-bold text-forest-950">{nights} nuit{nights > 1 ? 's' : ''}</span>
-                </div>
-                <div className="flex items-center justify-between text-foreground-muted">
-                  <span>Voyageurs :</span>
-                  <span className="font-bold text-forest-950">{nbPersonnes} personne{nbPersonnes > 1 ? 's' : ''}</span>
-                </div>
-              </div>
-            </div>
-
-            {/* Total Montant */}
-            <div className="bg-forest-900 text-white rounded-card p-6 shadow-md space-y-3">
-              <div className="flex items-center justify-between text-xs text-forest-200">
-                <span>{typePaiement === 'DEPOSIT' && (listing?.acomptePourcentage ?? 30) < 100 ? `Acompte à débiter aujourd'hui (${listing?.acomptePourcentage ?? 30}%)` : 'Montant Total à débiter'}</span>
-                <span className="px-2.5 py-0.5 rounded-pill bg-forest-800 text-on-inverse-marker font-semibold">
-                  {nights} nuit{nights > 1 ? 's' : ''} · {nbPersonnes} pers.
-                </span>
-              </div>
-              <div className="font-display text-3xl font-extrabold text-on-inverse-marker flex items-baseline gap-2">
-                <span>{fmt(finalMontantADebiter)} FCFA</span>
-                {useCoins && coinsDeduction > 0 && (
-                  <span className="text-xs font-semibold text-lime-300 line-through">
-                    {fmt(montantBrutADebiter)} FCFA
-                  </span>
-                )}
-              </div>
-              {useCoins && coinsDeduction > 0 && (
-                <p className="text-xs font-bold text-lime-300 flex items-center gap-1">
-                  <Coins className="w-3.5 h-3.5" /> −{fmt(coinsDeduction)} FCFA déduits de l’acompte via Klef Coins
-                </p>
-              )}
-              {typePaiement === 'DEPOSIT' && (listing?.acomptePourcentage ?? 30) < 100 && (
-                <p className="text-xs font-semibold text-on-inverse-marker">
-                  + Solde de {fmt(Math.round(estimatedTotal * ((100 - (listing?.acomptePourcentage ?? 30)) / 100)))} FCFA à régler à l&apos;arrivée (Total : {fmt(estimatedTotal)} FCFA)
-                </p>
-              )}
-              <p className="text-xs text-forest-200 flex items-center gap-1.5 pt-1 border-t border-forest-800">
-                <ShieldCheck className="w-4 h-4 text-on-inverse-marker shrink-0" />
-                <span>Bloqué par séquestre Klef jusqu&apos;à la remise des clés</span>
-              </p>
-            </div>
-          </div>
-
-          {/* Colonne Droite (Desktop / Mobile 2/2) : Choix Opérateur & Validation */}
-          <div className="lg:col-span-7 space-y-6">
-            <div className="bg-background-card rounded-card border border-border p-6 shadow-sm space-y-5">
-              <h3 className="font-display text-lg font-bold text-forest-900 border-b border-border pb-3">
-                Option de Paiement
-              </h3>
-
-              {/* Sélection Acompte vs Totalité */}
-              {((listing?.acomptePourcentage ?? 30) < 100) && (
-                <div className="grid gap-3 sm:grid-cols-2">
-                  <button
-                    type="button"
-                    onClick={() => setTypePaiement('DEPOSIT')}
-                    className={cn(
-                      'flex flex-col justify-between p-4 rounded-inner border-2 transition-all text-left cursor-pointer',
-                      typePaiement === 'DEPOSIT'
-                        ? 'border-forest-600 bg-forest-950 text-white shadow-sm'
-                        : 'border-border bg-background-alt text-foreground hover:border-neutral-300'
-                    )}
-                  >
-                    <div>
-                      <span className="text-[10px] font-extrabold uppercase tracking-wider text-on-inverse-marker block mb-1">
-                        RECOMMANDÉ
-                      </span>
-                      <p className="text-sm font-bold">Payer {listing?.acomptePourcentage ?? 30}% d&apos;acompte</p>
-                      <p className={cn('text-xs mt-0.5', typePaiement === 'DEPOSIT' ? 'text-forest-200' : 'text-foreground-muted')}>
-                        {fmt(Math.round(estimatedTotal * ((listing?.acomptePourcentage ?? 30) / 100)))} FCFA maintenant
-                      </p>
-                    </div>
-                    <p className={cn('text-[11px] mt-3 font-semibold', typePaiement === 'DEPOSIT' ? 'text-on-inverse-marker' : 'text-forest-700')}>
-                      Solde de {fmt(Math.round(estimatedTotal * ((100 - (listing?.acomptePourcentage ?? 30)) / 100)))} FCFA à l&apos;arrivée
-                    </p>
-                  </button>
-
-                  <button
-                    type="button"
-                    onClick={() => setTypePaiement('FULL')}
-                    className={cn(
-                      'flex flex-col justify-between p-4 rounded-inner border-2 transition-all text-left cursor-pointer',
-                      typePaiement === 'FULL'
-                        ? 'border-forest-600 bg-forest-950 text-white shadow-sm'
-                        : 'border-border bg-background-alt text-foreground hover:border-neutral-300'
-                    )}
-                  >
-                    <div>
-                      <span className="text-[10px] font-extrabold uppercase tracking-wider text-forest-200 block mb-1">
-                        TOTALITÉ
-                      </span>
-                      <p className="text-sm font-bold">Payer 100% de la totalité</p>
-                      <p className={cn('text-xs mt-0.5', typePaiement === 'FULL' ? 'text-forest-200' : 'text-foreground-muted')}>
-                        {fmt(estimatedTotal)} FCFA maintenant
-                      </p>
-                    </div>
-                    <p className={cn('text-[11px] mt-3 font-semibold', typePaiement === 'FULL' ? 'text-on-inverse-marker' : 'text-foreground-muted')}>
-                      Rien à régler sur place
-                    </p>
-                  </button>
-                </div>
-              )}
-
-              {/* Option Déduction Klef Coins Teranga */}
-              {teranga && teranga.soldeCoins > 0 && (
-                <div className="p-4 rounded-inner border border-lime-500/40 bg-gradient-to-br from-lime-500/10 via-forest-50/40 to-background-card space-y-3">
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-2">
-                      <div className="w-8 h-8 rounded-lg bg-lime-400/20 border border-lime-400/30 flex items-center justify-center text-forest-800 shrink-0">
-                        <Coins className="w-4 h-4 text-forest-800" />
-                      </div>
-                      <div>
-                        <h4 className="text-xs font-extrabold uppercase tracking-wider text-forest-950">
-                          Klef Teranga Club 🪙
-                        </h4>
-                        <p className="text-xs font-medium text-foreground-muted">
-                          Solde disponible : <strong className="text-forest-900 font-bold">{teranga.soldeCoins.toLocaleString('fr-FR')} Coins</strong>
-                        </p>
-                      </div>
-                    </div>
-                    {useCoins && (
-                      <span className="text-xs font-bold text-forest-800 bg-lime-400/30 px-2.5 py-1 rounded-pill border border-lime-400/40 animate-in fade-in duration-150">
-                        −{fmt(maxCoinsRedeemable)} FCFA
-                      </span>
-                    )}
-                  </div>
-
-                  <label className="flex items-center gap-3 p-3 rounded-inner bg-white/80 border border-forest-100 cursor-pointer hover:bg-white transition-colors">
-                    <input
-                      type="checkbox"
-                      checked={useCoins}
-                      onChange={(e) => setUseCoins(e.target.checked)}
-                      className="h-4.5 w-4.5 rounded border-forest-300 text-forest-700 focus:ring-forest-600 cursor-pointer"
-                    />
-                    <div className="text-xs">
-                      <span className="font-bold text-forest-950 block">
-                        Utiliser mes Klef Coins pour déduire l’acompte
-                      </span>
-                      <span className="text-foreground-muted">
-                        Réduction immédiate de <strong className="text-forest-700 font-bold">−{fmt(maxCoinsRedeemable)} FCFA</strong> sur le paiement
-                      </span>
-                    </div>
-                  </label>
-                </div>
-              )}
-
-              <h3 className="font-display text-sm font-bold text-forest-900 pt-2 border-t border-border">
-                Moyen de paiement mobile
-              </h3>
-
-              <div className="space-y-3">
-                {/* Wave */}
-                <button
-                  type="button"
-                  onClick={() => setFournisseur('WAVE')}
-                  className={cn(
-                    'w-full flex items-center gap-3.5 p-4 rounded-inner border-2 transition-all text-left',
-                    fournisseur === 'WAVE'
-                      ? 'border-forest-600 bg-forest-50/50'
-                      : 'border-border bg-background-card hover:bg-background-alt',
-                  )}
-                >
-                  <div className="w-12 h-12 rounded-inner overflow-hidden shrink-0 border border-border bg-white flex items-center justify-center">
-                    <Image src="/wavelogo.jpeg" alt="Wave" width={48} height={48} className="object-contain" />
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <p className="text-sm font-bold text-forest-950">Wave Mobile Money</p>
-                    <p className="text-xs text-foreground-muted mt-0.5">Paiement instantané sans aucun frais</p>
-                  </div>
-                  <div className={cn(
-                    'w-5 h-5 rounded-full border-2 flex items-center justify-center shrink-0',
-                    fournisseur === 'WAVE' ? 'border-forest-600 bg-forest-600' : 'border-border',
-                  )}>
-                    {fournisseur === 'WAVE' && <CheckCircle2 className="w-3.5 h-3.5 text-white" />}
-                  </div>
-                </button>
-
-                {/* Orange Money */}
-                <button
-                  type="button"
-                  onClick={() => setFournisseur('ORANGE_MONEY')}
-                  className={cn(
-                    'w-full flex items-center gap-3.5 p-4 rounded-inner border-2 transition-all text-left',
-                    fournisseur === 'ORANGE_MONEY'
-                      ? 'border-forest-600 bg-forest-50/50'
-                      : 'border-border bg-background-card hover:bg-background-alt',
-                  )}
-                >
-                  <div className="w-12 h-12 rounded-inner overflow-hidden shrink-0 border border-border bg-white flex items-center justify-center">
-                    <Image src="/orangeMoneylogo.png" alt="Orange Money" width={48} height={48} className="object-contain" />
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <p className="text-sm font-bold text-forest-950">Orange Money</p>
-                    <p className="text-xs text-foreground-muted mt-0.5">Paiement direct via votre compte Orange</p>
-                  </div>
-                  <div className={cn(
-                    'w-5 h-5 rounded-full border-2 flex items-center justify-center shrink-0',
-                    fournisseur === 'ORANGE_MONEY' ? 'border-forest-600 bg-forest-600' : 'border-border',
-                  )}>
-                    {fournisseur === 'ORANGE_MONEY' && <CheckCircle2 className="w-3.5 h-3.5 text-white" />}
-                  </div>
-                </button>
-              </div>
-
-              {/* Champ Numéro de Téléphone */}
-              <div className="pt-2 space-y-1.5">
-                <label className="block text-xs font-bold text-forest-900 uppercase tracking-wider">
-                  Numéro Mobile Money (Sénégal)
-                </label>
-                <div className="relative">
-                  <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-foreground-muted">
-                    <Smartphone className="w-4 h-4" />
-                  </div>
-                  <input
-                    type="tel"
-                    value={telephone}
-                    onChange={(e) => setTelephone(e.target.value)}
-                    placeholder="77 000 00 00"
-                    className="w-full pl-10 pr-4 py-3 bg-background-alt border border-border rounded-inner text-sm font-bold text-forest-950 focus:outline-none focus:border-forest-600 transition-colors"
-                  />
-                </div>
-                <p className="text-[11px] text-foreground-muted">
-                  La demande de confirmation de paiement sera envoyée directement sur ce numéro.
-                </p>
-              </div>
-
-              {/* Checkbox CGU Conforme au style PricePreviewWidget */}
-              <div className="pt-2">
-                <label className="flex items-start gap-3 cursor-pointer group">
-                  <div className="flex-shrink-0 mt-0.5">
-                    <div
-                      onClick={() => setCguAccepted((v) => !v)}
-                      className={`w-5 h-5 rounded-md border-2 flex items-center justify-center transition-all duration-200 ${cguAccepted
-                          ? 'bg-forest-700 border-forest-700 shadow-[0_0_0_3px_rgba(20,101,76,0.15)]'
-                          : 'border-border bg-background-card group-hover:border-forest-600'
-                        }`}
-                    >
-                      {cguAccepted && <CheckCircle2 className="w-3.5 h-3.5 text-white fill-white" />}
-                    </div>
-                  </div>
-                  <p className="text-xs font-medium text-foreground-muted leading-relaxed">
-                    J&apos;accepte les{' '}
-                    <Link href="/cgu" target="_blank" className="text-forest-700 font-bold hover:underline underline-offset-2">
-                      conditions de location
-                    </Link>{' '}
-                    et le{' '}
-                    <span className="text-forest-700 font-bold">contrat de réservation</span>{' '}
-                    qui seront envoyés à la confirmation.
-                  </p>
-                </label>
-              </div>
-
-              {/* Erreur éventuelle */}
-              {error && (
-                <div className="flex items-start gap-3 bg-error-50 border border-error-100 rounded-inner p-4">
-                  <AlertCircle className="w-4 h-4 text-error-500 shrink-0 mt-0.5" />
-                  <p className="text-xs font-medium text-error-600 leading-relaxed">{error}</p>
-                </div>
-              )}
-
-              {/* Bouton de confirmation du paiement */}
+        {/* Rail collant — desktop uniquement */}
+        <aside className="hidden lg:col-span-5 lg:block">
+          <div className="sticky top-24">
+            <SummaryRail r={r}>
+              {erreurApi && <Alerte>{erreurApi}</Alerte>}
               <button
                 type="button"
-                onClick={handlePay}
-                disabled={!cguAccepted || loading || listingLoading || !hasValidMinNights}
-                className={cn(
-                  'w-full flex items-center justify-center gap-2 py-4 px-6 font-bold rounded-pill text-base shadow-md transition-all active:scale-98',
-                  cguAccepted && !loading && hasValidMinNights
-                    ? 'bg-action hover:bg-action-hover text-forest-950 shadow-forest-900/10'
-                    : 'bg-background-alt text-foreground-muted cursor-not-allowed',
-                )}
+                onClick={payer}
+                disabled={envoi || enAttentePrix}
+                className="btn-action w-full"
               >
-                {loading ? (
-                  <><Loader2 className="w-5 h-5 animate-spin" /> Traitement en cours…</>
-                ) : !hasValidMinNights ? (
-                  `Séjour minimum requis : ${minNights} nuits`
+                {envoi ? (
+                  <>
+                    <Loader2 className="h-5 w-5 animate-spin" aria-hidden />
+                    Demande envoyée…
+                  </>
                 ) : (
                   <>
-                    Payer {fmt(finalMontantADebiter)} FCFA avec {fournisseur === 'WAVE' ? 'Wave' : 'Orange Money'}
+                    Payer <Montant value={r.pricing.aDebiter} pending={enAttentePrix} />
                   </>
                 )}
               </button>
-            </div>
+              <p className="text-center text-xs text-foreground-muted">
+                Vous validerez le paiement depuis {r.fournisseur === 'WAVE' ? 'Wave' : 'Orange Money'}.
+              </p>
+            </SummaryRail>
           </div>
-        </div>
-
+        </aside>
       </div>
 
-      {/* Modal Calendrier Disponibilités */}
-      {showCalendarModal && (
-        <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-xs flex items-end sm:items-center justify-center p-0 sm:p-4">
-          <div className="bg-background-card w-full max-w-lg rounded-t-card sm:rounded-card border border-border p-5 shadow-2xl space-y-4 animate-in slide-in-from-bottom-5 duration-200">
-            <div className="flex items-center justify-between border-b border-border pb-3">
-              <h3 className="font-display text-base font-bold text-forest-900">
-                Sélectionnez vos dates
-              </h3>
-              <button
-                type="button"
-                onClick={() => setShowCalendarModal(false)}
-                className="w-8 h-8 rounded-full bg-background-alt border border-border flex items-center justify-center text-foreground hover:bg-neutral-200 transition-colors"
-              >
-                <X className="w-4 h-4" />
-              </button>
-            </div>
-
-            <AvailabilityCalendar
-              compact
-              minNights={listing?.nuitesMinimum ?? 1}
-              onRangeChange={handleCalendarRangeSelect}
+      {/* ═══ BARRE COLLANTE MOBILE ════════════════════════════════════════
+          Conteneur flottant arrondi type carte (design identique au bouton hôte) */}
+      <div className="fixed inset-x-0 bottom-[calc(0.75rem+env(safe-area-inset-bottom,0px))] z-40 px-3 lg:hidden">
+        <div className="section-inverse space-y-3 p-4 border border-forest-800/80 shadow-2xl backdrop-blur-xl">
+          <div className="flex items-baseline justify-between gap-4 border-b border-border-inverse/30 pb-2.5">
+            <span className="text-xs text-on-inverse-muted">
+              {etape === 1
+                ? 'Total du séjour'
+                : r.pricing.enAcompte
+                  ? `Acompte · ${r.pricing.acomptePct}%`
+                  : 'À régler'}
+            </span>
+            <Montant
+              value={etape === 1 ? r.pricing.total : r.pricing.aDebiter}
+              pending={enAttentePrix}
+              className="font-display text-2xl font-bold tracking-tight text-on-inverse-display"
             />
+          </div>
 
+          {etape === 1 ? (
+            <>
+              {montreErreurs && r.erreurs.dates && (
+                <div className="mb-2">
+                  <Alerte>{r.erreurs.dates}</Alerte>
+                </div>
+              )}
+              <button type="button" onClick={continuer} className="btn-primary w-full">
+                Continuer
+                <ArrowRight className="h-4 w-4" aria-hidden />
+              </button>
+            </>
+          ) : (
             <button
               type="button"
-              onClick={() => setShowCalendarModal(false)}
-              className="w-full py-3 bg-forest-700 hover:bg-forest-800 text-white font-bold rounded-pill text-sm transition-colors"
+              onClick={payer}
+              disabled={envoi || enAttentePrix}
+              className="btn-action w-full"
             >
-              Valider les dates
+              {envoi ? (
+                <>
+                  <Loader2 className="h-5 w-5 animate-spin" aria-hidden />
+                  Demande envoyée…
+                </>
+              ) : (
+                <>
+                  Payer <Montant value={r.pricing.aDebiter} pending={enAttentePrix} />
+                </>
+              )}
             </button>
-          </div>
+          )}
         </div>
-      )}
-    </div>
+      </div>
+
+      <DateSheet
+        open={calendrierOuvert}
+        onClose={() => setCalendrierOuvert(false)}
+        minNights={r.minNights}
+        nights={r.nights}
+        onRangeChange={r.setPlage}
+      />
+    </main>
   );
 }
