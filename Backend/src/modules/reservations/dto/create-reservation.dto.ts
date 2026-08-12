@@ -35,6 +35,11 @@ export class CreateReservationDto {
   @IsString()
   fournisseur?: string;
 
+  @ApiProperty({ example: '221771234567', required: false })
+  @IsOptional()
+  @IsString()
+  telephone?: string;
+
   @ApiProperty({ example: true, required: false })
   @IsOptional()
   useCoins?: boolean;

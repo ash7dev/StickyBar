@@ -3,6 +3,7 @@
 import { useState, useCallback } from 'react';
 import { useActionGate } from '@/hooks/use-action-gate';
 import type { GateStep, GateBlock } from '@/hooks/use-action-gate';
+import { useRoleStore } from '@/stores/role.store';
 
 interface GatedActionState {
   open: boolean;
@@ -23,12 +24,36 @@ export function useGatedAction(onReady: () => void) {
   const [state, setState] = useState<GatedActionState>({ open: false, steps: [], block: null });
 
   const trigger = useCallback(() => {
-    if (gate.isReady) {
+    // Ré-évaluation dynamique de l'état du store pour éviter les fermetures obsolètes (stale closure)
+    // suite à une synchronisation asynchrone de session (ex: syncFromSupabaseSession).
+    const { profileCompleted, phoneVerified, statutKyc, nestToken, needsOnboarding } = useRoleStore.getState();
+
+    // Non connecté → pas de bloqueur gate (la redirection vers la page de login s'en charge)
+    if (!nestToken && !needsOnboarding) {
+      onReady();
+      return;
+    }
+
+    const steps: GateStep[] = [];
+    let block: GateBlock = null;
+
+    if (!profileCompleted) steps.push('profile');
+    if (!phoneVerified) steps.push('phone');
+
+    if (statutKyc === 'NON_VERIFIE' || statutKyc === 'REJETE' || statutKyc === 'A_RENOUVELER') {
+      steps.push('kyc');
+    } else if (statutKyc === 'SUSPENDU') {
+      block = 'kyc_suspended';
+    }
+
+    const isReady = steps.length === 0 && block === null;
+
+    if (isReady) {
       onReady();
     } else {
-      setState({ open: true, steps: gate.steps, block: gate.block });
+      setState({ open: true, steps, block });
     }
-  }, [gate, onReady]);
+  }, [onReady]);
 
   const complete = useCallback(() => {
     setState({ open: false, steps: [], block: null });

@@ -106,7 +106,12 @@ function extractErrorMessage(data: unknown): string | null {
   if (!data || typeof data !== 'object') return null;
   const d = data as Record<string, unknown>;
 
-  // NestJS ValidationPipe format
+  // Si le filtre d'exception backend a fourni un tableau de détails lisibles
+  if (Array.isArray(d.details) && d.details.length > 0) {
+    return (d.details as string[]).join(' · ');
+  }
+
+  // NestJS ValidationPipe format d'origine
   if (Array.isArray(d.message)) return (d.message as string[]).join(', ');
   if (typeof d.message === 'string') return d.message;
   return null;

@@ -24,6 +24,7 @@ export interface CreateReservationInput {
   nbPersonnes: number;
   typePaiement?: string;
   fournisseur?: FournisseurPaiement;
+  telephone?: string;
   useCoins?: boolean;
 }
 

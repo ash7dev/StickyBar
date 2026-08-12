@@ -106,6 +106,7 @@ export function PricePreviewWidget({
   const { showError } = useToastError();
 
   const calendarRef = useRef<HTMLDivElement>(null);
+  const travelersRef = useRef<HTMLDivElement>(null);
   const cguRef = useRef<HTMLInputElement>(null);
   /** Séquence de requête : garantit que seule la dernière réponse s'applique. */
   const requestSeq = useRef(0);
@@ -202,6 +203,10 @@ export function PricePreviewWidget({
   const { gateState, trigger: triggerGate, complete: completeGate, cancel: cancelGate } =
     useGatedAction(goToReserver);
 
+  const focusTravelers = useCallback(() => {
+    travelersRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+  }, []);
+
   /** Amène l'utilisateur sur ce qui bloque, au lieu de refuser en silence. */
   const focusBlocker = useCallback(() => {
     if (!hasRange) {
@@ -209,6 +214,7 @@ export function PricePreviewWidget({
       return;
     }
     if (!cguAccepted) {
+      // Si la section voyageurs n'a jamais été consultée ou si CGU manque, scroller doucement
       cguRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' });
       cguRef.current?.focus();
     }
@@ -366,7 +372,7 @@ export function PricePreviewWidget({
 
           {/* ── Voyageurs ────────────────────────────────────────────────── */}
 
-          <div className="border-t border-border pt-5">
+          <div ref={travelersRef} className="border-t border-border pt-5">
             <div className="mb-3 flex items-center justify-between gap-2">
               <div className="flex items-center gap-2">
                 <Users className="h-4 w-4 text-foreground-muted" />
@@ -661,20 +667,31 @@ export function PricePreviewWidget({
               showBadge={false}
               textColor="text-neutral-50 font-bold"
             />
-            <p className="truncate text-xs font-medium text-forest-200">
-              {hasRange
-                ? `${nights} nuit${nights > 1 ? 's' : ''} · ${nbPersonnes} voyageur${nbPersonnes > 1 ? 's' : ''}`
-                : `Minimum ${nuitesMinimum} nuit${nuitesMinimum > 1 ? 's' : ''}`}
-            </p>
+            <div className="flex items-center gap-1.5 mt-0.5">
+              <span className="truncate text-xs font-medium text-forest-200">
+                {hasRange
+                  ? `${nights} nuit${nights > 1 ? 's' : ''}`
+                  : `Min. ${nuitesMinimum} nuit${nuitesMinimum > 1 ? 's' : ''}`}
+              </span>
+              <button
+                type="button"
+                onClick={focusTravelers}
+                className="inline-flex items-center gap-1 rounded-pill bg-forest-800/80 px-2 py-0.5 text-[11px] font-semibold text-lime-300 transition-colors hover:bg-forest-700 active:scale-95"
+                title="Modifier le nombre de voyageurs"
+              >
+                <Users className="h-3 w-3" />
+                <span>{nbPersonnes}</span>
+              </button>
+            </div>
           </div>
 
           <button
             type="button"
-            onClick={canBook ? handleBook : focusBlocker}
+            onClick={handleBook}
             disabled={!hasHydrated}
             className="flex shrink-0 items-center gap-1.5 rounded-pill border border-action-edge bg-action px-5 py-3 text-sm font-semibold text-on-action shadow-action transition-transform duration-200 hover:bg-action-hover active:scale-[0.98] disabled:opacity-50"
           >
-            {canBook ? 'Réserver' : hasRange ? 'Accepter et réserver' : 'Choisir les dates'}
+            {canBook ? 'Réserver' : hasRange ? 'Accepter & Réserver' : 'Choisir les dates'}
           </button>
         </div>
       </div>
