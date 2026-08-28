@@ -7,8 +7,8 @@ const phoneSchema = z
   .regex(/^\+[1-9]\d{6,14}$/, 'Format invalide. Exemple : +221771234567 ou +33612345678');
 
 export const loginSchema = z.object({
-  email: z.string().email('Adresse email invalide'),
-  password: z.string().min(8, 'Mot de passe : 8 caractères minimum'),
+  email: z.string().min(1, 'Adresse email requise').email('Adresse email invalide'),
+  password: z.string().min(1, 'Mot de passe requis'),
 });
 export type LoginInput = z.infer<typeof loginSchema>;
 

@@ -8,6 +8,7 @@ import {
   ArrowLeft, Eye, EyeOff, KeyRound, Loader2, Lock, Mail,
   Phone, ShieldCheck, Sparkles,
 } from 'lucide-react';
+import { toast } from 'sonner';
 import { loginSchema, type LoginInput } from '@/schemas/auth.schema';
 import { useAuth, mapSupabaseError } from '@/features/auth/hooks/use-auth';
 import { ApiError } from '@/lib/nestjs/api-client';
@@ -89,10 +90,10 @@ export function LoginForm({ next }: Props) {
     try {
       await loginEmail(data, next);
     } catch (e) {
-      // mapSupabaseError était importé mais jamais appelé : les messages
-      // bruts de Supabase (« Invalid login credentials ») remontaient tels
-      // quels, en anglais, à l'utilisateur.
-      setError(mapSupabaseError(e instanceof Error ? e.message : String(e)) ?? (e instanceof Error ? e.message : 'Erreur de connexion'));
+      console.error('[LoginForm] Connection error:', e);
+      const msg = mapSupabaseError(e instanceof Error ? e.message : String(e)) ?? (e instanceof Error ? e.message : 'Erreur de connexion');
+      setError(msg);
+      toast.error(msg);
     }
   }
 
@@ -168,7 +169,9 @@ export function LoginForm({ next }: Props) {
           id="panel-email"
           role="tabpanel"
           aria-labelledby="tab-email"
-          onSubmit={handleSubmit(onSubmit)}
+          onSubmit={handleSubmit(onSubmit, (valErrors) => {
+            console.warn('[LoginForm] Validation issue:', valErrors);
+          })}
           className="space-y-4"
           noValidate
         >

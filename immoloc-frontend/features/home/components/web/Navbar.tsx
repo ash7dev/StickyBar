@@ -24,9 +24,10 @@ import { MobileBottomNav } from '@/components/layout/mobile-bottom-nav';
 import { CurrencySelector } from '@/components/layout/currency-selector';
 
 const LINKS = [
+  { href: '/',                 label: 'Accueil'           },
   { href: '/explorer',         label: 'Explorer'          },
-  { href: '/#comment-ca-marche', label: 'Comment ça marche' },
-];
+  { href: '/comment-ca-marche', label: 'Comment ça marche' },
+] as const;
 
 export function Navbar() {
   const pathname = usePathname();
@@ -219,17 +220,6 @@ export function Navbar() {
 
           {/* ── Actions — visibles sur toutes les tailles ──────────────────── */}
           <div className="flex items-center justify-end gap-1.5 sm:gap-2 shrink-0">
-            {/* Bouton Portail Admin si session Administrateur */}
-            {isAdmin && (
-              <Link
-                href="/admin/dashboard"
-                className="hidden sm:inline-flex items-center gap-1.5 px-3 py-1.5 rounded-pill bg-forest-950 text-lime-400 font-bold text-xs border border-forest-800 hover:bg-forest-900 transition-colors shadow-2xs"
-              >
-                <ShieldCheck className="w-3.5 h-3.5 text-lime-400" />
-                <span>Portail Admin</span>
-              </Link>
-            )}
-
             {/* Sélecteur de devise (FCFA, EUR, USD) */}
             <CurrencySelector />
 

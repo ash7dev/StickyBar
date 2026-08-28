@@ -347,17 +347,26 @@ export class AuthService {
         telephone: true,
         prenom: true,
         nom: true,
+        dateNaissance: true,
         estProprietaire: true,
         actif: true,
         profileCompleted: true,
         phoneVerified: true,
         statutKyc: true,
+        logements: {
+          where: { statut: 'PUBLISHED', archiveLe: null },
+          select: { id: true },
+        },
       },
     });
 
     if (!user || !user.actif) throw new UnauthorizedException('Compte désactivé');
 
-    const tokens = await this.generateTokens(user);
+    const activeRole = user.email?.toLowerCase().endsWith('@admin.com')
+      ? Role.ADMIN
+      : (user.estProprietaire ? Role.PROPRIETAIRE : Role.LOCATAIRE);
+
+    const tokens = await this.generateTokens({ ...user, activeRole });
 
     return {
       ...tokens,
@@ -367,9 +376,12 @@ export class AuthService {
         id: user.id,
         prenom: user.prenom,
         nom: user.nom,
-        activeRole: user.email?.toLowerCase().endsWith('@admin.com')
-          ? Role.ADMIN
-          : (user.estProprietaire ? Role.PROPRIETAIRE : Role.LOCATAIRE),
+        email: user.email,
+        telephone: user.telephone,
+        dateNaissance: user.dateNaissance?.toISOString() ?? null,
+        activeRole,
+        estProprietaire: user.estProprietaire,
+        hasAnnonce: (user.logements?.length ?? 0) > 0,
         profileCompleted: user.profileCompleted,
         phoneVerified: user.phoneVerified,
         statutKyc: user.statutKyc,

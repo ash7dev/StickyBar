@@ -28,7 +28,6 @@ export function mapSupabaseError(message: string): string {
 
 const AUTH_PAGES = ['/login', '/register', '/complete-profile', '/verify'];
 
-// Retourne `next` si c'est un chemin interne sûr, sinon le fallback selon le rôle.
 function resolveRedirect(user: AuthTokensResponse['user'], next?: string | null): string {
   if (user.activeRole === 'ADMIN' || user.email?.toLowerCase().endsWith('@admin.com')) {
     return '/admin/dashboard';
@@ -37,7 +36,7 @@ function resolveRedirect(user: AuthTokensResponse['user'], next?: string | null)
     if (!AUTH_PAGES.includes(next.split('?')[0])) return next;
   }
   if (user.activeRole === 'PROPRIETAIRE') {
-    return user.hasAnnonce ? '/dashboard' : '/become-host';
+    return user.hasAnnonce ? '/dashboard' : '/';
   }
   return '/';
 }
@@ -68,7 +67,6 @@ export function useAuth() {
     const result = await authApi.loginEmail(data);
     persistSession(result, setSession);
 
-    // Synchronisation Supabase en arrière-plan sans bloquer la redirection UI
     if (result.supabaseAccessToken && result.supabaseRefreshToken) {
       supabase.auth.setSession({
         access_token: result.supabaseAccessToken,
@@ -77,11 +75,7 @@ export function useAuth() {
     }
 
     const target = resolveRedirect(result.user, next);
-    if (typeof window !== 'undefined') {
-      window.location.href = target;
-    } else {
-      router.push(target);
-    }
+    router.push(target);
   }
 
   async function register(data: RegisterInput) {
