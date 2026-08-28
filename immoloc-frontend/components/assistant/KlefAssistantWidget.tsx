@@ -781,7 +781,7 @@ export function KlefAssistantWidget() {
           onClick={handleDismiss}
           title="Masquer l'assistant"
           aria-label="Masquer l'assistant"
-          className="absolute -top-1.5 -left-1.5 z-20 hidden group-hover:flex items-center justify-center w-5 h-5 rounded-full bg-forest-900 border border-white/40 text-white hover:bg-red-600 transition-all shadow-md active:scale-90 cursor-pointer"
+          className="absolute -top-1.5 -left-1.5 z-20 flex sm:hidden sm:group-hover:flex items-center justify-center w-5 h-5 rounded-full bg-forest-900 border border-white/40 text-white hover:bg-red-600 transition-all shadow-md active:scale-90 cursor-pointer"
         >
           <X className="w-3 h-3" />
         </button>
