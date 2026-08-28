@@ -28,10 +28,12 @@ export function NestSessionSync() {
   const { setSession, clearSession, setNeedsOnboarding, activeRole, setRole } = useRoleStore();
   const pathname = usePathname();
 
-  // ── Auto-switch vers PROPRIETAIRE pour /dashboard ─────────────────────────
+  // ── Auto-switch vers PROPRIETAIRE pour /dashboard & ADMIN pour /admin ──────
   useEffect(() => {
     if (pathname?.startsWith('/dashboard') && activeRole !== 'PROPRIETAIRE') {
       setRole('PROPRIETAIRE');
+    } else if (pathname?.startsWith('/admin') && activeRole !== 'ADMIN') {
+      setRole('ADMIN');
     }
   }, [pathname, activeRole, setRole]);
 

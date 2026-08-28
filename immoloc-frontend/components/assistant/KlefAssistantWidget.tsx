@@ -131,11 +131,33 @@ interface TicketItem {
 export function KlefAssistantWidget() {
   const pathname = usePathname();
   const isAdminPage = pathname?.startsWith('/admin');
-
   const store = useAssistantStore();
+
+  const isAuthenticated = useRoleStore((s) => Boolean(s.nestToken));
+  const activeRole = useRoleStore((s) => s.activeRole);
 
   const [activeTab, setActiveTab] = useState<'faq' | 'tickets'>(store.activeTab);
   const [isDismissed, setIsDismissed] = useState(false);
+
+  // FAQ state
+  const [searchQuery, setSearchQuery] = useState('');
+  const [selectedCategory, setSelectedCategory] = useState<string>('ALL');
+  const [selectedFAQ, setSelectedFAQ] = useState<FAQItem | null>(null);
+
+  // Ticket Form state
+  const [showCreateForm, setShowCreateForm] = useState(store.showCreateForm);
+  const [ticketSujet, setTicketSujet] = useState(store.initialSubject);
+  const [ticketCategorie, setTicketCategorie] = useState(store.initialCategory || 'RESERVATION');
+  const [ticketPriorite, setTicketPriorite] = useState('MOYENNE');
+  const [ticketMessage, setTicketMessage] = useState(store.initialMessage);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
+  // User Tickets state
+  const [tickets, setTickets] = useState<TicketItem[]>([]);
+  const [isLoadingTickets, setIsLoadingTickets] = useState(false);
+  const [selectedTicket, setSelectedTicket] = useState<TicketItem | null>(null);
+  const [replyMessage, setReplyMessage] = useState('');
+  const [isSendingReply, setIsSendingReply] = useState(false);
 
   // Charger l'état masqué depuis sessionStorage
   useEffect(() => {
@@ -175,29 +197,6 @@ export function KlefAssistantWidget() {
       description: `Vous pouvez le réactiver à tout moment depuis le footer de l'application.`,
     });
   }, [store]);
-
-  // FAQ state
-  const [searchQuery, setSearchQuery] = useState('');
-  const [selectedCategory, setSelectedCategory] = useState<string>('ALL');
-  const [selectedFAQ, setSelectedFAQ] = useState<FAQItem | null>(null);
-
-  // Ticket Form state
-  const [showCreateForm, setShowCreateForm] = useState(store.showCreateForm);
-  const [ticketSujet, setTicketSujet] = useState(store.initialSubject);
-  const [ticketCategorie, setTicketCategorie] = useState(store.initialCategory || 'RESERVATION');
-  const [ticketPriorite, setTicketPriorite] = useState('MOYENNE');
-  const [ticketMessage, setTicketMessage] = useState(store.initialMessage);
-  const [isSubmitting, setIsSubmitting] = useState(false);
-
-  // User Tickets state
-  const [tickets, setTickets] = useState<TicketItem[]>([]);
-  const [isLoadingTickets, setIsLoadingTickets] = useState(false);
-  const [selectedTicket, setSelectedTicket] = useState<TicketItem | null>(null);
-  const [replyMessage, setReplyMessage] = useState('');
-  const [isSendingReply, setIsSendingReply] = useState(false);
-
-  const isAuthenticated = useRoleStore((s) => Boolean(s.nestToken));
-  const activeRole = useRoleStore((s) => s.activeRole);
 
   const dialogId = useId();
 

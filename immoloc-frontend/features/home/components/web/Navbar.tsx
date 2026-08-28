@@ -14,6 +14,7 @@ import {
   Loader2,
   Coins,
   Sparkles,
+  ShieldCheck,
 } from 'lucide-react';
 import { useIsAuthenticated, useRoleStore } from '@/stores/role.store';
 import { useAuth } from '@/features/auth/hooks/use-auth';
@@ -23,10 +24,9 @@ import { MobileBottomNav } from '@/components/layout/mobile-bottom-nav';
 import { CurrencySelector } from '@/components/layout/currency-selector';
 
 const LINKS = [
-  { href: '/',                 label: 'Accueil'           },
   { href: '/explorer',         label: 'Explorer'          },
-  { href: '/comment-ca-marche', label: 'Comment ça marche' },
-] as const;
+  { href: '/#comment-ca-marche', label: 'Comment ça marche' },
+];
 
 export function Navbar() {
   const pathname = usePathname();
@@ -39,6 +39,8 @@ export function Navbar() {
   const [isScrolled, setIsScrolled] = useState(false);
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const [user, setUser] = useState<{ email?: string; user_metadata?: Record<string, any> } | null>(null);
+
+  const isAdmin = activeRole === 'ADMIN' || (user?.email?.toLowerCase().endsWith('@admin.com') ?? false);
 
   const dropdownRef = useRef<HTMLDivElement>(null);
   const listRef = useRef<HTMLDivElement>(null);
@@ -217,6 +219,17 @@ export function Navbar() {
 
           {/* ── Actions — visibles sur toutes les tailles ──────────────────── */}
           <div className="flex items-center justify-end gap-1.5 sm:gap-2 shrink-0">
+            {/* Bouton Portail Admin si session Administrateur */}
+            {isAdmin && (
+              <Link
+                href="/admin/dashboard"
+                className="hidden sm:inline-flex items-center gap-1.5 px-3 py-1.5 rounded-pill bg-forest-950 text-lime-400 font-bold text-xs border border-forest-800 hover:bg-forest-900 transition-colors shadow-2xs"
+              >
+                <ShieldCheck className="w-3.5 h-3.5 text-lime-400" />
+                <span>Portail Admin</span>
+              </Link>
+            )}
+
             {/* Sélecteur de devise (FCFA, EUR, USD) */}
             <CurrencySelector />
 
@@ -261,6 +274,21 @@ export function Navbar() {
                     </div>
 
                     <div className="p-1 space-y-0.5">
+                      {/* Bouton Mode Admin si compte Admin */}
+                      {isAdmin && (
+                        <Link
+                          role="menuitem"
+                          href="/admin/dashboard"
+                          onClick={() => setDropdownOpen(false)}
+                          className="w-full flex items-center gap-3 px-3 py-2 text-xs sm:text-sm font-bold text-forest-900 rounded-xl bg-forest-50 hover:bg-forest-100 border border-forest-200/60 transition-colors mb-1"
+                        >
+                          <div className="w-7 h-7 rounded-lg bg-forest-900 flex items-center justify-center text-lime-300 shrink-0">
+                            <ShieldCheck className="w-4 h-4" />
+                          </div>
+                          <span className="truncate">Passer en mode Admin 🛡️</span>
+                        </Link>
+                      )}
+
                       {/* 1. Passer en Mode propriétaire */}
                       <button
                         role="menuitem"

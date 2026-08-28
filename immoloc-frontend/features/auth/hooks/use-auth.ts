@@ -77,7 +77,11 @@ export function useAuth() {
     }
 
     const target = resolveRedirect(result.user, next);
-    router.push(target);
+    if (typeof window !== 'undefined') {
+      window.location.href = target;
+    } else {
+      router.push(target);
+    }
   }
 
   async function register(data: RegisterInput) {
@@ -101,7 +105,11 @@ export function useAuth() {
     }
 
     const target = redirectPath && redirectPath.startsWith('/') ? redirectPath : resolveRedirect(result.user);
-    router.push(target);
+    if (typeof window !== 'undefined') {
+      window.location.href = target;
+    } else {
+      router.push(target);
+    }
   }
 
   async function loginWithGoogle(next?: string | null) {
@@ -121,22 +129,28 @@ export function useAuth() {
   async function completeGoogleProfile(data: CompleteProfileInput, accessToken: string, next?: string | null) {
     await authApi.completeGoogleProfile(data, accessToken);
     const me = await authApi.me(accessToken).catch(() => null);
+    let target = '/';
     if (next && next.startsWith('/') && !next.startsWith('//') && !AUTH_PAGES.includes(next.split('?')[0])) {
-      router.push(next);
+      target = next;
     } else if (me) {
-      router.push(me.hasAnnonce && me.activeRole === 'PROPRIETAIRE' ? '/dashboard' : '/');
-    } else {
-      router.push('/');
+      target = me.hasAnnonce && me.activeRole === 'PROPRIETAIRE' ? '/dashboard' : '/';
     }
-    router.refresh();
+    if (typeof window !== 'undefined') {
+      window.location.href = target;
+    } else {
+      router.push(target);
+    }
   }
 
   async function logout(redirectTo: string = '/') {
     await authApi.logout().catch(() => {});
     await supabase.auth.signOut();
     clearSession();
-    router.push(redirectTo);
-    router.refresh();
+    if (typeof window !== 'undefined') {
+      window.location.href = redirectTo;
+    } else {
+      router.push(redirectTo);
+    }
   }
 
   async function resendConfirmation(email: string) {
@@ -154,7 +168,11 @@ export function useAuth() {
     const result = await authApi.verifyRegisterOtp(opts);
     persistSession(result, setSession);
     const target = resolveRedirect(result.user, next);
-    router.push(target);
+    if (typeof window !== 'undefined') {
+      window.location.href = target;
+    } else {
+      router.push(target);
+    }
     return result;
   }
 
