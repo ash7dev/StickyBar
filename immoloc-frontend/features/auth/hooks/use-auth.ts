@@ -67,14 +67,17 @@ export function useAuth() {
   async function loginEmail(data: LoginInput, next?: string | null) {
     const result = await authApi.loginEmail(data);
     persistSession(result, setSession);
+
+    // Synchronisation Supabase en arrière-plan sans bloquer la redirection UI
     if (result.supabaseAccessToken && result.supabaseRefreshToken) {
-      await supabase.auth.setSession({
+      supabase.auth.setSession({
         access_token: result.supabaseAccessToken,
         refresh_token: result.supabaseRefreshToken,
-      });
+      }).catch((err) => console.warn('[useAuth] Supabase session sync warning:', err));
     }
-    router.push(resolveRedirect(result.user, next));
-    router.refresh();
+
+    const target = resolveRedirect(result.user, next);
+    router.push(target);
   }
 
   async function register(data: RegisterInput) {
@@ -89,15 +92,16 @@ export function useAuth() {
   async function verifyPhoneOtp(phone: string, token: string, redirectPath?: string) {
     const result = await authApi.verifyOtp({ phone, token });
     persistSession(result, setSession);
+
     if (result.supabaseAccessToken && result.supabaseRefreshToken) {
-      await supabase.auth.setSession({
+      supabase.auth.setSession({
         access_token: result.supabaseAccessToken,
         refresh_token: result.supabaseRefreshToken,
-      });
+      }).catch((err) => console.warn('[useAuth] Supabase session sync warning:', err));
     }
+
     const target = redirectPath && redirectPath.startsWith('/') ? redirectPath : resolveRedirect(result.user);
     router.push(target);
-    router.refresh();
   }
 
   async function loginWithGoogle(next?: string | null) {
@@ -149,8 +153,8 @@ export function useAuth() {
   ) {
     const result = await authApi.verifyRegisterOtp(opts);
     persistSession(result, setSession);
-    router.push(resolveRedirect(result.user, next));
-    router.refresh();
+    const target = resolveRedirect(result.user, next);
+    router.push(target);
     return result;
   }
 

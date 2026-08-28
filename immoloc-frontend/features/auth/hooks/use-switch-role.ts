@@ -73,8 +73,6 @@ export function useSwitchRole() {
       } else {
         router.push('/');
       }
-      
-      router.refresh();
     } catch (error) {
       console.error('[useSwitchRole] Failed to switch role:', error);
       // ── Rollback en cas d'erreur ───────────────────────────────────────────
