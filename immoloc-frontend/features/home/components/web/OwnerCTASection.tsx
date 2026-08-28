@@ -26,8 +26,8 @@ const PROMESSES = [
 
 export function OwnerCTASection() {
   return (
-    <section className="overflow-hidden py-20">
-      <div className="mx-auto max-w-7xl px-6">
+    <section className="overflow-hidden py-6 sm:py-20">
+      <div className="mx-auto max-w-7xl px-3 sm:px-6">
         {/* `.section-inverse` porte déjà le dégradé forest-900 → 950 et bascule
             correctement en mode sombre. */}
         <div className="section-inverse relative overflow-hidden">
@@ -41,7 +41,7 @@ export function OwnerCTASection() {
             className="pointer-events-none absolute -top-32 -right-32 h-96 w-96 rounded-pill bg-forest-700/40 blur-3xl"
           />
 
-          <div className="relative grid gap-12 p-8 md:p-12 lg:grid-cols-2 lg:p-16">
+          <div className="relative grid gap-8 sm:gap-12 p-5 sm:p-8 md:p-12 lg:grid-cols-2 lg:p-16">
 
             {/* ── Gauche ─────────────────────────────────────────────────── */}
 

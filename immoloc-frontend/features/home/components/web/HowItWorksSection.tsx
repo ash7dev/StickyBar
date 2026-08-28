@@ -56,10 +56,10 @@ export function HowItWorksSection() {
       boucle sans fin et sans garde prefers-reduced-motion. Le degrade du
       canvas suffit a habiller la section.
     */
-    <section className="bg-canvas py-16 sm:py-24">
-      <div className="mx-auto max-w-[1120px] px-6">
+    <section className="bg-canvas py-6 sm:py-16 lg:py-24">
+      <div className="mx-auto max-w-[1120px] px-4 sm:px-6">
 
-        <header className="mx-auto mb-12 max-w-2xl text-center">
+        <header className="mx-auto mb-6 sm:mb-12 max-w-2xl text-center">
           <span className="inline-flex items-center gap-2 rounded-pill border border-white/60 bg-white/55 px-4 py-2 backdrop-blur-md">
             <ShieldCheck className="h-4 w-4 text-forest-700" aria-hidden="true" />
             <span className="text-[0.8125rem] text-neutral-700">Paiement sous séquestre</span>

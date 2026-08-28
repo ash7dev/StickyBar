@@ -100,21 +100,21 @@ export function HeroSection({ listings = [] }: Props) {
         <div className="absolute inset-0 bg-[linear-gradient(to_right,rgba(20,101,76,0.03)_1px,transparent_1px),linear-gradient(to_bottom,rgba(20,101,76,0.03)_1px,transparent_1px)] bg-[size:4rem_4rem]" />
       </div>
 
-      <div className="mx-auto w-full max-w-7xl px-4 sm:px-6 lg:px-8 pb-16 pt-20 md:pb-24 md:pt-28 relative z-10">
-        <div className="grid items-center gap-10 lg:grid-cols-[1.15fr_0.85fr]">
+      <div className="mx-auto w-full max-w-7xl px-4 sm:px-6 lg:px-8 pb-6 pt-5 sm:pb-16 sm:pt-20 md:pb-24 md:pt-28 relative z-10">
+        <div className="grid items-center gap-6 sm:gap-10 lg:grid-cols-[1.15fr_0.85fr]">
 
           {/* -- Colonne texte ------------------------------------------- */}
           <div>
-            <div className="klef-rise mb-6 inline-flex items-center gap-2 rounded-pill border border-white/60 bg-white/55 px-4 py-2 backdrop-blur-md">
-              <ShieldCheck className="h-4 w-4 text-forest-700" aria-hidden="true" />
-              <span className="text-[0.8125rem] text-neutral-700">
+            <div className="klef-rise mb-3 sm:mb-6 inline-flex items-center gap-2 rounded-pill border border-white/60 bg-white/55 px-3.5 py-1.5 sm:px-4 sm:py-2 backdrop-blur-md">
+              <ShieldCheck className="h-4 w-4 text-forest-700 shrink-0" aria-hidden="true" />
+              <span className="text-[0.75rem] sm:text-[0.8125rem] font-medium text-neutral-700">
                 Votre argent est bloqué jusqu’à la remise des clés
               </span>
             </div>
 
             <h1
               id={titleId}
-              className="klef-rise font-display text-[clamp(2.5rem,6vw,4rem)] font-semibold leading-[1.06] tracking-[-0.025em] text-forest-900 relative"
+              className="klef-rise font-display text-[clamp(2rem,6vw,4rem)] font-semibold leading-[1.08] sm:leading-[1.06] tracking-[-0.025em] text-forest-900 relative"
               style={{ '--rise-delay': '60ms' } as React.CSSProperties}
             >
               Un logement{' '}
@@ -143,7 +143,7 @@ export function HeroSection({ listings = [] }: Props) {
             </h1>
 
             <p
-              className="klef-rise mt-5 max-w-xl text-lg leading-relaxed text-foreground-muted"
+              className="klef-rise mt-3 sm:mt-5 max-w-xl text-base sm:text-lg leading-relaxed text-foreground-muted"
               style={{ '--rise-delay': '120ms' } as React.CSSProperties}
             >
               Chaque bien est visité par un agent avant publication. Vous ne payez
@@ -151,7 +151,7 @@ export function HeroSection({ listings = [] }: Props) {
             </p>
 
             {/* -- Bouton Pilule de Recherche Mobile (Uniquement Mobile) ----------- */}
-            <div className="sm:hidden klef-rise relative z-30 mt-6" style={{ '--rise-delay': '180ms' } as React.CSSProperties}>
+            <div className="sm:hidden klef-rise relative z-30 mt-4" style={{ '--rise-delay': '180ms' } as React.CSSProperties}>
               <button
                 type="button"
                 onClick={() => setIsMobileSearchOpen(true)}

@@ -1,7 +1,7 @@
 'use client';
 
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { AlertCircle, Compass, Loader2, MapPin, Navigation, RotateCw } from 'lucide-react';
+import { AlertCircle, Compass, Loader2, MapPin, Navigation, RotateCw, X } from 'lucide-react';
 import { listingsApi } from '@/lib/nestjs/listings.api';
 import type { Listing } from '@/lib/nestjs/types';
 import { cn } from '@/lib/utils/cn';
@@ -17,6 +17,8 @@ export function NearbyListingsSection() {
   const [radiusKm, setRadiusKm] = useState<number>(10);
   const [listings, setListings] = useState<Listing[]>([]);
   const [message, setMessage] = useState<string | null>(null);
+
+  const sectionRef = useRef<HTMLDivElement>(null);
 
   /* Sans cette garde, une reponse lente arrivant apres un changement de rayon
      ecrasait les resultats du rayon courant. */
@@ -35,8 +37,6 @@ export function NearbyListingsSection() {
       setStatus('success');
     } catch {
       if (!alive.current || id !== requestId.current) return;
-      // console.error laissait l'echec dans la console ; l'ecran, lui,
-      // affiche desormais un bouton pour reessayer.
       setMessage('Impossible de récupérer les logements à proximité.');
       setStatus('error');
     }
@@ -62,9 +62,6 @@ export function NearbyListingsSection() {
           setStatus('denied');
           setMessage('L’accès à votre position a été refusé.');
         } else if (err.code === err.TIMEOUT) {
-          // TIMEOUT n'etait pas distingue : l'utilisateur lisait « impossible
-          // de determiner votre position » alors qu'un nouvel essai marche
-          // souvent.
           setStatus('error');
           setMessage('La localisation a pris trop de temps.');
         } else {
@@ -73,15 +70,27 @@ export function NearbyListingsSection() {
         }
       },
       {
-        /* enableHighAccuracy: true activait le GPS materiel : plusieurs
-           secondes de plus et une consommation de batterie nettement
-           superieure. Pour un rayon de 5 a 50 km, la position reseau suffit. */
         enableHighAccuracy: false,
         timeout: 12_000,
         maximumAge: 300_000,
       },
     );
   }, [fetchNearby, radiusKm]);
+
+  // Écoute de l'événement déclencheur global "klef:locate-nearby" (depuis le Pill des catégories)
+  useEffect(() => {
+    const handleLocateEvent = () => {
+      if (status === 'idle') {
+        locate();
+      }
+      setTimeout(() => {
+        sectionRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      }, 100);
+    };
+
+    window.addEventListener('klef:locate-nearby', handleLocateEvent);
+    return () => window.removeEventListener('klef:locate-nearby', handleLocateEvent);
+  }, [locate, status]);
 
   function changeRadius(r: number) {
     setRadiusKm(r);
@@ -90,52 +99,60 @@ export function NearbyListingsSection() {
 
   const busy = status === 'locating' || status === 'loading';
 
-  return (
-    <section className="mx-auto max-w-[1120px] px-6 py-12">
-      {/* Le fond etait un degrade from-forest-950/5 via-background-card
-          to-emerald-950/5 — emerald n'existe pas dans les tokens, et un
-          degrade a 5% n'est pas perceptible. */}
-      <div className="rounded-card border border-border bg-background-card p-6 shadow-sm sm:p-8">
+  // Ne rien afficher en mode 'idle' pour ne pas casser le rythme de la page d'accueil avec un bloc vide
+  if (status === 'idle') {
+    return null;
+  }
 
+  return (
+    <section ref={sectionRef} className="mx-auto max-w-[1120px] px-3 sm:px-6 py-4 sm:py-8 animate-in fade-in slide-in-from-top-4 duration-300">
+      <div className="rounded-card border border-forest-800/20 bg-background-card p-4 sm:p-8 shadow-lg relative overflow-hidden">
         <header className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
           <div className="min-w-0">
-            <span className="inline-flex items-center gap-2 rounded-pill bg-neutral-100 px-3 py-1 text-[0.6875rem] font-semibold uppercase tracking-[0.12em] text-forest-700">
-              <Compass className="h-3.5 w-3.5" aria-hidden="true" />
-              Autour de vous
-            </span>
+            <div className="flex items-center gap-2">
+              <span className="inline-flex items-center gap-2 rounded-pill bg-neutral-100 px-3 py-1 text-[0.6875rem] font-semibold uppercase tracking-[0.12em] text-forest-700 border border-neutral-200">
+                <Compass className="h-3.5 w-3.5" aria-hidden="true" />
+                Autour de vous (GPS)
+              </span>
+            </div>
             <h2 className="mt-3 font-display text-[clamp(1.5rem,3.5vw,2rem)] font-semibold tracking-[-0.02em] text-forest-900">
-              Logements près de chez vous
+              Logements proches de votre position
             </h2>
-            <p className="mt-2 max-w-xl text-sm leading-relaxed text-foreground-muted">
-              Votre position sert uniquement à trier les résultats. Elle n’est ni
-              enregistrée, ni transmise aux propriétaires.
+            <p className="mt-1.5 max-w-xl text-sm leading-relaxed text-foreground-muted">
+              Résultats triés par distance GPS réelle. Votre position n’est pas enregistrée.
             </p>
           </div>
 
-          <button
-            type="button"
-            onClick={locate}
-            disabled={busy}
-            className="btn-primary shrink-0 !px-4 !py-2.5 text-sm"
-          >
-            {busy
-              ? <Loader2 className="h-4 w-4 animate-spin" aria-hidden="true" />
-              : <Navigation className="h-4 w-4" aria-hidden="true" />}
-            {status === 'locating' ? 'Localisation…'
-              : status === 'loading' ? 'Recherche…'
-                : coords ? 'Actualiser ma position'
-                  : 'Me localiser'}
-          </button>
+          <div className="flex items-center gap-2 shrink-0">
+            <button
+              type="button"
+              onClick={locate}
+              disabled={busy}
+              className="btn-primary !px-4 !py-2.5 text-sm cursor-pointer"
+            >
+              {busy
+                ? <Loader2 className="h-4 w-4 animate-spin" aria-hidden="true" />
+                : <Navigation className="h-4 w-4" aria-hidden="true" />}
+              {status === 'locating' ? 'Localisation…'
+                : status === 'loading' ? 'Recherche…'
+                  : 'Actualiser'}
+            </button>
+
+            <button
+              type="button"
+              onClick={() => setStatus('idle')}
+              className="flex h-9 w-9 items-center justify-center rounded-pill border border-border bg-background-card text-foreground-muted hover:text-foreground hover:bg-neutral-100 transition-colors cursor-pointer"
+              title="Masquer la section à proximité"
+              aria-label="Fermer la section"
+            >
+              <X className="w-4 h-4" />
+            </button>
+          </div>
         </header>
 
-        {/*
-          Le selecteur de rayon n'apparaissait qu'en status === 'success' : on
-          ne pouvait pas le regler avant de lancer, ni apres un echec — alors
-          que le message d'etat vide conseille justement d'elargir.
-          Il est desormais toujours visible.
-        */}
+        {/* Sélecteur de rayon */}
         <div className="mt-5 flex flex-wrap items-center gap-2">
-          <span className="text-xs text-foreground-muted">Rayon :</span>
+          <span className="text-xs font-medium text-foreground-muted">Rayon :</span>
           <div role="group" aria-label="Rayon de recherche" className="flex flex-wrap gap-1.5">
             {RADII.map((r) => (
               <button
@@ -145,10 +162,10 @@ export function NearbyListingsSection() {
                 disabled={busy}
                 aria-pressed={radiusKm === r}
                 className={cn(
-                  'rounded-pill border px-3 py-1.5 text-xs font-medium transition-colors duration-150 disabled:opacity-50',
+                  'rounded-pill border px-3 py-1.5 text-xs font-semibold transition-all duration-150 disabled:opacity-50 cursor-pointer',
                   radiusKm === r
-                    ? 'border-forest-700 bg-forest-900 text-white font-semibold shadow-xs'
-                    : 'border-border bg-background-card text-foreground-muted hover:border-border-hover hover:text-foreground',
+                    ? 'border-forest-950 bg-forest-950 text-neutral-0 shadow-xs'
+                    : 'border-border bg-background-card text-foreground-muted hover:border-forest-300 hover:text-foreground hover:bg-forest-50',
                 )}
               >
                 {r} km
@@ -158,29 +175,6 @@ export function NearbyListingsSection() {
         </div>
 
         <div className="mt-8" aria-live="polite">
-          {status === 'idle' && (
-            <div className="flex flex-col items-center rounded-card border border-dashed border-border bg-background-alt p-8 text-center">
-              <span className="grid h-11 w-11 place-items-center rounded-inner bg-neutral-100 text-forest-700">
-                <MapPin className="h-5 w-5" aria-hidden="true" />
-              </span>
-              <h3 className="mt-3 text-base font-semibold text-forest-900">
-                Trouvez un logement à proximité
-              </h3>
-              <p className="mt-1.5 max-w-md text-sm leading-relaxed text-foreground-muted">
-                Autorisez l’accès à votre position pour voir les biens disponibles
-                dans un rayon de {radiusKm} km.
-              </p>
-              <button
-                type="button"
-                onClick={locate}
-                className="btn-primary mt-4"
-              >
-                <Navigation className="h-4 w-4" aria-hidden="true" />
-                Me localiser
-              </button>
-            </div>
-          )}
-
           {busy && (
             <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3">
               {[0, 1, 2].map((i) => <ListingCardSkeleton key={i} />)}

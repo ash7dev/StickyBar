@@ -28,6 +28,8 @@ export interface TenantPriceDisplayProps {
   className?: string;
   /** Couleur personnalisée pour le texte du prix final */
   textColor?: string;
+  /** Mode surface sombre (inverse) : texte blanc/lime sur fond sombre */
+  isInverse?: boolean;
 }
 
 export function TenantPriceDisplay({
@@ -40,6 +42,7 @@ export function TenantPriceDisplay({
   period = '/ nuit',
   className,
   textColor,
+  isInverse = false,
 }: TenantPriceDisplayProps) {
   const getFormattedPrice = useCurrencyStore((s) => s.getFormattedPrice);
   const prixPublic = getPrixPublic(prixBase);
@@ -51,7 +54,7 @@ export function TenantPriceDisplay({
 
   if (prixPublic <= 0) {
     return (
-      <span className={cn('font-display font-semibold text-foreground-muted', className)}>
+      <span className={cn('font-display font-semibold', isInverse ? 'text-forest-200' : 'text-foreground-muted', className)}>
         —
       </span>
     );
@@ -82,11 +85,13 @@ export function TenantPriceDisplay({
     },
   }[size];
 
-  const defaultFinalColor = isDiscounted
-    ? 'text-forest-950'
-    : 'text-foreground';
+  const defaultFinalColor = isInverse
+    ? (isDiscounted ? 'text-lime-300' : 'text-neutral-0')
+    : (isDiscounted ? 'text-forest-950' : 'text-foreground');
 
   const activeFinalColor = textColor || defaultFinalColor;
+  const activePeriodColor = isInverse ? 'text-forest-200 font-normal ml-1 text-xs sm:text-sm' : sizeStyles.period;
+  const activeOriginalColor = isInverse ? 'text-white/60 line-through tabular-nums text-xs font-medium' : sizeStyles.original;
 
   return (
     <div className={cn('flex flex-col min-w-0 justify-end', className)}>
@@ -98,7 +103,7 @@ export function TenantPriceDisplay({
             layout === 'inline' ? 'flex-row' : 'flex-row items-center',
           )}
         >
-          <span className={sizeStyles.original}>
+          <span className={activeOriginalColor}>
             {publicFmt.fullStr}
           </span>
           {showBadge && (
@@ -122,7 +127,7 @@ export function TenantPriceDisplay({
           {finalFmt.amountStr}
         </span>
         {period && (
-          <span className={sizeStyles.period}>
+          <span className={activePeriodColor}>
             {finalFmt.symbol}&nbsp;{period}
           </span>
         )}

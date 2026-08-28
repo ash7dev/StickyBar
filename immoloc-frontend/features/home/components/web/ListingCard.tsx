@@ -36,7 +36,7 @@ export interface ListingCardProps {
   isFavorite?: boolean;
   onToggleFavorite?: (id: string, next: boolean) => void;
   priority?: boolean;
-  variant?: 'standard' | 'premium';
+  variant?: 'standard' | 'premium' | 'dark';
   isInstantBooking?: boolean;
   derniereMinuteActive?: boolean;
   videoUrl?: string | null;
@@ -62,6 +62,7 @@ export function ListingCard({
   isFavorite = false,
   onToggleFavorite,
   priority = false,
+  variant = 'standard',
   isInstantBooking = false,
   derniereMinuteActive = false,
   videoUrl = null,
@@ -70,6 +71,7 @@ export function ListingCard({
   const src = photos?.[0]?.url;
   const lieu = quartier ? `${quartier}, ${ville}` : ville;
   const categorie = sousType ?? type;
+  const isDark = variant === 'dark';
 
   // Objet partiel compatible avec la modale VideoReelsModal
   const listingData: Partial<Listing> & { id: string; titre: string; ville: string; prixBase: number; videoUrl?: string | null; isInstantBooking?: boolean } = {
@@ -83,7 +85,13 @@ export function ListingCard({
 
   return (
     <>
-      <article className="group relative isolate flex flex-col overflow-hidden rounded-card border border-border bg-background-card transition-[box-shadow,transform] duration-200 ease-[cubic-bezier(0.22,1,0.36,1)] hover:-translate-y-0.5 hover:shadow-md motion-reduce:transform-none motion-reduce:transition-none">
+      <article
+        className={`group relative isolate flex flex-col overflow-hidden rounded-card transition-all duration-200 ease-[cubic-bezier(0.22,1,0.36,1)] hover:-translate-y-1 motion-reduce:transform-none motion-reduce:transition-none ${
+          isDark
+            ? 'border border-white/15 bg-forest-900/60 backdrop-blur-md hover:border-lime-400/40 hover:bg-forest-900/80 shadow-xl'
+            : 'border border-border bg-background-card hover:shadow-md'
+        }`}
+      >
 
         {/* ── Photo ───────────────────────────────────────────────────────── */}
         <div className="relative aspect-[4/3] overflow-hidden bg-neutral-100">
@@ -125,7 +133,7 @@ export function ListingCard({
                   e.stopPropagation();
                   setShowVideoModal(true);
                 }}
-                className="inline-flex items-center gap-1.5 rounded-pill bg-black/70 px-2.5 py-1 text-[0.6875rem] font-bold text-white backdrop-blur-md hover:bg-black/90 transition-colors z-30 shadow-md"
+                className="inline-flex items-center gap-1.5 rounded-pill bg-black/70 px-2.5 py-1 text-[0.6875rem] font-bold text-white backdrop-blur-md hover:bg-black/90 transition-colors z-30 shadow-md cursor-pointer"
               >
                 <Video className="h-3.5 w-3.5 text-on-inverse-marker" aria-hidden="true" />
                 Visite 360°
@@ -141,7 +149,9 @@ export function ListingCard({
         {/* ── Contenu ─────────────────────────────────────────────────────── */}
         <div className="flex flex-1 flex-col p-4">
           <div className="flex items-start justify-between gap-3">
-            <h3 className="min-w-0 font-display text-[1.0625rem] font-semibold leading-snug tracking-[-0.01em] text-forest-900">
+            <h3 className={`min-w-0 font-display text-[1.0625rem] font-semibold leading-snug tracking-[-0.01em] ${
+              isDark ? 'text-neutral-0 group-hover:text-lime-300 transition-colors' : 'text-forest-900'
+            }`}>
               <Link
                 href={`/explorer/${slug ?? id}`}
                 className="line-clamp-1 after:absolute after:inset-0 after:z-10 after:content-[''] focus-visible:outline-none focus-visible:after:outline-2 focus-visible:after:outline-offset-2 focus-visible:after:outline-ring"
@@ -152,12 +162,12 @@ export function ListingCard({
 
             {note !== null && note > 0 && (
               <span className="flex shrink-0 items-center gap-1 text-sm">
-                <Star className="h-3.5 w-3.5 fill-current text-gold-500" aria-hidden="true" />
-                <span className="font-semibold tabular-nums text-foreground">
+                <Star className="h-3.5 w-3.5 fill-current text-gold-400" aria-hidden="true" />
+                <span className={`font-semibold tabular-nums ${isDark ? 'text-neutral-50' : 'text-foreground'}`}>
                   {rating.format(note)}
                 </span>
                 {totalSejours > 0 && (
-                  <span className="text-xs text-foreground-faint tabular-nums">
+                  <span className={`text-xs tabular-nums ${isDark ? 'text-forest-200' : 'text-foreground-faint'}`}>
                     ({totalSejours})
                   </span>
                 )}
@@ -165,14 +175,14 @@ export function ListingCard({
             )}
           </div>
 
-          <p className="mt-1 line-clamp-1 text-sm text-foreground-muted">
+          <p className={`mt-1 line-clamp-1 text-sm ${isDark ? 'text-forest-200' : 'text-foreground-muted'}`}>
             {lieu}
-            {categorie && <span className="text-foreground-faint"> · {categorie}</span>}
+            {categorie && <span className={isDark ? 'text-forest-300/60' : 'text-foreground-faint'}> · {categorie}</span>}
           </p>
 
           {/* Specs Airbnb-style */}
           {(capaciteMax || nombreChambres || nombreSallesBain) && (
-            <p className="mt-1 text-xs text-foreground-faint font-medium">
+            <p className={`mt-1 text-xs font-medium ${isDark ? 'text-forest-200/80' : 'text-foreground-faint'}`}>
               {[
                 capaciteMax && capaciteMax > 0 ? `${capaciteMax} voy.` : null,
                 nombreChambres ? `${nombreChambres} ch.` : null,
@@ -186,10 +196,13 @@ export function ListingCard({
               prixBase={prixBase}
               derniereMinuteActive={derniereMinuteActive}
               size="md"
+              isInverse={isDark}
             />
 
             {sponsorise && !derniereMinuteActive ? (
-              <span className="shrink-0 rounded-pill bg-neutral-100 px-2 py-0.5 text-[0.6875rem] font-medium text-foreground-faint">
+              <span className={`shrink-0 rounded-pill px-2 py-0.5 text-[0.6875rem] font-medium ${
+                isDark ? 'bg-white/10 text-neutral-100 border border-white/10' : 'bg-neutral-100 text-foreground-faint'
+              }`}>
                 Mis en avant
               </span>
             ) : null}
