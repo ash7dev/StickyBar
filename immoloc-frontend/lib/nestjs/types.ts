@@ -206,6 +206,8 @@ export interface Listing {
   derniereMinuteActive?: boolean;
   videoUrl?: string | null;
   reglesMaison: string | null;
+  regimeElectricite?: string | null;
+  detailsElectricite?: string | null;
   photos: ListingPhoto[];
   equipements: Equipement[];
   tarifsNuits?: TarifNuit[];
@@ -425,6 +427,8 @@ export interface ListingDetail {
   nomReseauWifi?: string | null;
   codeWifi?: string | null;
   instructionsDigicode?: string | null;
+  regimeElectricite?: string | null;
+  detailsElectricite?: string | null;
 
   // Statut & modération
   rejectionReason: string | null;

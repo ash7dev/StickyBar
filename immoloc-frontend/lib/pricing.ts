@@ -44,3 +44,19 @@ export function formatPrixDerniereMinute(prixPublic: number): string {
   const reduced = getPrixDerniereMinute(prixPublic);
   return reduced <= 0 ? '—' : reduced.toLocaleString('fr-FR');
 }
+
+/**
+ * Formate un montant en tenant compte de la devise active (FCFA, EUR, USD).
+ */
+export function formatPriceWithCurrency(priceInFcfa: number | string | null | undefined): string {
+  if (typeof window !== 'undefined') {
+    try {
+      const { useCurrencyStore } = require('@/stores/currency.store');
+      const fn = useCurrencyStore.getState().getFormattedPrice;
+      return fn(priceInFcfa).fullStr;
+    } catch {}
+  }
+  const prixPublic = getPrixPublic(priceInFcfa);
+  if (prixPublic <= 0) return '—';
+  return `${prixPublic.toLocaleString('fr-FR')} FCFA`;
+}

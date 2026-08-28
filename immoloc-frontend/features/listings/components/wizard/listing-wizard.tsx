@@ -110,6 +110,8 @@ export function ListingWizard({ editMode = false }: Props) {
         nomReseauWifi: conditions.nomReseauWifi || null,
         codeWifi: conditions.codeWifi || null,
         instructionsDigicode: conditions.instructionsDigicode || null,
+        regimeElectricite: conditions.regimeElectricite || 'INCLUS',
+        detailsElectricite: conditions.detailsElectricite || null,
       };
 
       if (!listingId) {

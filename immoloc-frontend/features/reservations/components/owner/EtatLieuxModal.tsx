@@ -37,7 +37,7 @@ const CATEGORIES: { value: PhotoCategorie; label: string }[] = [
   { value: 'SALON', label: 'Salon' },
   { value: 'CHAMBRE', label: 'Chambre' },
   { value: 'CUISINE', label: 'Cuisine' },
-  { value: 'SALLE_DE_BAIN', label: 'Salle d’eau' },
+  { value: 'SALLE_DE_BAIN', label: 'Salle de bain' },
   { value: 'TERRASSE', label: 'Terrasse' },
   { value: 'PISCINE', label: 'Piscine' },
   { value: 'VUE', label: 'Vue' },

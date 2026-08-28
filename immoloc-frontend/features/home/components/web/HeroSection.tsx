@@ -4,7 +4,8 @@ import Link from 'next/link';
 import Image from 'next/image';
 import { useRouter } from 'next/navigation';
 import { useEffect, useId, useRef, useState } from 'react';
-import { CalendarDays, MapPin, Search, ShieldCheck } from 'lucide-react';
+import { createPortal } from 'react-dom';
+import { CalendarDays, MapPin, Search, ShieldCheck, SlidersHorizontal, X, RotateCcw, Check } from 'lucide-react';
 import { DateRangeCalendar, shortLabel, type DateRange } from './date-range-calendar';
 import type { Listing } from '@/lib/nestjs/types';
 import { formatPrixPublic, getPrixPublic, formatPrixDerniereMinute } from '@/lib/pricing';
@@ -33,8 +34,26 @@ export function HeroSection({ listings = [] }: Props) {
   const [place, setPlace] = useState('');
   const [range, setRange] = useState<DateRange>({ from: null, to: null });
   const [openField, setOpenField] = useState<'from' | 'to' | null>(null);
+  const [isMobileSearchOpen, setIsMobileSearchOpen] = useState(false);
+  const [mobileTab, setMobileTab] = useState<'where' | 'dates'>('where');
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   const popoverRef = useRef<HTMLFormElement>(null);
+
+  useEffect(() => {
+    if (isMobileSearchOpen) {
+      document.body.style.overflow = 'hidden';
+    } else {
+      document.body.style.overflow = '';
+    }
+    return () => {
+      document.body.style.overflow = '';
+    };
+  }, [isMobileSearchOpen]);
 
   useEffect(() => {
     if (!openField) return;
@@ -131,18 +150,40 @@ export function HeroSection({ listings = [] }: Props) {
               rien tant que vous n’avez pas les clés en main.
             </p>
 
-            {/* -- Recherche ------------------------------------------ */}
-            {/*
-              C'etait un <div> contenant un input et des boutons. En <form
-              role="search"> : la touche Entree soumet nativement depuis
-              n'importe quel champ, et les lecteurs d'ecran annoncent un
-              point de repere « recherche ».
-            */}
+            {/* -- Bouton Pilule de Recherche Mobile (Uniquement Mobile) ----------- */}
+            <div className="sm:hidden klef-rise relative z-30 mt-6" style={{ '--rise-delay': '180ms' } as React.CSSProperties}>
+              <button
+                type="button"
+                onClick={() => setIsMobileSearchOpen(true)}
+                className="w-full flex items-center justify-between gap-3 p-3.5 rounded-full bg-white/95 backdrop-blur-md border border-forest-900/10 shadow-[0_8px_30px_rgba(20,101,76,0.12)] hover:shadow-lg transition-all active:scale-[0.98] text-left cursor-pointer"
+              >
+                <div className="flex items-center gap-3.5 min-w-0">
+                  <div className="w-10 h-10 rounded-full bg-forest-900 flex items-center justify-center shrink-0 shadow-md text-lime-400">
+                    <Search className="w-4 h-4" />
+                  </div>
+                  <div className="min-w-0">
+                    <p className="text-sm font-bold text-forest-950 truncate">
+                      {place.trim() ? place : 'Où allez-vous ?'}
+                    </p>
+                    <p className="text-xs text-foreground-muted truncate">
+                      {range.from
+                        ? `${shortLabel.format(range.from)} - ${range.to ? shortLabel.format(range.to) : '...'}`
+                        : 'Destination · Dates · Tout Sénégal'}
+                    </p>
+                  </div>
+                </div>
+                <div className="w-8 h-8 rounded-full bg-forest-50 flex items-center justify-center text-forest-700 shrink-0 border border-forest-100">
+                  <SlidersHorizontal className="w-4 h-4" />
+                </div>
+              </button>
+            </div>
+
+            {/* -- Barre de recherche Desktop (Uniquement Desktop) ---------------- */}
             <form
               role="search"
               onSubmit={submit}
               ref={popoverRef}
-              className="klef-rise relative z-50 mt-9"
+              className="klef-rise relative z-50 mt-9 hidden sm:block"
               style={{ '--rise-delay': '180ms' } as React.CSSProperties}
             >
               <div className="glass flex flex-col rounded-card p-1.5 sm:flex-row sm:items-stretch sm:rounded-pill">
@@ -150,8 +191,6 @@ export function HeroSection({ listings = [] }: Props) {
                 <div className="flex flex-1 items-center gap-2.5 rounded-pill px-4 py-2.5 transition-colors duration-150 focus-within:bg-white/60">
                   <MapPin className="h-4 w-4 shrink-0 text-foreground-muted" aria-hidden="true" />
                   <span className="min-w-0 flex-1">
-                    {/* Le label etait un <span class="sr-only"> dans un <label>
-                        sans htmlFor : aucune association reelle. */}
                     <label htmlFor={placeId} className="block text-[0.6875rem] font-semibold uppercase tracking-wider text-foreground-faint">
                       Où
                     </label>
@@ -273,6 +312,237 @@ export function HeroSection({ listings = [] }: Props) {
           </div>
         </div>
       </div>
+
+      {/* ── Modale Bottom Sheet Mobile Ultra-Premium (Design Tokens Klef) ── */}
+      {mounted && isMobileSearchOpen && createPortal(
+        <>
+          {/* Backdrop sombre flouté avec effet de profondeur */}
+          <div
+            className="fixed inset-0 z-[99998] bg-forest-950/60 backdrop-blur-md sm:hidden animate-in fade-in duration-300"
+            onClick={() => setIsMobileSearchOpen(false)}
+          />
+
+          {/* Bottom Sheet Flottant avec coins arrondis premium */}
+          <div className="fixed inset-x-0 bottom-0 top-12 z-[99999] flex flex-col rounded-t-[32px] bg-neutral-50 border-t border-white/40 shadow-[0_-16px_48px_rgba(4,25,18,0.30)] overflow-hidden sm:hidden animate-in slide-in-from-bottom duration-300 ease-out">
+
+            {/* Poignée tactile de glissement (Drag Handle) */}
+            <div className="shrink-0 pt-2.5 pb-1 flex justify-center bg-white">
+              <div className="w-12 h-1 rounded-full bg-neutral-300" />
+            </div>
+
+            {/* En-tête de la modale */}
+            <div className="shrink-0 z-20 flex items-center justify-between border-b border-border bg-white px-5 py-3 shadow-2xs">
+              <button
+                type="button"
+                onClick={() => setIsMobileSearchOpen(false)}
+                className="flex h-8 w-8 items-center justify-center rounded-full bg-neutral-100 text-forest-900 transition-all hover:bg-neutral-200 active:scale-90"
+              >
+                <X className="h-4 w-4" />
+              </button>
+
+              <span className="text-xs font-black text-forest-950 uppercase tracking-[0.15em]">
+                Rechercher un séjour
+              </span>
+
+              <button
+                type="button"
+                onClick={() => {
+                  setPlace('');
+                  setRange({ from: null, to: null });
+                }}
+                className="text-xs font-bold text-forest-700 hover:text-forest-900 underline underline-offset-4 transition-colors"
+              >
+                Effacer
+              </button>
+            </div>
+
+            {/* Corps défilable délimité */}
+            <div className="flex-1 overflow-y-auto p-4 space-y-4 pb-28">
+
+              {/* 1. Bloc "Où ?" (Destination) */}
+              <div
+                className={`rounded-2xl border transition-all duration-200 overflow-hidden ${
+                  mobileTab === 'where'
+                    ? 'border-forest-600 bg-white shadow-md ring-4 ring-forest-500/10 p-4'
+                    : 'border-border bg-white p-3.5 hover:border-border-hover'
+                }`}
+              >
+                <div
+                  className="flex items-center justify-between cursor-pointer"
+                  onClick={() => setMobileTab('where')}
+                >
+                  <div className="flex items-center gap-3">
+                    <div className={`w-9 h-9 rounded-xl flex items-center justify-center transition-colors ${mobileTab === 'where' ? 'bg-forest-900 text-lime-400 shadow-xs' : 'bg-neutral-100 text-forest-800'}`}>
+                      <MapPin className="w-4 h-4" />
+                    </div>
+                    <div>
+                      <p className="text-[10px] font-black uppercase text-foreground-muted tracking-wider">Destination</p>
+                      <p className="text-sm font-bold text-forest-950">
+                        {place.trim() ? place : 'Où allez-vous ?'}
+                      </p>
+                    </div>
+                  </div>
+                  {mobileTab !== 'where' && (
+                    <span className="text-xs font-bold text-forest-600 bg-forest-50 px-2.5 py-1 rounded-full border border-forest-100">
+                      Modifier
+                    </span>
+                  )}
+                </div>
+
+                {mobileTab === 'where' && (
+                  <div className="mt-4 pt-3.5 border-t border-border space-y-4 animate-in fade-in duration-200">
+                    <div className="relative">
+                      <MapPin className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-forest-600" />
+                      <input
+                        type="text"
+                        autoFocus
+                        value={place}
+                        onChange={(e) => setPlace(e.target.value)}
+                        placeholder="Saisissez une ville (Dakar, Saly, Ngor...)"
+                        className="w-full rounded-xl border border-border bg-neutral-50 py-3 pl-10 pr-10 text-sm font-semibold text-foreground outline-none focus:border-forest-600 focus:bg-white focus:ring-2 focus:ring-forest-500/20 transition-all"
+                      />
+                      {place && (
+                        <button
+                          type="button"
+                          onClick={() => setPlace('')}
+                          className="absolute right-3 top-1/2 -translate-y-1/2 text-neutral-400 hover:text-neutral-600 p-1"
+                        >
+                          <X className="w-4 h-4" />
+                        </button>
+                      )}
+                    </div>
+
+                    <div>
+                      <p className="text-[11px] font-black text-foreground-muted uppercase tracking-wider mb-2.5">
+                        Destinations recommandées au Sénégal
+                      </p>
+                      <div className="grid grid-cols-2 gap-2">
+                        {[
+                          { name: 'Dakar', desc: 'Capitale & vie nocturne' },
+                          { name: 'Saly', desc: 'Station balnéaire & plages' },
+                          { name: 'Ngaparou', desc: 'Calme & villas piscine' },
+                          { name: 'Somone', desc: 'Lagune & nature' },
+                          { name: 'Almadies', desc: 'Restaurants & vue mer' },
+                          { name: 'Ngor', desc: 'Île & surf' },
+                        ].map((item) => {
+                          const active = place === item.name;
+                          return (
+                            <button
+                              key={item.name}
+                              type="button"
+                              onClick={() => {
+                                setPlace(item.name);
+                                setMobileTab('dates');
+                              }}
+                              className={`flex flex-col text-left p-3 rounded-xl border transition-all duration-150 cursor-pointer ${
+                                active
+                                  ? 'border-forest-600 bg-forest-50/80 shadow-xs ring-1 ring-forest-500/30'
+                                  : 'border-border bg-neutral-50 hover:bg-neutral-100 hover:border-border-hover'
+                              }`}
+                            >
+                              <span className="text-xs font-extrabold text-forest-900 flex items-center justify-between">
+                                {item.name}
+                                {active && <Check className="w-3.5 h-3.5 text-forest-600" />}
+                              </span>
+                              <span className="text-[10px] text-foreground-muted leading-tight mt-0.5 font-medium">
+                                {item.desc}
+                              </span>
+                            </button>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              {/* 2. Bloc "Quand ?" (Dates) */}
+              <div
+                className={`rounded-2xl border transition-all duration-200 overflow-hidden ${
+                  mobileTab === 'dates'
+                    ? 'border-forest-600 bg-white shadow-md ring-4 ring-forest-500/10 p-4'
+                    : 'border-border bg-white p-3.5 hover:border-border-hover'
+                }`}
+              >
+                <div
+                  className="flex items-center justify-between cursor-pointer"
+                  onClick={() => setMobileTab('dates')}
+                >
+                  <div className="flex items-center gap-3">
+                    <div className={`w-9 h-9 rounded-xl flex items-center justify-center transition-colors ${mobileTab === 'dates' ? 'bg-forest-900 text-lime-400 shadow-xs' : 'bg-neutral-100 text-forest-800'}`}>
+                      <CalendarDays className="w-4 h-4" />
+                    </div>
+                    <div>
+                      <p className="text-[10px] font-black uppercase text-foreground-muted tracking-wider">Séjour / Dates</p>
+                      <p className="text-sm font-bold text-forest-950">
+                        {range.from
+                          ? `${shortLabel.format(range.from)} - ${range.to ? shortLabel.format(range.to) : 'Sélectionnez départ'}`
+                          : 'Ajouter des dates'}
+                      </p>
+                    </div>
+                  </div>
+                  {mobileTab !== 'dates' && (
+                    <span className="text-xs font-bold text-forest-600 bg-forest-50 px-2.5 py-1 rounded-full border border-forest-100">
+                      {range.from ? 'Modifier' : 'Sélectionner'}
+                    </span>
+                  )}
+                </div>
+
+                {mobileTab === 'dates' && (
+                  <div className="mt-4 pt-3.5 border-t border-border space-y-3 animate-in fade-in duration-200 flex flex-col items-center">
+                    <DateRangeCalendar
+                      value={range}
+                      onChange={setRange}
+                      focusField="from"
+                      className="w-full max-w-full border-none shadow-none p-0 bg-transparent"
+                    />
+                  </div>
+                )}
+              </div>
+
+            </div>
+
+            {/* Pied de modale fixe de haute conversion (Trois Voix Klef : Bouton Lime) */}
+            <div className="shrink-0 z-30 flex items-center justify-between gap-3 border-t border-border bg-white/95 backdrop-blur-md p-4 shadow-[0_-8px_30px_rgba(4,25,18,0.12)]">
+              <button
+                type="button"
+                onClick={() => {
+                  setPlace('');
+                  setRange({ from: null, to: null });
+                }}
+                className="flex items-center gap-1.5 px-3.5 py-3 text-xs font-bold text-foreground-muted hover:text-foreground active:scale-95 transition-all"
+              >
+                <RotateCcw className="w-3.5 h-3.5" />
+                Réinitialiser
+              </button>
+
+              <button
+                type="button"
+                onClick={(e) => {
+                  setIsMobileSearchOpen(false);
+                  submit(e);
+                }}
+                className="flex-1 flex items-center justify-center gap-2.5 rounded-full bg-lime-400 hover:bg-lime-500 px-6 py-3.5 text-sm font-black text-forest-900 shadow-[0_6px_20px_rgba(155,194,44,0.35)] transition-all active:scale-[0.98] cursor-pointer"
+              >
+                <Search className="w-4 h-4 text-forest-900" />
+                <span>
+                  {(() => {
+                    const parts = [];
+                    if (place.trim()) parts.push(place.trim());
+                    if (range.from && range.to) {
+                      const n = Math.max(1, Math.round((range.to.getTime() - range.from.getTime()) / 86400000));
+                      parts.push(`${n} nuit${n > 1 ? 's' : ''}`);
+                    }
+                    if (parts.length > 0) return `Rechercher (${parts.join(' · ')})`;
+                    return 'Rechercher les hébergements';
+                  })()}
+                </span>
+              </button>
+            </div>
+          </div>
+        </>,
+        document.body
+      )}
 
     </section>
   );

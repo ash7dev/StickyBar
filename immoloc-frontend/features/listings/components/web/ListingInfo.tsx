@@ -395,6 +395,32 @@ export function ListingInfo({ listing }: Props) {
         </div>
       </div>
 
+      {/* ── Électricité & Woyofal ─────────────────────────────────────── */}
+      {listing.regimeElectricite && (
+        <div className="border-t border-border pt-6 md:pt-10">
+          <SectionTitle icon={Zap} label="Électricité & Climatisation" />
+          <div className="relative bg-amber-500/10 rounded-2xl p-5 border border-amber-500/20">
+            <div className="flex items-start gap-3.5">
+              <div className="w-10 h-10 rounded-xl bg-amber-500/20 flex items-center justify-center flex-shrink-0 text-amber-700">
+                <Zap className="w-5 h-5 fill-amber-500 text-amber-600" />
+              </div>
+              <div className="space-y-1">
+                <p className="text-sm font-black text-amber-950">
+                  {listing.regimeElectricite === 'INCLUS' && '⚡ Électricité 100% Inclus'}
+                  {listing.regimeElectricite === 'FORFAIT_RECHARGE' && '🔋 Recharge initiale offerte (Woyofal)'}
+                  {listing.regimeElectricite === 'WOYOFAL_LOCATAIRE' && '🔌 Woyofal à la charge du locataire'}
+                </p>
+                <p className="text-xs font-medium text-amber-900/90 leading-relaxed">
+                  {listing.regimeElectricite === 'INCLUS' && 'L\'électricité et l\'usage de la climatisation sont entièrement inclus dans le tarif de votre séjour.'}
+                  {listing.regimeElectricite === 'FORFAIT_RECHARGE' && (listing.detailsElectricite || 'Une recharge initiale est disponible à votre arrivée. Les recharges supplémentaires s\'effectuent par le voyageur via le compteur Woyofal.')}
+                  {listing.regimeElectricite === 'WOYOFAL_LOCATAIRE' && (listing.detailsElectricite || 'Le compteur prépayé Woyofal est géré et rechargé par le voyageur durant son séjour.')}
+                </p>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* ── Équipements par catégorie ────────────────────────────────── */}
       {listing.equipements.length > 0 && (() => {
         const grouped = listing.equipements.reduce<Record<string, typeof listing.equipements>>((acc, eq) => {

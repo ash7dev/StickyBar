@@ -161,6 +161,17 @@ export class CreateLogementDto {
   @MaxLength(500)
   instructionsDigicode?: string;
 
+  @ApiPropertyOptional({ description: "Régime de prise en charge de l'électricité (INCLUS, FORFAIT_RECHARGE, WOYOFAL_LOCATAIRE)" })
+  @IsOptional()
+  @IsString()
+  regimeElectricite?: string;
+
+  @ApiPropertyOptional({ maxLength: 500, description: "Détails / Précisions sur l'électricité et Woyofal" })
+  @IsOptional()
+  @IsString()
+  @MaxLength(500)
+  detailsElectricite?: string;
+
   @ApiPropertyOptional({ description: "Activer la réservation instantanée sans validation manuelle" })
   @IsOptional()
   @IsBoolean()

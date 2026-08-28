@@ -15,6 +15,9 @@ export interface ListingItem {
   note?: number | null;
   totalSejours?: number;
   photos: { url: string }[];
+  capaciteMax?: number;
+  nombreChambres?: number | null;
+  nombreSallesBain?: number | null;
   isInstantBooking?: boolean;
   derniereMinuteActive?: boolean;
   videoUrl?: string | null;
@@ -89,6 +92,9 @@ export function ListingsSection({
                   note={listing.note ? Number(listing.note) : null}
                   totalSejours={listing.totalSejours ?? 0}
                   photos={listing.photos}
+                  capaciteMax={listing.capaciteMax}
+                  nombreChambres={listing.nombreChambres}
+                  nombreSallesBain={listing.nombreSallesBain}
                   isInstantBooking={listing.isInstantBooking}
                   derniereMinuteActive={listing.derniereMinuteActive}
                   videoUrl={listing.videoUrl}

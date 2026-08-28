@@ -20,6 +20,7 @@ import { useAuth } from '@/features/auth/hooks/use-auth';
 import { useSwitchRole } from '@/features/auth/hooks/use-switch-role';
 import { createClient } from '@/lib/supabase/client';
 import { MobileBottomNav } from '@/components/layout/mobile-bottom-nav';
+import { CurrencySelector } from '@/components/layout/currency-selector';
 
 const LINKS = [
   { href: '/',                 label: 'Accueil'           },
@@ -216,6 +217,9 @@ export function Navbar() {
 
           {/* ── Actions — visibles sur toutes les tailles ──────────────────── */}
           <div className="flex items-center justify-end gap-1.5 sm:gap-2 shrink-0">
+            {/* Sélecteur de devise (FCFA, EUR, USD) */}
+            <CurrencySelector />
+
             {isAuthenticated ? (
               <div ref={dropdownRef} className="relative">
                 {/* Trigger Avatar */}
@@ -348,7 +352,7 @@ export function Navbar() {
             <Link
               href="/become-host"
               onClick={handlePublierClick}
-              className="btn-action !px-3 !py-2 !text-[0.8125rem] sm:!px-4 sm:!text-sm whitespace-nowrap"
+              className="btn-action !px-3 !py-2 !text-[0.8125rem] sm:!px-4 sm:!text-sm whitespace-nowrap hidden sm:inline-flex"
             >
               <span>
                 Publier un bien

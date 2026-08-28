@@ -3,7 +3,7 @@
 import { useState } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
-import { Heart, ImageOff, ShieldCheck, Star, Video, Zap } from 'lucide-react';
+import { Bath, BedDouble, Heart, ImageOff, ShieldCheck, Star, Users, Video, Zap } from 'lucide-react';
 import type { Listing } from '@/lib/nestjs/types';
 import { VideoReelsModal } from '@/features/listings/components/web/VideoReelsModal';
 
@@ -28,6 +28,9 @@ export interface ListingCardProps {
   note: number | null;
   totalSejours: number;
   photos: { url: string }[];
+  capaciteMax?: number;
+  nombreChambres?: number | null;
+  nombreSallesBain?: number | null;
   verifie?: boolean;
   sponsorise?: boolean;
   isFavorite?: boolean;
@@ -51,6 +54,9 @@ export function ListingCard({
   note,
   totalSejours,
   photos,
+  capaciteMax,
+  nombreChambres,
+  nombreSallesBain,
   verifie = false,
   sponsorise = false,
   isFavorite = false,
@@ -163,6 +169,17 @@ export function ListingCard({
             {lieu}
             {categorie && <span className="text-foreground-faint"> · {categorie}</span>}
           </p>
+
+          {/* Specs Airbnb-style */}
+          {(capaciteMax || nombreChambres || nombreSallesBain) && (
+            <p className="mt-1 text-xs text-foreground-faint font-medium">
+              {[
+                capaciteMax && capaciteMax > 0 ? `${capaciteMax} voy.` : null,
+                nombreChambres ? `${nombreChambres} ch.` : null,
+                nombreSallesBain ? `${nombreSallesBain} sdb` : null,
+              ].filter(Boolean).join(' · ')}
+            </p>
+          )}
 
           <div className="mt-auto flex items-end justify-between gap-3 pt-3">
             <TenantPriceDisplay

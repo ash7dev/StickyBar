@@ -148,7 +148,7 @@ export function StepBien({ onNext, submitRef }: Props) {
       <SectionCard
         icon={Users}
         title="Capacité et composition"
-        description="Personnes accueillies, pièces et salles d'eau"
+        description="Personnes accueillies, pièces et salles de bain"
       >
         <div className="divide-y divide-border overflow-hidden rounded-inner border border-border">
           <Controller name="capaciteMax" control={control} render={({ field }) => (
@@ -161,7 +161,7 @@ export function StepBien({ onNext, submitRef }: Props) {
             <CounterRow icon={BedSingle} label="Nombre de chambres" value={field.value ?? 1} onChange={field.onChange} min={0} max={20} />
           )} />
           <Controller name="nombreSallesBain" control={control} render={({ field }) => (
-            <CounterRow icon={Bath} label="Salles d'eau" value={field.value ?? 1} onChange={field.onChange} min={0} max={20} />
+            <CounterRow icon={Bath} label="Salles de bain" value={field.value ?? 1} onChange={field.onChange} min={0} max={20} />
           )} />
         </div>
       </SectionCard>

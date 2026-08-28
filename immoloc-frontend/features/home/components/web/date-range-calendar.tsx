@@ -2,6 +2,7 @@
 
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { cn } from '@/lib/utils/cn';
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Utilitaires de date — sans dépendance
@@ -47,6 +48,7 @@ interface Props {
   /** Sur quel champ le sélecteur a été ouvert — pilote le premier clic. */
   focusField?: 'from' | 'to';
   onClose?: () => void;
+  className?: string;
 }
 
 export function DateRangeCalendar({
@@ -56,6 +58,7 @@ export function DateRangeCalendar({
   minDate,
   focusField = 'from',
   onClose,
+  className,
 }: Props) {
   const today = useMemo(() => startOfDay(new Date()), []);
   const floor = useMemo(() => startOfDay(minDate ?? today), [minDate, today]);
@@ -161,7 +164,7 @@ export function DateRangeCalendar({
 
   return (
     <div
-      className="w-[min(92vw,44rem)] rounded-card border border-border bg-background-card p-4 shadow-xl"
+      className={cn('w-[min(92vw,44rem)] rounded-card border border-border bg-background-card p-4 shadow-xl', className)}
       onKeyDown={onKeyDown}
     >
       {/* ── En-tête ─────────────────────────────────────────────────────── */}

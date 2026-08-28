@@ -164,6 +164,9 @@ export function SimilarListingsSection({ currentListing, className }: SimilarLis
                     note={item.note ? Number(item.note) : null}
                     totalSejours={item.totalSejours ?? 0}
                     photos={item.photos ?? []}
+                    capaciteMax={item.capaciteMax}
+                    nombreChambres={item.nombreChambres}
+                    nombreSallesBain={item.nombreSallesBain}
                     isInstantBooking={item.isInstantBooking}
                     derniereMinuteActive={item.derniereMinuteActive}
                     videoUrl={item.videoUrl}

@@ -14,6 +14,9 @@ interface Listing {
   ville: string;
   quartier?: string;
   prixBase: number;
+  capaciteMax?: number;
+  nombreChambres?: number | null;
+  nombreSallesBain?: number | null;
   note: number | null;
   totalSejours: number;
   photos: { url: string }[];

@@ -4,6 +4,7 @@ import type { ComponentType, ReactNode } from 'react';
 import { Minus, Plus } from 'lucide-react';
 import { cn } from '@/lib/utils/cn';
 import { fmtMontant } from '@/features/reservations/lib/reservation';
+import { useCurrencyStore } from '@/stores/currency.store';
 
 // Rappel de discipline pour tout ce fichier :
 // · graisse plafonnée à 600 → font-semibold, jamais font-bold/extrabold
@@ -56,18 +57,25 @@ export function Montant({
     value,
     pending,
     className,
-    suffix = ' FCFA',
+    suffix,
 }: {
     value: unknown;
     pending?: boolean;
     className?: string;
     suffix?: string;
 }) {
+    const getFormattedPrice = useCurrencyStore((s) => s.getFormattedPrice);
     if (pending) return <Skeleton className={cn('h-[1em] w-20 align-middle', className)} />;
+
+    const num = typeof value === 'number' ? value : parseFloat(String(value ?? 0));
+    if (Number.isNaN(num)) {
+        return <span className={cn('tabular-nums', className)}>—</span>;
+    }
+    const formatted = getFormattedPrice(num);
+
     return (
         <span className={cn('tabular-nums', className)}>
-            {fmtMontant(value)}
-            {suffix}
+            {suffix !== undefined ? `${formatted.amountStr}${suffix}` : formatted.fullStr}
         </span>
     );
 }

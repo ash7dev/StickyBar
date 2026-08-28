@@ -20,6 +20,7 @@ import { AvailabilityCalendar } from './AvailabilityCalendar';
 import { cn } from '@/lib/utils/cn';
 import { useToastError } from '@/lib/hooks/use-toast-error';
 import { TenantPriceDisplay } from '@/components/ui/TenantPriceDisplay';
+import { useCurrencyStore } from '@/stores/currency.store';
 
 interface Props {
   listingId: string;
@@ -168,6 +169,8 @@ export function MobileReservationSheet({
       showError(error);
     }
   }
+
+  const getFormattedPrice = useCurrencyStore((s) => s.getFormattedPrice);
 
   return (
     <>
@@ -364,9 +367,9 @@ export function MobileReservationSheet({
                 <div className="flex items-center justify-between text-sm">
                   <span className="flex items-center gap-2 text-emerald-100/80 font-medium">
                     <Moon className="w-4 h-4 text-emerald-100/80" />
-                    {fmt(prixAffiche)} × {nights} nuit{nights > 1 ? 's' : ''}
+                    {getFormattedPrice(prixAffiche).amountStr} {getFormattedPrice(prixAffiche).symbol} × {nights} nuit{nights > 1 ? 's' : ''}
                   </span>
-                  <span className="font-bold text-white">{fmt(prixAffiche * nights)} FCFA</span>
+                  <span className="font-bold text-white">{getFormattedPrice(prixAffiche * nights).fullStr}</span>
                 </div>
 
                 {preview && preview.supplementPersonnes > 0 && (
@@ -375,7 +378,7 @@ export function MobileReservationSheet({
                       <Users className="w-4 h-4 text-emerald-100/80" />
                       Supplément {nbPersonnes} voyageur{nbPersonnes > 1 ? 's' : ''}
                     </span>
-                    <span className="font-bold text-gold-400">+{fmt(preview.supplementPersonnes)} FCFA</span>
+                    <span className="font-bold text-gold-400">+{getFormattedPrice(preview.supplementPersonnes).fullStr}</span>
                   </div>
                 )}
 
@@ -385,7 +388,7 @@ export function MobileReservationSheet({
                       <Moon className="w-4 h-4 text-emerald-100/80" />
                       Réduction séjour long
                     </span>
-                    <span className="font-bold text-emerald-200">−{fmt(preview.reductionNuits)} FCFA</span>
+                    <span className="font-bold text-emerald-200">−{getFormattedPrice(preview.reductionNuits).fullStr}</span>
                   </div>
                 )}
 
@@ -393,7 +396,7 @@ export function MobileReservationSheet({
                   <span className="font-black text-white text-sm">Total</span>
                   <div className="flex items-center gap-2">
                     {isPending && <Loader2 className="w-3.5 h-3.5 animate-spin text-emerald-300" />}
-                    <span className="font-black text-white text-xl tracking-tight">{fmt(estimatedTotal)} FCFA</span>
+                    <span className="font-black text-white text-xl tracking-tight">{getFormattedPrice(estimatedTotal).fullStr}</span>
                   </div>
                 </div>
               </div>

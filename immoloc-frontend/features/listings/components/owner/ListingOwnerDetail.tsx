@@ -10,7 +10,7 @@ import {
   Check, ChefHat, ChevronLeft, ChevronRight, CheckCircle2, Copy, Eye,
   FileText, Grid2x2, Home, ImageOff, Info, KeyRound, Lock, MapPin, Moon,
   Pause, Pencil, Play, Send, Settings, Share2, Shield, ShieldAlert, Sliders,
-  Star, Tag, Trees, TrendingDown, TrendingUp, Users, Wifi, X, ZoomIn,
+  Star, Tag, Trees, TrendingDown, TrendingUp, Users, Wifi, X, Zap, ZoomIn,
 } from 'lucide-react';
 import type { ListingDetail } from '@/lib/nestjs/types';
 import type { Reservation } from '@/features/reservations/components/reservation-card';
@@ -481,10 +481,12 @@ function ListingCalendar({ listingId, reservations }: { listingId: string; reser
 
 /* ── Description et consignes ──────────────────────────────────────────── */
 
-function DescriptionSection({ description, reglesMaison, instructionsAcces }: {
+function DescriptionSection({ description, reglesMaison, instructionsAcces, regimeElectricite, detailsElectricite }: {
   description: string;
   reglesMaison?: string | null;
   instructionsAcces?: string | null;
+  regimeElectricite?: string | null;
+  detailsElectricite?: string | null;
 }) {
   const [copied, setCopied] = useState(false);
 
@@ -501,6 +503,20 @@ function DescriptionSection({ description, reglesMaison, instructionsAcces }: {
         <p className="eyebrow mb-2">Présentation</p>
         <p className="whitespace-pre-wrap text-sm leading-relaxed text-foreground-muted">{description}</p>
       </div>
+
+      {regimeElectricite && (
+        <div className="rounded-inner border border-amber-500/30 bg-amber-500/10 p-4 space-y-1">
+          <p className="flex items-center gap-2 text-sm font-bold text-amber-950">
+            <Zap className="h-4 w-4 text-amber-600 fill-amber-500" aria-hidden="true" />
+            Électricité : {regimeElectricite === 'INCLUS' ? '100% Inclus' : regimeElectricite === 'FORFAIT_RECHARGE' ? 'Recharge initiale offerte' : 'Woyofal à la charge du locataire'}
+          </p>
+          <p className="text-xs text-amber-900/90 leading-relaxed">
+            {regimeElectricite === 'INCLUS' && 'L\'électricité est incluse dans le prix du séjour.'}
+            {regimeElectricite === 'FORFAIT_RECHARGE' && (detailsElectricite || 'Une recharge initiale Woyofal est fournie à l\'arrivée.')}
+            {regimeElectricite === 'WOYOFAL_LOCATAIRE' && (detailsElectricite || 'Le locataire gère la recharge du compteur Woyofal.')}
+          </p>
+        </div>
+      )}
 
       <div className="grid gap-5 border-t border-border pt-5 md:grid-cols-2">
         <div className="space-y-2.5">
@@ -776,7 +792,7 @@ export function ListingOwnerDetail({ listing }: { listing: ListingDetail }) {
 
   const specs = [
     { icon: Bed, value: listing.nombreChambres, label: listing.nombreChambres > 1 ? 'chambres' : 'chambre' },
-    { icon: Bath, value: listing.nombreSallesBain, label: listing.nombreSallesBain > 1 ? 'salles d\u2019eau' : 'salle d\u2019eau' },
+    { icon: Bath, value: listing.nombreSallesBain, label: listing.nombreSallesBain > 1 ? 'salles de bain' : 'salle de bain' },
     { icon: Users, value: listing.capaciteMax, label: 'pers. max' },
     { icon: Moon, value: listing.nuitesMinimum, label: 'nuits min.' },
     { icon: Home, value: listing.nombrePieces, label: listing.nombrePieces > 1 ? 'pièces' : 'pièce' },
@@ -1089,6 +1105,8 @@ export function ListingOwnerDetail({ listing }: { listing: ListingDetail }) {
             description={listing.description}
             reglesMaison={listing.reglesMaison}
             instructionsAcces={listing.instructionsAcces}
+            regimeElectricite={listing.regimeElectricite}
+            detailsElectricite={listing.detailsElectricite}
           />
 
           {listing.equipements.length > 0 && (

@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useCallback, useId } from 'react';
 import Link from 'next/link';
+import { usePathname } from 'next/navigation';
 import {
   MessageSquare,
   X,
@@ -22,6 +23,7 @@ import {
   Building,
   CreditCard,
   Search,
+  EyeOff,
 } from 'lucide-react';
 import { cn } from '@/lib/utils/cn';
 import { nestFetch } from '@/lib/nestjs/api-client';
@@ -127,9 +129,52 @@ interface TicketItem {
 }
 
 export function KlefAssistantWidget() {
+  const pathname = usePathname();
+  const isAdminPage = pathname?.startsWith('/admin');
+
   const store = useAssistantStore();
 
   const [activeTab, setActiveTab] = useState<'faq' | 'tickets'>(store.activeTab);
+  const [isDismissed, setIsDismissed] = useState(false);
+
+  // Charger l'état masqué depuis sessionStorage
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const dismissed = sessionStorage.getItem('klef-assistant-dismissed') === 'true';
+      setIsDismissed(dismissed);
+    }
+  }, []);
+
+  // Synchronisation avec Zustand store lors d'un appel externe "Demander un assistant"
+  useEffect(() => {
+    if (store.isOpen) {
+      setIsDismissed(false);
+      if (typeof window !== 'undefined') {
+        sessionStorage.removeItem('klef-assistant-dismissed');
+      }
+      setActiveTab(store.activeTab);
+      if (store.showCreateForm) {
+        setShowCreateForm(true);
+        if (store.initialSubject) setTicketSujet(store.initialSubject);
+        if (store.initialCategory) setTicketCategorie(store.initialCategory);
+        if (store.initialMessage) setTicketMessage(store.initialMessage);
+      }
+    }
+  }, [store.isOpen, store.activeTab, store.showCreateForm, store.initialSubject, store.initialCategory, store.initialMessage]);
+
+  const handleDismiss = useCallback((e: React.MouseEvent) => {
+    e.stopPropagation();
+    setIsDismissed(true);
+    if (typeof window !== 'undefined') {
+      sessionStorage.setItem('klef-assistant-dismissed', 'true');
+    }
+    if (store.isOpen) {
+      store.closeAssistant();
+    }
+    toast.info('Assistant masqué', {
+      description: `Vous pouvez le réactiver à tout moment depuis le footer de l'application.`,
+    });
+  }, [store]);
 
   // FAQ state
   const [searchQuery, setSearchQuery] = useState('');
@@ -156,19 +201,6 @@ export function KlefAssistantWidget() {
 
   const dialogId = useId();
 
-  // Synchronisation avec Zustand store lors d'un appel externe "Demander un assistant"
-  useEffect(() => {
-    if (store.isOpen) {
-      setActiveTab(store.activeTab);
-      if (store.showCreateForm) {
-        setShowCreateForm(true);
-        if (store.initialSubject) setTicketSujet(store.initialSubject);
-        if (store.initialCategory) setTicketCategorie(store.initialCategory);
-        if (store.initialMessage) setTicketMessage(store.initialMessage);
-      }
-    }
-  }, [store.isOpen, store.activeTab, store.showCreateForm, store.initialSubject, store.initialCategory, store.initialMessage]);
-
   // Charger les tickets de l'utilisateur connecté
   const fetchTickets = useCallback(async () => {
     if (!isAuthenticated) return;
@@ -188,6 +220,11 @@ export function KlefAssistantWidget() {
       fetchTickets();
     }
   }, [store.isOpen, activeTab, fetchTickets]);
+
+  // Early return APRÈS tous les hooks (règle des hooks React)
+  if (isAdminPage || (isDismissed && !store.isOpen)) {
+    return null;
+  }
 
   // Filtrer la FAQ avec recherche naturelle
   const filteredFAQ = FAQ_DATA.filter((item) => {
@@ -302,14 +339,25 @@ export function KlefAssistantWidget() {
                 </p>
               </div>
             </div>
-            <button
-              type="button"
-              onClick={store.closeAssistant}
-              className="flex h-8 w-8 items-center justify-center rounded-pill text-neutral-0/80 transition-colors hover:bg-neutral-0/10 hover:text-neutral-0"
-              aria-label="Fermer l'assistant"
-            >
-              <X className="h-4 w-4" />
-            </button>
+            <div className="flex items-center gap-1">
+              <button
+                type="button"
+                onClick={handleDismiss}
+                className="flex items-center gap-1 px-2 py-1 rounded-pill text-neutral-400 hover:text-white hover:bg-white/10 text-[11px] font-semibold transition-colors cursor-pointer"
+                title="Masquer le bouton d’assistance"
+              >
+                <EyeOff className="w-3.5 h-3.5" />
+                <span className="hidden sm:inline">Masquer</span>
+              </button>
+              <button
+                type="button"
+                onClick={store.closeAssistant}
+                className="flex h-8 w-8 items-center justify-center rounded-pill text-neutral-0/80 transition-colors hover:bg-neutral-0/10 hover:text-neutral-0 cursor-pointer"
+                aria-label="Fermer l'assistant"
+              >
+                <X className="h-4 w-4" />
+              </button>
+            </div>
           </div>
 
           {/* Navigation Onglets */}
@@ -726,24 +774,36 @@ export function KlefAssistantWidget() {
         </div>
       )}
 
-      {/* Bouton Flottant Déclencheur */}
-      <button
-        type="button"
-        onClick={() => {
-          if (store.isOpen) store.closeAssistant();
-          else store.openAssistant();
-        }}
-        className="group flex h-13 w-13 items-center justify-center rounded-pill bg-forest-950 text-neutral-0 shadow-2xl transition-transform hover:scale-105 active:scale-95"
-        aria-label="Assistant Klef"
-      >
-        <div className="relative">
-          <MessageSquare className="h-6 w-6 text-neutral-0 transition-transform group-hover:rotate-6" />
-          <span className="absolute -top-1 -right-1 flex h-3 w-3">
-            <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-action opacity-75" />
-            <span className="relative inline-flex h-3 w-3 rounded-full bg-action" />
-          </span>
-        </div>
-      </button>
+      {/* Bouton Flottant Déclencheur (Masquable avec badge X au survol) */}
+      <div className="relative group">
+        <button
+          type="button"
+          onClick={handleDismiss}
+          title="Masquer l'assistant"
+          aria-label="Masquer l'assistant"
+          className="absolute -top-1.5 -left-1.5 z-20 hidden group-hover:flex items-center justify-center w-5 h-5 rounded-full bg-forest-900 border border-white/40 text-white hover:bg-red-600 transition-all shadow-md active:scale-90 cursor-pointer"
+        >
+          <X className="w-3 h-3" />
+        </button>
+
+        <button
+          type="button"
+          onClick={() => {
+            if (store.isOpen) store.closeAssistant();
+            else store.openAssistant();
+          }}
+          className="flex h-13 w-13 items-center justify-center rounded-full bg-forest-950 text-neutral-0 shadow-2xl transition-all duration-200 hover:scale-105 active:scale-95 border border-forest-800/60 cursor-pointer"
+          aria-label="Assistant Klef"
+        >
+          <div className="relative">
+            <MessageSquare className="h-6 w-6 text-neutral-0 transition-transform group-hover:rotate-6" />
+            <span className="absolute -top-1 -right-1 flex h-3 w-3">
+              <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-action opacity-75" />
+              <span className="relative inline-flex h-3 w-3 rounded-full bg-action" />
+            </span>
+          </div>
+        </button>
+      </div>
     </aside>
   );
 }

@@ -117,7 +117,7 @@ export function ListingDetailSpec({ listing }: ListingDetailSpecProps) {
   const specs = [
     listing.surface ? { icon: Maximize, label: 'Surface', value: `${listing.surface} m²` } : null,
     listing.nombreChambres ? { icon: BedDouble, label: 'Chambres', value: `${listing.nombreChambres}` } : null,
-    listing.nombreSallesBain ? { icon: Bath, label: "Salles d'eau", value: `${listing.nombreSallesBain}` } : null,
+    listing.nombreSallesBain ? { icon: Bath, label: "Salles de bain", value: `${listing.nombreSallesBain}` } : null,
     { icon: Users, label: 'Capacité', value: `${listing.capaciteMax} pers.` },
     listing.nuitesMinimum > 0 ? { icon: Moon, label: 'Séjour min.', value: `${listing.nuitesMinimum} nuit${listing.nuitesMinimum > 1 ? 's' : ''}` } : null,
     listing.ageMin ? { icon: ShieldAlert, label: 'Âge minimum', value: `${listing.ageMin} ans` } : null,

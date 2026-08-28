@@ -242,6 +242,8 @@ export const stepConditionsSchema = z.object({
   nomReseauWifi: z.string().max(100).optional(),
   codeWifi: z.string().max(100).optional(),
   instructionsDigicode: z.string().max(500).optional(),
+  regimeElectricite: z.enum(['INCLUS', 'FORFAIT_RECHARGE', 'WOYOFAL_LOCATAIRE']).default('INCLUS'),
+  detailsElectricite: z.string().max(500).optional(),
 });
 
 export type StepConditionsInput = z.infer<typeof stepConditionsSchema>;

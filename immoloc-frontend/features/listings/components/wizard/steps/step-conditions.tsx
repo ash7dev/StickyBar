@@ -1,9 +1,7 @@
-'use client';
-
 import { useEffect, useId, useMemo, useState } from 'react';
-import { useForm } from 'react-hook-form';
+import { useForm, Controller } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { Info, Moon, Plus, ScrollText, TrendingDown, Users, X, Smartphone, Wifi, KeyRound, LogIn } from 'lucide-react';
+import { Info, Moon, Plus, ScrollText, TrendingDown, Users, X, Smartphone, Wifi, KeyRound, LogIn, Zap, BatteryCharging, Plug } from 'lucide-react';
 import {
   stepConditionsSchema, type StepConditionsInput,
   type TarifPersonnes, type TarifNuits,
@@ -88,9 +86,10 @@ export function StepConditions({ onNext, submitRef }: Props) {
     nMin: useId(), nMax: useId(), nPrix: useId(),
     regles: useId(), instructions: useId(),
     wifiSsid: useId(), wifiPass: useId(), digicode: useId(),
+    elecDetails: useId(),
   };
 
-  const { register, handleSubmit, watch } = useForm<StepConditionsInput>({
+  const { register, control, handleSubmit, watch } = useForm<StepConditionsInput>({
     resolver: zodResolver(stepConditionsSchema),
     defaultValues: {
       reglesMaison: conditions.reglesMaison ?? '',
@@ -98,6 +97,8 @@ export function StepConditions({ onNext, submitRef }: Props) {
       nomReseauWifi: conditions.nomReseauWifi ?? '',
       codeWifi: conditions.codeWifi ?? '',
       instructionsDigicode: conditions.instructionsDigicode ?? '',
+      regimeElectricite: conditions.regimeElectricite ?? 'INCLUS',
+      detailsElectricite: conditions.detailsElectricite ?? '',
     },
   });
 
@@ -320,6 +321,96 @@ export function StepConditions({ onNext, submitRef }: Props) {
             Ajouter ce palier
           </button>
         </div>
+      </SectionCard>
+
+      {/* -- Gestion de l'Électricité & Woyofal --------------------------- */}
+      <SectionCard
+        icon={Zap}
+        title="Gestion de l'Électricité & Woyofal"
+        description="Précisez le mode de prise en charge de l'électricité pour le séjour"
+      >
+        <p className="flex items-start gap-2.5 rounded-inner bg-amber-500/10 border border-amber-500/20 p-3.5 text-xs leading-relaxed text-amber-900">
+          <Zap className="mt-0.5 h-4 w-4 shrink-0 text-amber-600" aria-hidden="true" />
+          Au Sénégal, l'électricité est un sujet clé. Définir un mode clair prévient toute contestation ou mauvaise surprise sur la climatisation.
+        </p>
+
+        <Controller
+          name="regimeElectricite"
+          control={control}
+          render={({ field }) => (
+            <div className="grid gap-3 sm:grid-cols-3">
+              {[
+                {
+                  value: 'INCLUS',
+                  label: '100% Inclus',
+                  desc: 'Électricité comprise sans frais supplémentaires.',
+                  icon: Zap,
+                },
+                {
+                  value: 'FORFAIT_RECHARGE',
+                  label: 'Forfait / Recharge offerte',
+                  desc: 'Recharge initiale fournie, ré-achats à la charge du voyageur.',
+                  icon: BatteryCharging,
+                },
+                {
+                  value: 'WOYOFAL_LOCATAIRE',
+                  label: 'Woyofal à la charge du locataire',
+                  desc: 'Le voyageur gère l’achat des codes Woyofal sur son compteur.',
+                  icon: Plug,
+                },
+              ].map((opt) => {
+                const active = field.value === opt.value;
+                const OptIcon = opt.icon;
+                return (
+                  <button
+                    key={opt.value}
+                    type="button"
+                    onClick={() => field.onChange(opt.value)}
+                    className={cn(
+                      'flex flex-col text-left gap-2 rounded-inner border p-4 transition-all duration-150 cursor-pointer',
+                      active
+                        ? 'border-forest-600 bg-forest-100 shadow-xs'
+                        : 'border-border bg-background-card hover:border-border-hover hover:bg-neutral-50',
+                    )}
+                  >
+                    <div className="flex items-center justify-between w-full">
+                      <span className={cn('grid h-8 w-8 place-items-center rounded-inner', active ? 'bg-forest-600 text-white' : 'bg-neutral-100 text-foreground-muted')}>
+                        <OptIcon className="h-4 w-4" />
+                      </span>
+                      <span className={cn('h-3.5 w-3.5 rounded-full border-2 flex items-center justify-center', active ? 'border-forest-600 bg-forest-600' : 'border-neutral-300')}>
+                        {active && <span className="h-1.5 w-1.5 rounded-full bg-white" />}
+                      </span>
+                    </div>
+                    <div>
+                      <p className={cn('text-xs font-bold', active ? 'text-forest-900' : 'text-foreground')}>
+                        {opt.label}
+                      </p>
+                      <p className="text-[11px] leading-snug text-foreground-muted mt-1">
+                        {opt.desc}
+                      </p>
+                    </div>
+                  </button>
+                );
+              })}
+            </div>
+          )}
+        />
+
+        {watch('regimeElectricite') !== 'INCLUS' && (
+          <div className="space-y-1.5">
+            <FieldLabel htmlFor={ids.elecDetails} optional>
+              Précisions ou quota inclus (ex: 5 000 FCFA ou 15 kWh/jour)
+            </FieldLabel>
+            <textarea
+              {...register('detailsElectricite')}
+              id={ids.elecDetails}
+              rows={2}
+              maxLength={500}
+              placeholder="Ex : Recharge Woyofal de 5 000 FCFA fournie à votre arrivée. Pour recharger ensuite, utilisez votre compte Orange Money ou Wave sur le numéro de compteur affiché."
+              className={cn(INPUT_CLS, 'resize-none leading-relaxed')}
+            />
+          </div>
+        )}
       </SectionCard>
 
       {/* -- Livret d'accueil digital --------------------------------------- */}

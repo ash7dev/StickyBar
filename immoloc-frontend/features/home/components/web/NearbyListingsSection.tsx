@@ -214,6 +214,9 @@ export function NearbyListingsSection() {
                       note={item.note ?? null}
                       totalSejours={item.totalSejours || 0}
                       photos={item.photos || []}
+                      capaciteMax={item.capaciteMax}
+                      nombreChambres={item.nombreChambres}
+                      nombreSallesBain={item.nombreSallesBain}
                       derniereMinuteActive={item.derniereMinuteActive}
                     />
                   </li>

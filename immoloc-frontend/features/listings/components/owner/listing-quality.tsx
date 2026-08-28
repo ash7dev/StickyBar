@@ -37,7 +37,7 @@ export function buildCriteria(listing: ListingDetail): Criterion[] {
         },
         {
             label: `Cinq photos minimum (${photos}/5)`,
-            hint: 'Une par pièce, plus l’entrée et la vue. Les annonces sans salle d’eau reçoivent moins de demandes.',
+            hint: 'Une par pièce, plus l’entrée et la vue. Les annonces sans salle de bain reçoivent moins de demandes.',
             weight: 25,
             done: photos >= 5,
         },

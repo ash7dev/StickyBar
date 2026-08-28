@@ -18,6 +18,7 @@ import { ActionGateModal } from '@/features/gate/components/ActionGateModal';
 import { AvailabilityCalendar } from './AvailabilityCalendar';
 import { useToastError } from '@/lib/hooks/use-toast-error';
 import { KlefTrustBadge } from '@/components/ui/KlefTrustBadge';
+import { useCurrencyStore } from '@/stores/currency.store';
 
 /**
  * Date civile locale au format YYYY-MM-DD.
@@ -287,6 +288,7 @@ export function PricePreviewWidget({
     from, to, listingId, nbPersonnes, router, ageMin, triggerGate, showError,
   ]);
 
+  const getFormattedPrice = useCurrencyStore((s) => s.getFormattedPrice);
   const showTarifHint =
     personnesBase != null || (tarifsPersonnes != null && tarifsPersonnes.length > 0);
 
@@ -455,10 +457,10 @@ export function PricePreviewWidget({
               <div className="flex items-center justify-between gap-3 text-sm">
                 <span className="flex items-center gap-2 text-on-inverse-muted">
                   <Moon className="h-4 w-4" />
-                  {fmt(prixAffiche)} × {nights} nuit{nights > 1 ? 's' : ''}
+                  {getFormattedPrice(prixAffiche).amountStr} {getFormattedPrice(prixAffiche).symbol} × {nights} nuit{nights > 1 ? 's' : ''}
                 </span>
                 <span className="font-semibold tabular-nums text-on-inverse">
-                  {fmt(prixAffiche * nights)} FCFA
+                  {getFormattedPrice(prixAffiche * nights).fullStr}
                 </span>
               </div>
 
@@ -469,7 +471,7 @@ export function PricePreviewWidget({
                     Supplément {nbPersonnes} voyageur{nbPersonnes > 1 ? 's' : ''}
                   </span>
                   <span className="font-semibold tabular-nums text-on-inverse">
-                    +{fmt(preview.supplementPersonnes)} FCFA
+                    +{getFormattedPrice(preview.supplementPersonnes).fullStr}
                   </span>
                 </div>
               )}
@@ -481,7 +483,7 @@ export function PricePreviewWidget({
                     Réduction séjour long
                   </span>
                   <span className="font-semibold tabular-nums text-on-inverse">
-                    −{fmt(preview.reductionNuits)} FCFA
+                    −{getFormattedPrice(preview.reductionNuits).fullStr}
                   </span>
                 </div>
               )}
@@ -497,7 +499,7 @@ export function PricePreviewWidget({
                     <Loader2 className="h-3.5 w-3.5 animate-spin text-on-inverse-muted" />
                   )}
                   <span className="font-display text-2xl font-semibold leading-none tabular-nums text-on-inverse-display">
-                    {fmt(estimatedTotal)} FCFA
+                    {getFormattedPrice(estimatedTotal).fullStr}
                   </span>
                 </span>
               </div>

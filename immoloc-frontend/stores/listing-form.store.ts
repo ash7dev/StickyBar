@@ -227,6 +227,8 @@ export const useListingFormStore = create<ListingFormState>((set, get) => ({
         nomReseauWifi: listing.nomReseauWifi ?? undefined,
         codeWifi: listing.codeWifi ?? undefined,
         instructionsDigicode: listing.instructionsDigicode ?? undefined,
+        regimeElectricite: (listing.regimeElectricite as any) ?? 'INCLUS',
+        detailsElectricite: listing.detailsElectricite ?? undefined,
       },
       tarifsPersonnes: listing.tarifsPersonnes.map((t) => ({
         personnesMin: t.personnesMin,

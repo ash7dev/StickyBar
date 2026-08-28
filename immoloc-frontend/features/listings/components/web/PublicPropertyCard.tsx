@@ -1,6 +1,6 @@
 import Image from 'next/image';
 import Link from 'next/link';
-import { Star, MapPin, Users, ArrowRight, Images } from 'lucide-react';
+import { Star, MapPin, Users, BedDouble, Bath, ArrowRight, Images } from 'lucide-react';
 import type { Listing } from '@/lib/nestjs';
 import { TenantPriceDisplay } from '@/components/ui/TenantPriceDisplay';
 import { FavoriteButton } from '@/components/ui/FavoriteButton';
@@ -107,9 +107,37 @@ export function PublicPropertyCard({ listing }: Props) {
         </div>
 
         {/* Titre */}
-        <h3 className="text-[17px] font-black text-foreground leading-[1.4] line-clamp-2 mb-4 group-hover:text-emerald-600 transition-colors">
+        <h3 className="text-[17px] font-black text-foreground leading-[1.4] line-clamp-2 mb-2.5 group-hover:text-emerald-600 transition-colors">
           {listing.titre}
         </h3>
+
+        {/* Caractéristiques style Airbnb : Voyageurs · Chambres · SdB */}
+        <div className="flex items-center gap-2 text-xs font-semibold text-foreground-muted mb-4 flex-wrap">
+          {listing.capaciteMax > 0 && (
+            <span className="inline-flex items-center gap-1">
+              <Users className="w-3.5 h-3.5 text-forest-600 shrink-0" />
+              {listing.capaciteMax} {listing.capaciteMax > 1 ? 'voyageurs' : 'voyageur'}
+            </span>
+          )}
+          {listing.nombreChambres ? (
+            <>
+              <span className="text-border-hover">•</span>
+              <span className="inline-flex items-center gap-1">
+                <BedDouble className="w-3.5 h-3.5 text-forest-600 shrink-0" />
+                {listing.nombreChambres} {listing.nombreChambres > 1 ? 'chambres' : 'chambre'}
+              </span>
+            </>
+          ) : null}
+          {listing.nombreSallesBain ? (
+            <>
+              <span className="text-border-hover">•</span>
+              <span className="inline-flex items-center gap-1">
+                <Bath className="w-3.5 h-3.5 text-forest-600 shrink-0" />
+                {listing.nombreSallesBain} sdb
+              </span>
+            </>
+          ) : null}
+        </div>
 
         {/* Prix - design amélioré */}
         <div className="mt-auto">

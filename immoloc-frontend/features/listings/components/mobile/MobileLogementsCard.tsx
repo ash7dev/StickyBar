@@ -2,7 +2,7 @@
 
 import Image from 'next/image';
 import Link from 'next/link';
-import { MapPin, Star, Users, ArrowRight } from 'lucide-react';
+import { MapPin, Star, Users, BedDouble, Bath, ArrowRight } from 'lucide-react';
 import type { Listing } from '@/lib/nestjs/types';
 
 const TYPE_LABELS: Record<string, string> = {
@@ -53,15 +53,15 @@ export function MobileLogementsCard({ listing }: { listing: Listing }) {
       <div className="flex flex-col flex-1 min-w-0 px-4 py-3.5">
 
         {/* Rating + capacité - améliorés */}
-        <div className="flex items-center justify-between mb-2">
+        <div className="flex items-center justify-between mb-1.5">
           {rating ? (
-            <div className="flex items-center gap-1 px-2 py-1 bg-warning-50 rounded-lg">
+            <div className="flex items-center gap-1 px-2 py-0.5 bg-warning-50 rounded-lg">
               <Star className="w-3 h-3 text-warning-500 fill-warning-500" />
               <span className="text-[11px] font-black text-slate-800">{rating.toFixed(1)}</span>
             </div>
           ) : <div />}
           {listing.capaciteMax > 0 && (
-            <div className="flex items-center gap-1 px-2 py-1 bg-slate-100 rounded-lg">
+            <div className="flex items-center gap-1 px-2 py-0.5 bg-slate-100 rounded-lg">
               <Users className="w-3 h-3 text-slate-600" />
               <span className="text-[10px] font-bold text-slate-700">{listing.capaciteMax} pers.</span>
             </div>
@@ -69,9 +69,37 @@ export function MobileLogementsCard({ listing }: { listing: Listing }) {
         </div>
 
         {/* Titre - agrandi */}
-        <h3 className="text-[15px] font-black text-slate-900 leading-[1.4] line-clamp-2 mb-2">
+        <h3 className="text-[15px] font-black text-slate-900 leading-[1.3] line-clamp-1 mb-1">
           {listing.titre}
         </h3>
+
+        {/* Specs Airbnb-style : Voyageurs · Chambres · SdB */}
+        <div className="flex items-center gap-1.5 text-[11px] font-semibold text-slate-500 mb-1.5 flex-wrap">
+          {listing.capaciteMax > 0 && (
+            <span className="inline-flex items-center gap-0.5">
+              <Users className="w-3 h-3 text-emerald-600 shrink-0" />
+              {listing.capaciteMax} voy.
+            </span>
+          )}
+          {listing.nombreChambres ? (
+            <>
+              <span className="text-slate-300">•</span>
+              <span className="inline-flex items-center gap-0.5">
+                <BedDouble className="w-3 h-3 text-emerald-600 shrink-0" />
+                {listing.nombreChambres} ch.
+              </span>
+            </>
+          ) : null}
+          {listing.nombreSallesBain ? (
+            <>
+              <span className="text-slate-300">•</span>
+              <span className="inline-flex items-center gap-0.5">
+                <Bath className="w-3 h-3 text-emerald-600 shrink-0" />
+                {listing.nombreSallesBain} sdb
+              </span>
+            </>
+          ) : null}
+        </div>
 
         {/* Localisation - améliorée */}
         <div className="flex items-center gap-1.5 mb-auto">

@@ -6,9 +6,8 @@ import { cn } from '@/lib/utils/cn';
 import {
   getPrixPublic,
   getPrixDerniereMinute,
-  formatPrixPublic,
-  formatPrixDerniereMinute,
 } from '@/lib/pricing';
+import { useCurrencyStore } from '@/stores/currency.store';
 
 export interface TenantPriceDisplayProps {
   /** Prix de base hôte (avant commission locataire +7%) */
@@ -31,8 +30,6 @@ export interface TenantPriceDisplayProps {
   textColor?: string;
 }
 
-const fmtMoney = new Intl.NumberFormat('fr-FR', { maximumFractionDigits: 0 });
-
 export function TenantPriceDisplay({
   prixBase,
   derniereMinuteActive = false,
@@ -44,9 +41,13 @@ export function TenantPriceDisplay({
   className,
   textColor,
 }: TenantPriceDisplayProps) {
+  const getFormattedPrice = useCurrencyStore((s) => s.getFormattedPrice);
   const prixPublic = getPrixPublic(prixBase);
   const isDiscounted = derniereMinuteActive && prixPublic > 0;
   const prixFinal = isDiscounted ? getPrixDerniereMinute(prixPublic) : prixPublic;
+
+  const publicFmt = getFormattedPrice(prixPublic);
+  const finalFmt = getFormattedPrice(prixFinal);
 
   if (prixPublic <= 0) {
     return (
@@ -98,7 +99,7 @@ export function TenantPriceDisplay({
           )}
         >
           <span className={sizeStyles.original}>
-            {fmtMoney.format(prixPublic)} FCFA
+            {publicFmt.fullStr}
           </span>
           {showBadge && (
             <span
@@ -118,11 +119,11 @@ export function TenantPriceDisplay({
 
       <div className="flex items-baseline min-w-0">
         <span className={cn(sizeStyles.final, activeFinalColor)}>
-          {fmtMoney.format(prixFinal)}
+          {finalFmt.amountStr}
         </span>
         {period && (
           <span className={sizeStyles.period}>
-            FCFA&nbsp;{period}
+            {finalFmt.symbol}&nbsp;{period}
           </span>
         )}
       </div>

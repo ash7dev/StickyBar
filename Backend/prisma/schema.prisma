@@ -179,6 +179,8 @@ model Logement {
   nomReseauWifi        String?
   codeWifi             String?
   instructionsDigicode String?
+  regimeElectricite    String?
+  detailsElectricite   String?
 
   // Statut et moderation
   statut           StatutLogement @default(DRAFT)

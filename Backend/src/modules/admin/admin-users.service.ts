@@ -127,13 +127,15 @@ export class AdminUsersService {
     const user = await this.prisma.utilisateur.findUnique({ where: { id } });
     if (!user) throw new NotFoundException(`Utilisateur ${id} introuvable`);
 
-    // 1. Réinitialiser les compteurs de fautes de l'utilisateur
+    // 1. Réinitialiser les compteurs de fautes et réactiver le compte de l'utilisateur
     await this.prisma.utilisateur.update({
       where: { id },
       data: {
         nbAnnulations: 0,
         nbAbsencesJourJ: 0,
         nbNonConformites: 0,
+        actif: true,
+        bloqueJusqua: null,
       },
     });
 

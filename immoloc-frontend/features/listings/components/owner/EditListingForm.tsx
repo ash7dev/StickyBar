@@ -9,7 +9,7 @@ import Link from 'next/link';
 import {
   AlertCircle, ArrowLeft, Armchair, Bath, BedDouble, BedSingle, Building2,
   Camera, Check, ChevronDown, DoorOpen, Eye, Home, ImageOff, Key, Loader2, MapPin, Minus,
-  Pen, Plus, Shield, Smartphone, Star, Trash2, TreePine, TrendingUp, Upload, Users, Wifi, X, Zap,
+  Pen, Plus, Shield, Smartphone, Star, Trash2, TreePine, TrendingUp, Upload, Users, Wifi, X, Zap, BatteryCharging, Plug,
 } from 'lucide-react';
 import {
   stepBienSchema, type StepBienInput,
@@ -39,7 +39,7 @@ const TYPE_META: Record<string, { label: string; Icon: React.ComponentType<{ cla
 };
 
 const CAT_PHOTO_LABELS: Record<string, string> = {
-  SALON: 'Salon', CHAMBRE: 'Chambre', CUISINE: 'Cuisine', SALLE_DE_BAIN: 'Salle d’eau',
+  SALON: 'Salon', CHAMBRE: 'Chambre', CUISINE: 'Cuisine', SALLE_DE_BAIN: 'Salle de bain',
   TERRASSE: 'Terrasse', VUE: 'Vue', ENTREE: 'Entrée', PISCINE: 'Piscine', AUTRE: 'Autre',
 };
 
@@ -232,7 +232,7 @@ function SectionBien({ listing, report }: { listing: ListingDetail; report: (id:
             <CounterRow icon={BedSingle} label="Nombre de chambres" value={field.value ?? 1} onChange={field.onChange} min={0} max={20} />
           )} />
           <Controller name="nombreSallesBain" control={control} render={({ field }) => (
-            <CounterRow icon={Bath} label="Salles d'eau" value={field.value ?? 1} onChange={field.onChange} min={0} max={20} />
+            <CounterRow icon={Bath} label="Salles de bain" value={field.value ?? 1} onChange={field.onChange} min={0} max={20} />
           )} />
         </div>
       </div>
@@ -917,6 +917,8 @@ function SectionConditions({ listing, report }: { listing: ListingDetail; report
   const [nomWifi, setNomWifi] = useState(listing.nomReseauWifi ?? '');
   const [codeWifi, setCodeWifi] = useState(listing.codeWifi ?? '');
   const [digicode, setDigicode] = useState(listing.instructionsDigicode ?? '');
+  const [regimeElectricite, setRegimeElectricite] = useState<string>(listing.regimeElectricite ?? 'INCLUS');
+  const [detailsElectricite, setDetailsElectricite] = useState<string>(listing.detailsElectricite ?? '');
   const id = useId();
   const MAX = 1000;
 
@@ -924,7 +926,9 @@ function SectionConditions({ listing, report }: { listing: ListingDetail; report
     regles !== (listing.reglesMaison ?? '') ||
     nomWifi !== (listing.nomReseauWifi ?? '') ||
     codeWifi !== (listing.codeWifi ?? '') ||
-    digicode !== (listing.instructionsDigicode ?? '');
+    digicode !== (listing.instructionsDigicode ?? '') ||
+    regimeElectricite !== (listing.regimeElectricite ?? 'INCLUS') ||
+    detailsElectricite !== (listing.detailsElectricite ?? '');
 
   useEffect(() => { report('conditions', isDirty); }, [isDirty, report]);
 
@@ -938,17 +942,83 @@ function SectionConditions({ listing, report }: { listing: ListingDetail; report
           nomReseauWifi: nomWifi || null,
           codeWifi: codeWifi || null,
           instructionsDigicode: digicode || null,
+          regimeElectricite: regimeElectricite || 'INCLUS',
+          detailsElectricite: detailsElectricite || null,
         }),
       });
       await qc.invalidateQueries({ queryKey: ['listing-owner', listing.id] });
-      setState('saved'); setTimeout(() => setState('idle'), 2500);
+      setState('saved'); report('conditions', false); setTimeout(() => setState('idle'), 2500);
     } catch (e) {
       setApiError(e instanceof Error ? e.message : 'Erreur inattendue'); setState('error');
     }
   }
 
   return (
-    <SectionCard title="Règles & Livret d'Accueil Digital" icon={Shield}>
+    <SectionCard title="Règles, Électricité & Livret Digital" icon={Shield}>
+      {/* Électricité & Woyofal */}
+      <div className="space-y-4 rounded-inner border border-amber-500/20 bg-amber-500/5 p-4">
+        <div className="flex items-center gap-2 text-amber-950 font-bold text-sm">
+          <Zap className="h-4 w-4 text-amber-600 fill-amber-500" aria-hidden="true" />
+          <span>Gestion de l&apos;Électricité & Woyofal</span>
+        </div>
+        <p className="text-xs text-foreground-muted">
+          Précisez le mode de prise en charge de l&apos;électricité pour éviter tout malentendu sur la climatisation.
+        </p>
+
+        <div className="grid gap-3 sm:grid-cols-3">
+          {[
+            { value: 'INCLUS', label: '100% Inclus', desc: 'Électricité comprise.', icon: Zap },
+            { value: 'FORFAIT_RECHARGE', label: 'Forfait / Recharge offerte', desc: 'Recharge initiale fournie.', icon: BatteryCharging },
+            { value: 'WOYOFAL_LOCATAIRE', label: 'Woyofal locataire', desc: 'Rechargé par le voyageur.', icon: Plug },
+          ].map((opt) => {
+            const active = regimeElectricite === opt.value;
+            const OptIcon = opt.icon;
+            return (
+              <button
+                key={opt.value}
+                type="button"
+                onClick={() => setRegimeElectricite(opt.value)}
+                className={cn(
+                  'flex flex-col text-left gap-2 rounded-inner border p-3.5 transition-all duration-150 cursor-pointer',
+                  active ? 'border-forest-600 bg-forest-100 shadow-xs' : 'border-border bg-background-card hover:border-border-hover',
+                )}
+              >
+                <div className="flex items-center justify-between w-full">
+                  <span className={cn('grid h-7 w-7 place-items-center rounded-inner', active ? 'bg-forest-600 text-white' : 'bg-neutral-100 text-foreground-muted')}>
+                    <OptIcon className="h-3.5 w-3.5" />
+                  </span>
+                  <span className={cn('h-3 w-3 rounded-full border-2 flex items-center justify-center', active ? 'border-forest-600 bg-forest-600' : 'border-neutral-300')}>
+                    {active && <span className="h-1 w-1 rounded-full bg-white" />}
+                  </span>
+                </div>
+                <div>
+                  <p className={cn('text-xs font-bold', active ? 'text-forest-900' : 'text-foreground')}>
+                    {opt.label}
+                  </p>
+                  <p className="text-[11px] leading-snug text-foreground-muted mt-0.5">
+                    {opt.desc}
+                  </p>
+                </div>
+              </button>
+            );
+          })}
+        </div>
+
+        {regimeElectricite !== 'INCLUS' && (
+          <div className="space-y-1 mt-3">
+            <FieldLabel optional>Précisions Woyofal / Quota</FieldLabel>
+            <textarea
+              value={detailsElectricite}
+              rows={2}
+              maxLength={500}
+              onChange={(e) => setDetailsElectricite(e.target.value)}
+              placeholder="Ex : Recharge Woyofal de 5 000 FCFA fournie à votre arrivée. Pour recharger ensuite, utilisez votre compte Orange Money ou Wave."
+              className={cn(INPUT_CLS, 'resize-none leading-relaxed')}
+            />
+          </div>
+        )}
+      </div>
+
       <div>
         <FieldLabel htmlFor={id} optional>Règles intérieures</FieldLabel>
         <textarea
