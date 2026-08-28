@@ -195,7 +195,7 @@ export function AdminSidebar({ isOpen, onClose }: AdminSidebarProps) {
         )}
       >
         {/* Entête de la Sidebar */}
-        <div className="shrink-0 space-y-4 border-b border-border p-5">
+        <div className="shrink-0 space-y-4 border-b border-border p-5 pt-[calc(1.25rem+env(safe-area-inset-top,0px))]">
           <div className="flex items-center justify-between gap-2">
             <Link href="/admin/dashboard" className="flex items-baseline">
               <span className="font-display text-2xl font-semibold tracking-tight text-forest-800">klef</span>
@@ -203,7 +203,7 @@ export function AdminSidebar({ isOpen, onClose }: AdminSidebarProps) {
             </Link>
 
             <div className="flex items-center gap-2">
-              <span className="rounded-pill bg-purple-50 border border-purple-200/80 px-2.5 py-0.5 text-[0.6875rem] font-semibold uppercase tracking-[0.1em] text-purple-800">
+              <span className="rounded-pill bg-forest-900 border border-forest-700 px-2.5 py-0.5 text-[0.6875rem] font-semibold uppercase tracking-[0.1em] text-lime-300">
                 Admin
               </span>
               <button
@@ -211,9 +211,9 @@ export function AdminSidebar({ isOpen, onClose }: AdminSidebarProps) {
                 type="button"
                 onClick={onClose}
                 aria-label="Fermer le menu"
-                className="grid h-9 w-9 place-items-center rounded-pill text-foreground-muted transition-colors hover:bg-background-alt lg:hidden"
+                className="flex h-10 w-10 items-center justify-center rounded-xl bg-background-alt text-foreground hover:bg-forest-50 active:scale-95 transition-all lg:hidden"
               >
-                <X className="h-4 w-4" aria-hidden="true" />
+                <X className="h-5 w-5" aria-hidden="true" />
               </button>
             </div>
           </div>

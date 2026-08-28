@@ -161,18 +161,18 @@ export function AdminHeader({ onMenuToggle, urgentCount, urgentDetails }: AdminH
   return (
     /* `backdrop-blur-md` derrière un fond à 95 % d'opacité : le filtre ne
        produit rien de visible et coûte du GPU à chaque scroll. */
-    <header className="sticky top-0 z-40 border-b border-border bg-background-card text-foreground">
-      <div className="px-4 py-3 sm:px-6 lg:px-8">
-        <div className="flex items-center justify-between gap-4">
+    <header className="sticky top-0 z-40 border-b border-border bg-background-card text-foreground pt-[env(safe-area-inset-top,0px)]">
+      <div className="px-3.5 py-3 sm:px-6 lg:px-8">
+        <div className="flex items-center justify-between gap-3">
           {/* ── Gauche ─────────────────────────────────────────────────── */}
           <div className="flex min-w-0 items-center gap-3">
             <button
               type="button"
               onClick={onMenuToggle}
               aria-label="Ouvrir le menu d’administration"
-              className="rounded-pill border border-border bg-background-alt p-2 text-foreground transition-colors hover:bg-background-card lg:hidden"
+              className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-forest-900 text-lime-400 border border-forest-800 hover:bg-forest-950 active:scale-95 transition-all shadow-sm lg:hidden"
             >
-              <Menu className="h-5 w-5" aria-hidden />
+              <Menu className="h-6 w-6" aria-hidden />
             </button>
 
             <div className="min-w-0">
