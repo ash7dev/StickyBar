@@ -102,6 +102,11 @@ export class SearchLogementsDto {
   @Min(1)
   page?: number;
 
+  @ApiPropertyOptional({ example: 'newest', description: 'Tri : newest | rated | popular | price_asc | price_desc' })
+  @IsOptional()
+  @IsString()
+  sort?: string;
+
   @ApiPropertyOptional({ minimum: 1, maximum: 50, default: 10 })
   @IsOptional()
   @Type(() => Number)

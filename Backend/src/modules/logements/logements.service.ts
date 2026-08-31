@@ -177,11 +177,24 @@ export class LogementsService {
       total = withDistance.length;
       paginatedLogements = withDistance.slice((page - 1) * limit, page * limit);
     } else {
+      let orderBy: Prisma.LogementOrderByWithRelationInput | Prisma.LogementOrderByWithRelationInput[] = { note: 'desc' };
+      if (dto.sort === 'newest') {
+        orderBy = { creeLe: 'desc' };
+      } else if (dto.sort === 'rated') {
+        orderBy = [{ note: 'desc' }, { totalAvis: 'desc' }];
+      } else if (dto.sort === 'popular') {
+        orderBy = [{ totalSejours: 'desc' }, { note: 'desc' }];
+      } else if (dto.sort === 'price_asc') {
+        orderBy = { prixBase: 'asc' };
+      } else if (dto.sort === 'price_desc') {
+        orderBy = { prixBase: 'desc' };
+      }
+
       total = await this.prisma.logement.count({ where });
       paginatedLogements = await this.prisma.logement.findMany({
         where,
         select,
-        orderBy: { note: 'desc' },
+        orderBy,
         skip: (page - 1) * limit,
         take: limit,
       });
@@ -302,16 +315,17 @@ export class LogementsService {
     type SectionDef = {
       id: string;
       where: Prisma.LogementWhereInput;
-      orderBy: Prisma.LogementOrderByWithRelationInput;
+      orderBy: Prisma.LogementOrderByWithRelationInput | Prisma.LogementOrderByWithRelationInput[];
+      shuffle?: boolean;
     };
 
     const sections: SectionDef[] = [
-      // Règle stricte : au moins 1 réservation confirmée
-      { id: 'popular', where: { ...base, totalSejours: { gt: 0 } }, orderBy: { totalSejours: 'desc' } },
-      // 12 derniers ajoutés — toujours distinct de la grille principale
-      { id: 'newest', where: base, orderBy: { creeLe: 'desc' } },
-      // Règle stricte : note >= 4
-      { id: 'rated', where: { ...base, note: { gte: 4 } }, orderBy: { note: 'desc' } },
+      // Règle stricte : au moins 1 réservation confirmée (trié par succès)
+      { id: 'popular', where: { ...base, totalSejours: { gt: 0 } }, orderBy: [{ totalSejours: 'desc' }, { note: 'desc' }], shuffle: false },
+      // 12 derniers ajoutés — tri strict par date de création décroissante (plus récents en premier)
+      { id: 'newest', where: base, orderBy: { creeLe: 'desc' }, shuffle: false },
+      // Règle stricte : note >= 4 — tri strict par note décroissante (meilleures notes en premier)
+      { id: 'rated', where: { ...base, note: { gte: 4 } }, orderBy: [{ note: 'desc' }, { totalAvis: 'desc' }], shuffle: false },
       // En vedette par type — au moins 1 réservation, sinon fallback sans filtre
       { id: 'villas', where: { ...base, type: TypeLogement.VILLA, totalSejours: { gt: 0 } }, orderBy: { totalSejours: 'desc' } },
       { id: 'appartements', where: { ...base, type: TypeLogement.APPARTEMENT, totalSejours: { gt: 0 } }, orderBy: { totalSejours: 'desc' } },
@@ -349,16 +363,18 @@ export class LogementsService {
             where: s.where,
             select: cardSelect,
             orderBy: s.orderBy,
-            take: POOL,
+            take: s.shuffle === false ? LIMIT : POOL,
           });
-          // Shuffle Fisher-Yates puis on prend les LIMIT premiers
-          for (let k = logements.length - 1; k > 0; k--) {
-            const j = Math.floor(Math.random() * (k + 1));
-            [logements[k], logements[j]] = [logements[j], logements[k]];
+          // Ne mélanger aléatoirement que si shuffle n'est pas explicitement désactivé
+          if (s.shuffle !== false) {
+            for (let k = logements.length - 1; k > 0; k--) {
+              const j = Math.floor(Math.random() * (k + 1));
+              [logements[k], logements[j]] = [logements[j], logements[k]];
+            }
           }
           return {
             id: s.id,
-            listings: logements.slice(0, LIMIT).map((l) => ({
+            listings: (s.shuffle !== false ? logements.slice(0, LIMIT) : logements).map((l) => ({
               id: l.id,
               titre: l.titre,
               type: l.type,
