@@ -121,23 +121,19 @@ export function StepAnnonce({ onNext, submitRef }: Props) {
         <div>
           <FieldLabel htmlFor={ids.prix} required>Prix par nuit</FieldLabel>
 
-          {/* La carte sombre est conservee : c'est le chiffre le plus
-              important du wizard, et c'est le seul bloc inverse de l'ecran.
-              En revanche le montant passe en blanc — il etait en lime-300,
-              donc l'accent portait le contenu central de l'etape. */}
           <div className="section-inverse rounded-card p-5">
-            <p className="eyebrow">Prix de base</p>
+            <div className="flex items-center justify-between">
+              <p className="eyebrow">Prix de base par nuitée</p>
+              <span className="text-[11px] font-medium text-forest-200">Saisie obligatoire *</span>
+            </div>
 
             <Controller
               name="prixBase"
               control={control}
               render={({ field }) => (
-                <div className="mt-2 flex items-center gap-3">
+                <div className="mt-3 flex items-center gap-3 rounded-inner border border-white/20 bg-white/10 px-4 py-3 transition-all duration-150 focus-within:border-action focus-within:ring-2 focus-within:ring-action/30">
                   <input
                     id={ids.prix}
-                    // type="number" laissait la molette modifier la valeur
-                    // quand le champ avait le focus, acceptait « e » et la
-                    // notation scientifique, et n'affichait aucun separateur.
                     type="text"
                     inputMode="numeric"
                     autoComplete="off"
@@ -146,10 +142,10 @@ export function StepAnnonce({ onNext, submitRef }: Props) {
                       const digits = e.target.value.replace(/\D/g, '');
                       field.onChange(digits ? Number(digits) : undefined);
                     }}
-                    placeholder="25 000"
+                    placeholder="Saisissez votre tarif (ex: 25 000)"
                     aria-invalid={!!errors.prixBase}
                     aria-describedby={errors.prixBase ? `${ids.prix}-error` : undefined}
-                    className="w-full bg-transparent font-display text-3xl font-semibold tabular-nums text-neutral-50 outline-none placeholder:text-forest-300"
+                    className="w-full bg-transparent font-display text-xl sm:text-2xl font-semibold tabular-nums text-neutral-50 outline-none placeholder:text-forest-200/60 placeholder:text-sm sm:placeholder:text-base placeholder:font-normal"
                   />
                   <span className="shrink-0 rounded-pill bg-marker-bg px-3 py-1.5 text-xs font-semibold text-on-inverse-marker">
                     FCFA / nuit
@@ -158,9 +154,13 @@ export function StepAnnonce({ onNext, submitRef }: Props) {
               )}
             />
 
-            {prixBase > 0 && (
-              <p className="mt-2 text-xs text-forest-200">
+            {prixBase > 0 ? (
+              <p className="mt-2.5 text-xs text-forest-200">
                 Environ {nf.format(prixBase / XOF_PER_EUR)} € par nuit
+              </p>
+            ) : (
+              <p className="mt-2.5 flex items-center gap-1.5 text-xs text-forest-200/90">
+                <span>👉</span> Indiquez ici le tarif d'une nuitée pour votre logement en FCFA.
               </p>
             )}
           </div>

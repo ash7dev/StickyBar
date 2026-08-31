@@ -86,17 +86,45 @@ export class DashboardService {
 
     const pendingAmount = Number(pendingDeposit._sum.montantAcompte || 0) + Number(pendingFull._sum.netProprietaire || 0);
 
-    // Retraits en cours s'il existe un wallet
+    // Retraits en cours et calcul du solde retirable propre à l'activité hôte
     let processingWithdrawals = 0;
+    let hostBalance = 0;
+
     if (wallet) {
-      const withdrawalsSum = await this.prisma.retrait.aggregate({
-        where: {
-          walletId: wallet.id,
-          statut: 'EN_ATTENTE',
-        },
-        _sum: { montant: true },
-      });
+      const [withdrawalsSum, hostCredits, hostDebits] = await Promise.all([
+        this.prisma.retrait.aggregate({
+          where: {
+            walletId: wallet.id,
+            statut: 'EN_ATTENTE',
+          },
+          _sum: { montant: true },
+        }),
+        this.prisma.transactionWallet.aggregate({
+          where: {
+            walletId: wallet.id,
+            type: 'CREDIT_LOCATION',
+            sens: 'CREDIT',
+          },
+          _sum: { montant: true },
+        }),
+        this.prisma.transactionWallet.aggregate({
+          where: {
+            walletId: wallet.id,
+            type: { in: ['DEBIT_RETRAIT', 'DEBIT_PENALITE', 'DEBIT_DETTE'] },
+            sens: 'DEBIT',
+          },
+          _sum: { montant: true },
+        }),
+      ]);
+
       processingWithdrawals = Number(withdrawalsSum._sum.montant || 0);
+      const totalHostCredits = Number(hostCredits._sum.montant || 0);
+      const totalHostDebits = Number(hostDebits._sum.montant || 0);
+
+      // Le solde retirable affiché sur l'espace hôte concerne uniquement les gains de location de ses biens
+      // (les remboursements reçus en tant que client locataire restent dans son wallet général mais ne polluent pas le tableau de bord hôte)
+      hostBalance = Math.max(0, totalHostCredits - totalHostDebits);
+      hostBalance = Math.min(hostBalance, Number(wallet.soldeDisponible || 0));
     }
 
     const totalProcessed = allBookings
@@ -128,7 +156,7 @@ export class DashboardService {
 
     return {
       wallet: {
-        balance: Number(wallet?.soldeDisponible || 0),
+        balance: hostBalance,
         pending: pendingAmount,
         processing: processingWithdrawals,
       },
