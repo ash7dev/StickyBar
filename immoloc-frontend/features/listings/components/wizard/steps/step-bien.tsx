@@ -152,13 +152,18 @@ export function StepBien({ onNext, submitRef }: Props) {
       >
         <div className="divide-y divide-border overflow-hidden rounded-inner border border-border">
           <Controller name="capaciteMax" control={control} render={({ field }) => (
-            <CounterRow icon={Users} label="Capacité d'accueil" value={field.value ?? 1} onChange={field.onChange} min={1} max={50} />
+            <CounterRow
+              icon={Users}
+              label="Capacité d'accueil"
+              hint="Nombre maximum de voyageurs"
+              value={field.value ?? 1} onChange={field.onChange} min={1} max={50}
+            />
           )} />
           <Controller name="nombrePieces" control={control} render={({ field }) => (
-            <CounterRow icon={DoorOpen} label="Nombre de pièces" value={field.value ?? 1} onChange={field.onChange} min={1} max={30} />
+            <CounterRow icon={DoorOpen} label="Pièces" value={field.value ?? 1} onChange={field.onChange} min={1} max={30} />
           )} />
           <Controller name="nombreChambres" control={control} render={({ field }) => (
-            <CounterRow icon={BedSingle} label="Nombre de chambres" value={field.value ?? 1} onChange={field.onChange} min={0} max={20} />
+            <CounterRow icon={BedSingle} label="Chambres" value={field.value ?? 1} onChange={field.onChange} min={0} max={20} />
           )} />
           <Controller name="nombreSallesBain" control={control} render={({ field }) => (
             <CounterRow icon={Bath} label="Salles de bain" value={field.value ?? 1} onChange={field.onChange} min={0} max={20} />

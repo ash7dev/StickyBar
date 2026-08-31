@@ -176,25 +176,75 @@ export function Counter({
     );
 }
 
-export function CounterRow({
-    icon: Icon, label, value, onChange, min, max,
-}: {
-    icon: React.ComponentType<{ className?: string }>;
-    label: string;
-    value: number;
-    onChange: (v: number) => void;
-    min?: number;
-    max?: number;
-}) {
-    return (
-        // px-4.5 : meme famille de bug que py-4.5. La ligne n'avait pas de
-        // padding horizontal.
-        <div className="flex items-center justify-between gap-3 bg-background-card px-4 py-3.5 transition-colors hover:bg-background-alt">
-            <span className="flex min-w-0 items-center gap-3">
-                <Icon className="h-4 w-4 shrink-0 text-foreground-faint" aria-hidden="true" />
-                <span className="truncate text-sm text-foreground">{label}</span>
-            </span>
-            <Counter value={value} onChange={onChange} min={min} max={max} label={label} />
+interface CounterRowProps {
+  icon: React.ComponentType<{ className?: string }>;
+  label: string;
+  value: number;
+  onChange: (v: number) => void;
+  min: number;
+  max: number;
+  /** Précision optionnelle sous le libellé — utile pour "Capacité d'accueil". */
+  hint?: string;
+}
+
+export function CounterRow({ icon: Icon, label, value, onChange, min, max, hint }: CounterRowProps) {
+  const dec = () => onChange(Math.max(min, value - 1));
+  const inc = () => onChange(Math.min(max, value + 1));
+
+  return (
+    <div className="flex flex-col gap-3 p-4 sm:flex-row sm:items-center sm:justify-between sm:gap-4">
+      {/* Libellé — largeur pleine, jamais tronqué */}
+      <div className="flex items-center gap-3 min-w-0">
+        <span className="marker-box h-9 w-9 shrink-0">
+          <Icon className="h-4 w-4" />
+        </span>
+        <div className="min-w-0">
+          <p className="text-sm font-medium leading-snug text-foreground">{label}</p>
+          {hint && <p className="mt-0.5 text-xs leading-snug text-foreground-muted">{hint}</p>}
         </div>
-    );
+      </div>
+
+      {/* Stepper — pleine largeur et espacé sur mobile, compact sur desktop */}
+      <div className="flex items-center justify-between gap-3 sm:justify-end sm:gap-2">
+        <button
+          type="button"
+          aria-label={`Diminuer : ${label}`}
+          disabled={value <= min}
+          onClick={dec}
+          className={cn(
+            'grid h-10 w-10 shrink-0 place-items-center rounded-pill border border-border',
+            'bg-background-card text-foreground transition-colors duration-150',
+            'hover:border-forest-400 hover:bg-forest-50',
+            'disabled:cursor-not-allowed disabled:opacity-35 disabled:hover:border-border disabled:hover:bg-background-card',
+            'sm:h-9 sm:w-9',
+          )}
+        >
+          <Minus className="h-4 w-4" />
+        </button>
+
+        <span
+          className="w-8 shrink-0 text-center font-display text-lg font-semibold tabular-nums text-foreground"
+          aria-live="polite"
+        >
+          {value}
+        </span>
+
+        <button
+          type="button"
+          aria-label={`Augmenter : ${label}`}
+          disabled={value >= max}
+          onClick={inc}
+          className={cn(
+            'grid h-10 w-10 shrink-0 place-items-center rounded-pill border border-border',
+            'bg-background-card text-foreground transition-colors duration-150',
+            'hover:border-forest-400 hover:bg-forest-50',
+            'disabled:cursor-not-allowed disabled:opacity-35 disabled:hover:border-border disabled:hover:bg-background-card',
+            'sm:h-9 sm:w-9',
+          )}
+        >
+          <Plus className="h-4 w-4" />
+        </button>
+      </div>
+    </div>
+  );
 }
