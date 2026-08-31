@@ -121,18 +121,23 @@ export function ListingGallery({ photos, title }: Props) {
 
       {/* ── Lightbox ───────────────────────────────────────────────────────── */}
       {lightboxOpen && (
-        <div className="fixed inset-0 z-50 bg-neutral-950 flex items-center justify-center" onClick={() => setLightboxOpen(false)}>
-          {/* Fermer */}
-          <button
-            className="absolute top-5 right-5 z-10 w-10 h-10 bg-white/10 backdrop-blur-xl border border-white/15 rounded-full flex items-center justify-center text-white hover:bg-white/20 transition-colors"
-            onClick={() => setLightboxOpen(false)}
-          >
-            <X className="w-5 h-5" />
-          </button>
-
-          {/* Counter */}
-          <div className="absolute top-5 left-1/2 -translate-x-1/2 px-4 py-1.5 bg-white/10 backdrop-blur-xl border border-white/15 rounded-full text-xs font-bold text-white/80">
-            {lightboxIndex + 1} / {photos.length}
+        <div
+          className="fixed inset-0 z-[99999] flex flex-col items-center justify-between bg-neutral-950/98 px-4 pb-[calc(env(safe-area-inset-bottom,0px)+1rem)] pt-[calc(env(safe-area-inset-top,0px)+1rem)] backdrop-blur-xl sm:p-6"
+          onClick={() => setLightboxOpen(false)}
+        >
+          {/* Top Bar */}
+          <div className="z-30 flex w-full max-w-5xl items-center justify-between shrink-0 mb-2" onClick={(e) => e.stopPropagation()}>
+            <span className="rounded-pill border border-white/20 bg-white/15 px-3.5 py-1.5 text-xs font-semibold tabular-nums text-white/90 shadow-xs">
+              {lightboxIndex + 1} / {photos.length}
+            </span>
+            <button
+              type="button"
+              className="grid h-11 w-11 shrink-0 place-items-center rounded-pill border border-white/30 bg-white/20 text-white shadow-xl backdrop-blur-md transition-all duration-150 hover:bg-white/35 active:scale-95 cursor-pointer"
+              onClick={() => setLightboxOpen(false)}
+              aria-label="Fermer la galerie"
+            >
+              <X className="h-6 w-6" aria-hidden="true" />
+            </button>
           </div>
 
           {/* Carousel */}

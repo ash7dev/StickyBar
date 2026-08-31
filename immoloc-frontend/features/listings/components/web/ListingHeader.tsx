@@ -296,10 +296,10 @@ export function ListingHeader({ listing }: ListingHeaderProps) {
           aria-modal="true"
           aria-label={`Photos de ${listing.titre}`}
           onClick={() => setOpen(false)}
-          className="fixed inset-0 z-[70] flex flex-col items-center justify-between bg-forest-950/95 p-4 backdrop-blur-xl sm:p-6"
+          className="fixed inset-0 z-[99999] flex flex-col items-center justify-between bg-forest-950/98 px-4 pb-[calc(env(safe-area-inset-bottom,0px)+1rem)] pt-[calc(env(safe-area-inset-top,0px)+1rem)] backdrop-blur-xl sm:p-6"
         >
-          <div className="z-10 flex w-full max-w-6xl items-center justify-between">
-            <span className="rounded-pill border border-white/15 bg-white/10 px-3 py-1.5 text-xs font-semibold tabular-nums text-white/80">
+          <div className="z-30 flex w-full max-w-6xl items-center justify-between shrink-0 mb-2">
+            <span className="rounded-pill border border-white/20 bg-white/15 px-3.5 py-1.5 text-xs font-semibold tabular-nums text-white/90 shadow-xs">
               {index + 1} / {photos.length}
             </span>
             <button
@@ -307,9 +307,9 @@ export function ListingHeader({ listing }: ListingHeaderProps) {
               type="button"
               onClick={() => setOpen(false)}
               aria-label="Fermer la galerie"
-              className="grid h-10 w-10 place-items-center rounded-pill border border-white/15 bg-white/10 text-white transition-colors duration-150 hover:bg-white/20"
+              className="grid h-11 w-11 shrink-0 place-items-center rounded-pill border border-white/30 bg-white/20 text-white shadow-xl backdrop-blur-md transition-all duration-150 hover:bg-white/35 active:scale-95 cursor-pointer"
             >
-              <X className="h-5 w-5" aria-hidden="true" />
+              <X className="h-6 w-6" aria-hidden="true" />
             </button>
           </div>
 
