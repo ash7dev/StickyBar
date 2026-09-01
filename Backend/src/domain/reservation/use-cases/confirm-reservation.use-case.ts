@@ -37,12 +37,14 @@ export class ConfirmReservationUseCase {
         where: { id: reservationId },
         include: {
           locataire: { select: { statutKyc: true } },
-          proprietaire: { select: { statutKyc: true } },
+          proprietaire: { select: { statutKyc: true, isShadowAccount: true } },
+          logement: { select: { gestionnaireId: true } },
         },
       });
 
       if (!reservation) throw new NotFoundException('Réservation introuvable');
-      if (reservation.proprietaireId !== userId) {
+      const isOwnerOrManager = reservation.proprietaireId === userId || reservation.logement?.gestionnaireId === userId;
+      if (!isOwnerOrManager) {
         throw new ForbiddenException('Vous n\'êtes pas autorisé à confirmer cette réservation');
       }
 
@@ -53,17 +55,19 @@ export class ConfirmReservationUseCase {
         );
       }
 
-      // Vérification KYC du propriétaire (NOUVEAU)
-      if (reservation.proprietaire.statutKyc === StatutKyc.REJETE || reservation.proprietaire.statutKyc === StatutKyc.SUSPENDU) {
-        throw new ForbiddenException(
-          "Votre compte propriétaire ne vous permet pas de confirmer de réservations (KYC rejeté ou suspendu).",
-        );
-      }
+      // Vérification KYC du propriétaire (uniquement s'il n'est pas un compte ombre créé par la conciergerie)
+      if (!reservation.proprietaire.isShadowAccount) {
+        if (reservation.proprietaire.statutKyc === StatutKyc.REJETE || reservation.proprietaire.statutKyc === StatutKyc.SUSPENDU) {
+          throw new ForbiddenException(
+            "Votre compte propriétaire ne vous permet pas de confirmer de réservations (KYC rejeté ou suspendu).",
+          );
+        }
 
-      if (reservation.proprietaire.statutKyc !== StatutKyc.VERIFIE) {
-        throw new ForbiddenException(
-          "Votre KYC doit être vérifié avant de pouvoir confirmer des réservations.",
-        );
+        if (reservation.proprietaire.statutKyc !== StatutKyc.VERIFIE) {
+          throw new ForbiddenException(
+            "Votre KYC doit être vérifié avant de pouvoir confirmer des réservations.",
+          );
+        }
       }
 
       if (reservation.delaiConfirmation && new Date() > reservation.delaiConfirmation) {

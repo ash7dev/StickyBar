@@ -13,12 +13,16 @@ export class CheckoutProprioUseCase {
   async execute(reservationId: string, userId: string) {
     const reservation = await this.prisma.reservation.findUnique({
       where: { id: reservationId },
-      include: { photosEtatLieu: { where: { type: 'CHECKOUT' } } },
+      include: {
+        photosEtatLieu: { where: { type: 'CHECKOUT' } },
+        logement: { select: { gestionnaireId: true } },
+      },
     });
 
     if (!reservation) throw new NotFoundException('Réservation introuvable');
-    if (reservation.proprietaireId !== userId) {
-      throw new ForbiddenException('Seul le propriétaire peut confirmer le check-out');
+    const isOwnerOrManager = reservation.proprietaireId === userId || reservation.logement?.gestionnaireId === userId;
+    if (!isOwnerOrManager) {
+      throw new ForbiddenException('Seul le propriétaire ou le gestionnaire peut confirmer le check-out');
     }
     if (reservation.statut !== StatutReservation.CHECKED_IN) {
       throw new ConflictException(`Action impossible dans le statut actuel: ${reservation.statut}`);

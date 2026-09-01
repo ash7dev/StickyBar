@@ -72,8 +72,10 @@ model Utilisateur {
   actif        Boolean   @default(true)
   bloqueJusqua DateTime?
 
-  // Double role
+  // Double role & gestion
   estProprietaire Boolean @default(false)
+  estGestionnaire Boolean @default(false)
+  isShadowAccount Boolean @default(false)
 
   // Notes agregees (denormalisees pour affichage rapide)
   noteLocataire    Decimal @default(0) @db.Decimal(3, 2)
@@ -99,7 +101,8 @@ model Utilisateur {
 
   // Relations
   profile                  Profile             @relation(fields: [userId], references: [userId])
-  logements                Logement[]
+  logements                Logement[]          @relation("ProprietaireLogement")
+  logementsGeres           Logement[]          @relation("GestionnaireLogement")
   reservationsLocataire    Reservation[]       @relation("locataire")
   reservationsProprietaire Reservation[]       @relation("proprietaire_res")
   avisEnvoyes              Avis[]              @relation("auteur")
@@ -142,8 +145,10 @@ model CompteurFaute {
 // =============================================================================
 
 model Logement {
-  id             String @id @default(uuid())
+  id             String  @id @default(uuid())
   proprietaireId String
+  gestionnaireId String?
+  gestionDeleguee Boolean @default(false)
 
   // Identite
   titre       String
@@ -208,7 +213,8 @@ model Logement {
   archiveLe  DateTime?
 
   // Relations
-  proprietaire     Utilisateur               @relation(fields: [proprietaireId], references: [id])
+  proprietaire     Utilisateur               @relation("ProprietaireLogement", fields: [proprietaireId], references: [id])
+  gestionnaire     Utilisateur?              @relation("GestionnaireLogement", fields: [gestionnaireId], references: [id])
   photos           PhotoLogement[]
   equipements      LogementEquipement[]
   tarifsPersonnes  TarifPersonnes[]
@@ -218,6 +224,7 @@ model Logement {
   avis             Avis[]
 
   @@index([proprietaireId])
+  @@index([gestionnaireId])
   @@index([proprietaireId, statut])
   @@index([statut])
   @@index([ville])

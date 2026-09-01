@@ -32,6 +32,9 @@ function resolveRedirect(user: AuthTokensResponse['user'], next?: string | null)
   if (user.activeRole === 'ADMIN' || user.email?.toLowerCase().endsWith('@admin.com')) {
     return '/admin/dashboard';
   }
+  if (user.activeRole === 'GESTIONNAIRE' || user.email?.toLowerCase().endsWith('@gestionnaire.com')) {
+    return '/gestionnaire';
+  }
   if (next && next.startsWith('/') && !next.startsWith('//')) {
     if (!AUTH_PAGES.includes(next.split('?')[0])) return next;
   }

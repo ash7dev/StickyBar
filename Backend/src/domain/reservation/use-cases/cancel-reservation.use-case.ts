@@ -38,13 +38,13 @@ export class CancelReservationUseCase {
   async execute(reservationId: string, userId: string, raison: string) {
     const reservation = await this.prisma.reservation.findUnique({
       where: { id: reservationId },
-      include: { paiement: true },
+      include: { paiement: true, logement: { select: { gestionnaireId: true } } },
     });
 
     if (!reservation) throw new NotFoundException('Réservation introuvable');
 
     const isLocataire = reservation.locataireId === userId;
-    const isProprio = reservation.proprietaireId === userId;
+    const isProprio = reservation.proprietaireId === userId || reservation.logement?.gestionnaireId === userId;
 
     if (!isLocataire && !isProprio) {
       throw new ForbiddenException('Vous n\'êtes pas autorisé à annuler cette réservation');

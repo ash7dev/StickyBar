@@ -1,0 +1,28 @@
+'use client';
+
+import { CalendarDays } from 'lucide-react';
+
+export default function GestionnairePlanningPage() {
+  return (
+    <div className="space-y-6">
+      <div>
+        <h1 className="font-display text-2xl sm:text-3xl font-semibold tracking-tight text-foreground">
+          Planning & Arrivées/Départs
+        </h1>
+        <p className="text-sm text-foreground-muted mt-1">
+          Suivi du calendrier d’occupation, remises des clés et check-in / check-out.
+        </p>
+      </div>
+
+      <div className="rounded-card border border-dashed border-border bg-background-card p-12 text-center shadow-xs">
+        <div className="mx-auto w-12 h-12 rounded-inner bg-forest-50 text-forest-700 flex items-center justify-center mb-4">
+          <CalendarDays className="w-6 h-6" aria-hidden="true" />
+        </div>
+        <h2 className="text-base sm:text-lg font-semibold text-foreground">Planning vide</h2>
+        <p className="text-xs sm:text-sm text-foreground-muted mt-1 max-w-md mx-auto leading-relaxed">
+          Les dates d’arrivée et de départ des locataires s’afficheront dans ce planning.
+        </p>
+      </div>
+    </div>
+  );
+}

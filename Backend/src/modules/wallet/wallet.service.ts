@@ -127,4 +127,66 @@ export class WalletService {
       },
     });
   }
+
+  async getManagedProprietairesAndWallets(managerId: string) {
+    const managedListings = await this.prisma.logement.findMany({
+      where: { gestionnaireId: managerId, archiveLe: null },
+      select: {
+        id: true,
+        titre: true,
+        ville: true,
+        proprietaireId: true,
+      },
+    });
+
+    const ownerIds = Array.from(new Set(managedListings.map((l) => l.proprietaireId)));
+
+    if (ownerIds.length === 0) {
+      return [];
+    }
+
+    const owners = await this.prisma.utilisateur.findMany({
+      where: { id: { in: ownerIds } },
+      select: {
+        id: true,
+        prenom: true,
+        nom: true,
+        telephone: true,
+        email: true,
+        isShadowAccount: true,
+        wallet: {
+          select: {
+            id: true,
+            soldeDisponible: true,
+            dettePenalites: true,
+            misAJourLe: true,
+          },
+        },
+      },
+    });
+
+    return owners.map((owner) => {
+      const listings = managedListings.filter((l) => l.proprietaireId === owner.id);
+      return {
+        ...owner,
+        soldeDisponible: Number(owner.wallet?.soldeDisponible || 0),
+        dettePenalites: Number(owner.wallet?.dettePenalites || 0),
+        logementsCount: listings.length,
+        logements: listings,
+      };
+    });
+  }
+
+  async requestWithdrawalForOwner(managerId: string, ownerId: string, dto: RequestWithdrawalDto) {
+    // Vérifier que le gestionnaire gère au moins un bien de ce propriétaire
+    const isManagerOfOwner = await this.prisma.logement.findFirst({
+      where: { gestionnaireId: managerId, proprietaireId: ownerId, archiveLe: null },
+    });
+
+    if (!isManagerOfOwner) {
+      throw new Error('Vous n’êtes pas le gestionnaire enregistré pour ce propriétaire');
+    }
+
+    return this.requestWithdrawalUseCase.execute(ownerId, dto);
+  }
 }

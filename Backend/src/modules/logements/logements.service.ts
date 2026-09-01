@@ -453,7 +453,7 @@ export class LogementsService {
   }
 
   async create(userId: string, dto: CreateLogementDto): Promise<Logement> {
-    const { equipementIds, ...fields } = dto;
+    const { equipementIds, managedOwnerPhone, managedOwnerNom, managedOwnerPrenom, ...fields } = dto;
 
     let latitude = fields.latitude;
     let longitude = fields.longitude;
@@ -466,9 +466,67 @@ export class LogementsService {
       }
     }
 
+    let targetProprietaireId = userId;
+    let gestionnaireId: string | null = null;
+    let gestionDeleguee = false;
+
+    if (managedOwnerPhone && managedOwnerPhone.trim().length > 0) {
+      const formattedPhone = managedOwnerPhone.trim();
+      const existingUser = await this.prisma.utilisateur.findUnique({
+        where: { telephone: formattedPhone },
+      });
+
+      if (existingUser) {
+        targetProprietaireId = existingUser.id;
+      } else {
+        const shadowAuthId = `shadow_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`;
+        const shadowEmail = `shadow_${formattedPhone.replace(/[^0-9]/g, '')}@klef.sn`;
+        const prenom = managedOwnerPrenom?.trim() || 'Propriétaire';
+        const nom = managedOwnerNom?.trim() || 'Klef';
+
+        const createdUser = await this.prisma.$transaction(async (tx) => {
+          await tx.profile.create({
+            data: {
+              userId: shadowAuthId,
+              phone: formattedPhone,
+              email: shadowEmail,
+            },
+          });
+
+          const user = await tx.utilisateur.create({
+            data: {
+              userId: shadowAuthId,
+              email: shadowEmail,
+              telephone: formattedPhone,
+              prenom,
+              nom,
+              estProprietaire: true,
+              isShadowAccount: true,
+            },
+          });
+
+          await tx.wallet.create({
+            data: {
+              utilisateurId: user.id,
+              soldeDisponible: 0,
+            },
+          });
+
+          return user;
+        });
+
+        targetProprietaireId = createdUser.id;
+      }
+
+      gestionnaireId = userId;
+      gestionDeleguee = true;
+    }
+
     const logement = await this.prisma.logement.create({
       data: {
-        proprietaireId: userId,
+        proprietaireId: targetProprietaireId,
+        ...(gestionnaireId && { gestionnaireId }),
+        gestionDeleguee,
         titre: fields.titre,
         description: fields.description,
         type: fields.type,
@@ -512,7 +570,10 @@ export class LogementsService {
   async findMine(userId: string): Promise<Logement[]> {
     return this.prisma.logement.findMany({
       where: {
-        proprietaireId: userId,
+        OR: [
+          { proprietaireId: userId },
+          { gestionnaireId: userId },
+        ],
         archiveLe: null,
       },
       include: {
@@ -610,7 +671,7 @@ export class LogementsService {
       throw new NotFoundException('Logement introuvable');
     }
 
-    const isOwner = requesterId && logement.proprietaireId === requesterId;
+    const isOwner = requesterId && (logement.proprietaireId === requesterId || logement.gestionnaireId === requesterId);
 
     if (!isOwner && logement.statut !== StatutLogement.PUBLISHED) {
       throw new NotFoundException('Logement introuvable');
@@ -1049,7 +1110,9 @@ export class LogementsService {
   private async assertOwner(id: string, userId: string): Promise<Logement> {
     const logement = await this.prisma.logement.findUnique({ where: { id } });
     if (!logement) throw new NotFoundException('Logement introuvable');
-    if (logement.proprietaireId !== userId) throw new ForbiddenException('Accès interdit');
+    if (logement.proprietaireId !== userId && logement.gestionnaireId !== userId) {
+      throw new ForbiddenException('Accès interdit');
+    }
     return logement;
   }
 

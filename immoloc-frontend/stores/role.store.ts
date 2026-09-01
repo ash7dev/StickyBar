@@ -3,7 +3,7 @@ import { persist, createJSONStorage } from 'zustand/middleware';
 import type { StatutKyc } from '@/lib/nestjs/types';
 import { API_CONFIG } from '@/lib/config/api';
 
-type Role = 'LOCATAIRE' | 'PROPRIETAIRE' | 'ADMIN';
+type Role = 'LOCATAIRE' | 'PROPRIETAIRE' | 'ADMIN' | 'GESTIONNAIRE';
 
 /**
  * Vérifie si le token est expiré ou sur le point de l'être
@@ -34,7 +34,7 @@ export function getPersistedActiveRole(): Role | null {
   if (typeof window === 'undefined') return null;
   try {
     const stored = localStorage.getItem(ACTIVE_ROLE_KEY);
-    if (stored === 'LOCATAIRE' || stored === 'PROPRIETAIRE' || stored === 'ADMIN') {
+    if (stored === 'LOCATAIRE' || stored === 'PROPRIETAIRE' || stored === 'ADMIN' || stored === 'GESTIONNAIRE') {
       return stored;
     }
   } catch {}

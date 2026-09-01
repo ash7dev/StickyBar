@@ -192,4 +192,19 @@ export class CreateLogementDto {
   @IsArray()
   @IsUUID('4', { each: true })
   equipementIds?: string[];
+
+  @ApiPropertyOptional({ description: "Numéro de téléphone du propriétaire (Gestion déléguée)" })
+  @IsOptional()
+  @IsString()
+  managedOwnerPhone?: string;
+
+  @ApiPropertyOptional({ description: "Nom du propriétaire (Gestion déléguée)" })
+  @IsOptional()
+  @IsString()
+  managedOwnerNom?: string;
+
+  @ApiPropertyOptional({ description: "Prénom du propriétaire (Gestion déléguée)" })
+  @IsOptional()
+  @IsString()
+  managedOwnerPrenom?: string;
 }

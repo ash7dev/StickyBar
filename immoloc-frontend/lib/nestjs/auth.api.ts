@@ -118,7 +118,7 @@ export const authApi = {
   me: (token?: string) =>
     nestFetch<MeResponse>(NEST_API.AUTH.ME, { token }),
 
-  meSupabase: (supabaseToken: string, preferredRole?: 'LOCATAIRE' | 'PROPRIETAIRE' | 'ADMIN' | null) =>
+  meSupabase: (supabaseToken: string, preferredRole?: 'LOCATAIRE' | 'PROPRIETAIRE' | 'ADMIN' | 'GESTIONNAIRE' | null) =>
     nestFetch<MeSupabaseResponse>(NEST_API.AUTH.ME_SUPABASE, {
       token: supabaseToken,
       preferredRole, // Passera dans le header X-Active-Role si défini

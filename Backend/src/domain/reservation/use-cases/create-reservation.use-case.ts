@@ -281,13 +281,27 @@ export class CreateReservationUseCase {
 
     this.logger.log(`Réservation [${reservation.id}] créée — paiement simulé confirmé`);
 
-    // Notification Push asynchrone au propriétaire
+    // Notification Push asynchrone au propriétaire et au gestionnaire
     this.notifications.sendReservationPush(
       reservation.proprietaireId,
       'Nouvelle demande de réservation 📅',
       `Vous avez reçu une nouvelle réservation. Veuillez la confirmer sous 24h.`,
       '/reservations'
     ).catch((err) => this.logger.error(`Erreur Push reservation: ${err.message}`));
+
+    this.prisma.logement.findUnique({
+      where: { id: logementId },
+      select: { gestionnaireId: true },
+    }).then((logementData) => {
+      if (logementData?.gestionnaireId && logementData.gestionnaireId !== reservation.proprietaireId) {
+        this.notifications.sendReservationPush(
+          logementData.gestionnaireId,
+          'Nouvelle demande de réservation 📅',
+          `Réservation reçue pour un logement sous votre gestion.`,
+          '/reservations'
+        ).catch((err) => this.logger.error(`Erreur Push gestionnaire: ${err.message}`));
+      }
+    }).catch(() => {});
 
     return { reservationId: reservation.id, paymentUrl: null };
   }

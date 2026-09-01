@@ -27,7 +27,7 @@ export async function nestFetch<T>(
     token?: string;
     skipAutoToken?: boolean;
     skipContentType?: boolean;
-    preferredRole?: 'LOCATAIRE' | 'PROPRIETAIRE' | 'ADMIN' | null;
+    preferredRole?: 'LOCATAIRE' | 'PROPRIETAIRE' | 'ADMIN' | 'GESTIONNAIRE' | null;
     retryAttempts?: number;
   } = {},
 ): Promise<T> {

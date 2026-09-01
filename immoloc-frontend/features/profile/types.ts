@@ -1,12 +1,6 @@
-export type StatutKyc =
-  | 'NON_VERIFIE'
-  | 'EN_ATTENTE'
-  | 'VERIFIE'
-  | 'REJETE'
-  | 'A_RENOUVELER'
-  | 'SUSPENDU';
+import type { UserRole, StatutKyc } from '@/lib/nestjs/types';
 
-export type UserRole = 'LOCATAIRE' | 'PROPRIETAIRE' | 'ADMIN';
+export type { StatutKyc, UserRole };
 
 export interface UserProfile {
   id: string;

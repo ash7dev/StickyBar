@@ -23,6 +23,7 @@ import { CalendrierModule } from './modules/calendrier/calendrier.module';
 import { NotificationsModule } from './modules/notifications/notifications.module';
 import { SupportModule } from './modules/support/support.module';
 import { TerangaClubModule } from './modules/teranga-club/teranga-club.module';
+import { GestionnaireModule } from './modules/gestionnaire/gestionnaire.module';
 import { JwtAuthGuard } from './shared/guards/jwt-auth.guard';
 import { RolesGuard } from './shared/guards/roles.guard';
 
@@ -59,6 +60,7 @@ import { RolesGuard } from './shared/guards/roles.guard';
     NotificationsModule,
     SupportModule,
     TerangaClubModule,
+    GestionnaireModule,
   ],
   providers: [
     { provide: APP_GUARD, useClass: ThrottlerGuard },

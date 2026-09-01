@@ -42,6 +42,7 @@ export function Navbar() {
   const [user, setUser] = useState<{ email?: string; user_metadata?: Record<string, any> } | null>(null);
 
   const isAdmin = activeRole === 'ADMIN' || (user?.email?.toLowerCase().endsWith('@admin.com') ?? false);
+  const isGestionnaire = activeRole === 'GESTIONNAIRE' || (user?.email?.toLowerCase().endsWith('@gestionnaire.com') ?? false);
 
   const dropdownRef = useRef<HTMLDivElement>(null);
   const listRef = useRef<HTMLDivElement>(null);
@@ -276,6 +277,21 @@ export function Navbar() {
                             <ShieldCheck className="w-4 h-4" />
                           </div>
                           <span className="truncate">Passer en mode Admin 🛡️</span>
+                        </Link>
+                      )}
+
+                      {/* Bouton Portail Gestionnaire si compte Gestionnaire */}
+                      {isGestionnaire && (
+                        <Link
+                          role="menuitem"
+                          href="/gestionnaire"
+                          onClick={() => setDropdownOpen(false)}
+                          className="w-full flex items-center gap-3 px-3 py-2 text-xs sm:text-sm font-bold text-forest-900 rounded-xl bg-forest-50 hover:bg-forest-100 border border-forest-200/60 transition-colors mb-1"
+                        >
+                          <div className="w-7 h-7 rounded-lg bg-forest-900 flex items-center justify-center text-lime-400 shrink-0">
+                            <Building className="w-4 h-4" />
+                          </div>
+                          <span className="truncate">Espace Gestionnaire 🔑</span>
                         </Link>
                       )}
 

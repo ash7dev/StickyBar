@@ -3,7 +3,7 @@
 
 // ── Primitives partagées ──────────────────────────────────────────────────────
 
-export type UserRole = 'LOCATAIRE' | 'PROPRIETAIRE' | 'ADMIN';
+export type UserRole = 'LOCATAIRE' | 'PROPRIETAIRE' | 'ADMIN' | 'GESTIONNAIRE';
 
 export type ListingStatus =
   | 'DRAFT'
