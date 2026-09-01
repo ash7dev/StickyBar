@@ -11,12 +11,13 @@ import { fcfa, fmtDateShort, STATUT_CFG_LIGHT } from '@/lib/dashboard/owner-toke
 interface Props {
   reservation: Reservation;
   viewMode?: 'grid' | 'list';
+  hrefPrefix?: string;
   onConfirm?: (id: string) => void;
   onCancel?: (id: string) => void;
 }
 
 export function OwnerReservationCard({
-  reservation, viewMode = 'list', onConfirm, onCancel,
+  reservation, viewMode = 'list', hrefPrefix = '/dashboard/reservations', onConfirm, onCancel,
 }: Props) {
   // Confirmer ou refuser partait au premier clic, sans retour ni verrou :
   // un double-clic envoyait deux requetes, et un clic malencontreux annulait
@@ -40,7 +41,7 @@ export function OwnerReservationCard({
   const hostAmount = Number(reservation.netProprietaire ?? reservation.totalLocataire ?? 0);
 
   const isPending = reservation.statut === 'PENDING';
-  const href = `/dashboard/reservations/${reservation.id}`;
+  const href = `${hrefPrefix}/${reservation.id}`;
 
   const run = (fn?: (id: string) => void) => () => {
     if (!fn || busy) return;

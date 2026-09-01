@@ -2,6 +2,7 @@ export enum Role {
   LOCATAIRE = 'LOCATAIRE',
   PROPRIETAIRE = 'PROPRIETAIRE',
   ADMIN = 'ADMIN',
+  GESTIONNAIRE = 'GESTIONNAIRE',
 }
 
 // Payload JWT généré par NestJS

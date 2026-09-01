@@ -12,6 +12,7 @@ import {
   Building,
   User,
   Search,
+  Plus,
 } from 'lucide-react';
 import { createClient } from '@/lib/supabase/client';
 import { useRoleStore } from '@/stores/role.store';
@@ -119,6 +120,15 @@ export function GestionnaireHeader({ onMenuToggle }: GestionnaireHeaderProps) {
 
           {/* ── Droite ─────────────────────────────────────────────────── */}
           <div className="flex shrink-0 items-center gap-2.5">
+            <Link
+              href="/gestionnaire/annonces/nouvelle"
+              className="btn-action shrink-0 inline-flex items-center gap-1.5 px-3.5 py-1.5 text-xs font-bold"
+            >
+              <Plus className="h-4 w-4" aria-hidden="true" />
+              <span className="hidden sm:inline">Publier un bien</span>
+              <span className="sm:hidden">Publier</span>
+            </Link>
+
             <button
               type="button"
               aria-label="Notifications"

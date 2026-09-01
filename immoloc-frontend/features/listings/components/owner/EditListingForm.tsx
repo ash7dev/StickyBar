@@ -1096,7 +1096,16 @@ function SectionConditions({ listing, report }: { listing: ListingDetail; report
 
 /* ─── Export ──────────────────────────────────────────────────────────────── */
 
-export function EditListingForm({ listing }: { listing: ListingDetail }) {
+export function EditListingForm({
+  listing,
+  cancelHref,
+  isGestionnaire = false,
+}: {
+  listing: ListingDetail;
+  cancelHref?: string;
+  isGestionnaire?: boolean;
+}) {
+  const backUrl = cancelHref ?? `/dashboard/annonces/${listing.id}`;
   const { dirtyCount, report } = useDirtyRegistry();
   const quality = computeQuality(listing);
 
@@ -1114,7 +1123,7 @@ export function EditListingForm({ listing }: { listing: ListingDetail }) {
 
       <div className="section-inverse space-y-4 p-6 sm:p-8">
         <div className="flex flex-wrap items-center justify-between gap-3">
-          <Link href={`/dashboard/annonces/${listing.id}`}
+          <Link href={backUrl}
             className="inline-flex items-center gap-2 rounded-pill border border-white/15 px-4 py-2 text-sm font-medium text-neutral-50 transition-colors hover:bg-white/10">
             <ArrowLeft className="h-4 w-4" aria-hidden="true" />
             Retour
@@ -1164,6 +1173,30 @@ export function EditListingForm({ listing }: { listing: ListingDetail }) {
         </aside>
 
         <div className="w-full flex-1 space-y-6">
+          {isGestionnaire && (listing as any).proprietaire && (() => {
+            const owner = (listing as any).proprietaire;
+            return (
+              <div className="card p-5 border-forest-600/30 bg-forest-50/50 space-y-3">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-3">
+                    <span className="grid h-9 w-9 shrink-0 place-items-center rounded-inner bg-forest-900 text-lime-400 font-bold text-xs">
+                      {owner.prenom?.[0]}{owner.nom?.[0]}
+                    </span>
+                    <div>
+                      <p className="eyebrow text-forest-800">Propriétaire du bien</p>
+                      <p className="text-sm font-semibold text-foreground">
+                        {owner.prenom} {owner.nom}
+                      </p>
+                    </div>
+                  </div>
+                  <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold bg-forest-100 text-forest-800 border border-forest-200">
+                    Gestion Conciergerie
+                  </span>
+                </div>
+              </div>
+            );
+          })()}
+
           <div id="section-bien" className="scroll-mt-24"><SectionBien listing={listing} report={report} /></div>
           <div id="section-presentation" className="scroll-mt-24"><SectionPresentation listing={listing} report={report} /></div>
           <div id="section-equipements" className="scroll-mt-24"><SectionEquipements listing={listing} report={report} /></div>

@@ -286,7 +286,10 @@ export default function ReservationDetailPage({ params }: { params: Promise<{ id
   const cfg = STATUT_CFG[res.statut] ?? STATUT_CFG.PENDING;
   const StatusIcon = cfg.icon;
 
-  const isOwner = res.proprietaire.id === userId && activeRole === 'PROPRIETAIRE';
+  const isOwner =
+    (res.proprietaire.id === userId && activeRole === 'PROPRIETAIRE') ||
+    activeRole === 'GESTIONNAIRE' ||
+    (res.logement as any)?.gestionnaireId === userId;
   const canSeePhone = canSeeCoordonnees(res.statut, res.dateDebut);
 
   const mainPhoto =
@@ -355,7 +358,7 @@ export default function ReservationDetailPage({ params }: { params: Promise<{ id
 
         <div className="flex items-center justify-between gap-3">
           <Link
-            href="/dashboard/reservations"
+            href={activeRole === 'GESTIONNAIRE' ? '/gestionnaire/reservations' : '/dashboard/reservations'}
             className="group inline-flex items-center gap-2 text-xs font-semibold text-foreground-muted transition-colors hover:text-foreground"
           >
             <span className="flex h-8 w-8 items-center justify-center rounded-pill border border-border bg-background-alt transition-colors group-hover:border-border-hover">

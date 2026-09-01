@@ -179,4 +179,10 @@ export const NEST_API = {
     CLAIM_QUEST: (code: string) => `${BASE}/teranga-club/quests/${code}/claim`,
     REFERRAL:    `${BASE}/teranga-club/referral`,
   },
+  GESTIONNAIRE: {
+    DASHBOARD: `${BASE}/gestionnaire/dashboard`,
+    LOGEMENTS: `${BASE}/gestionnaire/logements`,
+    PROPRIETAIRES: `${BASE}/gestionnaire/proprietaires`,
+    PROPRIETAIRES_ALL: `${BASE}/gestionnaire/proprietaires-all`,
+  },
 } as const;

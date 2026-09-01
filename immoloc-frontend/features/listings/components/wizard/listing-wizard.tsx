@@ -4,7 +4,8 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { ArrowLeft, ArrowRight, AlertTriangle, Loader2, CheckCircle2 } from 'lucide-react';
-import { WizardStepper, WIZARD_STEPS } from './wizard-stepper';
+import { WizardStepper, WIZARD_STEPS, GESTIONNAIRE_WIZARD_STEPS } from './wizard-stepper';
+import { StepProprietaire } from './steps/step-proprietaire';
 import { StepBien } from './steps/step-bien';
 import { StepAnnonce } from './steps/step-annonce';
 import { StepEquipements } from './steps/step-equipements';
@@ -16,16 +17,31 @@ import { nestFetch } from '@/lib/nestjs/api-client';
 import { NEST_API } from '@/lib/nestjs/endpoints';
 import { cn } from '@/lib/utils/cn';
 
-const STEP_TITLES = [
+const OWNER_STEP_TITLES = [
   'Votre logement', 'Votre annonce', 'Équipements et services',
   'Conditions et règles', 'Photos du bien', 'Récapitulatif',
 ];
 
-const STEP_SUBTITLES = [
+const OWNER_STEP_SUBTITLES = [
   'Décrivez votre bien et sa localisation',
   'Rédigez votre annonce et fixez votre tarif',
   'Sélectionnez ce que vous mettez à disposition',
   'Définissez vos conditions et votre règlement intérieur',
+  'Ajoutez au minimum 5 photos',
+  'Vérifiez les informations puis soumettez',
+];
+
+const GESTIONNAIRE_STEP_TITLES = [
+  'Propriétaire du bien', 'Votre logement', 'Votre annonce', 'Équipements et services',
+  'Conditions et règles', 'Photos du bien', 'Récapitulatif',
+];
+
+const GESTIONNAIRE_STEP_SUBTITLES = [
+  'Sélectionnez ou saisissez les coordonnées du propriétaire du logement',
+  'Décrivez le bien et sa localisation',
+  'Rédigez l’annonce et fixez le tarif',
+  'Sélectionnez ce qui est mis à disposition',
+  'Définissez les conditions et le règlement intérieur',
   'Ajoutez au minimum 5 photos',
   'Vérifiez les informations puis soumettez',
 ];
@@ -37,24 +53,61 @@ type UploadParams = {
 
 interface Props {
   editMode?: boolean;
+  cancelHref?: string;
+  successHref?: string;
+  isGestionnaire?: boolean;
+  initialOwnerId?: string;
 }
 
-export function ListingWizard({ editMode = false }: Props) {
+export function ListingWizard({
+  editMode = false,
+  cancelHref = '/dashboard/annonces',
+  successHref = '/dashboard/annonces?submitted=1',
+  isGestionnaire: isGestionnaireProp,
+  initialOwnerId,
+}: Props) {
   const router = useRouter();
   const store = useListingFormStore();
   const {
     currentStep, completedSteps, setStep, nextStep, prevStep, markCompleted,
-    bien, annonce, equipements, equipementIds, conditions,
+    proprietaire, bien, annonce, equipements, equipementIds, conditions,
     tarifsPersonnes, tarifsNuits, photos, video,
-    draftListingId, setDraftListingId, updatePhoto, reset,
+    draftListingId, setDraftListingId, updatePhoto, reset, setProprietaire,
   } = store;
+
+  const isGestionnaire = isGestionnaireProp ?? cancelHref.includes('/gestionnaire');
+  const wizardSteps = isGestionnaire ? GESTIONNAIRE_WIZARD_STEPS : WIZARD_STEPS;
+  const stepTitles = isGestionnaire ? GESTIONNAIRE_STEP_TITLES : OWNER_STEP_TITLES;
+  const stepSubtitles = isGestionnaire ? GESTIONNAIRE_STEP_SUBTITLES : OWNER_STEP_SUBTITLES;
 
   const submitRef = useRef<HTMLButtonElement>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [apiError, setApiError] = useState<string | null>(null);
   const [progress, setProgress] = useState({ percent: 0, title: '', details: '' });
+  const isConfirmation = currentStep === wizardSteps.length - 1;
 
-  const isConfirmation = currentStep === WIZARD_STEPS.length - 1;
+  // Pré-sélection automatique du propriétaire et saut du Step 0 si initialOwnerId est fourni
+  useEffect(() => {
+    if (!initialOwnerId || !isGestionnaire || editMode) return;
+
+    nestFetch<Array<{ id: string; prenom: string; nom: string; telephone: string }>>(
+      NEST_API.GESTIONNAIRE.PROPRIETAIRES_ALL,
+    )
+      .then((owners) => {
+        const found = owners.find((o) => o.id === initialOwnerId);
+        if (found) {
+          setProprietaire({
+            mode: 'EXISTING',
+            telephone: found.telephone,
+            nom: found.nom,
+            prenom: found.prenom,
+          });
+          markCompleted(0);
+          setStep(1); // Saut automatique du Step 0 vers le Step 1 (Votre Logement) !
+        }
+      })
+      .catch(() => {});
+  }, [initialOwnerId, isGestionnaire, editMode, setProprietaire, markCompleted, setStep]);
 
   /* Un rafraîchissement ou une fermeture pendant le transfert perd les
      fichiers déjà envoyés et laisse une annonce incomplète. */
@@ -112,6 +165,15 @@ export function ListingWizard({ editMode = false }: Props) {
         instructionsDigicode: conditions.instructionsDigicode || null,
         regimeElectricite: conditions.regimeElectricite || 'INCLUS',
         detailsElectricite: conditions.detailsElectricite || null,
+        ...(isGestionnaire && proprietaire
+          ? proprietaire.mode === 'EXISTING'
+            ? { managedOwnerPhone: proprietaire.telephone }
+            : {
+                managedOwnerPhone: proprietaire.telephone,
+                managedOwnerNom: proprietaire.nom,
+                managedOwnerPrenom: proprietaire.prenom,
+              }
+          : {}),
       };
 
       if (!listingId) {
@@ -129,14 +191,7 @@ export function ListingWizard({ editMode = false }: Props) {
       }
 
       /* ── Photos ────────────────────────────────────────────────────────
-         Séquentiel et marqué au fur et à mesure.
-
-         ⚠️ Avant : `Promise.all` sur tous les envois, et l'`url` n'était
-         jamais écrite dans le store. Un échec à la 7e photo faisait repartir
-         les 6 premières au réessai — elles étaient réenvoyées à Cloudinary
-         ET rattachées une seconde fois à l'annonce. Trois tentatives
-         produisaient 18 doublons. Les envois concurrents non résolus
-         laissaient en plus des fichiers orphelins facturés sur Cloudinary. */
+         Séquentiel et marqué au fur et à mesure. */
 
       const pending = photos.photos
         .map((p, index) => ({ p, index }))
@@ -233,8 +288,6 @@ export function ListingWizard({ editMode = false }: Props) {
             }
           };
           xhr.onerror = () => reject(new Error('Connexion interrompue pendant l’envoi de la vidéo.'));
-          /* `xhr.onabort` et `ontimeout` manquaient : une coupure laissait la
-             promesse en attente indéfiniment, modale bloquée à l'écran. */
           xhr.onabort = () => reject(new Error('Envoi de la vidéo annulé.'));
           xhr.ontimeout = () => reject(new Error('Délai dépassé pendant l’envoi de la vidéo.'));
           xhr.send(fd);
@@ -284,8 +337,11 @@ export function ListingWizard({ editMode = false }: Props) {
       }
 
       setProgress({ percent: 100, title: 'Annonce envoyée', details: 'Redirection…' });
+      const editRedirectHref = cancelHref.endsWith('/annonces')
+        ? `${cancelHref}/${listingId}`
+        : `/dashboard/annonces/${listingId}`;
       reset();
-      router.push(editMode ? `/dashboard/annonces/${listingId}` : '/dashboard/annonces?submitted=1');
+      router.push(editMode ? editRedirectHref : successHref);
     } catch (err) {
       const raw = err instanceof Error ? err.message : 'Une erreur est survenue.';
       const isNetwork = /Load failed|Failed to fetch|NetworkError|Network request failed/i.test(raw);
@@ -299,7 +355,7 @@ export function ListingWizard({ editMode = false }: Props) {
   }, [
     draftListingId, annonce, bien, conditions, photos.photos, video,
     tarifsPersonnes, tarifsNuits, equipements, equipementIds,
-    editMode, setDraftListingId, updatePhoto, reset, router,
+    editMode, setDraftListingId, updatePhoto, reset, router, successHref, cancelHref, isGestionnaire, proprietaire,
   ]);
 
   return (
@@ -311,7 +367,7 @@ export function ListingWizard({ editMode = false }: Props) {
         <div className="mx-auto max-w-3xl px-3 sm:px-4">
           <div className="flex h-14 items-center justify-between gap-3 sm:h-16">
             <Link
-              href="/dashboard/annonces"
+              href={cancelHref}
               className="btn-ghost flex items-center gap-2 px-3.5 py-1.5 text-sm"
             >
               <ArrowLeft className="h-4 w-4" aria-hidden="true" />
@@ -320,18 +376,18 @@ export function ListingWizard({ editMode = false }: Props) {
 
             <div className="flex flex-col items-center">
               <span className="eyebrow text-foreground-muted">
-                Étape {currentStep + 1} / {WIZARD_STEPS.length}
+                Étape {currentStep + 1} / {wizardSteps.length}
               </span>
               <div
                 role="progressbar"
                 aria-valuenow={currentStep + 1}
                 aria-valuemin={1}
-                aria-valuemax={WIZARD_STEPS.length}
+                aria-valuemax={wizardSteps.length}
                 className="mt-1 h-1.5 w-16 overflow-hidden rounded-pill bg-background-alt"
               >
                 <div
                   className="h-full rounded-pill bg-forest-600 transition-[width] duration-500"
-                  style={{ width: `${((currentStep + 1) / WIZARD_STEPS.length) * 100}%` }}
+                  style={{ width: `${((currentStep + 1) / wizardSteps.length) * 100}%` }}
                 />
               </div>
             </div>
@@ -343,6 +399,7 @@ export function ListingWizard({ editMode = false }: Props) {
             <WizardStepper
               currentStep={currentStep}
               completedSteps={completedSteps}
+              steps={wizardSteps}
               onStepClick={(s) => { if (s < currentStep || completedSteps.has(s)) setStep(s); }}
             />
           </div>
@@ -358,10 +415,10 @@ export function ListingWizard({ editMode = false }: Props) {
             {editMode ? 'Modification d’annonce' : 'Création d’annonce'}
           </p>
           <h1 className="mb-2 font-display text-2xl font-semibold tracking-tight text-foreground sm:text-4xl">
-            {STEP_TITLES[currentStep]}
+            {stepTitles[currentStep]}
           </h1>
           <p className="mx-auto max-w-xl text-sm leading-relaxed text-foreground-muted sm:text-base">
-            {STEP_SUBTITLES[currentStep]}
+            {stepSubtitles[currentStep]}
           </p>
         </div>
 
@@ -390,17 +447,37 @@ export function ListingWizard({ editMode = false }: Props) {
         )}
 
         <div className="space-y-5 sm:space-y-6">
-          {currentStep === 0 && <StepBien onNext={handleStepValidated} submitRef={submitRef} />}
-          {currentStep === 1 && <StepAnnonce onNext={handleStepValidated} submitRef={submitRef} />}
-          {currentStep === 2 && <StepEquipements onNext={handleStepValidated} submitRef={submitRef} />}
-          {currentStep === 3 && <StepConditions onNext={handleStepValidated} submitRef={submitRef} />}
-          {currentStep === 4 && <StepPhotos onNext={handleStepValidated} submitRef={submitRef} />}
-          {currentStep === 5 && (
-            <StepConfirmation
-              onSubmit={handleFinalSubmit}
-              isSubmitting={isSubmitting}
-              submitRef={submitRef}
-            />
+          {isGestionnaire ? (
+            <>
+              {currentStep === 0 && <StepProprietaire onNext={handleStepValidated} submitRef={submitRef} />}
+              {currentStep === 1 && <StepBien onNext={handleStepValidated} submitRef={submitRef} />}
+              {currentStep === 2 && <StepAnnonce onNext={handleStepValidated} submitRef={submitRef} />}
+              {currentStep === 3 && <StepEquipements onNext={handleStepValidated} submitRef={submitRef} />}
+              {currentStep === 4 && <StepConditions onNext={handleStepValidated} submitRef={submitRef} />}
+              {currentStep === 5 && <StepPhotos onNext={handleStepValidated} submitRef={submitRef} />}
+              {currentStep === 6 && (
+                <StepConfirmation
+                  onSubmit={handleFinalSubmit}
+                  isSubmitting={isSubmitting}
+                  submitRef={submitRef}
+                />
+              )}
+            </>
+          ) : (
+            <>
+              {currentStep === 0 && <StepBien onNext={handleStepValidated} submitRef={submitRef} />}
+              {currentStep === 1 && <StepAnnonce onNext={handleStepValidated} submitRef={submitRef} />}
+              {currentStep === 2 && <StepEquipements onNext={handleStepValidated} submitRef={submitRef} />}
+              {currentStep === 3 && <StepConditions onNext={handleStepValidated} submitRef={submitRef} />}
+              {currentStep === 4 && <StepPhotos onNext={handleStepValidated} submitRef={submitRef} />}
+              {currentStep === 5 && (
+                <StepConfirmation
+                  onSubmit={handleFinalSubmit}
+                  isSubmitting={isSubmitting}
+                  submitRef={submitRef}
+                />
+              )}
+            </>
           )}
         </div>
 
@@ -418,7 +495,7 @@ export function ListingWizard({ editMode = false }: Props) {
               </button>
 
               <button type="button" onClick={handleNext} className="btn-action px-6 py-3 text-sm sm:px-8">
-                {currentStep === 4 ? 'Vérifier l’annonce' : 'Continuer'}
+                {currentStep === wizardSteps.length - 2 ? 'Vérifier l’annonce' : 'Continuer'}
                 <ArrowRight className="h-4 w-4" aria-hidden="true" />
               </button>
             </div>

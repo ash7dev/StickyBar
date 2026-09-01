@@ -135,7 +135,11 @@ export class WalletService {
         id: true,
         titre: true,
         ville: true,
+        type: true,
+        statut: true,
+        prixBase: true,
         proprietaireId: true,
+        photos: { where: { estPrincipale: true }, select: { url: true }, take: 1 },
       },
     });
 
@@ -188,5 +192,37 @@ export class WalletService {
     }
 
     return this.requestWithdrawalUseCase.execute(ownerId, dto);
+  }
+
+  async getAllProprietaires() {
+    const owners = await this.prisma.utilisateur.findMany({
+      where: {
+        logements: {
+          some: {
+            archiveLe: null,
+          },
+        },
+      },
+      select: {
+        id: true,
+        prenom: true,
+        nom: true,
+        telephone: true,
+        email: true,
+        _count: {
+          select: { logements: true },
+        },
+      },
+      orderBy: { prenom: 'asc' },
+    });
+
+    return owners.map((o) => ({
+      id: o.id,
+      prenom: o.prenom,
+      nom: o.nom,
+      telephone: o.telephone,
+      email: o.email,
+      logementsCount: o._count.logements,
+    }));
   }
 }

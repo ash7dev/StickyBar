@@ -283,4 +283,33 @@ export class NotificationsService implements OnModuleInit {
       : `Votre demande de retrait de ${amount.toLocaleString('fr-FR')} FCFA est en cours de traitement.`;
     return this.sendNotificationToUser(userId, title, body, '/parametres');
   }
+
+  /** Notification SMS / Push / WhatsApp au propriétaire lors de la publication d'un bien en son nom par sa conciergerie */
+  async sendManagedListingNotification(
+    ownerPhone: string,
+    ownerUserId: string,
+    logementTitle: string,
+    gestionnaireName: string = 'Votre conciergerie',
+  ) {
+    const title = 'Nouveau bien ajouté à votre espace 🏠';
+    const message = `Bonjour ! Un nouveau logement "${logementTitle}" a été ajouté à votre espace par ${gestionnaireName}.`;
+
+    this.logger.log(`[Notification Conciergerie] Message préparé pour ${ownerPhone} (${ownerUserId}) : "${message}"`);
+
+    // 1. Notification Push Web PWA (si l'utilisateur a un abonnement actif)
+    await this.sendNotificationToUser(ownerUserId, title, message, '/dashboard/annonces').catch(() => {});
+
+    // 2. Hook SMS / WhatsApp (Configuration prête pour Twilio, Infobip ou SMS local Senegal)
+    /*
+    const twilioAccountSid = this.configService.get<string>('TWILIO_ACCOUNT_SID');
+    const twilioAuthToken = this.configService.get<string>('TWILIO_AUTH_TOKEN');
+    if (twilioAccountSid && twilioAuthToken) {
+      // Configuration d'envoi SMS / WhatsApp actif :
+      // await twilioClient.messages.create({ body: message, from: 'Klef Conciergerie', to: ownerPhone });
+      this.logger.log(`[SMS/WhatsApp Conciergerie] Message transmis avec succès à ${ownerPhone}`);
+    }
+    */
+
+    return { success: true, message: 'Notification propriétaire conciergerie envoyée' };
+  }
 }

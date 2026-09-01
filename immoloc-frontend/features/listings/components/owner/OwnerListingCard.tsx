@@ -6,7 +6,7 @@ import Image from 'next/image';
 import Link from 'next/link';
 import {
   Calendar, Edit3, ExternalLink, Eye, ImageOff, MapPin,
-  MoreVertical, PauseCircle, PlayCircle, Trash2, Zap, AlertTriangle
+  MoreVertical, PauseCircle, PlayCircle, Trash2, Zap, AlertTriangle, User
 } from 'lucide-react';
 import { cn } from '@/lib/utils/cn';
 
@@ -35,6 +35,7 @@ interface Props {
   onToggleStatus?: (id: string, currentStatus: string) => void;
   onToggleDerniereMinute?: (id: string, active: boolean) => void;
   onDelete?: (id: string) => void;
+  isGestionnaire?: boolean;
 }
 
 /* Statuts pensés pour un fond CLAIR : ces cartes vivent sur le canvas, pas
@@ -49,7 +50,7 @@ const STATUT_CONFIG: Record<string, { label: string; cls: string; dot: string }>
   REJECTED: { label: 'Rejetée', cls: 'bg-error-50 text-error-700', dot: 'bg-error-500' },
 };
 
-export function OwnerListingCard({ listing, viewMode = 'grid', onToggleStatus, onToggleDerniereMinute, onDelete }: Props) {
+export function OwnerListingCard({ listing, viewMode = 'grid', onToggleStatus, onToggleDerniereMinute, onDelete, isGestionnaire = false }: Props) {
   const [menuOpen, setMenuOpen] = useState(false);
   const rawPrice = listing.prixParNuit ?? listing.prixNuit ?? listing.prixBase ?? 0;
   const num = Number(rawPrice);
@@ -60,8 +61,8 @@ export function OwnerListingCard({ listing, viewMode = 'grid', onToggleStatus, o
 
   const cfg = STATUT_CONFIG[listing.statut] ?? STATUT_CONFIG.DRAFT;
   const location = [listing.commune, listing.ville].filter(Boolean).join(', ') || 'Sénégal';
-  const detailHref = `/dashboard/annonces/${listing.id}`;
-  const editHref = `/dashboard/annonces/${listing.id}/modifier`;
+  const detailHref = isGestionnaire ? `/gestionnaire/annonces/${listing.id}` : `/dashboard/annonces/${listing.id}`;
+  const editHref = isGestionnaire ? `/gestionnaire/annonces/${listing.id}/modifier` : `/dashboard/annonces/${listing.id}/modifier`;
 
   const Status = (
     <span className={cn(
@@ -113,9 +114,16 @@ export function OwnerListingCard({ listing, viewMode = 'grid', onToggleStatus, o
               </Link>
             </h3>
 
-            <p className="flex items-center gap-1.5 text-xs text-foreground-muted font-medium">
-              <MapPin className="h-3.5 w-3.5 shrink-0 text-foreground-faint" aria-hidden="true" />
-              <span className="truncate">{location}</span>
+            <p className="flex flex-wrap items-center gap-2 text-xs text-foreground-muted font-medium">
+              <span className="flex items-center gap-1">
+                <MapPin className="h-3.5 w-3.5 shrink-0 text-foreground-faint" aria-hidden="true" />
+                <span className="truncate">{location}</span>
+              </span>
+              {isGestionnaire && (listing as any).proprietaire && (
+                <span className="inline-flex items-center gap-1 rounded-pill bg-forest-50 border border-forest-200/60 px-2 py-0.5 text-[0.6875rem] font-semibold text-forest-700">
+                  <User className="h-3 w-3" /> Bailleur : {(listing as any).proprietaire.prenom} {(listing as any).proprietaire.nom}
+                </span>
+              )}
             </p>
           </div>
         </div>
@@ -130,7 +138,7 @@ export function OwnerListingCard({ listing, viewMode = 'grid', onToggleStatus, o
               <Edit3 className="h-3.5 w-3.5 text-forest-950 stroke-[2px]" aria-hidden="true" />
               Modifier
             </Link>
-            <ActionsMenu listing={listing} onToggleStatus={onToggleStatus} onToggleDerniereMinute={onToggleDerniereMinute} onDelete={onDelete} onOpenChange={setMenuOpen} />
+            <ActionsMenu listing={listing} onToggleStatus={onToggleStatus} onToggleDerniereMinute={onToggleDerniereMinute} onDelete={onDelete} onOpenChange={setMenuOpen} isGestionnaire={isGestionnaire} />
           </div>
         </div>
       </article>
@@ -174,7 +182,7 @@ export function OwnerListingCard({ listing, viewMode = 'grid', onToggleStatus, o
         </div>
 
         <div className="absolute right-3 top-3 z-30">
-          <ActionsMenu listing={listing} onToggleStatus={onToggleStatus} onToggleDerniereMinute={onToggleDerniereMinute} onDelete={onDelete} onPhoto onOpenChange={setMenuOpen} />
+          <ActionsMenu listing={listing} onToggleStatus={onToggleStatus} onToggleDerniereMinute={onToggleDerniereMinute} onDelete={onDelete} onPhoto onOpenChange={setMenuOpen} isGestionnaire={isGestionnaire} />
         </div>
       </div>
 
@@ -192,6 +200,13 @@ export function OwnerListingCard({ listing, viewMode = 'grid', onToggleStatus, o
             {listing.titre}
           </Link>
         </h3>
+
+        {isGestionnaire && (listing as any).proprietaire && (
+          <p className="mt-1 flex items-center gap-1.5 text-xs text-forest-700 font-semibold truncate">
+            <User className="h-3.5 w-3.5 text-forest-600 shrink-0" />
+            <span className="truncate">Bailleur : {(listing as any).proprietaire.prenom} {(listing as any).proprietaire.nom}</span>
+          </p>
+        )}
 
         <div className="mt-auto flex items-end justify-between gap-3 border-t border-border pt-3">
           {Price}
@@ -225,7 +240,7 @@ function Thumb({ photo, className }: { photo?: string; className?: string }) {
 /* ── Menu d'actions ─────────────────────────────────────────────────────── */
 
 function ActionsMenu({
-  listing, onToggleStatus, onToggleDerniereMinute, onDelete, onPhoto = false, onOpenChange,
+  listing, onToggleStatus, onToggleDerniereMinute, onDelete, onPhoto = false, onOpenChange, isGestionnaire = false,
 }: {
   listing: OwnerListing;
   onToggleStatus?: (id: string, currentStatus: string) => void;
@@ -233,6 +248,7 @@ function ActionsMenu({
   onDelete?: (id: string) => void;
   onPhoto?: boolean;
   onOpenChange?: (open: boolean) => void;
+  isGestionnaire?: boolean;
 }) {
   const [open, setOpen] = useState(false);
   const [showConfirmDelete, setShowConfirmDelete] = useState(false);
@@ -240,6 +256,8 @@ function ActionsMenu({
   const ref = useRef<HTMLDivElement>(null);
   const btnRef = useRef<HTMLButtonElement>(null);
   const menuId = useId();
+
+  const editHref = isGestionnaire ? `/gestionnaire/annonces/${listing.id}/modifier` : `/dashboard/annonces/${listing.id}/modifier`;
 
   useEffect(() => {
     setMounted(true);
@@ -298,10 +316,17 @@ function ActionsMenu({
             role="menu"
             className="absolute right-0 top-full z-50 mt-2 w-60 space-y-0.5 overflow-hidden rounded-card border border-border bg-background-card p-1.5 shadow-lg"
           >
-            <Link href={`/dashboard/annonces/${listing.id}/modifier`} role="menuitem" className={item}>
+            <Link href={editHref} role="menuitem" className={item}>
               <Edit3 className="h-4 w-4 text-forest-600" aria-hidden="true" />
               Modifier l&apos;annonce
             </Link>
+
+            {isGestionnaire && (
+              <Link href={`/gestionnaire/annonces/${listing.id}`} role="menuitem" className={item}>
+                <Eye className="h-4 w-4 text-forest-600" aria-hidden="true" />
+                Détail & Calendrier Conciergerie
+              </Link>
+            )}
 
             <Link
               href={`/logements/${listing.slug ?? listing.id}`}
@@ -310,14 +335,17 @@ function ActionsMenu({
               role="menuitem"
               className={item}
             >
-              <Eye className="h-4 w-4 text-forest-600" aria-hidden="true" />
-              Fiche publique
-              <ExternalLink className="ml-auto h-3.5 w-3.5 text-foreground-faint" aria-hidden="true" />
+              <ExternalLink className="h-4 w-4 text-forest-600" aria-hidden="true" />
+              Fiche publique voyageur
             </Link>
 
-            <Link href={`/dashboard/reservations?logementId=${listing.id}`} role="menuitem" className={item}>
+            <Link
+              href={isGestionnaire ? `/gestionnaire/reservations?q=${encodeURIComponent(listing.titre)}` : `/dashboard/reservations?logementId=${listing.id}`}
+              role="menuitem"
+              className={item}
+            >
               <Calendar className="h-4 w-4 text-forest-600" aria-hidden="true" />
-              Réservations
+              Réservations du bien
             </Link>
 
             {onToggleDerniereMinute && (

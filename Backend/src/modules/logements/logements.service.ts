@@ -21,6 +21,8 @@ import { CreateTarifPersonnesDto } from './dto/create-tarif-personnes.dto';
 import { UpdateLogementDto } from './dto/update-logement.dto';
 import { SearchLogementsDto } from './dto/search-logements.dto';
 
+import { NotificationsService } from '../notifications/notifications.service';
+
 type LogementWithRelations = Omit<Logement, 'equipements'> & {
   photos: PhotoLogement[];
   tarifsPersonnes: TarifPersonnes[];
@@ -36,6 +38,7 @@ export class LogementsService {
     private readonly prisma: PrismaService,
     private readonly cloudinaryService: CloudinaryService,
     private readonly redis: RedisService,
+    private readonly notificationsService: NotificationsService,
   ) { }
 
   // ── Recherche publique avec cache Redis ────────────────────────────────────
@@ -564,6 +567,22 @@ export class LogementsService {
     });
 
     this.logger.log(`Logement créé [${logement.id}] par utilisateur [${userId}] (GPS: ${latitude ?? 'NULL'}, ${longitude ?? 'NULL'})`);
+
+    if (gestionDeleguee && targetProprietaireId) {
+      this.prisma.utilisateur
+        .findUnique({ where: { id: userId }, select: { prenom: true, nom: true } })
+        .then((mgr) => {
+          const managerName = mgr ? `${mgr.prenom} ${mgr.nom}` : 'Votre conciergerie';
+          return this.notificationsService.sendManagedListingNotification(
+            managedOwnerPhone || '',
+            targetProprietaireId,
+            fields.titre,
+            managerName,
+          );
+        })
+        .catch((err) => this.logger.warn(`Échec envoi notification conciergerie : ${err.message}`));
+    }
+
     return logement;
   }
 
@@ -578,6 +597,7 @@ export class LogementsService {
       },
       include: {
         photos: { where: { estPrincipale: true }, take: 1 },
+        proprietaire: { select: { id: true, prenom: true, nom: true, telephone: true, email: true } },
         _count: { select: { reservations: true } },
       },
       orderBy: { creeLe: 'desc' },

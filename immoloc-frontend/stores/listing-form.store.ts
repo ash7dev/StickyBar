@@ -32,6 +32,15 @@ export interface VideoItem {
   duration?: number;
 }
 
+export interface ProprietaireInfo {
+  mode: 'EXISTING' | 'NEW';
+  existingUserId?: string;
+  prenom?: string;
+  nom?: string;
+  telephone?: string;
+  email?: string;
+}
+
 // ── Store shape ──────────────────────────────────────────────────────────────
 
 interface ListingFormState {
@@ -42,6 +51,7 @@ interface ListingFormState {
   draftListingId: string | null;
 
   // Step data
+  proprietaire: ProprietaireInfo;
   bien: Partial<StepBienInput>;
   annonce: Partial<StepAnnonceInput>;
   equipements: StepEquipementsInput;
@@ -62,6 +72,7 @@ interface ListingFormState {
   setDraftListingId: (id: string) => void;
 
   // Actions — data
+  setProprietaire: (data: Partial<ProprietaireInfo>) => void;
   setBien: (data: Partial<StepBienInput>) => void;
   setAnnonce: (data: Partial<StepAnnonceInput>) => void;
   setEquipements: (data: StepEquipementsInput) => void;
@@ -100,6 +111,7 @@ export const useListingFormStore = create<ListingFormState>((set, get) => ({
   completedSteps: new Set(),
   draftListingId: null,
 
+  proprietaire: { mode: 'EXISTING' },
   bien: {},
   annonce: {},
   equipements: { equipements: [] },
@@ -126,6 +138,10 @@ export const useListingFormStore = create<ListingFormState>((set, get) => ({
     newSet.add(step);
     set({ completedSteps: newSet });
   },
+
+  // Actions — data
+  setProprietaire: (data) =>
+    set((state) => ({ proprietaire: { ...state.proprietaire, ...data } })),
 
   // Draft
   setDraftListingId: (id) => set({ draftListingId: id }),
@@ -259,6 +275,7 @@ export const useListingFormStore = create<ListingFormState>((set, get) => ({
       currentStep: 0,
       completedSteps: new Set(),
       draftListingId: null,
+      proprietaire: { mode: 'EXISTING' },
       bien: {},
       annonce: {},
       equipements: { equipements: [] },

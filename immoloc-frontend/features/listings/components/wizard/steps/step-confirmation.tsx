@@ -2,7 +2,7 @@
 
 import {
   CheckCircle2, Home, Zap, CircleDollarSign, Camera, MapPin,
-  Sparkles, ShieldCheck, Moon, Loader2, Film,
+  Sparkles, ShieldCheck, Moon, Loader2, Film, User,
 } from 'lucide-react';
 import { useListingFormStore } from '@/stores/listing-form.store';
 import { cn } from '@/lib/utils/cn';
@@ -44,7 +44,7 @@ function SummaryRow({ icon: Icon, label, value, hint }: {
 }
 
 export function StepConfirmation({ onSubmit, isSubmitting, submitRef }: Props) {
-  const { bien, annonce, equipements, photos, video } = useListingFormStore();
+  const { bien, annonce, equipements, photos, video, proprietaire } = useListingFormStore();
 
   const principalPhoto = photos.photos.find((p) => p.estPrincipale) ?? photos.photos[0];
   const prixBase = Number(annonce.prixBase) || 0;
@@ -94,13 +94,20 @@ export function StepConfirmation({ onSubmit, isSubmitting, submitRef }: Props) {
         )}
 
         <dl className="grid grid-cols-1 gap-x-8 p-6 sm:grid-cols-2">
+          {proprietaire && (proprietaire.prenom || proprietaire.telephone || proprietaire.existingUserId) && (
+            <SummaryRow
+              icon={User}
+              label="Propriétaire du bien"
+              value={proprietaire.mode === 'EXISTING'
+                ? `Inscrit (${proprietaire.telephone || 'Rattaché'})`
+                : `${proprietaire.prenom || ''} ${proprietaire.nom || ''} (${proprietaire.telephone})`}
+              hint="Gestion conciergerie déléguée"
+            />
+          )}
           <SummaryRow
             icon={CircleDollarSign}
             label="Votre prix"
             value={`${fcfa(prixBase)} FCFA / nuit`}
-            /* Le récapitulatif affichait prixBase sans préciser que le prix
-               public en diffère : le propriétaire découvrait l'écart après
-               publication. */
             hint={`Affiché ${fcfa(prixPublic)} FCFA aux voyageurs`}
           />
           <SummaryRow icon={Home} label="Capacité" value={`${bien.capaciteMax ?? '—'} personnes`} />

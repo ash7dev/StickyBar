@@ -5,6 +5,7 @@ import { CurrentUser } from '../../shared/decorators/current-user.decorator';
 import { AuthUser } from '../../shared/types/jwt-payload.type';
 import { WalletService } from '../wallet/wallet.service';
 import { LogementsService } from '../logements/logements.service';
+import { GestionnaireService } from './gestionnaire.service';
 import { RequestWithdrawalDto } from '../wallet/dto/withdrawal.dto';
 
 @ApiTags('Gestionnaire (Conciergerie)')
@@ -15,7 +16,14 @@ export class GestionnaireController {
   constructor(
     private readonly walletService: WalletService,
     private readonly logementsService: LogementsService,
+    private readonly gestionnaireService: GestionnaireService,
   ) {}
+
+  @Get('dashboard')
+  @ApiOperation({ summary: 'Obtenir la vue synthétique complète du tableau de bord conciergerie (KPIs, graphiques, séjours)' })
+  async getDashboardStats(@CurrentUser() user: AuthUser) {
+    return this.gestionnaireService.getDashboardStats(user.id);
+  }
 
   @Get('logements')
   @ApiOperation({ summary: 'Obtenir la liste de tous les logements gérés par le gestionnaire' })
@@ -27,6 +35,12 @@ export class GestionnaireController {
   @ApiOperation({ summary: 'Obtenir la liste des propriétaires partenaires et le solde de leurs wallets' })
   async getManagedOwners(@CurrentUser() user: AuthUser) {
     return this.walletService.getManagedProprietairesAndWallets(user.id);
+  }
+
+  @Get('proprietaires-all')
+  @ApiOperation({ summary: 'Obtenir la liste de tous les propriétaires inscrits pour sélection lors de la création d\'une annonce' })
+  async getAllProprietaires() {
+    return this.walletService.getAllProprietaires();
   }
 
   @Post('proprietaires/:ownerId/retrait')

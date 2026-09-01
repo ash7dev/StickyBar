@@ -64,14 +64,14 @@ export class LogementsController {
   }
 
   @Post()
-  @Roles(Role.PROPRIETAIRE)
+  @Roles(Role.PROPRIETAIRE, Role.GESTIONNAIRE)
   @ApiOperation({ summary: 'Créer un nouveau logement (statut DRAFT)' })
   create(@CurrentUser() user: AuthUser, @Body() dto: CreateLogementDto) {
     return this.logements.create(user.id, dto);
   }
 
   @Get('me')
-  @Roles(Role.PROPRIETAIRE)
+  @Roles(Role.PROPRIETAIRE, Role.GESTIONNAIRE)
   @ApiOperation({ summary: 'Lister mes logements (non archivés)' })
   findMine(@CurrentUser() user: AuthUser) {
     return this.logements.findMine(user.id);
@@ -102,7 +102,7 @@ export class LogementsController {
   }
 
   @Patch(':id')
-  @Roles(Role.PROPRIETAIRE)
+  @Roles(Role.PROPRIETAIRE, Role.GESTIONNAIRE)
   @ApiOperation({ summary: 'Mettre à jour un logement' })
   @ApiParam({ name: 'id', description: 'UUID du logement' })
   update(
@@ -114,7 +114,7 @@ export class LogementsController {
   }
 
   @Patch(':id/submit')
-  @Roles(Role.PROPRIETAIRE)
+  @Roles(Role.PROPRIETAIRE, Role.GESTIONNAIRE)
   @HttpCode(200)
   @ApiOperation({ summary: 'Soumettre un logement pour révision (DRAFT → PENDING_REVIEW)' })
   @ApiParam({ name: 'id', description: 'UUID du logement' })
@@ -123,7 +123,7 @@ export class LogementsController {
   }
 
   @Patch(':id/pause')
-  @Roles(Role.PROPRIETAIRE)
+  @Roles(Role.PROPRIETAIRE, Role.GESTIONNAIRE)
   @HttpCode(200)
   @ApiOperation({ summary: 'Mettre en pause un logement publié (PUBLISHED → PAUSED)' })
   @ApiParam({ name: 'id', description: 'UUID du logement' })
@@ -132,7 +132,7 @@ export class LogementsController {
   }
 
   @Patch(':id/republier')
-  @Roles(Role.PROPRIETAIRE)
+  @Roles(Role.PROPRIETAIRE, Role.GESTIONNAIRE)
   @HttpCode(200)
   @ApiOperation({ summary: 'Republier un logement mis en pause (PAUSED → PUBLISHED)' })
   @ApiParam({ name: 'id', description: 'UUID du logement' })
@@ -141,7 +141,7 @@ export class LogementsController {
   }
 
   @Delete(':id')
-  @Roles(Role.PROPRIETAIRE)
+  @Roles(Role.PROPRIETAIRE, Role.GESTIONNAIRE)
   @HttpCode(200)
   @ApiOperation({ summary: 'Archiver (soft delete) un logement' })
   @ApiParam({ name: 'id', description: 'UUID du logement' })
@@ -150,7 +150,7 @@ export class LogementsController {
   }
 
   @Post(':id/tarifs-personnes')
-  @Roles(Role.PROPRIETAIRE)
+  @Roles(Role.PROPRIETAIRE, Role.GESTIONNAIRE)
   @ApiOperation({ summary: 'Remplacer les tarifs par plage de personnes' })
   @ApiParam({ name: 'id', description: 'UUID du logement' })
   @ApiBody({ type: [CreateTarifPersonnesDto] })
@@ -163,7 +163,7 @@ export class LogementsController {
   }
 
   @Post(':id/tarifs-nuits')
-  @Roles(Role.PROPRIETAIRE)
+  @Roles(Role.PROPRIETAIRE, Role.GESTIONNAIRE)
   @ApiOperation({ summary: 'Remplacer les tarifs par durée de séjour' })
   @ApiParam({ name: 'id', description: 'UUID du logement' })
   @ApiBody({ type: [CreateTarifNuitsDto] })
@@ -176,7 +176,7 @@ export class LogementsController {
   }
 
   @Get(':id/photos/upload-params')
-  @Roles(Role.PROPRIETAIRE)
+  @Roles(Role.PROPRIETAIRE, Role.GESTIONNAIRE)
   @ApiOperation({ summary: 'Obtenir les paramètres signés pour upload direct vers Cloudinary' })
   @ApiParam({ name: 'id', description: 'UUID du logement' })
   getPhotoUploadParams(@Param('id') id: string, @CurrentUser() user: AuthUser) {
@@ -184,7 +184,7 @@ export class LogementsController {
   }
 
   @Get(':id/video/upload-params')
-  @Roles(Role.PROPRIETAIRE)
+  @Roles(Role.PROPRIETAIRE, Role.GESTIONNAIRE)
   @ApiOperation({ summary: 'Obtenir les paramètres signés pour upload vidéo 60s direct vers Cloudinary' })
   @ApiParam({ name: 'id', description: 'UUID du logement' })
   getVideoUploadParams(@Param('id') id: string, @CurrentUser() user: AuthUser) {
@@ -192,7 +192,7 @@ export class LogementsController {
   }
 
   @Delete(':id/video')
-  @Roles(Role.PROPRIETAIRE)
+  @Roles(Role.PROPRIETAIRE, Role.GESTIONNAIRE)
   @HttpCode(200)
   @ApiOperation({ summary: 'Supprimer la vidéo de présentation d\'un logement' })
   @ApiParam({ name: 'id', description: 'UUID du logement' })
@@ -201,7 +201,7 @@ export class LogementsController {
   }
 
   @Post(':id/photos')
-  @Roles(Role.PROPRIETAIRE)
+  @Roles(Role.PROPRIETAIRE, Role.GESTIONNAIRE)
   @HttpCode(201)
   @ApiOperation({ summary: 'Enregistrer une photo après upload direct Cloudinary' })
   @ApiParam({ name: 'id', description: 'UUID du logement' })
@@ -214,7 +214,7 @@ export class LogementsController {
   }
 
   @Delete(':id/photos/:photoId')
-  @Roles(Role.PROPRIETAIRE)
+  @Roles(Role.PROPRIETAIRE, Role.GESTIONNAIRE)
   @HttpCode(200)
   @ApiOperation({ summary: 'Supprimer une photo (DB + Cloudinary)' })
   @ApiParam({ name: 'id', description: 'UUID du logement' })
@@ -228,7 +228,7 @@ export class LogementsController {
   }
 
   @Patch(':id/photos/:photoId/principal')
-  @Roles(Role.PROPRIETAIRE)
+  @Roles(Role.PROPRIETAIRE, Role.GESTIONNAIRE)
   @HttpCode(200)
   @ApiOperation({ summary: 'Définir une photo comme photo principale' })
   @ApiParam({ name: 'id', description: 'UUID du logement' })
@@ -242,7 +242,7 @@ export class LogementsController {
   }
 
   @Put(':id/equipements')
-  @Roles(Role.PROPRIETAIRE)
+  @Roles(Role.PROPRIETAIRE, Role.GESTIONNAIRE)
   @HttpCode(200)
   @ApiOperation({ summary: "Remplacer la liste complète d'équipements d'un logement" })
   @ApiParam({ name: 'id', description: 'UUID du logement' })

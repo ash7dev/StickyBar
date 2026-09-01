@@ -210,8 +210,8 @@ export interface Listing {
   detailsElectricite?: string | null;
   photos: ListingPhoto[];
   equipements: Equipement[];
-  tarifsNuits?: TarifNuit[];
-  tarifsPersonnes?: TarifPersonne[];
+  tarifsNuits: TarifNuit[];
+  tarifsPersonnes: TarifPersonne[];
   note?: number | null;
   totalAvis?: number;
   totalSejours?: number;
@@ -233,6 +233,7 @@ export interface Listing {
     id: string;
     prenom: string;
     nom: string;
+    telephone?: string | null;
     avatarUrl?: string | null;
     statutKyc?: StatutKyc;
     noteProprietaire?: number;
