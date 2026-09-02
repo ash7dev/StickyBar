@@ -1,6 +1,6 @@
-import { Injectable, Logger } from '@nestjs/common';
+import { Injectable, Logger, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../../infrastructure/prisma/prisma.service';
-import { StatutLogement, StatutReservation, TypeEtatLieu } from '@prisma/client';
+import { StatutLogement, StatutReservation, StatutRetrait, TypeEtatLieu } from '@prisma/client';
 
 export interface DashboardStatsResponse {
   kpis: {
@@ -592,5 +592,161 @@ export class GestionnaireService {
     });
 
     return reports;
+  }
+
+  async getReleveMensuelProprietaire(managerId: string, ownerId: string, moisStr?: string) {
+    const now = new Date();
+    let targetYear = now.getFullYear();
+    let targetMonth = now.getMonth();
+
+    if (moisStr && /^\d{4}-\d{2}$/.test(moisStr)) {
+      const [y, m] = moisStr.split('-').map(Number);
+      targetYear = y;
+      targetMonth = m - 1;
+    }
+
+    const startOfMonth = new Date(targetYear, targetMonth, 1, 0, 0, 0);
+    const endOfMonth = new Date(targetYear, targetMonth + 1, 0, 23, 59, 59);
+
+    const owner = await this.prisma.utilisateur.findUnique({
+      where: { id: ownerId },
+      select: {
+        id: true,
+        prenom: true,
+        nom: true,
+        telephone: true,
+        email: true,
+        wallet: { select: { soldeDisponible: true } },
+      },
+    });
+
+    if (!owner) {
+      throw new NotFoundException('Propriétaire partenaire introuvable');
+    }
+
+    const managedListings = await this.prisma.logement.findMany({
+      where: {
+        proprietaireId: ownerId,
+        gestionnaireId: managerId,
+        archiveLe: null,
+      },
+      select: {
+        id: true,
+        titre: true,
+        type: true,
+        ville: true,
+        quartier: true,
+        prixBase: true,
+      },
+    });
+
+    const listingIds = managedListings.map((l) => l.id);
+
+    const activeStatuts: StatutReservation[] = [
+      StatutReservation.PAID,
+      StatutReservation.CONFIRMED,
+      StatutReservation.CHECKED_IN,
+      StatutReservation.COMPLETED,
+    ];
+
+    const reservations = listingIds.length > 0
+      ? await this.prisma.reservation.findMany({
+          where: {
+            logementId: { in: listingIds },
+            statut: { in: activeStatuts },
+            creeLe: { gte: startOfMonth, lte: endOfMonth },
+          },
+          include: {
+            logement: { select: { id: true, titre: true, ville: true } },
+            locataire: { select: { prenom: true, nom: true, telephone: true } },
+            paiement: { select: { fournisseur: true, statut: true } },
+          },
+          orderBy: { creeLe: 'asc' },
+        })
+      : [];
+
+    const retraits = await this.prisma.retrait.findMany({
+      where: {
+        wallet: { utilisateurId: ownerId },
+        demandeeLe: { gte: startOfMonth, lte: endOfMonth },
+      },
+      orderBy: { demandeeLe: 'desc' },
+    });
+
+    const totalEncaissementsBruts = reservations.reduce((sum, r) => sum + Number(r.totalLocataire || 0), 0);
+    const totalCommissionsKlef = reservations.reduce((sum, r) => sum + Number(r.montantCommission || 0), 0);
+    const totalNetBailleurGenerer = reservations.reduce((sum, r) => sum + Number(r.netProprietaire || 0), 0);
+    const totalReversementsEffectues = retraits
+      .filter((w) => w.statut === StatutRetrait.EFFECTUE)
+      .reduce((sum, w) => sum + Number(w.montant || 0), 0);
+
+    const soldeActuelWallet = Number(owner.wallet?.soldeDisponible || 0);
+    const moisLabel = startOfMonth.toLocaleDateString('fr-FR', { month: 'long', year: 'numeric' });
+
+    return {
+      referenceReleve: `REL-${owner.id.substring(0, 5).toUpperCase()}-${targetYear}${String(targetMonth + 1).padStart(2, '0')}`,
+      periode: {
+        mois: moisStr || `${targetYear}-${String(targetMonth + 1).padStart(2, '0')}`,
+        label: moisLabel.charAt(0).toUpperCase() + moisLabel.slice(1),
+        dateDebut: startOfMonth.toISOString(),
+        dateFin: endOfMonth.toISOString(),
+      },
+      proprietaire: {
+        id: owner.id,
+        nomComplet: `${owner.prenom} ${owner.nom}`,
+        telephone: owner.telephone,
+        email: owner.email,
+      },
+      gestionnaire: {
+        societe: 'Klef Managed Conciergerie',
+        contact: '+221 77 123 45 67',
+        email: 'concierge@klef.sn',
+      },
+      logements: managedListings.map((l) => ({
+        id: l.id,
+        titre: l.titre,
+        ville: l.ville,
+        quartier: l.quartier,
+      })),
+      syntheseFinanciere: {
+        totalEncaissementsBruts,
+        totalCommissionsKlef,
+        totalNetBailleurGenerer,
+        totalReversementsEffectues,
+        soldeActuelWallet,
+        tauxCommissionMoyen: totalEncaissementsBruts > 0
+          ? Math.round((totalCommissionsKlef / totalEncaissementsBruts) * 100)
+          : 7,
+      },
+      sejours: reservations.map((r) => {
+        const start = new Date(r.dateDebut);
+        const end = new Date(r.dateFin);
+        const nuits = Math.max(1, Math.ceil((end.getTime() - start.getTime()) / (1000 * 60 * 60 * 24)));
+        return {
+          id: r.id,
+          code: (r as any).code || r.id.substring(0, 8).toUpperCase(),
+          logementTitre: r.logement?.titre || 'Logement',
+          locataireNom: r.locataire ? `${r.locataire.prenom} ${r.locataire.nom}` : 'Voyageur',
+          locataireTelephone: r.locataire?.telephone || '',
+          dateDebut: r.dateDebut.toISOString(),
+          dateFin: r.dateFin.toISOString(),
+          nuits,
+          montantLocataireBrut: Number(r.totalLocataire || 0),
+          commissionKlef: Number(r.montantCommission || 0),
+          netBailleur: Number(r.netProprietaire || 0),
+          statutPaiement: r.paiement?.statut || 'REGLE',
+          modePaiement: r.paiement?.fournisseur || 'Wave / OM',
+        };
+      }),
+      reversementsMobileMoney: retraits.map((w) => ({
+        id: w.id,
+        reference: w.transactionIdExterne || w.id.substring(0, 8).toUpperCase(),
+        date: w.demandeeLe.toISOString(),
+        montant: Number(w.montant),
+        methode: w.methode || 'WAVE',
+        telephone: w.destinataire || owner.telephone,
+        statut: w.statut === StatutRetrait.EFFECTUE ? 'EFFECTUE' : w.statut,
+      })),
+    };
   }
 }

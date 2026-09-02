@@ -146,7 +146,7 @@ export function HeroSection({ listings = [] }: Props) {
               className="klef-rise mt-3 sm:mt-5 max-w-xl text-base sm:text-lg leading-relaxed text-foreground-muted"
               style={{ '--rise-delay': '120ms' } as React.CSSProperties}
             >
-              Chaque bien est visité par un agent avant publication. Vous ne payez
+              Vous ne payez
               rien tant que vous n’avez pas les clés en main.
             </p>
 
@@ -219,18 +219,16 @@ export function HeroSection({ listings = [] }: Props) {
                       onClick={() => setOpenField(openField === f ? null : f)}
                       aria-expanded={openField === f}
                       aria-haspopup="dialog"
-                      className={`flex flex-1 items-center gap-2.5 rounded-pill px-4 py-2.5 text-left transition-colors duration-150 hover:bg-white/50 ${
-                        openField === f ? 'bg-white/70' : ''
-                      }`}
+                      className={`flex flex-1 items-center gap-2.5 rounded-pill px-4 py-2.5 text-left transition-colors duration-150 hover:bg-white/50 ${openField === f ? 'bg-white/70' : ''
+                        }`}
                     >
                       <CalendarDays className="h-4 w-4 shrink-0 text-foreground-muted" aria-hidden="true" />
                       <span className="min-w-0">
                         <span className="block text-[0.6875rem] font-semibold uppercase tracking-wider text-foreground-faint">
                           {f === 'from' ? 'Arrivée' : 'Départ'}
                         </span>
-                        <span className={`block truncate text-[0.9375rem] ${
-                          (f === 'from' ? range.from : range.to) ? 'text-foreground' : 'text-foreground-faint'
-                        }`}>
+                        <span className={`block truncate text-[0.9375rem] ${(f === 'from' ? range.from : range.to) ? 'text-foreground' : 'text-foreground-faint'
+                          }`}>
                           {f === 'from'
                             ? (range.from ? shortLabel.format(range.from) : 'Ajouter')
                             : (range.to ? shortLabel.format(range.to) : 'Ajouter')}
@@ -361,11 +359,10 @@ export function HeroSection({ listings = [] }: Props) {
 
               {/* 1. Bloc "Où ?" (Destination) */}
               <div
-                className={`rounded-2xl border transition-all duration-200 overflow-hidden ${
-                  mobileTab === 'where'
+                className={`rounded-2xl border transition-all duration-200 overflow-hidden ${mobileTab === 'where'
                     ? 'border-forest-600 bg-white shadow-md ring-4 ring-forest-500/10 p-4'
                     : 'border-border bg-white p-3.5 hover:border-border-hover'
-                }`}
+                  }`}
               >
                 <div
                   className="flex items-center justify-between cursor-pointer"
@@ -434,11 +431,10 @@ export function HeroSection({ listings = [] }: Props) {
                                 setPlace(item.name);
                                 setMobileTab('dates');
                               }}
-                              className={`flex flex-col text-left p-3 rounded-xl border transition-all duration-150 cursor-pointer ${
-                                active
+                              className={`flex flex-col text-left p-3 rounded-xl border transition-all duration-150 cursor-pointer ${active
                                   ? 'border-forest-600 bg-forest-50/80 shadow-xs ring-1 ring-forest-500/30'
                                   : 'border-border bg-neutral-50 hover:bg-neutral-100 hover:border-border-hover'
-                              }`}
+                                }`}
                             >
                               <span className="text-xs font-extrabold text-forest-900 flex items-center justify-between">
                                 {item.name}
@@ -458,11 +454,10 @@ export function HeroSection({ listings = [] }: Props) {
 
               {/* 2. Bloc "Quand ?" (Dates) */}
               <div
-                className={`rounded-2xl border transition-all duration-200 overflow-hidden ${
-                  mobileTab === 'dates'
+                className={`rounded-2xl border transition-all duration-200 overflow-hidden ${mobileTab === 'dates'
                     ? 'border-forest-600 bg-white shadow-md ring-4 ring-forest-500/10 p-4'
                     : 'border-border bg-white p-3.5 hover:border-border-hover'
-                }`}
+                  }`}
               >
                 <div
                   className="flex items-center justify-between cursor-pointer"
@@ -503,17 +498,17 @@ export function HeroSection({ listings = [] }: Props) {
             </div>
 
             {/* Pied de modale fixe de haute conversion (Trois Voix Klef : Bouton Lime) */}
-            <div className="shrink-0 z-30 flex items-center justify-between gap-3 border-t border-border bg-white/95 backdrop-blur-md p-4 shadow-[0_-8px_30px_rgba(4,25,18,0.12)]">
+            <div className="shrink-0 z-30 flex items-center justify-between gap-3 border-t border-border bg-white/95 backdrop-blur-md p-3.5 shadow-[0_-8px_30px_rgba(4,25,18,0.12)]">
               <button
                 type="button"
                 onClick={() => {
                   setPlace('');
                   setRange({ from: null, to: null });
                 }}
-                className="flex items-center gap-1.5 px-3.5 py-3 text-xs font-bold text-foreground-muted hover:text-foreground active:scale-95 transition-all"
+                className="flex items-center gap-1.5 px-3 py-2.5 text-xs font-medium text-foreground-muted hover:text-foreground active:scale-95 transition-all shrink-0 cursor-pointer"
               >
                 <RotateCcw className="w-3.5 h-3.5" />
-                Réinitialiser
+                <span>Réinitialiser</span>
               </button>
 
               <button
@@ -522,10 +517,10 @@ export function HeroSection({ listings = [] }: Props) {
                   setIsMobileSearchOpen(false);
                   submit(e);
                 }}
-                className="flex-1 flex items-center justify-center gap-2.5 rounded-full bg-lime-400 hover:bg-lime-500 px-6 py-3.5 text-sm font-black text-forest-900 shadow-[0_6px_20px_rgba(155,194,44,0.35)] transition-all active:scale-[0.98] cursor-pointer"
+                className="flex-1 min-w-0 flex items-center justify-center gap-2 rounded-full bg-lime-400 hover:bg-lime-500 px-4 py-3 text-xs sm:text-sm font-semibold text-forest-950 shadow-md hover:shadow-lg transition-all active:scale-[0.98] cursor-pointer"
               >
-                <Search className="w-4 h-4 text-forest-900" />
-                <span>
+                <Search className="w-4 h-4 text-forest-950 shrink-0" />
+                <span className="truncate whitespace-nowrap">
                   {(() => {
                     const parts = [];
                     if (place.trim()) parts.push(place.trim());

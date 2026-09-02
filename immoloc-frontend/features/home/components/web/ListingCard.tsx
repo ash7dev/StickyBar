@@ -31,6 +31,7 @@ export interface ListingCardProps {
   capaciteMax?: number;
   nombreChambres?: number | null;
   nombreSallesBain?: number | null;
+  nuitesMinimum?: number | null;
   verifie?: boolean;
   sponsorise?: boolean;
   isFavorite?: boolean;
@@ -57,6 +58,7 @@ export function ListingCard({
   capaciteMax,
   nombreChambres,
   nombreSallesBain,
+  nuitesMinimum,
   verifie = false,
   sponsorise = false,
   isFavorite = false,
@@ -181,12 +183,13 @@ export function ListingCard({
           </p>
 
           {/* Specs Airbnb-style */}
-          {(capaciteMax || nombreChambres || nombreSallesBain) && (
-            <p className={`mt-1 text-xs font-medium ${isDark ? 'text-forest-200/80' : 'text-foreground-faint'}`}>
+          {(capaciteMax || nombreChambres || nombreSallesBain || nuitesMinimum) && (
+            <p className={`mt-1.5 text-xs font-medium ${isDark ? 'text-forest-200/80' : 'text-foreground-faint'}`}>
               {[
-                capaciteMax && capaciteMax > 0 ? `${capaciteMax} voy.` : null,
+                capaciteMax && capaciteMax > 0 ? `${capaciteMax} voy. max` : null,
                 nombreChambres ? `${nombreChambres} ch.` : null,
                 nombreSallesBain ? `${nombreSallesBain} sdb` : null,
+                nuitesMinimum && nuitesMinimum > 1 ? `Min. ${nuitesMinimum} nuits` : '1 nuit min.',
               ].filter(Boolean).join(' · ')}
             </p>
           )}

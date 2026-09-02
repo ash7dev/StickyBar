@@ -171,10 +171,11 @@ model Logement {
   longitude Decimal? @db.Decimal(10, 7)
 
   // Tarification de base
-  prixBase           Decimal @db.Decimal(10, 2)
-  personnesBase      Int     @default(1)
-  acomptePourcentage Int     @default(30)
-  derniereMinuteActive Boolean @default(false)
+  prixBase              Decimal @db.Decimal(10, 2)
+  personnesBase         Int     @default(1)
+  acomptePourcentage    Int     @default(30)
+  commissionPourcentage Decimal @default(7.00) @db.Decimal(5, 2)
+  derniereMinuteActive  Boolean @default(false)
 
   // Conditions et livret d'accueil digital
   nuitesMinimum        Int     @default(1)

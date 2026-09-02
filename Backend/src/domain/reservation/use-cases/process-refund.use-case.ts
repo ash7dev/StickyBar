@@ -91,7 +91,7 @@ export class ProcessRefundUseCase {
 
         // 1-3 jours
         if (joursAvantCheckIn >= 1) {
-          return this.calculateUC2_Locataire1_3J(totalLocataire, totalBase);
+          return this.calculateUC2_Locataire1_3J(totalLocataire, totalBase, Number(reservation.tauxCommission || 0.07));
         }
 
         // Cas non géré (ne devrait jamais arriver)
@@ -188,11 +188,12 @@ export class ProcessRefundUseCase {
   private calculateUC2_Locataire1_3J(
     totalLocataire: Prisma.Decimal,
     totalBase: Prisma.Decimal,
+    tauxCommission: number = 0.07,
   ): RefundCalculation {
     const total = Number(totalLocataire);
     const base = Number(totalBase);
     const remboursement = total * 0.75;
-    const commission = total * this.COMMISSION_RATE;
+    const commission = total * tauxCommission;
     const compensationProprio = total - remboursement - commission;
 
     return {

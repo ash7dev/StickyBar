@@ -211,6 +211,7 @@ export function NearbyListingsSection() {
                       capaciteMax={item.capaciteMax}
                       nombreChambres={item.nombreChambres}
                       nombreSallesBain={item.nombreSallesBain}
+                      nuitesMinimum={item.nuitesMinimum}
                       derniereMinuteActive={item.derniereMinuteActive}
                     />
                   </li>

@@ -11,6 +11,8 @@ import { Users, Wallet, AlertCircle, RefreshCw, CheckCircle2, Building2 } from '
 import { cn } from '@/lib/utils/cn';
 import Link from 'next/link';
 
+import { GestionnaireReleveMensuelModal } from '@/features/gestionnaire/components/GestionnaireReleveMensuelModal';
+
 const fcfa = (n: number) => new Intl.NumberFormat('fr-FR').format(Math.round(n || 0));
 
 export default function GestionnaireProprietairesPage() {
@@ -20,6 +22,7 @@ export default function GestionnaireProprietairesPage() {
   });
 
   const [selectedOwner, setSelectedOwner] = useState<OwnerWithListings | null>(null);
+  const [selectedOwnerForReleve, setSelectedOwnerForReleve] = useState<OwnerWithListings | null>(null);
   const [montant, setMontant] = useState('');
   const [methode, setMethode] = useState<'WAVE' | 'ORANGE_MONEY'>('WAVE');
   const [telephonePay, setTelephonePay] = useState('');
@@ -215,9 +218,20 @@ export default function GestionnaireProprietairesPage() {
               key={owner.id}
               owner={owner}
               onOpenWithdrawal={openModal}
+              onOpenReleve={(o) => setSelectedOwnerForReleve(o)}
             />
           ))}
         </div>
+      )}
+
+      {/* Modal Relevé Mensuel PDF & WhatsApp */}
+      {selectedOwnerForReleve && (
+        <GestionnaireReleveMensuelModal
+          ownerId={selectedOwnerForReleve.id}
+          ownerName={`${selectedOwnerForReleve.prenom} ${selectedOwnerForReleve.nom}`}
+          isOpen={!!selectedOwnerForReleve}
+          onClose={() => setSelectedOwnerForReleve(null)}
+        />
       )}
 
       {/* Modal de demande de reversement */}

@@ -3,7 +3,7 @@
 import { useState } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
-import { ChevronLeft, ChevronRight, Heart, ImageOff, MapPin, RotateCcw, SearchX, ShieldCheck, Star, Users } from 'lucide-react';
+import { BedDouble, ChevronLeft, ChevronRight, Heart, ImageOff, MapPin, Moon, RotateCcw, SearchX, ShieldCheck, Star, Users, Wallet } from 'lucide-react';
 import type { Listing } from '@/lib/nestjs/types';
 import { cn } from '@/lib/utils/cn';
 
@@ -279,11 +279,29 @@ function ListingRow({
           <ul className="mt-3.5 flex flex-wrap gap-1.5">
             <Chip>
               <Users className="h-3.5 w-3.5 text-neutral-500" aria-hidden="true" />
-              {listing.capaciteMax ?? 1} pers.
+              <span>{listing.capaciteMax ?? 1} pers. max</span>
             </Chip>
-            {equipements.map((eq) => (
-              <Chip key={eq.id ?? eq.nom}>{eq.nom}</Chip>
-            ))}
+
+            {Boolean(listing.nombreChambres && listing.nombreChambres > 0) && (
+              <Chip>
+                <BedDouble className="h-3.5 w-3.5 text-neutral-500" aria-hidden="true" />
+                <span>{listing.nombreChambres} chambre{listing.nombreChambres! > 1 ? 's' : ''}</span>
+              </Chip>
+            )}
+
+            <Chip>
+              <Moon className="h-3.5 w-3.5 text-neutral-500" aria-hidden="true" />
+              <span>
+                {listing.nuitesMinimum && listing.nuitesMinimum > 1
+                  ? `Min. ${listing.nuitesMinimum} nuits`
+                  : '1 nuit min.'}
+              </span>
+            </Chip>
+
+            <Chip>
+              <Wallet className="h-3.5 w-3.5 text-neutral-500" aria-hidden="true" />
+              <span>Acompte {(listing as any).acomptePourcentage || 30}%</span>
+            </Chip>
           </ul>
         </div>
 

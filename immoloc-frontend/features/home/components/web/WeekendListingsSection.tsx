@@ -173,6 +173,7 @@ export function WeekendListingsSection() {
                   capaciteMax={item.capaciteMax}
                   nombreChambres={item.nombreChambres}
                   nombreSallesBain={item.nombreSallesBain}
+                  nuitesMinimum={item.nuitesMinimum}
                   verifie={Boolean((item as { verifie?: boolean }).verifie)}
                   isInstantBooking={item.isInstantBooking}
                   derniereMinuteActive={item.derniereMinuteActive}

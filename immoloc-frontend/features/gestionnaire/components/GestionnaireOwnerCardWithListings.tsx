@@ -3,7 +3,7 @@
 import { useState } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
-import { ChevronDown, ChevronUp, Phone, Mail, Wallet, Edit3, ImageOff, Building2 } from 'lucide-react';
+import { ChevronDown, ChevronUp, Phone, Mail, Wallet, Edit3, ImageOff, Building2, FileText } from 'lucide-react';
 import { cn } from '@/lib/utils/cn';
 import { OwnerListingCard } from '@/features/listings/components/owner/OwnerListingCard';
 
@@ -33,6 +33,7 @@ export interface OwnerWithListings {
 interface Props {
   owner: OwnerWithListings;
   onOpenWithdrawal: (owner: OwnerWithListings) => void;
+  onOpenReleve?: (owner: OwnerWithListings) => void;
 }
 
 const STATUT_CONFIG: Record<string, { label: string; cls: string; dot: string }> = {
@@ -42,7 +43,7 @@ const STATUT_CONFIG: Record<string, { label: string; cls: string; dot: string }>
   PAUSED: { label: 'En pause', cls: 'bg-neutral-100 text-foreground-muted', dot: 'bg-neutral-400' },
 };
 
-export function GestionnaireOwnerCardWithListings({ owner, onOpenWithdrawal }: Props) {
+export function GestionnaireOwnerCardWithListings({ owner, onOpenWithdrawal, onOpenReleve }: Props) {
   const [expanded, setExpanded] = useState(true);
   const listings = owner.logements ?? [];
 
@@ -88,8 +89,8 @@ export function GestionnaireOwnerCardWithListings({ owner, onOpenWithdrawal }: P
         </div>
 
         {/* Portefeuille & Action Virement */}
-        <div className="flex flex-wrap items-center gap-4 justify-between md:justify-end border-t md:border-t-0 border-border pt-3 md:pt-0">
-          <div className="text-left md:text-right">
+        <div className="flex flex-wrap items-center gap-3 justify-between md:justify-end border-t md:border-t-0 border-border pt-3 md:pt-0">
+          <div className="text-left md:text-right mr-2">
             <span className="text-[0.6875rem] uppercase font-bold text-foreground-muted tracking-wider block">
               Solde Portefeuille Disponible
             </span>
@@ -100,8 +101,17 @@ export function GestionnaireOwnerCardWithListings({ owner, onOpenWithdrawal }: P
 
           <button
             type="button"
+            onClick={() => onOpenReleve?.(owner)}
+            className="inline-flex items-center gap-2 px-4 py-2.5 rounded-pill border border-border bg-background-card hover:bg-neutral-100 text-xs font-semibold text-foreground transition-all cursor-pointer shadow-xs"
+          >
+            <FileText className="h-4 w-4 text-forest-600" aria-hidden="true" />
+            <span>📄 Relevé Mensuel</span>
+          </button>
+
+          <button
+            type="button"
             onClick={() => onOpenWithdrawal(owner)}
-            className="btn-action inline-flex items-center gap-2 px-5 py-2.5 text-xs font-semibold"
+            className="btn-action inline-flex items-center gap-2 px-5 py-2.5 text-xs font-semibold cursor-pointer"
           >
             <Wallet className="h-4 w-4" aria-hidden="true" />
             <span>Reverser Mobile Money</span>

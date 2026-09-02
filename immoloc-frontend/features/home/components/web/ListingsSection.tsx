@@ -18,6 +18,7 @@ export interface ListingItem {
   capaciteMax?: number;
   nombreChambres?: number | null;
   nombreSallesBain?: number | null;
+  nuitesMinimum?: number | null;
   isInstantBooking?: boolean;
   derniereMinuteActive?: boolean;
   videoUrl?: string | null;
@@ -95,6 +96,7 @@ export function ListingsSection({
                   capaciteMax={listing.capaciteMax}
                   nombreChambres={listing.nombreChambres}
                   nombreSallesBain={listing.nombreSallesBain}
+                  nuitesMinimum={listing.nuitesMinimum}
                   isInstantBooking={listing.isInstantBooking}
                   derniereMinuteActive={listing.derniereMinuteActive}
                   videoUrl={listing.videoUrl}

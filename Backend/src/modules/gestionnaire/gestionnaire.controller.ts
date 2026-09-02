@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Body, Param, UseGuards } from '@nestjs/common';
+import { Controller, Get, Post, Body, Param, Query, UseGuards } from '@nestjs/common';
 import { ApiTags, ApiBearerAuth, ApiOperation } from '@nestjs/swagger';
 import { JwtAuthGuard } from '../../shared/guards/jwt-auth.guard';
 import { CurrentUser } from '../../shared/decorators/current-user.decorator';
@@ -51,6 +51,16 @@ export class GestionnaireController {
     @Body() dto: RequestWithdrawalDto,
   ) {
     return this.walletService.requestWithdrawalForOwner(user.id, ownerId, dto);
+  }
+
+  @Get('proprietaires/:ownerId/releve-mensuel')
+  @ApiOperation({ summary: 'Obtenir le relevé mensuel de gestion locative certifié pour un propriétaire partenaire' })
+  async getReleveMensuel(
+    @CurrentUser() user: AuthUser,
+    @Param('ownerId') ownerId: string,
+    @Query('mois') mois?: string,
+  ) {
+    return this.gestionnaireService.getReleveMensuelProprietaire(user.id, ownerId, mois);
   }
 
   @Get('etats-des-lieux')

@@ -139,6 +139,8 @@ export class PricingService {
         nuitesMinimum: true,
         capaciteMax: true,
         personnesBase: true,
+        acomptePourcentage: true,
+        commissionPourcentage: true,
         derniereMinuteActive: true,
         tarifsPersonnes: { orderBy: { position: 'asc' } },
         tarifsNuits: { orderBy: { position: 'asc' } },
@@ -162,6 +164,8 @@ export class PricingService {
       );
     }
 
+    const tauxCommission = Number(logement.commissionPourcentage || 7) / 100;
+
     const breakdown = this.calculate({
       prixBase: logement.prixBase,
       tarifsPersonnes: logement.tarifsPersonnes,
@@ -170,6 +174,7 @@ export class PricingService {
       nbNuits,
       personnesBase: logement.personnesBase,
       nuitesMinimum: logement.nuitesMinimum,
+      tauxCommission,
     });
 
     // Remise -15% Dernière Minute si activé et réservation sous 48h

@@ -30,8 +30,14 @@ export default function GestionnairePlanningPage() {
     queryFn: () => nestFetch<any[]>(NEST_API.GESTIONNAIRE.LOGEMENTS),
   });
 
-  // 2. Récupération des données du dashboard conciergerie (réservations & checkins)
-  const { data: dashboardData, isLoading: loadingDashboard, error } = useQuery<any>({
+  // 2. Récupération de l'ensemble des réservations réelles de la conciergerie
+  const { data: rawReservations = [], isLoading: loadingReservations, error: errorReservations } = useQuery<any[]>({
+    queryKey: ['reservations', 'mine', 'gestionnaire'],
+    queryFn: () => nestFetch<any[]>(NEST_API.RESERVATIONS.MINE()),
+  });
+
+  // 3. Récupération des données du dashboard conciergerie (KPIs)
+  const { data: dashboardData, isLoading: loadingDashboard, error: errorDashboard } = useQuery<any>({
     queryKey: ['gestionnaire', 'dashboard'],
     queryFn: () => nestFetch<any>(NEST_API.GESTIONNAIRE.DASHBOARD),
   });
@@ -40,33 +46,73 @@ export default function GestionnairePlanningPage() {
     setFilters((prev) => ({ ...prev, ...updated }));
   };
 
-  // Liste des réservations extraites du dashboard
+  // Liste complète des réservations extraites du serveur
   const reservations = useMemo(() => {
-    if (!dashboardData) return [];
-    const checkins = dashboardData.upcomingCheckins || [];
-    const recent = dashboardData.recentBookings || [];
-
-    // Fusion unique des réservations
     const map = new Map<string, any>();
-    [...checkins, ...recent].forEach((b) => {
-      map.set(b.id, {
-        id: b.id,
-        code: b.code,
-        logementId: b.logementId || b.logement?.id,
-        dateDebut: b.dateDebut,
-        dateFin: b.dateFin,
-        statut: b.statut || 'CONFIRMED',
-        prixTotal: b.prixTotal || b.totalLocataire || 0,
-        netProprietaire: b.netProprietaire || 0,
-        travelerName: b.travelerName || (b.locataire ? `${b.locataire.prenom} ${b.locataire.nom}` : 'Voyageur'),
-        travelerPhone: b.travelerPhone || b.locataire?.telephone,
-        logementTitle: b.logementTitle || b.logement?.titre,
-        ownerName: b.ownerName || (b.logement?.proprietaire ? `${b.logement.proprietaire.prenom} ${b.logement.proprietaire.nom}` : undefined),
+
+    // A. Charger toutes les réservations réelles depuis le serveur
+    if (Array.isArray(rawReservations)) {
+      rawReservations.forEach((b) => {
+        map.set(b.id, {
+          id: b.id,
+          code: b.code || b.id.substring(0, 8).toUpperCase(),
+          logementId: b.logementId || b.logement?.id,
+          dateDebut: b.dateDebut,
+          dateFin: b.dateFin,
+          statut: b.statut || 'CONFIRMED',
+          prixTotal: Number(b.totalLocataire || b.prixTotal || 0),
+          netProprietaire: Number(b.netProprietaire || 0),
+          travelerName: b.locataire
+            ? `${b.locataire.prenom} ${b.locataire.nom}`.trim()
+            : b.travelerName || 'Voyageur',
+          travelerPhone: b.locataire?.telephone || b.travelerPhone,
+          logementTitle: b.logement?.titre || b.logementTitle,
+          ownerName: b.proprietaire
+            ? `${b.proprietaire.prenom} ${b.proprietaire.nom}`.trim()
+            : b.logement?.proprietaire
+            ? `${b.logement.proprietaire.prenom} ${b.logement.proprietaire.nom}`.trim()
+            : b.ownerName,
+          fournisseurPaiement: b.paiement?.fournisseur || b.fournisseurPaiement || 'Wave / OM',
+          statutPaiement: b.paiement?.statut || b.statutPaiement || (b.statut === 'CONFIRMED' || b.statut === 'PAID' ? 'PAID' : 'PENDING'),
+          estAcompte: b.estAcompte || false,
+        });
       });
-    });
+    }
+
+    // B. Compléter avec les données du dashboard si présentes
+    if (dashboardData) {
+      const checkins = dashboardData.upcomingCheckins || [];
+      const recent = dashboardData.recentBookings || [];
+      [...checkins, ...recent].forEach((b) => {
+        if (!map.has(b.id)) {
+          map.set(b.id, {
+            id: b.id,
+            code: b.code,
+            logementId: b.logementId || b.logement?.id,
+            dateDebut: b.dateDebut,
+            dateFin: b.dateFin,
+            statut: b.statut || 'CONFIRMED',
+            prixTotal: Number(b.prixTotal || b.totalLocataire || 0),
+            netProprietaire: Number(b.netProprietaire || 0),
+            travelerName:
+              b.travelerName || (b.locataire ? `${b.locataire.prenom} ${b.locataire.nom}` : 'Voyageur'),
+            travelerPhone: b.travelerPhone || b.locataire?.telephone,
+            logementTitle: b.logementTitle || b.logement?.titre,
+            ownerName:
+              b.ownerName ||
+              (b.logement?.proprietaire
+                ? `${b.logement.proprietaire.prenom} ${b.logement.proprietaire.nom}`
+                : undefined),
+            fournisseurPaiement: b.paiement?.fournisseur || b.fournisseurPaiement || 'Wave / OM',
+            statutPaiement: b.paiement?.statut || b.statutPaiement || (b.statut === 'CONFIRMED' || b.statut === 'PAID' ? 'PAID' : 'PENDING'),
+            estAcompte: b.estAcompte || false,
+          });
+        }
+      });
+    }
 
     return Array.from(map.values());
-  }, [dashboardData]);
+  }, [rawReservations, dashboardData]);
 
   // Filtrage des logements et des réservations
   const filteredLogements = useMemo(() => {
@@ -119,7 +165,8 @@ export default function GestionnairePlanningPage() {
     };
   }, [reservations, logements]);
 
-  const isLoading = loadingLogements || loadingDashboard;
+  const isLoading = loadingLogements || loadingDashboard || loadingReservations;
+  const error = errorDashboard || errorReservations;
 
   return (
     <div className="space-y-8 pb-12">

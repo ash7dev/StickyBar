@@ -185,5 +185,9 @@ export const NEST_API = {
     PROPRIETAIRES: `${BASE}/gestionnaire/proprietaires`,
     PROPRIETAIRES_ALL: `${BASE}/gestionnaire/proprietaires-all`,
     ETATS_DES_LIEUX: `${BASE}/gestionnaire/etats-des-lieux`,
+    RELEVE_MENSUEL: (ownerId: string, mois?: string) =>
+      mois
+        ? `${BASE}/gestionnaire/proprietaires/${ownerId}/releve-mensuel?mois=${mois}`
+        : `${BASE}/gestionnaire/proprietaires/${ownerId}/releve-mensuel`,
   },
 } as const;

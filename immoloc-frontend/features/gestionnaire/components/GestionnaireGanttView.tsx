@@ -3,7 +3,7 @@
 import { useState, useMemo } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
-import { Calendar, Eye, ImageOff, Phone, User, X } from 'lucide-react';
+import { Calendar, CheckCircle2, CreditCard, Eye, ImageOff, Phone, ShieldCheck, User, Wallet, X } from 'lucide-react';
 import { cn } from '@/lib/utils/cn';
 
 interface Proprietaire {
@@ -36,6 +36,9 @@ interface ReservationItem {
   travelerPhone?: string;
   logementTitle?: string;
   ownerName?: string;
+  fournisseurPaiement?: string;
+  statutPaiement?: string;
+  estAcompte?: boolean;
 }
 
 interface Props {
@@ -180,7 +183,36 @@ export function GestionnaireGanttView({ logements, reservations, currentDate }: 
                         return d.dateStr >= start && d.dateStr <= end;
                       });
 
-                      const isStart = matchingResa && new Date(matchingResa.dateDebut).toISOString().split('T')[0] === d.dateStr;
+                      let shouldRenderBar = false;
+                      let barDays = 1;
+
+                      if (matchingResa) {
+                        const startStr = new Date(matchingResa.dateDebut).toISOString().split('T')[0];
+                        const endStr = new Date(matchingResa.dateFin).toISOString().split('T')[0];
+
+                        const isStart = startStr === d.dateStr;
+                        const isOverflowStart = d.dayNum === 1 && startStr < daysList[0].dateStr && endStr >= d.dateStr;
+
+                        if (isStart || isOverflowStart) {
+                          shouldRenderBar = true;
+
+                          const startDayNum = isOverflowStart ? 1 : new Date(matchingResa.dateDebut).getDate();
+                          const endDateObj = new Date(matchingResa.dateFin);
+
+                          const currentMonth = currentDate.getMonth();
+                          const currentYear = currentDate.getFullYear();
+
+                          let endDayNum = endDateObj.getDate();
+                          if (
+                            endDateObj.getFullYear() > currentYear ||
+                            (endDateObj.getFullYear() === currentYear && endDateObj.getMonth() > currentMonth)
+                          ) {
+                            endDayNum = daysInMonth;
+                          }
+
+                          barDays = Math.max(1, endDayNum - startDayNum + 1);
+                        }
+                      }
 
                       return (
                         <td
@@ -191,25 +223,136 @@ export function GestionnaireGanttView({ logements, reservations, currentDate }: 
                             d.isWeekend ? 'bg-background-alt/40' : '',
                           )}
                         >
-                          {matchingResa && isStart && (
-                            <button
-                              type="button"
-                              onClick={() => setSelectedResa(matchingResa)}
-                              className={cn(
-                                'absolute top-2 bottom-2 left-0.5 z-10 rounded-pill px-3 text-[0.6875rem] font-extrabold shadow-sm truncate flex items-center justify-between gap-1.5 transition-all hover:scale-[1.02] cursor-pointer',
-                                matchingResa.statut === 'CONFIRMED'
-                                  ? 'bg-success-50 text-success-700 border border-success-500/40'
-                                  : matchingResa.statut === 'PENDING'
-                                  ? 'bg-warning-50 text-warning-700 border border-warning-500/40'
-                                  : 'bg-forest-950 text-neutral-0 border border-white/20',
-                              )}
+                          {matchingResa && shouldRenderBar && (
+                            <div
+                              className="group absolute top-2 bottom-2 left-0.5 z-10"
                               style={{
-                                width: `calc(${(Math.max(1, Math.ceil((new Date(matchingResa.dateFin).getTime() - new Date(matchingResa.dateDebut).getTime()) / 86400000))) * 36}px - 4px)`,
+                                width: `calc(${barDays * 36}px - 4px)`,
                               }}
                             >
-                              <span className="truncate">{matchingResa.travelerName || 'Locataire'}</span>
-                              <span className="opacity-90 shrink-0 font-bold">({fcfa(matchingResa.prixTotal || matchingResa.totalLocataire)} FCFA)</span>
-                            </button>
+                              {/* ── Popover Tooltip au survol ───────────────────────── */}
+                              <div className="pointer-events-none absolute bottom-full mb-2.5 left-1/2 -translate-x-1/2 z-50 w-72 p-3.5 rounded-2xl border border-white/15 bg-forest-950 text-neutral-50 shadow-2xl opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 text-left space-y-2.5">
+                                {/* Flèche décorative pointant vers la barre */}
+                                <div className="absolute -bottom-1.5 left-1/2 -translate-x-1/2 w-3 h-3 rotate-45 bg-forest-950 border-r border-b border-white/15" />
+
+                                {/* Entête Tooltip : Code + Badge Statut */}
+                                <div className="flex items-center justify-between border-b border-white/10 pb-2">
+                                  <span className="font-mono text-[0.65rem] font-extrabold text-lime-400">
+                                    #{matchingResa.code || matchingResa.id.substring(0, 8).toUpperCase()}
+                                  </span>
+                                  <span
+                                    className={cn(
+                                      'px-2 py-0.5 rounded-full text-[0.6rem] font-bold uppercase tracking-wider',
+                                      matchingResa.statut === 'CONFIRMED' ||
+                                        matchingResa.statut === 'PAID' ||
+                                        matchingResa.statut === 'CHECKED_IN' ||
+                                        matchingResa.statut === 'COMPLETED'
+                                        ? 'bg-lime-400/20 text-lime-300 border border-lime-400/30'
+                                        : 'bg-amber-400/20 text-amber-300 border border-amber-400/30'
+                                    )}
+                                  >
+                                    {matchingResa.statut === 'CONFIRMED'
+                                      ? 'Confirmé'
+                                      : matchingResa.statut === 'CHECKED_IN'
+                                      ? 'Check-in fait'
+                                      : matchingResa.statut === 'PAID'
+                                      ? 'Payé'
+                                      : 'En attente'}
+                                  </span>
+                                </div>
+
+                                {/* Info Locataire */}
+                                <div className="flex items-center gap-2">
+                                  <User className="h-3.5 w-3.5 text-forest-300 shrink-0" />
+                                  <span className="text-xs font-bold text-neutral-50 truncate">
+                                    {matchingResa.travelerName || 'Voyageur'}
+                                  </span>
+                                  {matchingResa.travelerPhone && (
+                                    <span className="text-[0.65rem] text-forest-300 ml-auto font-mono">
+                                      {matchingResa.travelerPhone}
+                                    </span>
+                                  )}
+                                </div>
+
+                                {/* Dates & Nombre de nuits */}
+                                <div className="flex items-center gap-2 text-[0.7rem] text-forest-200">
+                                  <Calendar className="h-3.5 w-3.5 text-forest-300 shrink-0" />
+                                  <span>
+                                    {new Date(matchingResa.dateDebut).toLocaleDateString('fr-FR', {
+                                      day: 'numeric',
+                                      month: 'short',
+                                    })}
+                                    {' → '}
+                                    {new Date(matchingResa.dateFin).toLocaleDateString('fr-FR', {
+                                      day: 'numeric',
+                                      month: 'short',
+                                    })}
+                                  </span>
+                                  <span className="ml-auto font-bold text-lime-300 bg-white/10 px-1.5 py-0.5 rounded-md">
+                                    {Math.max(
+                                      1,
+                                      Math.ceil(
+                                        (new Date(matchingResa.dateFin).getTime() -
+                                          new Date(matchingResa.dateDebut).getTime()) /
+                                          86400000
+                                      )
+                                    )}{' '}
+                                    nuits
+                                  </span>
+                                </div>
+
+                                {/* Détails Financiers & Mode de paiement */}
+                                <div className="border-t border-white/10 pt-2 space-y-1 text-[0.7rem]">
+                                  <div className="flex items-center justify-between">
+                                    <span className="text-forest-300 flex items-center gap-1">
+                                      <Wallet className="h-3 w-3 text-lime-400 shrink-0" />
+                                      Paiement ({matchingResa.fournisseurPaiement || 'Wave / OM'}) :
+                                    </span>
+                                    <span className="font-bold text-neutral-50 tabular-nums">
+                                      {fcfa(matchingResa.prixTotal || matchingResa.totalLocataire)} FCFA
+                                    </span>
+                                  </div>
+
+                                  <div className="flex items-center justify-between text-[0.65rem]">
+                                    <span className="text-forest-300">Règlement :</span>
+                                    <span className="font-semibold text-lime-300">
+                                      {matchingResa.estAcompte ? 'Acompte (Reste au check-in)' : 'Totalité 100% payée'}
+                                    </span>
+                                  </div>
+
+                                  {matchingResa.netProprietaire ? (
+                                    <div className="flex items-center justify-between text-[0.65rem]">
+                                      <span className="text-forest-300">Net Bailleur :</span>
+                                      <span className="font-bold text-lime-300 tabular-nums">
+                                        {fcfa(matchingResa.netProprietaire)} FCFA
+                                      </span>
+                                    </div>
+                                  ) : null}
+                                </div>
+                              </div>
+
+                              {/* Bouton de la barre Gantt */}
+                              <button
+                                type="button"
+                                onClick={() => setSelectedResa(matchingResa)}
+                                className={cn(
+                                  'w-full h-full rounded-pill px-3 text-[0.6875rem] font-extrabold shadow-sm truncate flex items-center justify-between gap-1.5 transition-all hover:scale-[1.02] cursor-pointer',
+                                  matchingResa.statut === 'CONFIRMED' ||
+                                    matchingResa.statut === 'PAID' ||
+                                    matchingResa.statut === 'CHECKED_IN' ||
+                                    matchingResa.statut === 'COMPLETED'
+                                    ? 'bg-success-50 text-success-700 border border-success-500/40'
+                                    : matchingResa.statut === 'PENDING'
+                                    ? 'bg-warning-50 text-warning-700 border border-warning-500/40'
+                                    : 'bg-forest-950 text-neutral-0 border border-white/20'
+                                )}
+                              >
+                                <span className="truncate">{matchingResa.travelerName || 'Locataire'}</span>
+                                <span className="opacity-90 shrink-0 font-bold">
+                                  ({fcfa(matchingResa.prixTotal || matchingResa.totalLocataire)} FCFA)
+                                </span>
+                              </button>
+                            </div>
                           )}
                         </td>
                       );
