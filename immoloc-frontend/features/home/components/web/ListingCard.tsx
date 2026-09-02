@@ -205,45 +205,24 @@ export function ListingCard({
           </div>
 
           {photoList.length > 1 && (
-            <>
-              {/* Flèches de navigation */}
-              <button
-                type="button"
-                onClick={movePhoto(-1)}
-                aria-label="Photo précédente"
-                className="absolute left-2 top-1/2 z-20 grid h-7 w-7 -translate-y-1/2 place-items-center rounded-full bg-white/90 text-forest-900 shadow-md backdrop-blur-sm transition-all hover:bg-white active:scale-90 opacity-80 sm:opacity-0 sm:group-hover:opacity-100 cursor-pointer"
-              >
-                <ChevronLeft className="h-4 w-4" aria-hidden="true" />
-              </button>
-
-              <button
-                type="button"
-                onClick={movePhoto(1)}
-                aria-label="Photo suivante"
-                className="absolute right-2 top-1/2 z-20 grid h-7 w-7 -translate-y-1/2 place-items-center rounded-full bg-white/90 text-forest-900 shadow-md backdrop-blur-sm transition-all hover:bg-white active:scale-90 opacity-80 sm:opacity-0 sm:group-hover:opacity-100 cursor-pointer"
-              >
-                <ChevronRight className="h-4 w-4" aria-hidden="true" />
-              </button>
-
-              {/* Puces interactives en bas de la photo */}
-              <div className="absolute inset-x-0 bottom-2.5 z-20 flex items-center justify-center gap-1.5" aria-hidden="true">
-                {photoList.slice(0, 5).map((_, i) => (
-                  <button
-                    key={i}
-                    type="button"
-                    onClick={scrollToPhoto(i)}
-                    aria-label={`Voir photo ${i + 1}`}
-                    className={cn(
-                      'h-1.5 rounded-full transition-all duration-200 cursor-pointer',
-                      i === photoIdx ? 'w-3.5 bg-white shadow-sm' : 'w-1.5 bg-white/60 hover:bg-white/90',
-                    )}
-                  />
-                ))}
-                {photoList.length > 5 && (
-                  <span className="ml-0.5 text-[0.625rem] font-bold text-white shadow-sm">+{photoList.length - 5}</span>
-                )}
-              </div>
-            </>
+            /* Puces interactives en bas de la photo */
+            <div className="absolute inset-x-0 bottom-2.5 z-20 flex items-center justify-center gap-1.5" aria-hidden="true">
+              {photoList.slice(0, 5).map((_, i) => (
+                <button
+                  key={i}
+                  type="button"
+                  onClick={scrollToPhoto(i)}
+                  aria-label={`Voir photo ${i + 1}`}
+                  className={cn(
+                    'h-1.5 rounded-full transition-all duration-200 cursor-pointer',
+                    i === photoIdx ? 'w-3.5 bg-white shadow-sm' : 'w-1.5 bg-white/60 hover:bg-white/90',
+                  )}
+                />
+              ))}
+              {photoList.length > 5 && (
+                <span className="ml-0.5 text-[0.625rem] font-bold text-white shadow-sm">+{photoList.length - 5}</span>
+              )}
+            </div>
           )}
         </div>
 
