@@ -36,6 +36,7 @@ export class DisputesService {
   async create(auteurId: string, dto: CreateDisputeDto) {
     const reservation = await this.prisma.reservation.findUnique({
       where: { id: dto.reservationId },
+      include: { logement: { select: { gestionnaireId: true } } },
     });
 
     if (!reservation) {
@@ -43,7 +44,7 @@ export class DisputesService {
     }
 
     const isLocataire = reservation.locataireId === auteurId;
-    const isProprio = reservation.proprietaireId === auteurId;
+    const isProprio = reservation.proprietaireId === auteurId || reservation.logement?.gestionnaireId === auteurId;
 
     if (!isLocataire && !isProprio) {
       throw new ForbiddenException('Vous n\'êtes pas partie prenante de cette réservation');

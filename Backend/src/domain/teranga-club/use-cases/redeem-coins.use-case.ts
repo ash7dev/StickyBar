@@ -25,24 +25,30 @@ export class RedeemCoinsUseCase {
 
     const soldeApres = account.soldeCoins - montantCoins;
 
-    await this.prisma.$transaction([
-      this.prisma.terangaAccount.update({
-        where: { id: account.id },
-        data: { soldeCoins: soldeApres },
-      }),
-      this.prisma.terangaTransaction.create({
-        data: {
-          terangaAccountId: account.id,
-          montantCoins: -montantCoins,
-          type: TypeTransactionTeranga.DEBIT_RESERVATION,
-          description: reservationId
-            ? `Réduction appliquée sur la réservation #${reservationId.slice(0, 8).toUpperCase()}`
-            : `Réduction appliquée sur réservation`,
-          reservationId: reservationId ?? null,
-          soldeApres,
-        },
-      }),
-    ]);
+    const accountUpdate = this.prisma.terangaAccount.update({
+      where: { id: account.id },
+      data: { soldeCoins: soldeApres },
+    });
+
+    const transactionCreate = this.prisma.terangaTransaction.create({
+      data: {
+        terangaAccountId: account.id,
+        montantCoins: -montantCoins,
+        type: TypeTransactionTeranga.DEBIT_RESERVATION,
+        description: reservationId
+          ? `Réduction appliquée sur la réservation #${reservationId.slice(0, 8).toUpperCase()}`
+          : `Réduction appliquée sur réservation`,
+        reservationId: reservationId ?? null,
+        soldeApres,
+      },
+    });
+
+    if (typeof (this.prisma as any).$transaction === 'function') {
+      await (this.prisma as PrismaClient).$transaction([accountUpdate, transactionCreate]);
+    } else {
+      await accountUpdate;
+      await transactionCreate;
+    }
 
     return { soldeApres };
   }

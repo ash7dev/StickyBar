@@ -36,34 +36,43 @@ export class UnlockBadgeUseCase {
 
     const nouveauSolde = account.soldeCoins + bonusCoins;
 
-    await this.prisma.$transaction([
-      this.prisma.terangaBadge.create({
-        data: {
-          terangaAccountId: account.id,
-          codeBadge,
-          libelle,
-          description,
-          icone,
-        },
-      }),
-      ...(bonusCoins > 0
-        ? [
-            this.prisma.terangaAccount.update({
-              where: { id: account.id },
-              data: { soldeCoins: nouveauSolde },
-            }),
-            this.prisma.terangaTransaction.create({
-              data: {
-                terangaAccountId: account.id,
-                montantCoins: bonusCoins,
-                type: TypeTransactionTeranga.CREDIT_BONUS_QUEST,
-                description: `Bonus quête accomplie : ${libelle}`,
-                soldeApres: nouveauSolde,
-              },
-            }),
-          ]
-        : []),
-    ]);
+    const badgeCreate = this.prisma.terangaBadge.create({
+      data: {
+        terangaAccountId: account.id,
+        codeBadge,
+        libelle,
+        description,
+        icone,
+      },
+    });
+
+    const accountUpdate = bonusCoins > 0 ? this.prisma.terangaAccount.update({
+      where: { id: account.id },
+      data: { soldeCoins: nouveauSolde },
+    }) : null;
+
+    const transactionCreate = bonusCoins > 0 ? this.prisma.terangaTransaction.create({
+      data: {
+        terangaAccountId: account.id,
+        montantCoins: bonusCoins,
+        type: TypeTransactionTeranga.CREDIT_BONUS_QUEST,
+        description: `Bonus quête accomplie : ${libelle}`,
+        soldeApres: nouveauSolde,
+      },
+    }) : null;
+
+    if (typeof (this.prisma as any).$transaction === 'function') {
+      await (this.prisma as PrismaClient).$transaction([
+        badgeCreate,
+        ...(accountUpdate && transactionCreate ? [accountUpdate, transactionCreate] : []),
+      ]);
+    } else {
+      await badgeCreate;
+      if (accountUpdate && transactionCreate) {
+        await accountUpdate;
+        await transactionCreate;
+      }
+    }
 
     return true;
   }

@@ -7,6 +7,7 @@ import {
   LayoutDashboard,
   Building2,
   Users,
+  UserPlus,
   CalendarDays,
   KeyRound,
   ClipboardCheck,
@@ -46,6 +47,7 @@ const GESTIONNAIRE_NAV_GROUPS: NavGroup[] = [
     items: [
       { href: '/gestionnaire/annonces', label: 'Annonces gérées', icon: Building2 },
       { href: '/gestionnaire/proprietaires', label: 'Propriétaires', icon: Users },
+      { href: '/gestionnaire/demandes-managed', label: 'Demandes Klef Managed', icon: UserPlus, badge: 'Nouveau' },
     ],
   },
   {

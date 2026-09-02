@@ -55,8 +55,9 @@ export class ConfirmReservationUseCase {
         );
       }
 
-      // Vérification KYC du propriétaire (uniquement s'il n'est pas un compte ombre créé par la conciergerie)
-      if (!reservation.proprietaire.isShadowAccount) {
+      // Vérification KYC du propriétaire (uniquement si le propriétaire confirme directement et qu'il n'est pas un compte ombre)
+      const isManagerConfirming = reservation.logement?.gestionnaireId === userId;
+      if (!isManagerConfirming && !reservation.proprietaire.isShadowAccount) {
         if (reservation.proprietaire.statutKyc === StatutKyc.REJETE || reservation.proprietaire.statutKyc === StatutKyc.SUSPENDU) {
           throw new ForbiddenException(
             "Votre compte propriétaire ne vous permet pas de confirmer de réservations (KYC rejeté ou suspendu).",

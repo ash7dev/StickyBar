@@ -1133,3 +1133,33 @@ enum CodeBadgeTeranga {
   SUPER_PARRAIN
 }
 
+// =============================================================================
+// DEMANDES KLEF MANAGED (Gestion Déléguée & Offre Sérénité)
+// =============================================================================
+
+enum StatutDemandeManaged {
+  NOUVEAU
+  CONTACTE
+  CONVERTI
+  ARCHIVE
+}
+
+model DemandeManaged {
+  id                String               @id @default(uuid())
+  prenom            String
+  nom               String
+  telephone         String
+  email             String?
+  ville             String?
+  typeBien          String?
+  nombreLogements   Int                  @default(1)
+  statut            StatutDemandeManaged @default(NOUVEAU)
+  notesGestionnaire String?              @db.Text
+  proprietaireId    String?              // Rempli après conversion en bailleur
+  creeLe            DateTime             @default(now())
+  misAJourLe        DateTime             @updatedAt
+
+  @@index([statut])
+  @@map("demandes_managed")
+}
+

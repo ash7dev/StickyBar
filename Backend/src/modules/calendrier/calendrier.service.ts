@@ -61,10 +61,12 @@ export class CalendrierService {
   private async assertOwner(logementId: string, userId: string) {
     const logement = await this.prisma.logement.findUnique({
       where: { id: logementId },
-      select: { proprietaireId: true },
+      select: { proprietaireId: true, gestionnaireId: true },
     });
     if (!logement) throw new NotFoundException('Logement introuvable');
-    if (logement.proprietaireId !== userId) throw new ForbiddenException('Accès refusé');
+    if (logement.proprietaireId !== userId && logement.gestionnaireId !== userId) {
+      throw new ForbiddenException('Accès refusé');
+    }
     return logement;
   }
 }

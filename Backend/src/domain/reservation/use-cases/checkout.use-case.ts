@@ -24,12 +24,14 @@ export class CheckoutUseCase {
   async execute(reservationId: string, userId: string) {
     const reservation = await this.prisma.reservation.findUnique({
       where: { id: reservationId },
+      include: { logement: { select: { gestionnaireId: true } } },
     });
 
     if (!reservation) throw new NotFoundException('Réservation introuvable');
 
-    if (reservation.proprietaireId !== userId) {
-      throw new ForbiddenException('Seul le propriétaire peut valider le check-out');
+    const isOwnerOrManager = reservation.proprietaireId === userId || reservation.logement?.gestionnaireId === userId;
+    if (!isOwnerOrManager) {
+      throw new ForbiddenException('Seul le propriétaire ou le gestionnaire peut valider le check-out');
     }
 
     // Vérification de la fenêtre de check-out (4 h avant la date/heure de fin)
@@ -62,11 +64,11 @@ export class CheckoutUseCase {
           ancienStatut: StatutReservation.CHECKED_IN,
           nouveauStatut: StatutReservation.COMPLETED,
           modifiePar: userId,
-          raison: 'Check-out manuel validé par le propriétaire',
+          raison: 'Check-out manuel validé par le propriétaire ou le gestionnaire',
         },
       });
 
-      this.logger.log(`Réservation [${reservationId}] clôturée manuellement par le propriétaire.`);
+      this.logger.log(`Réservation [${reservationId}] clôturée manuellement.`);
 
       return updatedRes;
     });

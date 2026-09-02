@@ -16,11 +16,15 @@ export class CheckInUploadPhotosUseCase {
   constructor(private readonly prisma: PrismaService) {}
 
   async execute(reservationId: string, userId: string, photos: string[]) {
-    const reservation = await this.prisma.reservation.findUnique({ where: { id: reservationId } });
+    const reservation = await this.prisma.reservation.findUnique({
+      where: { id: reservationId },
+      include: { logement: { select: { gestionnaireId: true } } },
+    });
 
     if (!reservation) throw new NotFoundException('Réservation introuvable');
-    if (reservation.proprietaireId !== userId) {
-      throw new ForbiddenException('Vous n\'êtes pas le propriétaire de cette réservation');
+    const isOwnerOrManager = reservation.proprietaireId === userId || reservation.logement?.gestionnaireId === userId;
+    if (!isOwnerOrManager) {
+      throw new ForbiddenException('Seul le propriétaire ou le gestionnaire peut uploader les photos de check-in');
     }
     if (reservation.statut !== StatutReservation.CONFIRMED) {
       throw new ConflictException(`Le check-in n'est possible que pour les réservations CONFIRMED (statut actuel: ${reservation.statut})`);

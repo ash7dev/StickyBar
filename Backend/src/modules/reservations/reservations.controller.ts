@@ -21,7 +21,7 @@ export class ReservationsController {
   constructor(private readonly reservationsService: ReservationsService) {}
 
   @Get('me')
-  @ApiOperation({ summary: 'Lister mes réservations (proprio ou locataire selon rôle actif)' })
+  @ApiOperation({ summary: 'Lister mes réservations (proprio, gestionnaire ou locataire selon rôle actif)' })
   findMine(
     @CurrentUser() user: AuthUser,
     @Query('statut') statut?: StatutReservation,
@@ -30,7 +30,7 @@ export class ReservationsController {
   }
 
   @Get(':id/etat-lieux/upload-params')
-  @Roles(Role.PROPRIETAIRE)
+  @Roles(Role.PROPRIETAIRE, Role.GESTIONNAIRE)
   @ApiOperation({ summary: 'Obtenir les paramètres de signature pour upload direct Cloudinary (état des lieux)' })
   @ApiParam({ name: 'id', description: 'UUID de la réservation' })
   getEtatLieuxUploadParams(@Param('id') id: string) {
@@ -38,7 +38,7 @@ export class ReservationsController {
   }
 
   @Post(':id/etat-lieux')
-  @Roles(Role.PROPRIETAIRE)
+  @Roles(Role.PROPRIETAIRE, Role.GESTIONNAIRE)
   @ApiOperation({ summary: 'Sauvegarder une photo état des lieux après upload Cloudinary direct' })
   @ApiParam({ name: 'id', description: 'UUID de la réservation' })
   addEtatLieuxPhoto(
@@ -50,16 +50,16 @@ export class ReservationsController {
   }
 
   @Post(':id/checkin-proprio')
-  @Roles(Role.PROPRIETAIRE)
-  @ApiOperation({ summary: 'Propriétaire finalise le check-in (photos uploadées via Cloudinary direct)' })
+  @Roles(Role.PROPRIETAIRE, Role.GESTIONNAIRE)
+  @ApiOperation({ summary: 'Propriétaire ou gestionnaire finalise le check-in (photos uploadées via Cloudinary direct)' })
   @ApiParam({ name: 'id', description: 'UUID de la réservation' })
   checkinProprio(@Param('id') id: string, @CurrentUser() user: AuthUser) {
     return this.reservationsService.checkinProprio(id, user.id);
   }
 
   @Post(':id/checkout-proprio')
-  @Roles(Role.PROPRIETAIRE)
-  @ApiOperation({ summary: 'Propriétaire finalise le check-out (photos uploadées via Cloudinary direct)' })
+  @Roles(Role.PROPRIETAIRE, Role.GESTIONNAIRE)
+  @ApiOperation({ summary: 'Propriétaire ou gestionnaire finalise le check-out (photos uploadées via Cloudinary direct)' })
   @ApiParam({ name: 'id', description: 'UUID de la réservation' })
   checkoutProprio(@Param('id') id: string, @CurrentUser() user: AuthUser) {
     return this.reservationsService.checkoutProprio(id, user.id);
@@ -83,15 +83,15 @@ export class ReservationsController {
   }
 
   @Patch(':id/confirm')
-  @Roles(Role.PROPRIETAIRE)
-  @ApiOperation({ summary: 'Confirmer une réservation (propriétaire uniquement)' })
+  @Roles(Role.PROPRIETAIRE, Role.GESTIONNAIRE)
+  @ApiOperation({ summary: 'Confirmer une réservation (propriétaire ou gestionnaire)' })
   @ApiParam({ name: 'id', description: 'UUID de la réservation' })
   confirm(@Param('id') id: string, @CurrentUser() user: AuthUser, @Body() dto: ConfirmReservationDto) {
     return this.reservationsService.confirm(id, user.id, dto.heureDebut, dto.heureFin);
   }
 
   @Patch(':id/cancel')
-  @ApiOperation({ summary: 'Annuler une réservation (locataire ou propriétaire)' })
+  @ApiOperation({ summary: 'Annuler une réservation (locataire, propriétaire ou gestionnaire)' })
   @ApiParam({ name: 'id', description: 'UUID de la réservation' })
   cancel(
     @Param('id') id: string,
@@ -102,8 +102,8 @@ export class ReservationsController {
   }
 
   @Post(':id/checkin/upload')
-  @Roles(Role.PROPRIETAIRE)
-  @ApiOperation({ summary: 'Propriétaire uploade les photos de l\'état des lieux (check-in)' })
+  @Roles(Role.PROPRIETAIRE, Role.GESTIONNAIRE)
+  @ApiOperation({ summary: 'Propriétaire ou gestionnaire uploade les photos de l\'état des lieux (check-in)' })
   @ApiParam({ name: 'id', description: 'UUID de la réservation' })
   @ApiBody({ schema: { type: 'object', properties: { photos: { type: 'array', items: { type: 'string' } } } } })
   uploadCheckInPhotos(
@@ -148,8 +148,8 @@ export class ReservationsController {
   }
 
   @Post(':id/checkout/upload')
-  @Roles(Role.PROPRIETAIRE)
-  @ApiOperation({ summary: 'Propriétaire uploade les photos de check-out' })
+  @Roles(Role.PROPRIETAIRE, Role.GESTIONNAIRE)
+  @ApiOperation({ summary: 'Propriétaire ou gestionnaire uploade les photos de check-out' })
   @ApiParam({ name: 'id', description: 'UUID de la réservation' })
   @ApiBody({ schema: { type: 'object', properties: { photos: { type: 'array', items: { type: 'string' } } } } })
   uploadCheckOutPhotos(
@@ -161,15 +161,15 @@ export class ReservationsController {
   }
 
   @Patch(':id/checkout/complete')
-  @Roles(Role.PROPRIETAIRE)
-  @ApiOperation({ summary: 'Propriétaire finalise le check-out' })
+  @Roles(Role.PROPRIETAIRE, Role.GESTIONNAIRE)
+  @ApiOperation({ summary: 'Propriétaire ou gestionnaire finalise le check-out' })
   @ApiParam({ name: 'id', description: 'UUID de la réservation' })
   completeCheckout(@Param('id') id: string, @CurrentUser() user: AuthUser) {
     return this.reservationsService.completeCheckout(id, user.id);
   }
 
   @Post(':id/signal-noshow')
-  @Roles(Role.PROPRIETAIRE)
+  @Roles(Role.PROPRIETAIRE, Role.GESTIONNAIRE)
   @ApiOperation({ summary: 'Signaler l\'absence du locataire (T+2h après début)' })
   @ApiParam({ name: 'id', description: 'UUID de la réservation' })
   signalTenantNoshow(
@@ -181,7 +181,7 @@ export class ReservationsController {
   }
 
   @Post(':id/reopen-late-checkin')
-  @Roles(Role.PROPRIETAIRE)
+  @Roles(Role.PROPRIETAIRE, Role.GESTIONNAIRE)
   @ApiOperation({ summary: 'Accueillir le voyageur quand même après signalement No-Show (Check-in tardif)' })
   @ApiParam({ name: 'id', description: 'UUID de la réservation' })
   reopenLateCheckin(
@@ -192,7 +192,7 @@ export class ReservationsController {
   }
 
   @Post(':id/rate-tenant')
-  @Roles(Role.PROPRIETAIRE)
+  @Roles(Role.PROPRIETAIRE, Role.GESTIONNAIRE)
   @ApiOperation({ summary: 'Noter le locataire (réservation terminée uniquement)' })
   @ApiParam({ name: 'id', description: 'UUID de la réservation' })
   rateTenant(

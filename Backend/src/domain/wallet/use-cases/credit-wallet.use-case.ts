@@ -56,11 +56,13 @@ export class CreditWalletUseCase {
         );
       }
 
-      // Pour DEPOSIT : créditer seulement l'acompte (le reste est payé en liquide au proprio)
-      // Pour FULL : créditer le netProprietaire complet (tout a été payé en ligne)
+      // Pour DEPOSIT : l'acompte encaisse (ex: 70,6K FCFA) contient la commission Klef (ex: 15,4K FCFA).
+      // Le net crédité au portefeuille du propriétaire = acompte - commission Klef.
+      // Le solde restant du séjour est payé en espèces au propriétaire à l'arrivée.
       const isDeposit = reservation.typePaiement?.toUpperCase() === 'DEPOSIT';
+      const commNum = Number(reservation.montantCommission || 0);
       const montantBrut = isDeposit
-        ? Number(reservation.montantAcompte || 0)
+        ? Math.max(0, Number(reservation.montantAcompte || 0) - commNum)
         : Number(reservation.netProprietaire || 0);
       const dette = Number(wallet.dettePenalites);
       const aDeduire = dette > 0 ? Math.min(montantBrut, dette) : 0;
@@ -110,7 +112,6 @@ export class CreditWalletUseCase {
       });
 
       // Libération des fonds depuis le Grand Livre Système Klef
-      const commNum = Number(reservation.montantCommission || 0);
       const hostEscrowPayout = isDeposit
         ? Math.max(0, Number(reservation.montantAcompte || 0) - commNum)
         : Number(reservation.netProprietaire || 0);

@@ -42,16 +42,29 @@ export class ReservationsService {
   ) {}
 
   async findMine(userId: string, activeRole: Role, statut?: StatutReservation) {
-    const isProprietaire = activeRole === Role.PROPRIETAIRE;
+    let roleWhere: any;
+    if (activeRole === Role.GESTIONNAIRE) {
+      roleWhere = {
+        OR: [
+          { proprietaireId: userId },
+          { logement: { gestionnaireId: userId } },
+        ],
+      };
+    } else if (activeRole === Role.PROPRIETAIRE) {
+      roleWhere = { proprietaireId: userId };
+    } else {
+      roleWhere = { locataireId: userId };
+    }
+
     return this.prisma.reservation.findMany({
       where: {
-        ...(isProprietaire ? { proprietaireId: userId } : { locataireId: userId }),
+        ...roleWhere,
         ...(statut ? { statut } : {}),
       },
       orderBy: { creeLe: 'desc' },
       include: {
-        locataire: { select: { id: true, prenom: true, nom: true, avatarUrl: true } },
-        proprietaire: { select: { id: true, prenom: true, nom: true, avatarUrl: true } },
+        locataire: { select: { id: true, prenom: true, nom: true, avatarUrl: true, telephone: true } },
+        proprietaire: { select: { id: true, prenom: true, nom: true, avatarUrl: true, telephone: true } },
         logement: {
           select: {
             id: true, titre: true, ville: true,
@@ -68,7 +81,11 @@ export class ReservationsService {
     return this.prisma.reservation.findFirst({
       where: {
         id,
-        OR: [{ locataireId: userId }, { proprietaireId: userId }],
+        OR: [
+          { locataireId: userId },
+          { proprietaireId: userId },
+          { logement: { gestionnaireId: userId } },
+        ],
       },
       include: {
         locataire: { select: { id: true, prenom: true, nom: true, avatarUrl: true, telephone: true, email: true, statutKyc: true } },
@@ -193,26 +210,18 @@ export class ReservationsService {
    */
   async signalTenantNoshow(userId: string, reservationId: string, commentaire?: string) {
     const result = await this.prisma.$transaction(async (tx) => {
-      // Pessimistic lock sur la réservation
-      const reservation = await tx.$queryRaw<Array<{
-        id: string;
-        proprietaireId: string;
-        locataireId: string;
-        statut: string;
-        dateDebut: Date;
-      }>>`
-        SELECT id, "proprietaireId", "locataireId", statut, "dateDebut"
-        FROM "Reservation"
-        WHERE id = ${reservationId}
-        FOR UPDATE
-      `.then(rows => rows[0]);
+      const reservation = await tx.reservation.findUnique({
+        where: { id: reservationId },
+        include: { logement: { select: { gestionnaireId: true } } },
+      });
 
       if (!reservation) {
         throw new NotFoundException('Réservation introuvable');
       }
 
-      if (reservation.proprietaireId !== userId) {
-        throw new BadRequestException('Seul le propriétaire peut signaler une absence');
+      const isOwnerOrManager = reservation.proprietaireId === userId || reservation.logement?.gestionnaireId === userId;
+      if (!isOwnerOrManager) {
+        throw new BadRequestException('Seul le propriétaire ou le gestionnaire peut signaler une absence');
       }
 
       if (reservation.statut !== 'CONFIRMED') {
@@ -253,20 +262,22 @@ export class ReservationsService {
   }
 
   /**
-   * Reopen a no-show reservation for late check-in (owner only)
+   * Reopen a no-show reservation for late check-in (owner or manager)
    */
   async reopenLateCheckin(userId: string, reservationId: string) {
     return await this.prisma.$transaction(async (tx) => {
       const reservation = await tx.reservation.findUnique({
         where: { id: reservationId },
+        include: { logement: { select: { gestionnaireId: true } } },
       });
 
       if (!reservation) {
         throw new NotFoundException('Réservation introuvable');
       }
 
-      if (reservation.proprietaireId !== userId) {
-        throw new BadRequestException('Seul le propriétaire peut réouvrir la réservation');
+      const isOwnerOrManager = reservation.proprietaireId === userId || reservation.logement?.gestionnaireId === userId;
+      if (!isOwnerOrManager) {
+        throw new BadRequestException('Seul le propriétaire ou le gestionnaire peut réouvrir la réservation');
       }
 
       if (reservation.statut !== 'COMPLETED' && reservation.statut !== 'CANCELLED') {
@@ -288,7 +299,7 @@ export class ReservationsService {
           ancienStatut: reservation.statut as StatutReservation,
           nouveauStatut: 'CHECKED_IN',
           modifiePar: userId,
-          raison: 'Accueilli tardivement par le propriétaire après signalement No-Show',
+          raison: 'Accueilli tardivement après signalement No-Show',
         },
       });
 
@@ -297,30 +308,22 @@ export class ReservationsService {
   }
 
   /**
-   * Rate tenant (owner only, reservation must be COMPLETED)
+   * Rate tenant (owner or manager, reservation must be COMPLETED)
    */
   async rateTenant(userId: string, reservationId: string, note: number, commentaire?: string) {
     const result = await this.prisma.$transaction(async (tx) => {
-      // Pessimistic lock sur la réservation pour éviter les notations concurrentes
-      const reservation = await tx.$queryRaw<Array<{
-        id: string;
-        proprietaireId: string;
-        locataireId: string;
-        logementId: string;
-        statut: string;
-      }>>`
-        SELECT id, "proprietaireId", "locataireId", "logementId", statut
-        FROM "Reservation"
-        WHERE id = ${reservationId}
-        FOR UPDATE
-      `.then(rows => rows[0]);
+      const reservation = await tx.reservation.findUnique({
+        where: { id: reservationId },
+        include: { logement: { select: { gestionnaireId: true } } },
+      });
 
       if (!reservation) {
         throw new NotFoundException('Réservation introuvable');
       }
 
-      if (reservation.proprietaireId !== userId) {
-        throw new BadRequestException('Seul le propriétaire peut noter le locataire');
+      const isOwnerOrManager = reservation.proprietaireId === userId || reservation.logement?.gestionnaireId === userId;
+      if (!isOwnerOrManager) {
+        throw new BadRequestException('Seul le propriétaire ou le gestionnaire peut noter le locataire');
       }
 
       if (reservation.statut !== 'COMPLETED') {

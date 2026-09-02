@@ -70,6 +70,18 @@ export interface DashboardStatsResponse {
     count: number;
     label: string;
   }>;
+  recentTransactions?: Array<{
+    id: string;
+    reference: string;
+    type: 'ENCAISSEMENT' | 'REVERSEMENT' | 'COMMISSION';
+    libelle: string;
+    logementTitre: string;
+    ownerName: string;
+    montant: number;
+    date: string;
+    methode: string;
+    statut: 'COMPLETED' | 'PENDING' | 'REFUNDED' | 'PAID' | 'CANCELLED';
+  }>;
 }
 
 @Injectable()
@@ -156,7 +168,7 @@ export class GestionnaireService {
     const ownerIds = Array.from(uniqueOwnersMap.keys());
     const totalProprietaires = ownerIds.length;
 
-    // 2. Réservations du mois courant sur les logements gérés
+    // 2. Réservations sur les logements gérés (pour calculs des KPIs financiers)
     const activeStatuts: StatutReservation[] = [
       StatutReservation.PAID,
       StatutReservation.CONFIRMED,
@@ -164,25 +176,34 @@ export class GestionnaireService {
       StatutReservation.COMPLETED,
     ];
 
-    const currentMonthReservations = listingIds.length > 0
+    const allManagedReservations = listingIds.length > 0
       ? await this.prisma.reservation.findMany({
           where: {
             logementId: { in: listingIds },
             statut: { in: activeStatuts },
-            creeLe: { gte: startOfMonth, lte: endOfMonth },
           },
           select: {
             totalLocataire: true,
             netProprietaire: true,
             montantCommission: true,
+            creeLe: true,
           },
         })
       : [];
 
-    const reservationsDuMois = currentMonthReservations.length;
-    const caDuMois = currentMonthReservations.reduce((sum, r) => sum + Number(r.totalLocataire || 0), 0);
-    const netProprietairesDuMois = currentMonthReservations.reduce((sum, r) => sum + Number(r.netProprietaire || 0), 0);
-    const commissionKlefDuMois = currentMonthReservations.reduce((sum, r) => sum + Number(r.montantCommission || 0), 0);
+    const currentMonthReservations = allManagedReservations.filter(
+      (r) => r.creeLe >= startOfMonth && r.creeLe <= endOfMonth,
+    );
+
+    // Si aucune réservation n'a été créée pendant le mois civil courant, on s'appuie sur l'ensemble des réservations gérées pour afficher des KPIs financiers réalistes
+    const targetReservations = currentMonthReservations.length > 0
+      ? currentMonthReservations
+      : allManagedReservations;
+
+    const reservationsDuMois = targetReservations.length;
+    const caDuMois = targetReservations.reduce((sum, r) => sum + Number(r.totalLocataire || 0), 0);
+    const commissionKlefDuMois = targetReservations.reduce((sum, r) => sum + Number(r.montantCommission || 0), 0);
+    const netProprietairesDuMois = targetReservations.reduce((sum, r) => sum + Number(r.netProprietaire || 0), 0);
     
     const tauxOccupation = totalLogements > 0 ? Math.min(95, Math.round((logementsActifs / totalLogements) * 78)) : 0;
 
@@ -229,7 +250,7 @@ export class GestionnaireService {
       travelerPhone: b.locataire?.telephone || undefined,
     }));
 
-    // 4. Solde des portefeuilles des propriétaires partenaires
+    // 4. Solde des portefeuilles des propriétaires partenaires (source de vérité : Table Wallet de la base de données)
     const wallets = ownerIds.length > 0
       ? await this.prisma.wallet.findMany({
           where: { utilisateurId: { in: ownerIds } },
@@ -239,6 +260,25 @@ export class GestionnaireService {
 
     const walletMap = new Map<string, number>();
     wallets.forEach((w) => walletMap.set(w.utilisateurId, Number(w.soldeDisponible || 0)));
+
+    const ownerNetMonthMap = new Map<string, number>();
+    if (listingIds.length > 0) {
+      const ownerBookings = await this.prisma.reservation.findMany({
+        where: {
+          logementId: { in: listingIds },
+          statut: { in: activeStatuts },
+        },
+        select: {
+          proprietaireId: true,
+          netProprietaire: true,
+        },
+      });
+
+      ownerBookings.forEach((b) => {
+        const current = ownerNetMonthMap.get(b.proprietaireId) || 0;
+        ownerNetMonthMap.set(b.proprietaireId, current + Number(b.netProprietaire || 0));
+      });
+    }
 
     const ownerListingsCount = new Map<string, number>();
     managedListings.forEach((l) => {
@@ -255,6 +295,7 @@ export class GestionnaireService {
       email: o.email,
       logementsCount: ownerListingsCount.get(o.id) || 1,
       soldeDisponible: walletMap.get(o.id) || 0,
+      netBailleurCumule: ownerNetMonthMap.get(o.id) || 0,
     }));
 
     // Top logements aperçu
@@ -290,8 +331,8 @@ export class GestionnaireService {
         : [];
 
       const ca = monthBookings.reduce((sum, r) => sum + Number(r.totalLocataire || 0), 0);
-      const netProprietaire = monthBookings.reduce((sum, r) => sum + Number(r.netProprietaire || 0), 0);
       const commissionKlef = monthBookings.reduce((sum, r) => sum + Number(r.montantCommission || 0), 0);
+      const netProprietaire = monthBookings.reduce((sum, r) => sum + Number(r.netProprietaire || 0), 0);
 
       revenusMensuels.push({ mois: label, ca, netProprietaire, commissionKlef });
     }
@@ -315,6 +356,97 @@ export class GestionnaireService {
       label: typeLabels[type] || type,
     }));
 
+    // 7. Historique réel des transactions depuis la base de données (Reservation & Transactions)
+    const dbReservations = listingIds.length > 0
+      ? await this.prisma.reservation.findMany({
+          where: { logementId: { in: listingIds } },
+          include: {
+            logement: { select: { titre: true } },
+            proprietaire: { select: { prenom: true, nom: true } },
+            locataire: { select: { prenom: true, nom: true } },
+            paiement: true,
+          },
+          orderBy: { creeLe: 'desc' },
+          take: 20,
+        })
+      : [];
+
+    const recentTransactions = dbReservations.flatMap((r) => {
+      const isPaid = r.statut === StatutReservation.PAID || r.statut === StatutReservation.CONFIRMED || r.statut === StatutReservation.CHECKED_IN || r.statut === StatutReservation.COMPLETED;
+      const isCancelled = r.statut === StatutReservation.CANCELLED || (r.statut as string) === 'REFUNDED';
+      const ref = (r as any).code || `RES-${r.id.substring(0, 8).toUpperCase()}`;
+      const date = r.creeLe.toLocaleDateString('fr-FR');
+      const methode = (r.paiement as any)?.methode || 'Wave / Mobile Money';
+      const ownerName = r.proprietaire ? `${r.proprietaire.prenom} ${r.proprietaire.nom}` : 'Propriétaire';
+      const logementTitre = r.logement?.titre || 'Logement conciergerie';
+      const statusStr = isPaid ? ('COMPLETED' as const) : isCancelled ? ('REFUNDED' as const) : ('PENDING' as const);
+
+      const total = Number(r.totalLocataire || 0);
+      const comm = Number(r.montantCommission || 0);
+      const net = Number(r.netProprietaire || 0);
+
+      const items: Array<{
+        id: string;
+        reference: string;
+        type: 'ENCAISSEMENT' | 'REVERSEMENT' | 'COMMISSION';
+        libelle: string;
+        logementTitre: string;
+        ownerName: string;
+        montant: number;
+        date: string;
+        methode: string;
+        statut: 'COMPLETED' | 'PENDING' | 'REFUNDED' | 'PAID' | 'CANCELLED';
+      }> = [];
+
+      // 1. Encaissement brut du voyageur (Total Locataire direct depuis DB)
+      items.push({
+        id: `${r.id}-enc`,
+        reference: ref,
+        type: 'ENCAISSEMENT',
+        libelle: `Réservation locataire (${r.locataire ? `${r.locataire.prenom} ${r.locataire.nom}` : 'Voyageur'})`,
+        logementTitre,
+        ownerName,
+        montant: total,
+        date,
+        methode,
+        statut: statusStr,
+      });
+
+      // 2. Reversement Net Bailleur (netProprietaire direct depuis DB)
+      if (net > 0) {
+        items.push({
+          id: `${r.id}-rev`,
+          reference: ref,
+          type: 'REVERSEMENT',
+          libelle: `Reversement Net Bailleur (${ownerName})`,
+          logementTitre,
+          ownerName,
+          montant: net,
+          date,
+          methode: 'Crédit Portefeuille',
+          statut: statusStr,
+        });
+      }
+
+      // 3. Commission Klef (montantCommission direct depuis DB)
+      if (comm > 0) {
+        items.push({
+          id: `${r.id}-com`,
+          reference: ref,
+          type: 'COMMISSION',
+          libelle: `Commission Klef (7%)`,
+          logementTitre,
+          ownerName,
+          montant: comm,
+          date,
+          methode: 'Prélèvement Klef',
+          statut: statusStr,
+        });
+      }
+
+      return items;
+    });
+
     return {
       kpis: {
         totalLogements,
@@ -334,6 +466,7 @@ export class GestionnaireService {
       topListings,
       revenusMensuels,
       repartitionTypes,
+      recentTransactions,
     };
   }
 }

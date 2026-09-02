@@ -41,7 +41,7 @@ export class ReviewsService {
 
     // 2. Vérifier si l'auteur est autorisé (Locataire ou Proprio)
     const isLocataire = reservation.locataireId === auteurId;
-    const isProprio = reservation.proprietaireId === auteurId;
+    const isProprio = reservation.proprietaireId === auteurId || reservation.logement?.gestionnaireId === auteurId;
 
     if (!isLocataire && !isProprio) {
       throw new ForbiddenException('Vous n\'êtes pas autorisé à noter cette réservation');

@@ -42,15 +42,43 @@ interface Props {
    sur une surface sombre. L'ancien PUBLISHED mettait un aplat forest-950 avec
    texte lime sur une carte blanche — l'élément le plus sombre de la page
    servait à dire « tout va bien ». */
+/* ── Statuts avec design tokens officiels Klef ─────────────────────────── */
 const STATUT_CONFIG: Record<string, { label: string; cls: string; dot: string }> = {
-  PUBLISHED: { label: 'Publiée', cls: 'bg-success-50 text-success-700', dot: 'bg-success-500' },
-  PENDING_REVIEW: { label: 'En révision', cls: 'bg-warning-50 text-warning-700', dot: 'bg-warning-500' },
-  DRAFT: { label: 'Brouillon', cls: 'bg-neutral-100 text-foreground-muted', dot: 'bg-neutral-400' },
-  PAUSED: { label: 'En pause', cls: 'bg-neutral-100 text-foreground-muted', dot: 'bg-neutral-400' },
-  REJECTED: { label: 'Rejetée', cls: 'bg-error-50 text-error-700', dot: 'bg-error-500' },
+  PUBLISHED: {
+    label: 'Publiée',
+    cls: 'bg-success-50 text-success-700 border-success-500/30 shadow-2xs',
+    dot: 'bg-success-500',
+  },
+  PENDING_REVIEW: {
+    label: 'En révision',
+    cls: 'bg-warning-50 text-warning-700 border-warning-500/30 shadow-2xs',
+    dot: 'bg-warning-500',
+  },
+  DRAFT: {
+    label: 'Brouillon',
+    cls: 'bg-background-alt text-foreground-muted border-border shadow-2xs',
+    dot: 'bg-neutral-400',
+  },
+  PAUSED: {
+    label: 'En pause',
+    cls: 'bg-background-alt text-foreground-muted border-border shadow-2xs',
+    dot: 'bg-neutral-400',
+  },
+  REJECTED: {
+    label: 'Rejetée',
+    cls: 'bg-error-50 text-error-700 border-error-500/30 shadow-2xs',
+    dot: 'bg-error-500',
+  },
 };
 
-export function OwnerListingCard({ listing, viewMode = 'grid', onToggleStatus, onToggleDerniereMinute, onDelete, isGestionnaire = false }: Props) {
+export function OwnerListingCard({
+  listing,
+  viewMode = 'grid',
+  onToggleStatus,
+  onToggleDerniereMinute,
+  onDelete,
+  isGestionnaire = false,
+}: Props) {
   const [menuOpen, setMenuOpen] = useState(false);
   const rawPrice = listing.prixParNuit ?? listing.prixNuit ?? listing.prixBase ?? 0;
   const num = Number(rawPrice);
@@ -63,10 +91,11 @@ export function OwnerListingCard({ listing, viewMode = 'grid', onToggleStatus, o
   const location = [listing.commune, listing.ville].filter(Boolean).join(', ') || 'Sénégal';
   const detailHref = isGestionnaire ? `/gestionnaire/annonces/${listing.id}` : `/dashboard/annonces/${listing.id}`;
   const editHref = isGestionnaire ? `/gestionnaire/annonces/${listing.id}/modifier` : `/dashboard/annonces/${listing.id}/modifier`;
+  const proprietaire = (listing as any).proprietaire;
 
-  const Status = (
+  const StatusBadge = (
     <span className={cn(
-      'inline-flex items-center gap-1.5 rounded-pill px-2.5 py-1 text-[0.6875rem] font-semibold',
+      'inline-flex items-center gap-1.5 rounded-pill border px-2.5 py-1 text-[0.6875rem] font-semibold tracking-wide backdrop-blur-md',
       cfg.cls,
     )}>
       <span className={cn('h-1.5 w-1.5 rounded-pill', cfg.dot)} />
@@ -74,70 +103,106 @@ export function OwnerListingCard({ listing, viewMode = 'grid', onToggleStatus, o
     </span>
   );
 
-  const Price = (
-    <p className="flex items-baseline gap-1">
-      <span className="text-base font-semibold tabular-nums text-forest-900">{price}</span>
+  const PriceDisplay = (
+    <div className="flex items-baseline gap-1">
+      <span className="text-lg font-semibold tabular-nums text-forest-900">{price}</span>
       <span className="text-xs text-foreground-muted">FCFA / nuit</span>
-    </p>
+    </div>
   );
 
   /* ── Mode liste ─────────────────────────────────────────────────────── */
   if (viewMode === 'list') {
     return (
       <article className={cn(
-        "group relative flex flex-col gap-4 rounded-card border border-border bg-background-card p-4 shadow-2xs transition-all duration-200 hover:-translate-y-0.5 hover:border-forest-600/30 hover:shadow-md sm:flex-row sm:items-center",
+        "group relative flex flex-col rounded-card border border-border bg-background-card shadow-2xs transition-all duration-200 hover:-translate-y-0.5 hover:border-forest-600/30 hover:shadow-md overflow-hidden",
         menuOpen ? "z-[60]" : "z-0 hover:z-20"
       )}>
-        <div className="flex min-w-0 flex-1 items-center gap-4">
-          <Thumb photo={photo} className="h-24 w-24 shrink-0 sm:h-28 sm:w-28" />
+        {/* Top row: photo + info */}
+        <div className="flex min-w-0 items-start gap-3.5 p-4 pb-3">
+          <div className="relative h-20 w-24 shrink-0 overflow-hidden rounded-inner bg-neutral-100 shadow-inner">
+            {photo ? (
+              <Image
+                src={photo}
+                alt=""
+                fill
+                sizes="96px"
+                className="object-cover transition-transform duration-500 ease-out group-hover:scale-105"
+              />
+            ) : (
+              <span className="grid h-full place-items-center text-neutral-300">
+                <ImageOff className="h-5 w-5" aria-hidden="true" />
+              </span>
+            )}
+            <div className="absolute inset-0 bg-gradient-to-t from-forest-950/40 via-transparent to-transparent opacity-60" />
+          </div>
 
-          <div className="min-w-0 flex-1 space-y-1.5">
-            <div className="flex flex-wrap items-center gap-2">
-              {Status}
-              {listing.derniereMinuteActive && (
-                <span className="inline-flex items-center gap-1 rounded-pill bg-amber-400/20 border border-amber-500/30 px-2 py-0.5 text-[0.6875rem] font-bold text-amber-700">
-                  <Zap className="h-3 w-3 fill-amber-500 text-amber-500" />
-                  -15% Dernière Min.
+          <div className="min-w-0 flex-1 space-y-1">
+            {/* Badges row */}
+            <div className="flex flex-wrap items-center gap-1.5">
+              {StatusBadge}
+              {listing.typeLogement && (
+                <span className="rounded-pill bg-neutral-100 border border-border px-2 py-0.5 text-[0.6rem] font-bold uppercase tracking-wider text-foreground-muted">
+                  {listing.typeLogement}
                 </span>
               )}
-              {listing.typeLogement && (
-                <span className="text-xs font-semibold text-foreground-faint">{listing.typeLogement}</span>
+              {listing.derniereMinuteActive && (
+                <span className="inline-flex items-center gap-1 rounded-pill bg-gold-50 border border-gold-200 px-2 py-0.5 text-[0.6rem] font-bold text-gold-800 shadow-2xs">
+                  <Zap className="h-2.5 w-2.5 fill-gold-400 text-gold-500" />
+                  -15%
+                </span>
               )}
             </div>
 
-            <h3 className="font-display text-lg font-semibold leading-snug tracking-[-0.015em] text-forest-900">
+            {/* Title - 2 lines allowed */}
+            <h3 className="font-display text-sm font-semibold leading-snug tracking-[-0.015em] text-forest-900 group-hover:text-forest-600 transition-colors">
               <Link
                 href={detailHref}
-                className="line-clamp-1 after:absolute after:inset-0 after:z-10 after:content-[''] focus-visible:outline-none"
+                className="line-clamp-2 focus-visible:outline-none"
               >
                 {listing.titre}
               </Link>
             </h3>
 
-            <p className="flex flex-wrap items-center gap-2 text-xs text-foreground-muted font-medium">
-              <span className="flex items-center gap-1">
-                <MapPin className="h-3.5 w-3.5 shrink-0 text-foreground-faint" aria-hidden="true" />
-                <span className="truncate">{location}</span>
+            {/* Location */}
+            <div className="flex flex-wrap items-center gap-2 text-[0.7rem] text-foreground-muted font-medium">
+              <span className="flex items-center gap-1 text-forest-800">
+                <MapPin className="h-3 w-3 shrink-0 text-foreground-faint" aria-hidden="true" />
+                <span className="truncate max-w-[160px]">{location}</span>
               </span>
-              {isGestionnaire && (listing as any).proprietaire && (
-                <span className="inline-flex items-center gap-1 rounded-pill bg-forest-50 border border-forest-200/60 px-2 py-0.5 text-[0.6875rem] font-semibold text-forest-700">
-                  <User className="h-3 w-3" /> Bailleur : {(listing as any).proprietaire.prenom} {(listing as any).proprietaire.nom}
+
+              {isGestionnaire && proprietaire && (
+                <span className="inline-flex items-center gap-1 rounded-pill bg-forest-50 border border-forest-100 px-2 py-0.5 text-[0.6rem] font-semibold text-forest-700 truncate max-w-[180px]">
+                  <User className="h-2.5 w-2.5 text-forest-600 shrink-0" /> {proprietaire.prenom} {proprietaire.nom}
                 </span>
               )}
-            </p>
+            </div>
           </div>
         </div>
 
-        <div className="flex shrink-0 items-center justify-between gap-3 border-t border-border/60 pt-3 sm:justify-end sm:border-t-0 sm:pt-0">
-          {Price}
-          <div className="relative z-20 flex items-center gap-2">
+        {/* Bottom row: price + action buttons */}
+        <div className="flex flex-wrap items-center justify-between gap-2 border-t border-border/60 px-4 py-2.5">
+          <div className="flex items-baseline gap-1">
+            <span className="text-base font-semibold tabular-nums text-forest-900">{price}</span>
+            <span className="text-[0.65rem] text-foreground-muted">FCFA / nuit</span>
+          </div>
+
+          <div className="relative z-20 flex items-center gap-1.5">
+            <Link
+              href={detailHref}
+              className="inline-flex items-center gap-1 rounded-pill border border-border bg-background-card hover:bg-neutral-100 px-2.5 py-1.5 text-[0.7rem] font-semibold text-foreground transition-all shadow-2xs"
+            >
+              <Eye className="h-3 w-3 text-forest-600" aria-hidden="true" />
+              <span>Gérer</span>
+            </Link>
+
             <Link
               href={editHref}
-              className="inline-flex items-center gap-1.5 rounded-pill bg-action hover:bg-action-hover text-on-action px-3.5 py-2 text-xs font-semibold transition-all shadow-xs active:scale-95 border-none"
+              className="btn-action inline-flex items-center gap-1 rounded-pill px-2.5 py-1.5 text-[0.7rem] font-semibold text-on-action transition-all shadow-xs active:scale-95 border-none"
             >
-              <Edit3 className="h-3.5 w-3.5 text-forest-950 stroke-[2px]" aria-hidden="true" />
-              Modifier
+              <Edit3 className="h-3 w-3 text-forest-950 stroke-[2px]" aria-hidden="true" />
+              <span>Modifier</span>
             </Link>
+
             <ActionsMenu listing={listing} onToggleStatus={onToggleStatus} onToggleDerniereMinute={onToggleDerniereMinute} onDelete={onDelete} onOpenChange={setMenuOpen} isGestionnaire={isGestionnaire} />
           </div>
         </div>
@@ -145,20 +210,22 @@ export function OwnerListingCard({ listing, viewMode = 'grid', onToggleStatus, o
     );
   }
 
+
   /* ── Mode grille ────────────────────────────────────────────────────── */
   return (
     <article className={cn(
       "group relative flex flex-col rounded-card border border-border bg-background-card shadow-2xs transition-all duration-200 hover:-translate-y-0.5 hover:border-forest-600/30 hover:shadow-md",
       menuOpen ? "z-[60]" : "z-0 hover:z-20"
     )}>
+      {/* ── Photo & Badges ────────────────────────────────────────────── */}
       <div className="relative aspect-[16/10] w-full overflow-hidden rounded-t-card bg-neutral-100">
         {photo ? (
           <Image
             src={photo}
-            alt=""
+            alt={listing.titre}
             fill
-            sizes="(max-width: 768px) 100vw, 33vw"
-            className="object-cover transition-transform duration-[320ms] ease-[cubic-bezier(0.22,1,0.36,1)] group-hover:scale-[1.03]"
+            sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
+            className="object-cover transition-transform duration-300 group-hover:scale-[1.03]"
           />
         ) : (
           <span className="grid h-full place-items-center text-neutral-300">
@@ -166,55 +233,87 @@ export function OwnerListingCard({ listing, viewMode = 'grid', onToggleStatus, o
           </span>
         )}
 
+        {/* Dégradé sous l'image */}
+        <div className="absolute inset-0 bg-gradient-to-t from-forest-950/70 via-transparent to-transparent opacity-80" />
+
+        {/* Badges haut gauche */}
         <div className="absolute left-3 top-3 flex flex-col gap-1 z-20">
-          <span className="glass !rounded-pill !shadow-none">
-            <span className={cn('inline-flex items-center gap-1.5 rounded-pill px-2.5 py-1 text-[0.6875rem] font-semibold', cfg.cls)}>
-              <span className={cn('h-1.5 w-1.5 rounded-pill', cfg.dot)} />
-              {cfg.label}
-            </span>
-          </span>
+          {StatusBadge}
           {listing.derniereMinuteActive && (
-            <span className="inline-flex items-center gap-1 rounded-pill bg-amber-500 text-slate-950 px-2.5 py-0.5 text-[0.65rem] font-black shadow-sm">
-              <Zap className="h-3 w-3 fill-slate-950" />
+            <span className="inline-flex items-center gap-1 rounded-pill bg-gold-400 text-forest-950 px-2.5 py-0.5 text-[0.65rem] font-bold shadow-sm">
+              <Zap className="h-3 w-3 fill-forest-950" />
               -15% Dernière Min.
             </span>
           )}
         </div>
 
+        {/* Menu d'actions haut droit */}
         <div className="absolute right-3 top-3 z-30">
           <ActionsMenu listing={listing} onToggleStatus={onToggleStatus} onToggleDerniereMinute={onToggleDerniereMinute} onDelete={onDelete} onPhoto onOpenChange={setMenuOpen} isGestionnaire={isGestionnaire} />
         </div>
+
+        {/* Badge Bailleur en bas sur la photo */}
+        {isGestionnaire && proprietaire && (
+          <div className="absolute bottom-3 left-3 right-3 z-20 flex items-center justify-between pointer-events-none">
+            <span className="inline-flex items-center gap-1.5 rounded-pill bg-forest-950/80 border border-white/20 backdrop-blur-md px-2.5 py-0.5 text-[0.6875rem] font-semibold text-neutral-0 shadow-sm truncate max-w-[85%]">
+              <User className="h-3 w-3 text-gold-300 shrink-0" />
+              <span className="truncate">Bailleur : {proprietaire.prenom} {proprietaire.nom}</span>
+            </span>
+          </div>
+        )}
       </div>
 
-      <div className="flex flex-1 flex-col p-4">
-        <p className="flex items-center gap-1.5 text-xs text-foreground-muted">
-          <MapPin className="h-3.5 w-3.5 shrink-0 text-foreground-faint" aria-hidden="true" />
-          <span className="truncate">{location}</span>
-        </p>
+      {/* ── Contenu de la Carte ────────────────────────────────────────── */}
+      <div className="flex flex-1 flex-col gap-1.5 p-4">
+        {/* Type + Location */}
+        <div className="flex items-center gap-2">
+          {listing.typeLogement && (
+            <span className="shrink-0 rounded-pill bg-neutral-100 border border-border px-2 py-0.5 text-[0.6rem] font-bold uppercase tracking-wider text-foreground-muted">
+              {listing.typeLogement}
+            </span>
+          )}
+          <p className="flex items-center gap-1 text-xs text-foreground-muted truncate font-medium min-w-0">
+            <MapPin className="h-3 w-3 shrink-0 text-foreground-faint" aria-hidden="true" />
+            <span className="truncate">{location}</span>
+          </p>
+        </div>
 
-        <h3 className="mt-1 font-display text-base font-semibold leading-snug tracking-[-0.015em] text-forest-900">
+        {/* Title */}
+        <h3 className="font-display text-sm sm:text-base font-semibold leading-snug tracking-[-0.015em] text-forest-900 group-hover:text-forest-600 transition-colors line-clamp-2">
           <Link
             href={detailHref}
-            className="line-clamp-1 after:absolute after:inset-0 after:z-10 after:content-[''] focus-visible:outline-none focus-visible:after:outline-2 focus-visible:after:outline-offset-2 focus-visible:after:outline-ring"
+            className="focus-visible:outline-none"
           >
             {listing.titre}
           </Link>
         </h3>
 
-        {isGestionnaire && (listing as any).proprietaire && (
-          <p className="mt-1 flex items-center gap-1.5 text-xs text-forest-700 font-semibold truncate">
-            <User className="h-3.5 w-3.5 text-forest-600 shrink-0" />
-            <span className="truncate">Bailleur : {(listing as any).proprietaire.prenom} {(listing as any).proprietaire.nom}</span>
-          </p>
-        )}
+        {/* ── Prix & Boutons d'Action ─────────────────────────────────── */}
+        <div className="mt-auto flex flex-wrap items-center justify-between gap-2 border-t border-border pt-3">
+          <div className="flex items-baseline gap-1">
+            <span className="text-base sm:text-lg font-semibold tabular-nums text-forest-900">{price}</span>
+            <span className="text-[0.65rem] text-foreground-muted">FCFA / nuit</span>
+          </div>
 
-        <div className="mt-auto flex items-end justify-between gap-3 border-t border-border pt-3">
-          {Price}
-          {listing.typeLogement && (
-            <span className="shrink-0 rounded-pill bg-neutral-100 px-2.5 py-1 text-[0.6875rem] text-foreground-muted">
-              {listing.typeLogement}
-            </span>
-          )}
+          <div className="flex items-center gap-1.5">
+            <Link
+              href={detailHref}
+              className="inline-flex items-center gap-1.5 rounded-pill border border-border bg-background-card hover:bg-neutral-100 px-3 py-1.5 text-xs font-semibold text-foreground transition-all shadow-2xs"
+              title="Gérer l'annonce et voir le calendrier"
+            >
+              <Eye className="h-3.5 w-3.5 text-forest-600" />
+              <span>Gérer</span>
+            </Link>
+
+            <Link
+              href={editHref}
+              className="btn-action inline-flex items-center gap-1.5 rounded-pill px-3 py-1.5 text-xs font-semibold text-on-action transition-all shadow-xs active:scale-95 border-none"
+              title="Modifier les détails de l'annonce"
+            >
+              <Edit3 className="h-3.5 w-3.5 text-forest-950 stroke-[2px]" />
+              <span>Modifier</span>
+            </Link>
+          </div>
         </div>
       </div>
     </article>

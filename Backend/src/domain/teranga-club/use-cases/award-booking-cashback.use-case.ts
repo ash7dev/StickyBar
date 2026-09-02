@@ -76,26 +76,32 @@ export class AwardBookingCashbackUseCase {
     // 5. Mettre à jour le compte et ajouter la transaction en transaction DB
     const nouveauSolde = account.soldeCoins + coinsGagnes;
 
-    await this.prisma.$transaction([
-      this.prisma.terangaAccount.update({
-        where: { id: account.id },
-        data: {
-          soldeCoins: nouveauSolde,
-          tier,
-          gmv12Mois,
-        },
-      }),
-      this.prisma.terangaTransaction.create({
-        data: {
-          terangaAccountId: account.id,
-          montantCoins: coinsGagnes,
-          type: TypeTransactionTeranga.CREDIT_BOOKING,
-          description: `Cashback ${cashbackPct}% — Réservation #${reservationId.slice(0, 8).toUpperCase()}`,
-          reservationId: reservation.id,
-          soldeApres: nouveauSolde,
-        },
-      }),
-    ]);
+    const accountUpdate = this.prisma.terangaAccount.update({
+      where: { id: account.id },
+      data: {
+        soldeCoins: nouveauSolde,
+        tier,
+        gmv12Mois,
+      },
+    });
+
+    const transactionCreate = this.prisma.terangaTransaction.create({
+      data: {
+        terangaAccountId: account.id,
+        montantCoins: coinsGagnes,
+        type: TypeTransactionTeranga.CREDIT_BOOKING,
+        description: `Cashback ${cashbackPct}% — Réservation #${reservationId.slice(0, 8).toUpperCase()}`,
+        reservationId: reservation.id,
+        soldeApres: nouveauSolde,
+      },
+    });
+
+    if (typeof (this.prisma as any).$transaction === 'function') {
+      await (this.prisma as PrismaClient).$transaction([accountUpdate, transactionCreate]);
+    } else {
+      await accountUpdate;
+      await transactionCreate;
+    }
 
     // 6. Débloquer le badge FIRST_STAY si 1er séjour
     if (nbSejours === 1) {

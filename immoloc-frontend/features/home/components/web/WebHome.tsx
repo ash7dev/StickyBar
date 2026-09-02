@@ -7,6 +7,7 @@ import { NearbyListingsSection } from './NearbyListingsSection';
 import { WeekendListingsSection } from './WeekendListingsSection';
 import { FeedSections } from './FeedSections';
 import { HowItWorksSection } from './HowItWorksSection';
+import { KlefManagedHomeBanner } from './KlefManagedHomeBanner';
 import { OwnerCTASection } from './OwnerCTASection';
 import { listingsApi } from '@/lib/nestjs/listings.api';
 import type { Listing } from '@/lib/nestjs/types';
@@ -45,6 +46,9 @@ export function WebHome() {
 
       {/* How It Works Section */}
       <HowItWorksSection />
+
+      {/* Klef Managed Concierge Banner Section */}
+      <KlefManagedHomeBanner />
 
       {/* Owner CTA Section */}
       <OwnerCTASection />
