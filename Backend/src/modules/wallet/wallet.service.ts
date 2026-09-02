@@ -82,9 +82,34 @@ export class WalletService {
       reservation: t.reservationId ? reservationsMap.get(t.reservationId) ?? null : null,
     }));
 
+    // Récupérer toutes les transactions pour ventiler le solde Hôte (revenus) et le solde Client (remboursements)
+    const allTransactions = await this.prisma.transactionWallet.findMany({
+      where: { walletId: wallet.id },
+      select: { type: true, montant: true, sens: true },
+    });
+
+    let soldeProprietaire = 0;
+    let soldeLocataire = 0;
+
+    for (const t of allTransactions) {
+      const m = Number(t.montant || 0);
+      if (t.type === 'CREDIT_LOCATION') {
+        soldeProprietaire += m;
+      } else if (t.type === 'DEBIT_RETRAIT' || t.type === 'DEBIT_PENALITE' || t.type === 'DEBIT_DETTE') {
+        soldeProprietaire -= m;
+      } else if (t.type === 'REMBOURSEMENT') {
+        soldeLocataire += (t.sens === 'CREDIT' ? m : -m);
+      }
+    }
+
+    soldeProprietaire = Math.max(0, soldeProprietaire);
+    soldeLocataire = Math.max(0, soldeLocataire);
+
     return {
       ...wallet,
       soldeDisponible: Number(wallet.soldeDisponible || 0),
+      soldeProprietaire,
+      soldeLocataire,
       dettePenalites: Number(wallet.dettePenalites || 0),
       transactions: transactionsEnriched,
     };

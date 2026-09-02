@@ -23,6 +23,8 @@ export default function WalletPage() {
         ) : (
           <WalletBalanceCard
             soldeDisponible={Number(data.soldeDisponible)}
+            soldeProprietaire={data.soldeProprietaire !== undefined ? Number(data.soldeProprietaire) : Number(data.soldeDisponible)}
+            soldeLocataire={Number(data.soldeLocataire || 0)}
             dettePenalites={Number(data.dettePenalites)}
           />
         )}
@@ -41,7 +43,7 @@ export default function WalletPage() {
 
         <div className="order-1 lg:order-2 min-w-0 space-y-4">
           <WalletWithdrawalCard
-            soldeDisponible={data ? Number(data.soldeDisponible) : 0}
+            soldeDisponible={data ? (data.soldeProprietaire !== undefined ? Number(data.soldeProprietaire) : Number(data.soldeDisponible)) : 0}
             isLoading={isLoading}
           />
 

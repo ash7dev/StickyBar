@@ -632,6 +632,8 @@ export interface WalletTransaction {
 export interface WalletData {
   id?: string;
   soldeDisponible: number;
+  soldeProprietaire?: number;
+  soldeLocataire?: number;
   dettePenalites: number;
   misAJourLe?: string;
   transactions: WalletTransaction[];
