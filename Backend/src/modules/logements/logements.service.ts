@@ -474,16 +474,44 @@ export class LogementsService {
     let gestionDeleguee = false;
 
     if (managedOwnerPhone && managedOwnerPhone.trim().length > 0) {
-      const formattedPhone = managedOwnerPhone.trim();
-      const existingUser = await this.prisma.utilisateur.findUnique({
-        where: { telephone: formattedPhone },
+      const rawPhone = managedOwnerPhone.trim();
+      const normPhone = rawPhone.replace(/[\s\-\.\(\)]/g, '');
+      const digitsOnly = normPhone.replace(/[^0-9]/g, '');
+
+      // Recherche souple : numéro exact, numéro avec/sans espaces, ou séquence de chiffres
+      const existingUser = await this.prisma.utilisateur.findFirst({
+        where: {
+          OR: [
+            { telephone: normPhone },
+            { telephone: rawPhone },
+            ...(digitsOnly.length >= 7 ? [{ telephone: { contains: digitsOnly } }] : []),
+          ],
+        },
+        orderBy: { creeLe: 'asc' }, // Priorité au compte d'origine le plus ancien
       });
 
       if (existingUser) {
         targetProprietaireId = existingUser.id;
+
+        // Auto-promotion en hôte & création du wallet si le compte était pur locataire
+        if (!existingUser.estProprietaire) {
+          await this.prisma.utilisateur.update({
+            where: { id: existingUser.id },
+            data: { estProprietaire: true },
+          });
+
+          const existingWallet = await this.prisma.wallet.findUnique({
+            where: { utilisateurId: existingUser.id },
+          });
+          if (!existingWallet) {
+            await this.prisma.wallet.create({
+              data: { utilisateurId: existingUser.id, soldeDisponible: 0 },
+            });
+          }
+        }
       } else {
         const shadowAuthId = `shadow_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`;
-        const shadowEmail = `shadow_${formattedPhone.replace(/[^0-9]/g, '')}@klef.sn`;
+        const shadowEmail = `shadow_${digitsOnly}@klef.sn`;
         const prenom = managedOwnerPrenom?.trim() || 'Propriétaire';
         const nom = managedOwnerNom?.trim() || 'Klef';
 
@@ -491,7 +519,7 @@ export class LogementsService {
           await tx.profile.create({
             data: {
               userId: shadowAuthId,
-              phone: formattedPhone,
+              phone: normPhone,
               email: shadowEmail,
             },
           });
@@ -500,7 +528,7 @@ export class LogementsService {
             data: {
               userId: shadowAuthId,
               email: shadowEmail,
-              telephone: formattedPhone,
+              telephone: normPhone,
               prenom,
               nom,
               estProprietaire: true,

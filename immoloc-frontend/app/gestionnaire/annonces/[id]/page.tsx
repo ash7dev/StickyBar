@@ -84,7 +84,7 @@ export default function GestionnaireAnnonceDetailPage({
         </Link>
       </div>
 
-      <ListingOwnerDetail listing={data} />
+      <ListingOwnerDetail listing={data} isGestionnaire={true} />
     </div>
   );
 }

@@ -718,12 +718,22 @@ export function ListingOwnerDetailSkeleton() {
 
 /* ── Composant principal ───────────────────────────────────────────────── */
 
-export function ListingOwnerDetail({ listing }: { listing: ListingDetail }) {
+export function ListingOwnerDetail({
+  listing,
+  isGestionnaire = false,
+}: {
+  listing: ListingDetail;
+  isGestionnaire?: boolean;
+}) {
   const qc = useQueryClient();
   const [openLightbox, setOpenLightbox] = useState(false);
   const [lightboxIndex, setLightboxIndex] = useState(0);
   const [pendingIndex, setPendingIndex] = useState<number | null>(null);
   const [copied, setCopied] = useState(false);
+
+  const backHref = isGestionnaire ? '/gestionnaire/annonces' : '/dashboard/annonces';
+  const editHref = isGestionnaire ? `/gestionnaire/annonces/${listing.id}/modifier` : `/dashboard/annonces/${listing.id}/modifier`;
+  const reservationsHref = isGestionnaire ? `/gestionnaire/reservations?q=${encodeURIComponent(listing.titre)}` : `/dashboard/reservations?logementId=${listing.id}`;
 
   const [emblaRef, embla] = useEmblaCarousel({ loop: true });
 
@@ -745,7 +755,6 @@ export function ListingOwnerDetail({ listing }: { listing: ListingDetail }) {
     }
   }, [openLightbox, embla, pendingIndex]);
 
-  // La visionneuse n'avait ni Échap, ni flèches, ni verrou de défilement.
   useEffect(() => {
     if (!openLightbox) return;
     const prev = document.body.style.overflow;
@@ -767,12 +776,20 @@ export function ListingOwnerDetail({ listing }: { listing: ListingDetail }) {
   }, []);
 
   const pauseMutation = useMutation({
-    mutationFn: () => nestFetch(NEST_API.LISTINGS.PAUSE(listing.id), { method: 'POST' }),
-    onSuccess: () => qc.invalidateQueries({ queryKey: ['listing-owner', listing.id] }),
+    mutationFn: () => nestFetch<ListingDetail>(NEST_API.LISTINGS.PAUSE(listing.id), { method: 'PATCH' }),
+    onSuccess: (updated) => {
+      qc.setQueryData(['owner-listing', listing.id], updated);
+      qc.invalidateQueries({ queryKey: ['owner-listings'] });
+      qc.invalidateQueries({ queryKey: ['listing-gestionnaire-detail', listing.id] });
+    },
   });
   const resumeMutation = useMutation({
-    mutationFn: () => nestFetch(NEST_API.LISTINGS.RESUME(listing.id), { method: 'POST' }),
-    onSuccess: () => qc.invalidateQueries({ queryKey: ['listing-owner', listing.id] }),
+    mutationFn: () => nestFetch<ListingDetail>(NEST_API.LISTINGS.RESUME(listing.id), { method: 'PATCH' }),
+    onSuccess: (updated) => {
+      qc.setQueryData(['owner-listing', listing.id], updated);
+      qc.invalidateQueries({ queryKey: ['owner-listings'] });
+      qc.invalidateQueries({ queryKey: ['listing-gestionnaire-detail', listing.id] });
+    },
   });
 
   const { data: allReservations = [] } = useQuery<Reservation[]>({
@@ -814,7 +831,7 @@ export function ListingOwnerDetail({ listing }: { listing: ListingDetail }) {
       <div className="sticky top-0 sm:relative z-40 bg-background-card/90 sm:bg-transparent backdrop-blur-md border-b border-border/80 py-3 sm:pb-3 -mx-4 px-4 sm:mx-0 transition-all shadow-xs sm:shadow-none">
         <div className="flex items-center justify-between gap-2 sm:gap-4 max-w-6xl mx-auto">
           <Link
-            href="/dashboard/annonces"
+            href={backHref}
             className="inline-flex items-center gap-2 text-xs sm:text-sm font-bold text-forest-950 hover:text-forest-700 transition-colors"
           >
             <span className="w-8 h-8 rounded-pill bg-background-card border border-border/80 flex items-center justify-center shadow-2xs shrink-0">
@@ -854,7 +871,7 @@ export function ListingOwnerDetail({ listing }: { listing: ListingDetail }) {
             </button>
 
             <Link
-              href={`/dashboard/annonces/${listing.id}/modifier`}
+              href={editHref}
               className="btn-action inline-flex h-9 items-center gap-1.5 rounded-pill px-3.5 sm:px-4 text-xs font-bold text-forest-950 shadow-action transition-all active:scale-95"
             >
               <Pencil className="w-3.5 h-3.5 text-forest-950" />
@@ -1005,7 +1022,7 @@ export function ListingOwnerDetail({ listing }: { listing: ListingDetail }) {
               <h3 className="font-display text-base font-semibold text-neutral-50">Réservations récentes</h3>
             </div>
             <Link
-              href={`/dashboard/reservations?logementId=${listing.id}`}
+              href={reservationsHref}
               className="inline-flex items-center gap-1 text-xs font-semibold text-on-inverse-marker transition-colors hover:text-on-inverse-marker"
             >
               Tout voir
@@ -1033,7 +1050,7 @@ export function ListingOwnerDetail({ listing }: { listing: ListingDetail }) {
               return (
                 <Link
                   key={r.id}
-                  href={`/dashboard/reservations/${r.id}`}
+                  href={isGestionnaire ? `/gestionnaire/reservations/${r.id}` : `/dashboard/reservations/${r.id}`}
                   className="group flex items-center justify-between gap-3 rounded-inner bg-white/[0.04] p-3.5 transition-colors hover:bg-white/[0.08]"
                 >
                   <div className="flex min-w-0 flex-1 items-center gap-3">
@@ -1137,11 +1154,11 @@ export function ListingOwnerDetail({ listing }: { listing: ListingDetail }) {
             <div className="space-y-2.5">
               {(listing.statut === 'DRAFT' || listing.statut === 'REJECTED') && (
                 <Link
-                  href={`/dashboard/annonces/${listing.id}/soumettre`}
+                  href={editHref}
                   className="flex h-11 w-full items-center justify-center gap-2 rounded-pill bg-forest-600 px-5 text-sm font-semibold text-white transition-colors hover:bg-forest-700"
                 >
                   <Send className="h-4 w-4" aria-hidden="true" />
-                  Soumettre pour validation
+                  Modifier & Soumettre
                 </Link>
               )}
 
@@ -1170,7 +1187,7 @@ export function ListingOwnerDetail({ listing }: { listing: ListingDetail }) {
               )}
 
               <Link
-                href={`/dashboard/annonces/${listing.id}/modifier`}
+                href={editHref}
                 className="flex h-11 w-full items-center justify-center gap-2 rounded-pill bg-action hover:bg-action-hover text-on-action font-bold text-sm shadow-md transition-all active:scale-95 cursor-pointer"
               >
                 <Pencil className="h-4 w-4 text-forest-950" aria-hidden="true" />
