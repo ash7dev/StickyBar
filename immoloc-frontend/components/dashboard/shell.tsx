@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react';
 import { createPortal } from 'react-dom';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
-import { Building2, CalendarDays, LayoutDashboard, Settings, Wallet } from 'lucide-react';
+import { Building2, CalendarDays, LayoutDashboard, Plus, Wallet } from 'lucide-react';
 import { DashboardSidebar } from './sidebar';
 import { DashboardHeader } from './header';
 import { useRoleStore } from '@/stores/role.store';
@@ -15,6 +15,8 @@ import DashboardLoading from '@/app/dashboard/loading';
    Elle reste sombre : c'est du chrome flottant au-dessus d'un contenu de
    couleur imprevisible (photos, cartes blanches, graphiques). Une barre
    claire exigerait bordure epaisse et ombre lourde pour se detacher.
+   Pas de .glass-dark ici pour la meme raison : un flou translucide sur un
+   fond imprevisible perd en lisibilite, l'opacite forte reste plus sure.
    -------------------------------------------------------------------- */
 
 type BottomNavItem = {
@@ -22,19 +24,32 @@ type BottomNavItem = {
   label: string;
   icon: React.ComponentType<{ className?: string; strokeWidth?: number }>;
   exact?: boolean;
+  isAction?: boolean;
 };
 
 const BOTTOM_NAV: BottomNavItem[] = [
   { href: '/dashboard', label: 'Accueil', icon: LayoutDashboard, exact: true },
   { href: '/dashboard/annonces', label: 'Biens', icon: Building2 },
+  { href: '/dashboard/annonces/nouvelle', label: 'Ajouter', icon: Plus, isAction: true },
   { href: '/dashboard/reservations', label: 'Séjours', icon: CalendarDays },
   { href: '/dashboard/wallet', label: 'Wallet', icon: Wallet },
-  { href: '/dashboard/parametres', label: 'Réglages', icon: Settings },
 ];
+
+// Path de la barre avec encoche : viewBox fixe (400x64), etire horizontalement
+// via preserveAspectRatio="none" (hauteur rendue = 64px = hauteur viewBox,
+// donc aucune distorsion verticale ; la distorsion horizontale residuelle
+// est negligeable, la barre variant peu entre ~336 et 406px de large).
+// L'encoche est un creux symetrique (deux courbes de Bezier) centre a 50%
+// de la largeur — la ou vit le FAB, positionne en CSS avec left-1/2.
+const NAV_BAR_PATH =
+  'M32 0 H150 C172 0 178 34 200 34 C222 34 228 0 250 0 H368 A32 32 0 0 1 368 64 H32 A32 32 0 0 1 32 0 Z';
 
 function BottomNav() {
   const pathname = usePathname();
   const [mounted, setMounted] = useState(false);
+  // Retire will-change une fois l'animation d'entree terminee, pour ne pas
+  // laisser un layer composite actif en permanence.
+  const [entered, setEntered] = useState(false);
 
   useEffect(() => {
     setMounted(true);
@@ -44,47 +59,109 @@ function BottomNav() {
 
   return createPortal(
     <nav
-      aria-label="Navigation principale"
-      className="fixed inset-x-0 z-[9999] mx-auto w-[calc(100%-1.5rem)] max-w-md lg:hidden"
-      style={{ bottom: 'calc(0.75rem + env(safe-area-inset-bottom, 0px))' }}
+      aria-label="Navigation principale Hôte"
+      className={cn(
+        'fixed inset-x-0 z-[9999] mx-auto w-[calc(100%-1.5rem)] max-w-md lg:hidden',
+        !entered && 'klef-rise',
+      )}
+      style={{
+        bottom: 'calc(0.75rem + env(safe-area-inset-bottom, 0px))',
+        willChange: entered ? 'auto' : 'transform, opacity',
+      }}
+      onAnimationEnd={() => setEntered(true)}
+      data-done={entered || undefined}
     >
-      <ul
-        className={cn(
-          'flex items-stretch justify-between gap-0.5 rounded-card border border-white/10 p-1.5',
-          'bg-forest-950/92 shadow-lg backdrop-blur-lg',
-        )}
-      >
-        {BOTTOM_NAV.map(({ href, label, icon: Icon, exact }) => {
-          const active = exact ? pathname === href : pathname.startsWith(href);
+      {/* Conteneur relatif : le SVG dessine le chrome (avec encoche), le
+          FAB est pose par-dessus en absolu, la liste flotte au niveau z-10. */}
+      <div className="relative h-16">
+        <svg
+          viewBox="0 0 400 64"
+          preserveAspectRatio="none"
+          className="absolute inset-0 h-16 w-full drop-shadow-[0_16px_40px_-6px_rgba(4,25,18,0.55)] pointer-events-none"
+          aria-hidden="true"
+        >
+          <path
+            d={NAV_BAR_PATH}
+            className="fill-forest-950/95 stroke-white/15"
+            strokeWidth={1}
+            vectorEffect="non-scaling-stroke"
+          />
+          {/* Liseré clair sur le rebord superieur, pour le relief du chrome
+              sans toucher au fond opaque (pas de .glass-dark ici). */}
+          <path
+            d="M32 0.75 H150 C172 0.75 178 34.75 200 34.75 C222 34.75 228 0.75 250 0.75 H368"
+            fill="none"
+            className="stroke-white/10"
+            strokeWidth={1}
+            strokeLinecap="round"
+            vectorEffect="non-scaling-stroke"
+          />
+        </svg>
 
-          return (
-            <li key={href} className="flex-1">
-              <Link
-                href={href}
-                aria-current={active ? 'page' : undefined}
-                className={cn(
-                  'flex min-h-[3.25rem] flex-col items-center justify-center gap-1 rounded-inner px-1 py-1.5',
-                  'transition-colors duration-150',
-                  active ? 'text-on-inverse-marker' : 'text-forest-200 hover:text-neutral-50',
-                )}
-              >
-                <span
+        <ul className="relative z-10 flex h-16 items-stretch justify-between px-2">
+          {BOTTOM_NAV.map(({ href, label, icon: Icon, exact, isAction }) => {
+            // L'emplacement du FAB reste un slot vide dans le flux (largeur
+            // reservee sous l'encoche) : le bouton lui-meme est rendu a part,
+            // en absolu, pour pouvoir deborder au-dessus du chrome.
+            if (isAction) {
+              return <li key={href} aria-hidden="true" className="flex-1" />;
+            }
+
+            const active = exact ? pathname === href : pathname.startsWith(href);
+
+            return (
+              <li key={href} className="flex-1">
+                <Link
+                  href={href}
+                  aria-current={active ? 'page' : undefined}
                   className={cn(
-                    'grid h-6 w-10 place-items-center rounded-pill transition-colors duration-150',
-                    active && 'bg-marker-bg',
+                    'flex h-full flex-col items-center justify-center gap-1 rounded-pill px-1',
+                    'transition-colors duration-150',
+                    // Etat actif hors-lime : la navigation n'est pas l'action
+                    // unique de l'ecran, seul le FAB porte le lime.
+                    active ? 'text-on-inverse-marker' : 'text-forest-200 hover:text-neutral-50',
+                    'focus:outline-none focus-visible:ring-2 focus-visible:ring-white/40 focus-visible:ring-offset-2 focus-visible:ring-offset-forest-950',
                   )}
                 >
-                  <Icon className="h-5 w-5" strokeWidth={active ? 2.25 : 1.9} />
-                </span>
+                  <span
+                    className={cn(
+                      'grid h-6 w-10 place-items-center rounded-pill transition-all duration-200 ease-out',
+                      active ? 'bg-marker-bg scale-100' : 'scale-90',
+                    )}
+                  >
+                    <Icon className="h-5 w-5" strokeWidth={active ? 2.25 : 1.9} />
+                  </span>
 
-                <span className="text-[0.625rem] font-medium leading-none">
-                  {label}
-                </span>
-              </Link>
-            </li>
-          );
-        })}
-      </ul>
+                  <span className="text-[0.625rem] font-medium leading-none">
+                    {label}
+                  </span>
+                </Link>
+              </li>
+            );
+          })}
+        </ul>
+
+        {/* FAB : niche dans l'encoche, deborde au-dessus du chrome — seule
+            action lime de l'ecran ("ONE per screen"). */}
+        <Link
+          href="/dashboard/annonces/nouvelle"
+          aria-label="Ajouter un bien"
+          className={cn(
+            'group absolute left-1/2 -top-6 z-20 flex h-16 w-16 -translate-x-1/2 items-center justify-center rounded-full',
+            'bg-gradient-to-b from-forest-700 to-forest-950 text-lime-400',
+            'border-[1.5px] border-[var(--action-edge)]',
+            'shadow-[var(--shadow-action)]',
+            'active:scale-90 transition-transform duration-150',
+            'focus:outline-none focus-visible:ring-2 focus-visible:ring-lime-400/70 focus-visible:ring-offset-2 focus-visible:ring-offset-forest-950',
+          )}
+        >
+          {/* Halo externe */}
+          <div className="absolute inset-0 rounded-full bg-lime-400/20 blur-md opacity-70 group-hover:opacity-100 transition-opacity pointer-events-none" />
+          {/* Anneau interne : profondeur, sans lime supplementaire visible */}
+          <div className="absolute inset-1 rounded-full border border-lime-400/20 pointer-events-none" />
+          <Plus className="relative z-10 h-7 w-7 stroke-[2.5]" aria-hidden="true" />
+        </Link>
+      </div>
     </nav>,
     document.body
   );
