@@ -140,9 +140,9 @@ export function WeekendListingsSection() {
               </button>
             </div>
 
-            <Link href={viewAllLink} className="btn-action shrink-0 text-sm">
-              Voir les logements
-              <ArrowRight className="h-4 w-4" aria-hidden="true" />
+            <Link href={viewAllLink} className="btn-action shrink-0 text-xs sm:text-sm whitespace-nowrap">
+              <span>Voir les logements</span>
+              <ArrowRight className="h-4 w-4 shrink-0" aria-hidden="true" />
             </Link>
           </div>
         </div>

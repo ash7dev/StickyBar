@@ -48,28 +48,28 @@ export function ListingsSection({
     <section className="py-4">
       <div className="max-w-7xl mx-auto px-6">
         {/* Header */}
-        <div className="flex items-end justify-between mb-4">
-          <div className="relative">
+        <div className="flex items-end justify-between gap-3 mb-4">
+          <div className="relative min-w-0 flex-1">
             {/* Trait oblique décoratif */}
             <div className="absolute -left-4 top-1/2 -translate-y-1/2 w-1 h-12 bg-gradient-to-b from-forest-500 to-forest-800 transform -skew-y-12 opacity-40" />
 
-            <h2 className="text-2xl md:text-3xl font-display font-bold text-foreground mb-1 relative">
+            <h2 className="text-xl sm:text-2xl md:text-3xl font-display font-bold text-foreground mb-1 relative truncate">
               {title}
               {/* Accent sous le titre */}
               <span className="absolute -bottom-1 left-0 w-12 h-0.5 bg-forest-600/40" />
             </h2>
             {subtitle && (
-              <p className="text-sm text-foreground-muted italic">{subtitle}</p>
+              <p className="text-xs sm:text-sm text-foreground-muted italic truncate">{subtitle}</p>
             )}
           </div>
 
           {viewAllLink && (
             <Link
               href={viewAllLink}
-              className="flex items-center gap-1 text-sm font-semibold text-forest-700 hover:text-forest-900 transition-colors group px-4 py-2 rounded-[var(--radius-pill)] border border-border hover:border-forest-300 hover:bg-forest-50"
+              className="flex items-center gap-1 text-xs sm:text-sm font-semibold text-forest-700 hover:text-forest-900 transition-colors group px-3.5 py-2 rounded-[var(--radius-pill)] border border-border hover:border-forest-300 hover:bg-forest-50 shrink-0 whitespace-nowrap"
             >
-              Voir tout
-              <ChevronRight className="w-4 h-4 transition-transform group-hover:translate-x-1" />
+              <span>Voir tout</span>
+              <ChevronRight className="w-3.5 h-3.5 sm:w-4 sm:h-4 shrink-0 transition-transform group-hover:translate-x-1" />
             </Link>
           )}
         </div>

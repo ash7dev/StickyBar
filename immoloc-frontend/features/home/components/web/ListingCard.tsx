@@ -3,12 +3,13 @@
 import { useState } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
-import { Bath, BedDouble, Heart, ImageOff, ShieldCheck, Star, Users, Video, Zap } from 'lucide-react';
+import { Bath, BedDouble, ChevronLeft, ChevronRight, Heart, ImageOff, ShieldCheck, Star, Users, Video, Zap } from 'lucide-react';
 import type { Listing } from '@/lib/nestjs/types';
 import { VideoReelsModal } from '@/features/listings/components/web/VideoReelsModal';
 
 import { TenantPriceDisplay } from '@/components/ui/TenantPriceDisplay';
 import { FavoriteButton } from '@/components/ui/FavoriteButton';
+import { cn } from '@/lib/utils/cn';
 
 const money = new Intl.NumberFormat('fr-FR', { maximumFractionDigits: 0 });
 const rating = new Intl.NumberFormat('fr-FR', {
@@ -70,10 +71,44 @@ export function ListingCard({
   videoUrl = null,
 }: ListingCardProps) {
   const [showVideoModal, setShowVideoModal] = useState(false);
-  const src = photos?.[0]?.url;
+  const [photoIdx, setPhotoIdx] = useState(0);
+  const [touchStart, setTouchStart] = useState<number | null>(null);
+  const [touchEnd, setTouchEnd] = useState<number | null>(null);
+
+  const photoList = photos || [];
+  const currentPhoto = photoList[photoIdx]?.url || photoList[0]?.url;
   const lieu = quartier ? `${quartier}, ${ville}` : ville;
   const categorie = sousType ?? type;
   const isDark = variant === 'dark';
+
+  const handleTouchStart = (e: React.TouchEvent) => {
+    setTouchEnd(null);
+    setTouchStart(e.targetTouches[0].clientX);
+  };
+
+  const handleTouchMove = (e: React.TouchEvent) => {
+    setTouchEnd(e.targetTouches[0].clientX);
+  };
+
+  const handleTouchEnd = (e: React.TouchEvent) => {
+    if (!touchStart || !touchEnd) return;
+    const distance = touchStart - touchEnd;
+    const isLeftSwipe = distance > 30;
+    const isRightSwipe = distance < -30;
+
+    if (isLeftSwipe && photoList.length > 1) {
+      setPhotoIdx((prev) => (prev + 1) % photoList.length);
+    }
+    if (isRightSwipe && photoList.length > 1) {
+      setPhotoIdx((prev) => (prev - 1 + photoList.length) % photoList.length);
+    }
+  };
+
+  const movePhoto = (dir: 1 | -1) => (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setPhotoIdx((p) => (p + dir + photoList.length) % photoList.length);
+  };
 
   // Objet partiel compatible avec la modale VideoReelsModal
   const listingData: Partial<Listing> & { id: string; titre: string; ville: string; prixBase: number; videoUrl?: string | null; isInstantBooking?: boolean } = {
@@ -95,11 +130,16 @@ export function ListingCard({
         }`}
       >
 
-        {/* ── Photo ───────────────────────────────────────────────────────── */}
-        <div className="relative aspect-[4/3] overflow-hidden bg-neutral-100">
-          {src ? (
+        {/* ── Photo (Swipeable Style Airbnb Mobile) ─────────────────────────── */}
+        <div
+          onTouchStart={handleTouchStart}
+          onTouchMove={handleTouchMove}
+          onTouchEnd={handleTouchEnd}
+          className="relative aspect-[4/3] overflow-hidden bg-neutral-100 select-none touch-pan-y"
+        >
+          {currentPhoto ? (
             <Image
-              src={src}
+              src={currentPhoto}
               alt=""
               fill
               priority={priority}
@@ -111,6 +151,14 @@ export function ListingCard({
               <ImageOff className="h-7 w-7" aria-hidden="true" />
               <span className="sr-only">Photo non disponible</span>
             </div>
+          )}
+
+          {/* Dégradé bas pour puces */}
+          {photoList.length > 1 && (
+            <div
+              className="pointer-events-none absolute inset-x-0 bottom-0 h-14 bg-gradient-to-t from-forest-950/60 to-transparent"
+              aria-hidden="true"
+            />
           )}
 
           {/* Badges sur la photo */}
@@ -146,6 +194,52 @@ export function ListingCard({
           <div className="absolute right-3 top-3 z-20">
             <FavoriteButton listingId={id} size="md" />
           </div>
+
+          {photoList.length > 1 && (
+            <>
+              {/* Flèches de navigation */}
+              <button
+                type="button"
+                onClick={movePhoto(-1)}
+                aria-label="Photo précédente"
+                className="absolute left-2 top-1/2 z-20 grid h-7 w-7 -translate-y-1/2 place-items-center rounded-full bg-white/90 text-forest-900 shadow-md backdrop-blur-sm transition-all hover:bg-white active:scale-90 opacity-80 sm:opacity-0 sm:group-hover:opacity-100 cursor-pointer"
+              >
+                <ChevronLeft className="h-4 w-4" aria-hidden="true" />
+              </button>
+
+              <button
+                type="button"
+                onClick={movePhoto(1)}
+                aria-label="Photo suivante"
+                className="absolute right-2 top-1/2 z-20 grid h-7 w-7 -translate-y-1/2 place-items-center rounded-full bg-white/90 text-forest-900 shadow-md backdrop-blur-sm transition-all hover:bg-white active:scale-90 opacity-80 sm:opacity-0 sm:group-hover:opacity-100 cursor-pointer"
+              >
+                <ChevronRight className="h-4 w-4" aria-hidden="true" />
+              </button>
+
+              {/* Puces interactives en bas de la photo */}
+              <div className="absolute inset-x-0 bottom-2.5 z-20 flex items-center justify-center gap-1.5" aria-hidden="true">
+                {photoList.slice(0, 5).map((_, i) => (
+                  <button
+                    key={i}
+                    type="button"
+                    onClick={(e) => {
+                      e.preventDefault();
+                      e.stopPropagation();
+                      setPhotoIdx(i);
+                    }}
+                    aria-label={`Voir photo ${i + 1}`}
+                    className={cn(
+                      'h-1.5 rounded-full transition-all duration-200 cursor-pointer',
+                      i === photoIdx ? 'w-3.5 bg-white shadow-sm' : 'w-1.5 bg-white/60 hover:bg-white/90',
+                    )}
+                  />
+                ))}
+                {photoList.length > 5 && (
+                  <span className="ml-0.5 text-[0.625rem] font-bold text-white shadow-sm">+{photoList.length - 5}</span>
+                )}
+              </div>
+            </>
+          )}
         </div>
 
         {/* ── Contenu ─────────────────────────────────────────────────────── */}
