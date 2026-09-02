@@ -369,34 +369,34 @@ export function MobileReservationSheet({
                     <Moon className="w-4 h-4 text-emerald-100/80" />
                     {getFormattedPrice(prixAffiche).amountStr} {getFormattedPrice(prixAffiche).symbol} × {nights} nuit{nights > 1 ? 's' : ''}
                   </span>
-                  <span className="font-bold text-white">{getFormattedPrice(prixAffiche * nights).fullStr}</span>
+                  <span className="font-bold text-white whitespace-nowrap shrink-0">{getFormattedPrice(prixAffiche * nights).fullStr}</span>
                 </div>
 
                 {preview && preview.supplementPersonnes > 0 && (
                   <div className="flex items-center justify-between text-sm">
-                    <span className="flex items-center gap-2 text-emerald-100/80 font-medium">
-                      <Users className="w-4 h-4 text-emerald-100/80" />
-                      Supplément {nbPersonnes} voyageur{nbPersonnes > 1 ? 's' : ''}
+                    <span className="flex items-center gap-2 text-emerald-100/80 font-medium min-w-0 truncate">
+                      <Users className="w-4 h-4 text-emerald-100/80 shrink-0" />
+                      <span className="truncate">Supplément {nbPersonnes} voyageur{nbPersonnes > 1 ? 's' : ''}</span>
                     </span>
-                    <span className="font-bold text-gold-400">+{getFormattedPrice(preview.supplementPersonnes).fullStr}</span>
+                    <span className="font-bold text-gold-400 whitespace-nowrap shrink-0">+{getFormattedPrice(preview.supplementPersonnes).fullStr}</span>
                   </div>
                 )}
 
                 {preview && preview.reductionNuits > 0 && (
                   <div className="flex items-center justify-between text-sm">
-                    <span className="flex items-center gap-2 text-emerald-100/80 font-medium">
-                      <Moon className="w-4 h-4 text-emerald-100/80" />
-                      Réduction séjour long
+                    <span className="flex items-center gap-2 text-emerald-100/80 font-medium min-w-0 truncate">
+                      <Moon className="w-4 h-4 text-emerald-100/80 shrink-0" />
+                      <span className="truncate">Réduction séjour long</span>
                     </span>
-                    <span className="font-bold text-emerald-200">−{getFormattedPrice(preview.reductionNuits).fullStr}</span>
+                    <span className="font-bold text-emerald-200 whitespace-nowrap shrink-0">−{getFormattedPrice(preview.reductionNuits).fullStr}</span>
                   </div>
                 )}
 
                 <div className="flex items-center justify-between border-t border-emerald-700 pt-3">
-                  <span className="font-black text-white text-sm">Total</span>
-                  <div className="flex items-center gap-2">
+                  <span className="font-black text-white text-sm shrink-0">Total</span>
+                  <div className="flex items-center gap-2 shrink-0">
                     {isPending && <Loader2 className="w-3.5 h-3.5 animate-spin text-emerald-300" />}
-                    <span className="font-black text-white text-xl tracking-tight">{getFormattedPrice(estimatedTotal).fullStr}</span>
+                    <span className="font-black text-white text-lg sm:text-xl tracking-tight whitespace-nowrap">{getFormattedPrice(estimatedTotal).fullStr}</span>
                   </div>
                 </div>
               </div>

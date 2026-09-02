@@ -114,6 +114,7 @@ export function PricePreviewWidget({
 
   const [nbPersonnes, setNbPersonnes] = useState(1);
   const [range, setRange] = useState<DateRange | undefined>();
+  const [hasTravelersChecked, setHasTravelersChecked] = useState(false);
   const [preview, setPreview] = useState<PricePreviewResponse | null>(null);
   const [previewFailed, setPreviewFailed] = useState(false);
   const [isPending, startTransition] = useTransition();
@@ -176,7 +177,7 @@ export function PricePreviewWidget({
   const acompteDisponible = acomptePourcentage > 0 && acomptePourcentage < 100;
 
   const hasValidMinNights = nights >= nuitesMinimum;
-  const canBook = hasRange && hasValidMinNights && cguAccepted && hasHydrated;
+  const canBook = hasRange && hasValidMinNights && hasTravelersChecked && cguAccepted && hasHydrated;
 
   const blockerMessage = !hasHydrated
     ? 'Chargement…'
@@ -184,9 +185,11 @@ export function PricePreviewWidget({
       ? 'Choisissez vos dates d’arrivée et de départ'
       : !hasValidMinNights
         ? `Séjour min. ${nuitesMinimum} nuits (${nights} nuit${nights > 1 ? 's' : ''} choisie${nights > 1 ? 's' : ''})`
-        : !cguAccepted
-          ? 'Acceptez les conditions pour continuer'
-          : '';
+        : !hasTravelersChecked
+          ? 'Vérifiez le nombre de voyageurs'
+          : !cguAccepted
+            ? 'Acceptez les conditions pour continuer'
+            : '';
 
   /* ── Navigation ──────────────────────────────────────────────────────── */
 
@@ -205,21 +208,26 @@ export function PricePreviewWidget({
     useGatedAction(goToReserver);
 
   const focusTravelers = useCallback(() => {
+    setHasTravelersChecked(true);
     travelersRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' });
   }, []);
 
-  /** Amène l'utilisateur sur ce qui bloque, au lieu de refuser en silence. */
+  /** Amène l'utilisateur étape par étape sur ce qui manque : Dates -> Voyageurs -> CGU */
   const focusBlocker = useCallback(() => {
     if (!hasRange) {
       calendarRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' });
       return;
     }
+    if (!hasTravelersChecked) {
+      setHasTravelersChecked(true);
+      travelersRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      return;
+    }
     if (!cguAccepted) {
-      // Si la section voyageurs n'a jamais été consultée ou si CGU manque, scroller doucement
       cguRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' });
       cguRef.current?.focus();
     }
-  }, [hasRange, cguAccepted]);
+  }, [hasRange, hasTravelersChecked, cguAccepted]);
 
   const handleBook = useCallback(async () => {
     setAgeError('');
@@ -392,7 +400,7 @@ export function PricePreviewWidget({
             <div className="flex items-center justify-between rounded-field border border-border bg-background-alt p-2">
               <button
                 type="button"
-                onClick={() => setNbPersonnes((p) => Math.max(1, p - 1))}
+                onClick={() => { setNbPersonnes((p) => Math.max(1, p - 1)); setHasTravelersChecked(true); }}
                 disabled={nbPersonnes <= 1}
                 aria-label="Retirer un voyageur"
                 className="flex h-10 w-10 items-center justify-center rounded-inner border border-border bg-background-card text-foreground-muted shadow-xs transition-colors duration-200 hover:border-forest-300 hover:text-forest-600 disabled:cursor-not-allowed disabled:opacity-30"
@@ -411,7 +419,7 @@ export function PricePreviewWidget({
 
               <button
                 type="button"
-                onClick={() => setNbPersonnes((p) => Math.min(capaciteMax, p + 1))}
+                onClick={() => { setNbPersonnes((p) => Math.min(capaciteMax, p + 1)); setHasTravelersChecked(true); }}
                 disabled={nbPersonnes >= capaciteMax}
                 aria-label="Ajouter un voyageur"
                 className="flex h-10 w-10 items-center justify-center rounded-inner border border-border bg-background-card text-foreground-muted shadow-xs transition-colors duration-200 hover:border-forest-300 hover:text-forest-600 disabled:cursor-not-allowed disabled:opacity-30"
@@ -455,22 +463,22 @@ export function PricePreviewWidget({
             <div className="section-inverse space-y-3 p-5">
 
               <div className="flex items-center justify-between gap-3 text-sm">
-                <span className="flex items-center gap-2 text-on-inverse-muted">
-                  <Moon className="h-4 w-4" />
-                  {getFormattedPrice(prixAffiche).amountStr} {getFormattedPrice(prixAffiche).symbol} × {nights} nuit{nights > 1 ? 's' : ''}
+                <span className="flex items-center gap-2 text-on-inverse-muted min-w-0 truncate">
+                  <Moon className="h-4 w-4 shrink-0" />
+                  <span className="truncate">{getFormattedPrice(prixAffiche).amountStr} {getFormattedPrice(prixAffiche).symbol} × {nights} nuit{nights > 1 ? 's' : ''}</span>
                 </span>
-                <span className="font-semibold tabular-nums text-on-inverse">
+                <span className="font-semibold tabular-nums text-on-inverse whitespace-nowrap shrink-0">
                   {getFormattedPrice(prixAffiche * nights).fullStr}
                 </span>
               </div>
 
               {preview && Number(preview.supplementPersonnes) > 0 && (
                 <div className="flex items-center justify-between gap-3 text-sm">
-                  <span className="flex items-center gap-2 text-on-inverse-muted">
-                    <Users className="h-4 w-4" />
-                    Supplément {nbPersonnes} voyageur{nbPersonnes > 1 ? 's' : ''}
+                  <span className="flex items-center gap-2 text-on-inverse-muted min-w-0 truncate">
+                    <Users className="h-4 w-4 shrink-0" />
+                    <span className="truncate">Supplément {nbPersonnes} voyageur{nbPersonnes > 1 ? 's' : ''}</span>
                   </span>
-                  <span className="font-semibold tabular-nums text-on-inverse">
+                  <span className="font-semibold tabular-nums text-on-inverse whitespace-nowrap shrink-0">
                     +{getFormattedPrice(preview.supplementPersonnes).fullStr}
                   </span>
                 </div>
@@ -478,11 +486,11 @@ export function PricePreviewWidget({
 
               {preview && Number(preview.reductionNuits) > 0 && (
                 <div className="flex items-center justify-between gap-3 text-sm">
-                  <span className="flex items-center gap-2 text-on-inverse-muted">
-                    <Zap className="h-4 w-4 text-on-inverse-marker" />
-                    Réduction séjour long
+                  <span className="flex items-center gap-2 text-on-inverse-muted min-w-0 truncate">
+                    <Zap className="h-4 w-4 text-on-inverse-marker shrink-0" />
+                    <span className="truncate">Réduction séjour long</span>
                   </span>
-                  <span className="font-semibold tabular-nums text-on-inverse">
+                  <span className="font-semibold tabular-nums text-on-inverse whitespace-nowrap shrink-0">
                     −{getFormattedPrice(preview.reductionNuits).fullStr}
                   </span>
                 </div>
@@ -490,15 +498,15 @@ export function PricePreviewWidget({
 
               {/* Le total est le point d'arrivée de la carte : Fraunces, aligné
                   à droite, seul élément de cette taille dans le bloc.       */}
-              <div className="flex items-end justify-between gap-3 border-t border-border-inverse pt-3.5">
-                <span className="pb-0.5 text-sm font-semibold text-on-inverse">
+              <div className="flex items-center justify-between gap-3 border-t border-border-inverse pt-3.5">
+                <span className="text-sm font-semibold text-on-inverse shrink-0">
                   {isEstimate ? 'Total estimé' : 'Total du séjour'}
                 </span>
-                <span className="flex items-center gap-2">
+                <span className="flex items-center gap-2 shrink-0">
                   {isPending && (
                     <Loader2 className="h-3.5 w-3.5 animate-spin text-on-inverse-muted" />
                   )}
-                  <span className="font-display text-2xl font-semibold leading-none tabular-nums text-on-inverse-display">
+                  <span className="font-display text-lg sm:text-xl font-semibold leading-none tabular-nums text-on-inverse-display whitespace-nowrap">
                     {getFormattedPrice(estimatedTotal).fullStr}
                   </span>
                 </span>
@@ -693,7 +701,15 @@ export function PricePreviewWidget({
             disabled={!hasHydrated}
             className="flex shrink-0 items-center gap-1.5 rounded-pill border border-action-edge bg-action px-5 py-3 text-sm font-semibold text-on-action shadow-action transition-transform duration-200 hover:bg-action-hover active:scale-[0.98] disabled:opacity-50"
           >
-            {canBook ? 'Réserver' : hasRange ? 'Accepter & Réserver' : 'Choisir les dates'}
+            {canBook
+              ? 'Réserver'
+              : !hasRange
+                ? 'Choisir les dates'
+                : !hasValidMinNights
+                  ? `Min. ${nuitesMinimum} nuits`
+                  : !hasTravelersChecked
+                    ? 'Définir les voyageurs'
+                    : 'Accepter & Réserver'}
           </button>
         </div>
       </div>
