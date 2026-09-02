@@ -35,14 +35,15 @@ export function WebHome() {
       {/* Categories Section */}
       <CategoriesSection />
 
-      {/* Weekend Available Listings Section */}
-      <WeekendListingsSection />
-
       {/* Nearby Listings Section (Geolocation GPS) */}
       <NearbyListingsSection />
 
-      {/* Feed Sections - Multiple horizontal sections */}
-      <FeedSections />
+      {/* Feed Sections - Multiple horizontal sections
+          WeekendListingsSection s'insère après la 1ère section (ex: "Les plus populaires")
+          pour créer un hook d'urgence après la preuve sociale. */}
+      <FeedSections
+        afterFirstSection={<WeekendListingsSection />}
+      />
 
       {/* How It Works Section */}
       <HowItWorksSection />

@@ -186,7 +186,11 @@ function getSectionConfig(sectionId: string) {
   return null;
 }
 
-export function FeedSections() {
+interface FeedSectionsProps {
+  afterFirstSection?: React.ReactNode;
+}
+
+export function FeedSections({ afterFirstSection }: FeedSectionsProps) {
   const [feed, setFeed] = useState<FeedResponse | null>(null);
   const [loading, setLoading] = useState(true);
   const { preferences, isLoaded: prefsLoaded } = useHomePreferences();
@@ -394,15 +398,18 @@ export function FeedSections() {
 
       {/* Sections du feed */}
       <div className="space-y-2">
-        {displayedSections.map((section) => (
-          <ListingsSection
-            key={section.id}
-            title={section.config.title}
-            subtitle={section.config.subtitle}
-            listings={section.listings}
-            viewAllLink={section.config.link}
-            variant={section.config.variant}
-          />
+        {displayedSections.map((section, index) => (
+          <div key={section.id}>
+            <ListingsSection
+              title={section.config.title}
+              subtitle={section.config.subtitle}
+              listings={section.listings}
+              viewAllLink={section.config.link}
+              variant={section.config.variant}
+            />
+            {/* Insérer le bloc spécial (ex: Weekend) après la 1ère section */}
+            {index === 0 && afterFirstSection}
+          </div>
         ))}
       </div>
     </div>
