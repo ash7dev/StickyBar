@@ -123,10 +123,10 @@ export const useListingFormStore = create<ListingFormState>((set, get) => ({
   video: null,
 
   // Navigation
-  setStep: (step) => set({ currentStep: Math.max(0, Math.min(step, STEPS.length - 1)) }),
+  setStep: (step) => set({ currentStep: Math.max(0, Math.min(step, 6)) }),
   nextStep: () => {
     const { currentStep } = get();
-    if (currentStep < STEPS.length - 1) set({ currentStep: currentStep + 1 });
+    if (currentStep < 6) set({ currentStep: currentStep + 1 });
   },
   prevStep: () => {
     const { currentStep } = get();
