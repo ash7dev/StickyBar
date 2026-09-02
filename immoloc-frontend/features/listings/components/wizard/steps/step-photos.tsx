@@ -115,7 +115,6 @@ export function StepPhotos({ onNext, submitRef }: Props) {
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!isComplete) { setHasTriedSubmit(true); return; }
     onNext();
   };
 
