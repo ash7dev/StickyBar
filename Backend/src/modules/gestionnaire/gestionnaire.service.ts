@@ -1,6 +1,6 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { PrismaService } from '../../infrastructure/prisma/prisma.service';
-import { StatutLogement, StatutReservation } from '@prisma/client';
+import { StatutLogement, StatutReservation, TypeEtatLieu } from '@prisma/client';
 
 export interface DashboardStatsResponse {
   kpis: {
@@ -468,5 +468,129 @@ export class GestionnaireService {
       repartitionTypes,
       recentTransactions,
     };
+  }
+
+  async getEtatsDesLieux(managerId: string) {
+    const managedListings = await this.prisma.logement.findMany({
+      where: { gestionnaireId: managerId, archiveLe: null },
+      select: { id: true },
+    });
+
+    const listingIds = managedListings.map((l) => l.id);
+    if (listingIds.length === 0) return [];
+
+    const reservations = await this.prisma.reservation.findMany({
+      where: {
+        logementId: { in: listingIds },
+        statut: { in: [StatutReservation.CONFIRMED, StatutReservation.CHECKED_IN, StatutReservation.COMPLETED, StatutReservation.PAID] },
+      },
+      include: {
+        logement: {
+          select: {
+            id: true,
+            titre: true,
+            ville: true,
+            photos: { where: { estPrincipale: true }, take: 1 },
+          },
+        },
+        proprietaire: { select: { prenom: true, nom: true } },
+        locataire: { select: { prenom: true, nom: true, telephone: true } },
+        photosEtatLieu: { orderBy: { creeLe: 'asc' } },
+        litige: true,
+      },
+      orderBy: { creeLe: 'desc' },
+      take: 50,
+    });
+
+    const reports: Array<{
+      id: string;
+      code: string;
+      type: 'CHECKIN' | 'CHECKOUT';
+      logementTitre: string;
+      logementVille: string;
+      ownerName: string;
+      travelerName: string;
+      travelerPhone?: string;
+      dateInspection: string;
+      statut: 'VALIDE' | 'LITIGE' | 'EN_ATTENTE';
+      regimeElectricite: string;
+      releveCompteur: string;
+      photosCount: number;
+      photosUrls: string[];
+      remarques: string;
+    }> = [];
+
+    reservations.forEach((r) => {
+      const codeBase = (r as any).code || `RES-${r.id.substring(0, 8).toUpperCase()}`;
+      const ownerName = r.proprietaire ? `${r.proprietaire.prenom} ${r.proprietaire.nom}` : 'Bailleur';
+      const travelerName = r.locataire ? `${r.locataire.prenom} ${r.locataire.nom}` : 'Voyageur';
+      const logementTitre = r.logement?.titre || 'Logement Conciergerie';
+      const logementVille = r.logement?.ville || 'Sénégal';
+
+      const checkinPhotos = r.photosEtatLieu.filter((p) => (p.type as string) === 'ENTREE' || p.type === TypeEtatLieu.CHECKIN);
+      const checkoutPhotos = r.photosEtatLieu.filter((p) => (p.type as string) === 'SORTIE' || p.type === TypeEtatLieu.CHECKOUT);
+
+      // 1. Rapport d'Entrée (CHECKIN)
+      if (r.checkinProprioLe || checkinPhotos.length > 0 || r.statut === StatutReservation.CHECKED_IN || r.statut === StatutReservation.COMPLETED || r.statut === StatutReservation.CONFIRMED) {
+        const hasLitige = !!r.litige;
+        reports.push({
+          id: `edl-in-${r.id}`,
+          code: `EDL-IN-${codeBase}`,
+          type: 'CHECKIN',
+          logementTitre,
+          logementVille,
+          ownerName,
+          travelerName,
+          travelerPhone: r.locataire?.telephone || undefined,
+          dateInspection: (r.checkinProprioLe || r.dateDebut).toLocaleDateString('fr-FR', {
+            day: 'numeric',
+            month: 'long',
+            year: 'numeric',
+          }),
+          statut: hasLitige ? 'LITIGE' : r.checkinProprioLe ? 'VALIDE' : 'EN_ATTENTE',
+          regimeElectricite: 'Carte Prépayée Woyofal Senelec',
+          releveCompteur: checkinPhotos.length > 0
+            ? `Relevé certifié : ${checkinPhotos.length} photo(s) d'inspection d'entrée`
+            : `Inspection d'entrée planifiée pour le ${r.dateDebut.toLocaleDateString('fr-FR')}`,
+          photosCount: checkinPhotos.length,
+          photosUrls: checkinPhotos.map((p) => p.url),
+          remarques: r.checkinProprioLe
+            ? `Check-in d'entrée certifié le ${r.checkinProprioLe.toLocaleDateString('fr-FR')}. Clés remises au voyageur.`
+            : `En attente du check-in d'entrée à l'arrivée du voyageur.`,
+        });
+      }
+
+      // 2. Rapport de Sortie (CHECKOUT)
+      if (r.checkoutProprioLe || checkoutPhotos.length > 0 || r.statut === StatutReservation.COMPLETED) {
+        const hasLitige = !!r.litige;
+        reports.push({
+          id: `edl-out-${r.id}`,
+          code: `EDL-OUT-${codeBase}`,
+          type: 'CHECKOUT',
+          logementTitre,
+          logementVille,
+          ownerName,
+          travelerName,
+          travelerPhone: r.locataire?.telephone || undefined,
+          dateInspection: (r.checkoutProprioLe || r.dateFin).toLocaleDateString('fr-FR', {
+            day: 'numeric',
+            month: 'long',
+            year: 'numeric',
+          }),
+          statut: hasLitige ? 'LITIGE' : r.checkoutProprioLe ? 'VALIDE' : 'EN_ATTENTE',
+          regimeElectricite: 'Carte Prépayée Woyofal Senelec',
+          releveCompteur: checkoutPhotos.length > 0
+            ? `Relevé de sortie certifié : ${checkoutPhotos.length} photo(s) d'inspection de sortie`
+            : `Inspection de sortie prévue pour le ${r.dateFin.toLocaleDateString('fr-FR')}`,
+          photosCount: checkoutPhotos.length,
+          photosUrls: checkoutPhotos.map((p) => p.url),
+          remarques: r.checkoutProprioLe
+            ? `Check-out de sortie certifié le ${r.checkoutProprioLe.toLocaleDateString('fr-FR')}. Logement vérifié et clés restituées.`
+            : `En attente du check-out de sortie à la fin du séjour.`,
+        });
+      }
+    });
+
+    return reports;
   }
 }

@@ -44,6 +44,7 @@ export interface InspectionReportItem {
   regimeElectricite?: string;
   releveCompteur?: string;
   photosCount: number;
+  photosUrls?: string[];
   photosByCategory?: Record<string, string[]>;
   remarques?: string;
 }
@@ -99,21 +100,11 @@ export function GestionnaireInspectionDetailModal({ report, isOpen, onClose }: P
 
   const isCheckin = report.type === 'CHECKIN';
 
-  const photosByCategory: Record<string, string[]> = report.photosByCategory || {
-    SALON: [
-      'https://images.unsplash.com/photo-1600585154340-be6161a56a0c?auto=format&fit=crop&w=600&q=80',
-      'https://images.unsplash.com/photo-1513694203232-719a280e022f?auto=format&fit=crop&w=600&q=80',
-    ],
-    CUISINE: [
-      'https://images.unsplash.com/photo-1556911220-e15b29be8c8f?auto=format&fit=crop&w=600&q=80',
-    ],
-    CHAMBRE: [
-      'https://images.unsplash.com/photo-1616594039964-ae9021a400a0?auto=format&fit=crop&w=600&q=80',
-    ],
-    COMPTEUR: [
-      'https://images.unsplash.com/photo-1581092160607-ee22621dd758?auto=format&fit=crop&w=600&q=80',
-    ],
-  };
+  // Photos réelles transmises depuis la base de données (zéro photos d'illustration Unsplash)
+  const realPhotosUrls = report.photosUrls || [];
+  const photosByCategory: Record<string, string[]> = report.photosByCategory || (
+    realPhotosUrls.length > 0 ? { INSPECTION: realPhotosUrls } : {}
+  );
 
   const categoryKeys = Object.keys(photosByCategory);
 

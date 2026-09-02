@@ -52,4 +52,10 @@ export class GestionnaireController {
   ) {
     return this.walletService.requestWithdrawalForOwner(user.id, ownerId, dto);
   }
+
+  @Get('etats-des-lieux')
+  @ApiOperation({ summary: 'Obtenir le registre certifié des états des lieux et inspections d\'entrée / sortie' })
+  async getEtatsDesLieux(@CurrentUser() user: AuthUser) {
+    return this.gestionnaireService.getEtatsDesLieux(user.id);
+  }
 }

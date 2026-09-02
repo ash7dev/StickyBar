@@ -24,68 +24,11 @@ export default function GestionnaireEtatsDesLieuxPage() {
   const [activeTypeFilter, setActiveTypeFilter] = useState<InspectionTypeFilter>('ALL');
   const [selectedCategory, setSelectedCategory] = useState('ALL');
 
-  // Récupération des données réelles du dashboard conciergerie
-  const { data, isLoading, error } = useQuery<any>({
-    queryKey: ['gestionnaire', 'dashboard'],
-    queryFn: () => nestFetch<any>(NEST_API.GESTIONNAIRE.DASHBOARD),
+  // Récupération des rapports d'états des lieux certifiés réels depuis l'API backend
+  const { data: realReports = [], isLoading, error } = useQuery<InspectionReportItem[]>({
+    queryKey: ['gestionnaire', 'etats-des-lieux'],
+    queryFn: () => nestFetch<InspectionReportItem[]>(NEST_API.GESTIONNAIRE.ETATS_DES_LIEUX),
   });
-
-  const prochainsCheckins = data?.prochainsCheckins || [];
-
-  // Transformation des réservations du backend en rapports d'états des lieux certifiés
-  const realReports: InspectionReportItem[] = useMemo(() => {
-    if (prochainsCheckins && prochainsCheckins.length > 0) {
-      return prochainsCheckins.flatMap((r: any, idx: number) => {
-        const checkinReport: InspectionReportItem = {
-          id: `edl-in-${r.id || idx}`,
-          code: r.code ? `EDL-IN-${r.code}` : `EDL-IN-${1000 + idx}`,
-          type: 'CHECKIN',
-          logementTitre: r.logementTitle || 'Logement Conciergerie',
-          logementVille: r.logementVille || 'Dakar',
-          ownerName: r.ownerName || 'Bailleur Partenaire',
-          travelerName: r.travelerName || 'Voyageur',
-          travelerPhone: r.travelerPhone,
-          dateInspection: new Date(r.dateDebut || Date.now()).toLocaleDateString('fr-FR', {
-            day: 'numeric',
-            month: 'long',
-            year: 'numeric',
-          }),
-          statut: 'VALIDE',
-          regimeElectricite: 'Carte Prépayée Woyofal Senelec',
-          releveCompteur: `Relevé d'entrée : ${1200 + idx * 45} kWh (Compteur actif)`,
-          photosCount: 8,
-          remarques: 'État des lieux d’entrée conforme. Clés remises en main propre.',
-        };
-
-        const checkoutReport: InspectionReportItem = {
-          id: `edl-out-${r.id || idx}`,
-          code: r.code ? `EDL-OUT-${r.code}` : `EDL-OUT-${2000 + idx}`,
-          type: 'CHECKOUT',
-          logementTitre: r.logementTitle || 'Logement Conciergerie',
-          logementVille: r.logementVille || 'Dakar',
-          ownerName: r.ownerName || 'Bailleur Partenaire',
-          travelerName: r.travelerName || 'Voyageur',
-          travelerPhone: r.travelerPhone,
-          dateInspection: new Date(r.dateFin || Date.now()).toLocaleDateString('fr-FR', {
-            day: 'numeric',
-            month: 'long',
-            year: 'numeric',
-          }),
-          statut: idx % 3 === 0 ? 'LITIGE' : 'VALIDE',
-          regimeElectricite: 'Carte Prépayée Woyofal Senelec',
-          releveCompteur: `Relevé de sortie : ${1240 + idx * 45} kWh`,
-          photosCount: 6,
-          remarques: idx % 3 === 0
-            ? 'Trace d’impact mineure signalée sur le mur du salon lors du check-out.'
-            : 'Check-out parfait. Logement restitué propre et clés restituées à la conciergerie.',
-        };
-
-        return [checkinReport, checkoutReport];
-      });
-    }
-
-    return [];
-  }, [prochainsCheckins]);
 
   // Filtrage combiné par recherche, type et catégorie
   const filteredReports = useMemo(() => {
