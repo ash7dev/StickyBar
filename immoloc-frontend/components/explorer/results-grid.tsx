@@ -148,6 +148,8 @@ function ListingRow({
     setIdx((p) => (p + dir + photos.length) % photos.length);
   };
 
+  const typeLibelle = formatType(listing.type, listing.sousType);
+
   return (
     <article className="group relative isolate flex flex-col overflow-hidden rounded-card border border-border bg-background-card shadow-xs transition-[box-shadow,transform] duration-200 ease-[cubic-bezier(0.22,1,0.36,1)] hover:-translate-y-0.5 hover:shadow-md motion-reduce:transform-none motion-reduce:transition-none sm:flex-row">
 
@@ -156,7 +158,7 @@ function ListingRow({
         onTouchStart={handleTouchStart}
         onTouchMove={handleTouchMove}
         onTouchEnd={handleTouchEnd}
-        className="relative aspect-[4/3] w-full shrink-0 overflow-hidden bg-neutral-100 sm:aspect-auto sm:min-h-[13.5rem] sm:w-[17.5rem] lg:w-[20rem] select-none touch-pan-y"
+        className="relative aspect-[4/3] w-full shrink-0 overflow-hidden bg-neutral-100 sm:aspect-auto sm:min-h-[12.5rem] sm:w-[16.5rem] lg:w-[18.5rem] select-none touch-pan-y"
       >
         {current ? (
           <Image
@@ -210,7 +212,7 @@ function ListingRow({
 
         {photos.length > 1 && (
           <>
-            {/* Flèches de navigation (Visibles au survol desktop et au touch mobile) */}
+            {/* Flèches de navigation */}
             <button
               type="button"
               onClick={move(-1)}
@@ -256,12 +258,18 @@ function ListingRow({
       </div>
 
       {/* ── Contenu ─────────────────────────────────────────────────────── */}
-      <div className="flex min-w-0 flex-1 flex-col justify-between p-5">
+      <div className="flex min-w-0 flex-1 flex-col justify-between p-3.5 sm:p-4">
         <div>
-          <div className="flex items-start justify-between gap-3">
+          <div className="flex items-start justify-between gap-2">
             <p className="flex min-w-0 items-center gap-1.5 text-[0.8125rem] text-foreground-muted flex-wrap">
               <MapPin className="h-3.5 w-3.5 shrink-0 text-forest-600" aria-hidden="true" />
               <span className="truncate">{lieu}</span>
+              {typeLibelle && (
+                <>
+                  <span className="text-foreground-faint">·</span>
+                  <span className="truncate font-semibold text-forest-900">{typeLibelle}</span>
+                </>
+              )}
               {listing.distanceKm !== undefined && listing.distanceKm !== null && (
                 <span className="inline-flex items-center gap-0.5 rounded-full bg-forest-50 px-2 py-0.5 text-[10px] font-extrabold text-forest-800 border border-forest-100/80 shrink-0">
                   📍 À {(listing.distanceKm as number).toFixed(1)} km
@@ -270,9 +278,7 @@ function ListingRow({
             </p>
 
             {hasNote && (
-              <span className="flex shrink-0 items-center gap-1 text-sm">
-                {/* gold-400 plafonnait à 2.40:1 sur blanc, sous le seuil de 3:1
-                    applicable aux graphiques porteurs de sens. */}
+              <span className="flex shrink-0 items-center gap-1 text-xs sm:text-sm">
                 <Star className="h-3.5 w-3.5 fill-current text-gold-500" aria-hidden="true" />
                 <span className="font-semibold tabular-nums text-foreground">{rating.format(listing.note!)}</span>
                 {(listing.totalSejours ?? 0) > 0 && (
@@ -282,7 +288,7 @@ function ListingRow({
             )}
           </div>
 
-          <h3 className="mt-1.5 font-display text-xl font-semibold leading-snug tracking-[-0.015em] text-forest-900">
+          <h3 className="mt-1 font-display text-base sm:text-lg font-semibold leading-snug tracking-[-0.015em] text-forest-900">
             <Link
               href={`/explorer/${listing.id}`}
               className="line-clamp-1 after:absolute after:inset-0 after:z-10 after:content-[''] focus-visible:outline-none focus-visible:after:outline-2 focus-visible:after:outline-offset-2 focus-visible:after:outline-ring"
@@ -291,7 +297,7 @@ function ListingRow({
             </Link>
           </h3>
 
-          <ul className="mt-2.5 flex flex-wrap gap-1.5">
+          <ul className="mt-2 flex flex-wrap gap-1.5">
             <Chip>
               <Users className="h-3.5 w-3.5 text-neutral-500" aria-hidden="true" />
               <span>{listing.capaciteMax ?? 1} pers. max</span>
@@ -320,7 +326,7 @@ function ListingRow({
           </ul>
         </div>
 
-        <div className="mt-3 flex items-center justify-end border-t border-border pt-3">
+        <div className="mt-2 flex items-center justify-end border-t border-border/50 pt-2">
           <TenantPriceDisplay
             prixBase={listing.prixBase}
             derniereMinuteActive={derniereMinuteActive}
