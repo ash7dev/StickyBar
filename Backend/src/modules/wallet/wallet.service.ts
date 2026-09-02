@@ -77,11 +77,15 @@ export class WalletService {
 
     const transactionsEnriched = wallet.transactions.map((t) => ({
       ...t,
+      montant: Number(t.montant || 0),
+      soldeApres: Number(t.soldeApres || 0),
       reservation: t.reservationId ? reservationsMap.get(t.reservationId) ?? null : null,
     }));
 
     return {
       ...wallet,
+      soldeDisponible: Number(wallet.soldeDisponible || 0),
+      dettePenalites: Number(wallet.dettePenalites || 0),
       transactions: transactionsEnriched,
     };
   }

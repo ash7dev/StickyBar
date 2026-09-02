@@ -1,6 +1,7 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useRef } from 'react';
+import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import Image from 'next/image';
 import { BedDouble, ChevronLeft, ChevronRight, Heart, ImageOff, MapPin, Moon, RotateCcw, SearchX, ShieldCheck, Star, Users, Wallet } from 'lucide-react';
@@ -20,8 +21,32 @@ interface ResultsGridProps {
 }
 
 export function ResultsGrid({ listings, nights }: ResultsGridProps) {
-  if (!listings?.length) {
-    return <EmptyState />;
+  if (listings.length === 0) {
+    return (
+      <div className="flex flex-col items-center justify-center rounded-card border border-border bg-background-card p-12 text-center shadow-xs">
+        <div className="mb-4 grid h-14 w-14 place-items-center rounded-pill bg-forest-50 text-forest-700 border border-forest-100">
+          <SearchX className="h-7 w-7 text-forest-600" aria-hidden="true" />
+        </div>
+        <h3 className="font-display text-lg sm:text-xl font-semibold text-forest-900">
+          Aucun logement ne correspond à votre recherche
+        </h3>
+        <p className="mt-2 max-w-md text-sm leading-relaxed text-foreground-muted">
+          Essayez d’élargir vos critères ou de supprimer certains filtres.
+        </p>
+        <button
+          type="button"
+          onClick={() => {
+            if (typeof window !== 'undefined') {
+              window.location.href = '/explorer';
+            }
+          }}
+          className="mt-6 inline-flex items-center gap-2 rounded-pill bg-forest-950 px-5 py-2.5 text-sm font-semibold text-white transition-all hover:bg-forest-900 active:scale-95 shadow-sm"
+        >
+          <RotateCcw className="h-4 w-4 text-on-inverse-marker" aria-hidden="true" />
+          Réinitialiser la recherche
+        </button>
+      </div>
+    );
   }
 
   return (
@@ -32,54 +57,6 @@ export function ResultsGrid({ listings, nights }: ResultsGridProps) {
         </li>
       ))}
     </ul>
-  );
-}
-
-function EmptyState() {
-  return (
-    <div className="flex flex-col items-center justify-center rounded-card border border-border bg-background-card p-8 sm:p-12 text-center shadow-xs">
-      <div className="mb-4 grid h-14 w-14 place-items-center rounded-pill bg-forest-50 text-forest-700 border border-forest-100">
-        <SearchX className="h-7 w-7 text-forest-600" aria-hidden="true" />
-      </div>
-
-      <h3 className="font-display text-lg sm:text-xl font-semibold text-forest-900">
-        Aucun logement ne correspond à vos critères
-      </h3>
-
-      <p className="mt-2 max-w-md text-sm leading-relaxed text-foreground-muted">
-        Essayez d’élargir vos filtres, d’ajuster le budget ou de découvrir les offres dans une autre ville au Sénégal.
-      </p>
-
-      {/* Actions */}
-      <div className="mt-6 flex flex-wrap items-center justify-center gap-3">
-        <Link
-          href="/explorer"
-          className="inline-flex items-center gap-2 rounded-pill bg-forest-950 px-5 py-2.5 text-sm font-semibold text-white transition-all hover:bg-forest-900 active:scale-95 shadow-sm"
-        >
-          <RotateCcw className="h-4 w-4 text-on-inverse-marker" aria-hidden="true" />
-          Réinitialiser tous les filtres
-        </Link>
-      </div>
-
-      {/* Villes populaires suggérées */}
-      <div className="mt-8 border-t border-border pt-6 w-full max-w-md">
-        <p className="text-[0.6875rem] font-semibold uppercase tracking-wider text-foreground-faint mb-3">
-          Villes populaires à explorer
-        </p>
-        <div className="flex flex-wrap justify-center gap-2">
-          {['Dakar', 'Saly', 'Ngor', 'Somone', 'Saint-Louis'].map((v) => (
-            <Link
-              key={v}
-              href={`/explorer?ville=${encodeURIComponent(v)}`}
-              className="inline-flex items-center gap-1.5 rounded-pill border border-border bg-background-alt px-3 py-1.5 text-xs font-medium text-forest-900 hover:border-forest-400 hover:bg-forest-50 transition-colors"
-            >
-              <MapPin className="h-3 w-3 text-forest-600" aria-hidden="true" />
-              {v}
-            </Link>
-          ))}
-        </div>
-      </div>
-    </div>
   );
 }
 
@@ -94,81 +71,85 @@ function ListingRow({
   nights?: number;
   priority?: boolean;
 }) {
+  const router = useRouter();
   const photos = listing.photos ?? [];
-  const [idx, setIdx] = useState(0);
+  const [activePhotoIdx, setActivePhotoIdx] = useState(0);
   const [isFavorite, setIsFavorite] = useState(false);
+  const scrollRef = useRef<HTMLDivElement>(null);
 
-  const [touchStart, setTouchStart] = useState<number | null>(null);
-  const [touchEnd, setTouchEnd] = useState<number | null>(null);
-
-  const handleTouchStart = (e: React.TouchEvent) => {
-    setTouchEnd(null);
-    setTouchStart(e.targetTouches[0].clientX);
-  };
-
-  const handleTouchMove = (e: React.TouchEvent) => {
-    setTouchEnd(e.targetTouches[0].clientX);
-  };
-
-  const handleTouchEnd = (e: React.TouchEvent) => {
-    if (!touchStart || !touchEnd) return;
-    const distance = touchStart - touchEnd;
-    const isLeftSwipe = distance > 30;
-    const isRightSwipe = distance < -30;
-
-    if (isLeftSwipe && photos.length > 1) {
-      setIdx((prev) => (prev + 1) % photos.length);
-    }
-    if (isRightSwipe && photos.length > 1) {
-      setIdx((prev) => (prev - 1 + photos.length) % photos.length);
+  const handleScroll = () => {
+    if (!scrollRef.current) return;
+    const { scrollLeft, clientWidth } = scrollRef.current;
+    if (clientWidth > 0) {
+      const newIdx = Math.round(scrollLeft / clientWidth);
+      if (newIdx !== activePhotoIdx) setActivePhotoIdx(newIdx);
     }
   };
 
-  const current = photos[idx]?.url;
+  const scrollToPhoto = (index: number) => (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    if (scrollRef.current) {
+      scrollRef.current.scrollTo({
+        left: index * scrollRef.current.clientWidth,
+        behavior: 'smooth',
+      });
+    }
+  };
+
+  const movePhoto = (dir: 1 | -1) => (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    if (scrollRef.current) {
+      const nextIdx = (activePhotoIdx + dir + photos.length) % photos.length;
+      scrollRef.current.scrollTo({
+        left: nextIdx * scrollRef.current.clientWidth,
+        behavior: 'smooth',
+      });
+    }
+  };
+
   const titre = listing.titre?.trim() || 'Logement sans titre';
   const lieu = [listing.quartier?.trim(), listing.ville?.trim()].filter(Boolean).join(', ') || 'Sénégal';
 
   const derniereMinuteActive = Boolean((listing as { derniereMinuteActive?: boolean }).derniereMinuteActive);
   const prix = getPrixPublic(listing.prixBase);
   const prixFinal = derniereMinuteActive ? getPrixDerniereMinute(prix) : prix;
-  const total = nights ? prixFinal * nights : null;
   const hasNote = typeof listing.note === 'number' && listing.note > 0;
 
   const verifie = Boolean((listing as { verifie?: boolean }).verifie);
-  const equipements = (listing.equipements ?? []).slice(0, 3);
-
-  const prop = (listing as { proprietaire?: { prenom?: string; nom?: string } }).proprietaire;
-  const ownerName = prop?.prenom
-    ? `${prop.prenom}${prop.nom ? ` ${prop.nom[0]}.` : ''}`
-    : null;
-
-  const move = (dir: 1 | -1) => (e: React.MouseEvent) => {
-    e.preventDefault();
-    e.stopPropagation();
-    setIdx((p) => (p + dir + photos.length) % photos.length);
-  };
-
   const typeLibelle = formatType(listing.type, listing.sousType);
 
   return (
     <article className="group relative isolate flex flex-col overflow-hidden rounded-card border border-border bg-background-card shadow-xs transition-[box-shadow,transform] duration-200 ease-[cubic-bezier(0.22,1,0.36,1)] hover:-translate-y-0.5 hover:shadow-md motion-reduce:transform-none motion-reduce:transition-none sm:flex-row">
 
-      {/* ── Photo (Swipeable Style Airbnb Mobile) ─────────────────────────── */}
-      <div
-        onTouchStart={handleTouchStart}
-        onTouchMove={handleTouchMove}
-        onTouchEnd={handleTouchEnd}
-        className="relative aspect-[16/10] w-full shrink-0 overflow-hidden bg-neutral-100 sm:aspect-auto sm:min-h-[11rem] sm:w-[15.5rem] lg:w-[17.5rem] select-none touch-pan-y"
-      >
-        {current ? (
-          <Image
-            src={current}
-            alt=""
-            fill
-            priority={priority}
-            sizes="(max-width: 640px) 100vw, 320px"
-            className="object-cover transition-transform duration-[320ms] ease-[cubic-bezier(0.22,1,0.36,1)] group-hover:scale-[1.02] motion-reduce:transform-none"
-          />
+      {/* ── Photo (Défilement Horizontal Natif / Scroll Snap) ─────────────────── */}
+      <div className="relative z-20 aspect-[16/10] w-full shrink-0 overflow-hidden bg-neutral-100 sm:aspect-auto sm:min-h-[11rem] sm:w-[15.5rem] lg:w-[17.5rem] select-none">
+        {photos.length > 0 ? (
+          <div
+            ref={scrollRef}
+            onScroll={handleScroll}
+            className="flex h-full w-full overflow-x-auto snap-x snap-mandatory [overscroll-behavior-x:contain] scrollbar-hide scroll-smooth"
+          >
+            {photos.map((photo, i) => (
+              <Link
+                key={photo.url || i}
+                href={`/explorer/${listing.id}`}
+                tabIndex={i === activePhotoIdx ? 0 : -1}
+                aria-hidden={i !== activePhotoIdx}
+                className="relative h-full w-full shrink-0 snap-center block overflow-hidden"
+              >
+                <Image
+                  src={photo.url}
+                  alt={titre}
+                  fill
+                  priority={priority && i === 0}
+                  sizes="(max-width: 640px) 100vw, 320px"
+                  className="object-cover transition-transform duration-[320ms] ease-out group-hover:scale-[1.02]"
+                />
+              </Link>
+            ))}
+          </div>
         ) : (
           <div className="grid h-full place-items-center text-neutral-300">
             <ImageOff className="h-7 w-7" aria-hidden="true" />
@@ -179,7 +160,7 @@ function ListingRow({
         {/* Dégradé bas pour lisibilité des puces */}
         {photos.length > 1 && (
           <div
-            className="pointer-events-none absolute inset-x-0 bottom-0 h-14 bg-gradient-to-t from-forest-950/60 to-transparent"
+            className="pointer-events-none absolute inset-x-0 bottom-0 h-14 bg-gradient-to-t from-forest-950/60 to-transparent z-10"
             aria-hidden="true"
           />
         )}
@@ -215,7 +196,7 @@ function ListingRow({
             {/* Flèches de navigation */}
             <button
               type="button"
-              onClick={move(-1)}
+              onClick={movePhoto(-1)}
               aria-label="Photo précédente"
               className="absolute left-2 top-1/2 z-20 grid h-7 w-7 -translate-y-1/2 place-items-center rounded-full bg-white/90 text-forest-900 shadow-md backdrop-blur-sm transition-all hover:bg-white active:scale-90 opacity-80 sm:opacity-0 sm:group-hover:opacity-100 cursor-pointer"
             >
@@ -224,7 +205,7 @@ function ListingRow({
 
             <button
               type="button"
-              onClick={move(1)}
+              onClick={movePhoto(1)}
               aria-label="Photo suivante"
               className="absolute right-2 top-1/2 z-20 grid h-7 w-7 -translate-y-1/2 place-items-center rounded-full bg-white/90 text-forest-900 shadow-md backdrop-blur-sm transition-all hover:bg-white active:scale-90 opacity-80 sm:opacity-0 sm:group-hover:opacity-100 cursor-pointer"
             >
@@ -237,15 +218,11 @@ function ListingRow({
                 <button
                   key={i}
                   type="button"
-                  onClick={(e) => {
-                    e.preventDefault();
-                    e.stopPropagation();
-                    setIdx(i);
-                  }}
+                  onClick={scrollToPhoto(i)}
                   aria-label={`Voir photo ${i + 1}`}
                   className={cn(
                     'h-1.5 rounded-full transition-all duration-200 cursor-pointer',
-                    i === idx ? 'w-3.5 bg-white shadow-sm' : 'w-1.5 bg-white/60 hover:bg-white/90',
+                    i === activePhotoIdx ? 'w-3.5 bg-white shadow-sm' : 'w-1.5 bg-white/60 hover:bg-white/90',
                   )}
                 />
               ))}

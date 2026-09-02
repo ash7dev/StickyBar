@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useRef } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
 import { Bath, BedDouble, ChevronLeft, ChevronRight, Heart, ImageOff, ShieldCheck, Star, Users, Video, Zap } from 'lucide-react';
@@ -26,27 +26,25 @@ export interface ListingCardProps {
   ville: string;
   quartier?: string | null;
   prixBase: number;
-  note: number | null;
-  totalSejours: number;
-  photos: { url: string }[];
+  note?: number | null;
+  totalSejours?: number;
   capaciteMax?: number;
   nombreChambres?: number | null;
   nombreSallesBain?: number | null;
   nuitesMinimum?: number | null;
+  acomptePourcentage?: number;
   verifie?: boolean;
   sponsorise?: boolean;
-  isFavorite?: boolean;
-  onToggleFavorite?: (id: string, next: boolean) => void;
-  priority?: boolean;
-  variant?: 'standard' | 'premium' | 'dark';
   isInstantBooking?: boolean;
+  photos?: { url: string; categorie?: string }[];
+  priority?: boolean;
+  variant?: 'light' | 'dark' | 'standard' | 'premium';
   derniereMinuteActive?: boolean;
   videoUrl?: string | null;
 }
 
 export function ListingCard({
   id,
-  slug,
   titre,
   type,
   sousType,
@@ -54,60 +52,60 @@ export function ListingCard({
   quartier,
   prixBase,
   note,
-  totalSejours,
-  photos,
+  totalSejours = 0,
   capaciteMax,
   nombreChambres,
   nombreSallesBain,
-  nuitesMinimum,
+  nuitesMinimum = 1,
+  acomptePourcentage = 30,
   verifie = false,
   sponsorise = false,
-  isFavorite = false,
-  onToggleFavorite,
-  priority = false,
-  variant = 'standard',
   isInstantBooking = false,
+  photos = [],
+  priority = false,
+  variant = 'light',
   derniereMinuteActive = false,
   videoUrl = null,
 }: ListingCardProps) {
   const [showVideoModal, setShowVideoModal] = useState(false);
   const [photoIdx, setPhotoIdx] = useState(0);
-  const [touchStart, setTouchStart] = useState<number | null>(null);
-  const [touchEnd, setTouchEnd] = useState<number | null>(null);
+  const scrollRef = useRef<HTMLDivElement>(null);
 
   const photoList = photos || [];
-  const currentPhoto = photoList[photoIdx]?.url || photoList[0]?.url;
   const lieu = quartier ? `${quartier}, ${ville}` : ville;
   const categorie = sousType ?? type;
   const isDark = variant === 'dark';
 
-  const handleTouchStart = (e: React.TouchEvent) => {
-    setTouchEnd(null);
-    setTouchStart(e.targetTouches[0].clientX);
-  };
-
-  const handleTouchMove = (e: React.TouchEvent) => {
-    setTouchEnd(e.targetTouches[0].clientX);
-  };
-
-  const handleTouchEnd = (e: React.TouchEvent) => {
-    if (!touchStart || !touchEnd) return;
-    const distance = touchStart - touchEnd;
-    const isLeftSwipe = distance > 30;
-    const isRightSwipe = distance < -30;
-
-    if (isLeftSwipe && photoList.length > 1) {
-      setPhotoIdx((prev) => (prev + 1) % photoList.length);
+  const handleScroll = () => {
+    if (!scrollRef.current) return;
+    const { scrollLeft, clientWidth } = scrollRef.current;
+    if (clientWidth > 0) {
+      const idx = Math.round(scrollLeft / clientWidth);
+      if (idx !== photoIdx) setPhotoIdx(idx);
     }
-    if (isRightSwipe && photoList.length > 1) {
-      setPhotoIdx((prev) => (prev - 1 + photoList.length) % photoList.length);
+  };
+
+  const scrollToPhoto = (index: number) => (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    if (scrollRef.current) {
+      scrollRef.current.scrollTo({
+        left: index * scrollRef.current.clientWidth,
+        behavior: 'smooth',
+      });
     }
   };
 
   const movePhoto = (dir: 1 | -1) => (e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
-    setPhotoIdx((p) => (p + dir + photoList.length) % photoList.length);
+    if (scrollRef.current) {
+      const nextIdx = (photoIdx + dir + photoList.length) % photoList.length;
+      scrollRef.current.scrollTo({
+        left: nextIdx * scrollRef.current.clientWidth,
+        behavior: 'smooth',
+      });
+    }
   };
 
   // Objet partiel compatible avec la modale VideoReelsModal
@@ -130,22 +128,33 @@ export function ListingCard({
         }`}
       >
 
-        {/* ── Photo (Swipeable Style Airbnb Mobile) ─────────────────────────── */}
-        <div
-          onTouchStart={handleTouchStart}
-          onTouchMove={handleTouchMove}
-          onTouchEnd={handleTouchEnd}
-          className="relative aspect-[4/3] overflow-hidden bg-neutral-100 select-none touch-pan-y"
-        >
-          {currentPhoto ? (
-            <Image
-              src={currentPhoto}
-              alt=""
-              fill
-              priority={priority}
-              sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
-              className="object-cover transition-transform duration-[320ms] ease-[cubic-bezier(0.22,1,0.36,1)] group-hover:scale-[1.03] motion-reduce:transform-none motion-reduce:transition-none"
-            />
+        {/* ── Photo (Défilement Horizontal Natif / Scroll Snap) ─────────────────── */}
+        <div className="relative z-20 aspect-[4/3] overflow-hidden bg-neutral-100 select-none">
+          {photoList.length > 0 ? (
+            <div
+              ref={scrollRef}
+              onScroll={handleScroll}
+              className="flex h-full w-full overflow-x-auto snap-x snap-mandatory [overscroll-behavior-x:contain] scrollbar-hide scroll-smooth"
+            >
+              {photoList.map((photo, i) => (
+                <Link
+                  key={photo.url || i}
+                  href={`/explorer/${id}`}
+                  tabIndex={i === photoIdx ? 0 : -1}
+                  aria-hidden={i !== photoIdx}
+                  className="relative h-full w-full shrink-0 snap-center block overflow-hidden"
+                >
+                  <Image
+                    src={photo.url}
+                    alt={titre}
+                    fill
+                    priority={priority && i === 0}
+                    sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
+                    className="object-cover transition-transform duration-[320ms] ease-[cubic-bezier(0.22,1,0.36,1)] group-hover:scale-[1.03]"
+                  />
+                </Link>
+              ))}
+            </div>
           ) : (
             <div className="grid h-full place-items-center text-neutral-300">
               <ImageOff className="h-7 w-7" aria-hidden="true" />
@@ -156,7 +165,7 @@ export function ListingCard({
           {/* Dégradé bas pour puces */}
           {photoList.length > 1 && (
             <div
-              className="pointer-events-none absolute inset-x-0 bottom-0 h-14 bg-gradient-to-t from-forest-950/60 to-transparent"
+              className="pointer-events-none absolute inset-x-0 bottom-0 h-14 bg-gradient-to-t from-forest-950/60 to-transparent z-10"
               aria-hidden="true"
             />
           )}
@@ -222,11 +231,7 @@ export function ListingCard({
                   <button
                     key={i}
                     type="button"
-                    onClick={(e) => {
-                      e.preventDefault();
-                      e.stopPropagation();
-                      setPhotoIdx(i);
-                    }}
+                    onClick={scrollToPhoto(i)}
                     aria-label={`Voir photo ${i + 1}`}
                     className={cn(
                       'h-1.5 rounded-full transition-all duration-200 cursor-pointer',
@@ -249,14 +254,14 @@ export function ListingCard({
               isDark ? 'text-neutral-0 group-hover:text-lime-300 transition-colors' : 'text-forest-900'
             }`}>
               <Link
-                href={`/explorer/${slug ?? id}`}
+                href={`/explorer/${id}`}
                 className="line-clamp-1 after:absolute after:inset-0 after:z-10 after:content-[''] focus-visible:outline-none focus-visible:after:outline-2 focus-visible:after:outline-offset-2 focus-visible:after:outline-ring"
               >
                 {titre}
               </Link>
             </h3>
 
-            {note !== null && note > 0 && (
+            {typeof note === 'number' && note > 0 && (
               <span className="flex shrink-0 items-center gap-1 text-sm">
                 <Star className="h-3.5 w-3.5 fill-current text-gold-400" aria-hidden="true" />
                 <span className={`font-semibold tabular-nums ${isDark ? 'text-neutral-50' : 'text-foreground'}`}>

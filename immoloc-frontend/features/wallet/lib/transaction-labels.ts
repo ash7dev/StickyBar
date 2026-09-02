@@ -7,9 +7,15 @@ export interface TransactionMeta {
   sign: '+' | '-';
 }
 
-const META: Record<TransactionType, TransactionMeta> = {
+const META: Record<string, TransactionMeta> = {
   CREDIT_LOCATION: {
     label: 'Séjour reçu',
+    colorClass: 'text-success-600',
+    bgClass: 'bg-success-50 text-success-700 border-success-100',
+    sign: '+',
+  },
+  REMBOURSEMENT: {
+    label: 'Remboursement',
     colorClass: 'text-success-600',
     bgClass: 'bg-success-50 text-success-700 border-success-100',
     sign: '+',
@@ -34,17 +40,24 @@ const META: Record<TransactionType, TransactionMeta> = {
   },
 };
 
-export function getTransactionMeta(type: TransactionType, sens: TransactionSens): TransactionMeta {
-  const base = META[type];
-  // En cas de CREDIT inattendu (ex: remboursement), override signe et couleur
+export function getTransactionMeta(type: string, sens: string): TransactionMeta {
+  const base = META[type] || {
+    label: type ? type.replace(/_/g, ' ') : 'Transaction',
+    colorClass: sens === 'CREDIT' ? 'text-success-600' : 'text-error-600',
+    bgClass: sens === 'CREDIT' ? 'bg-success-50 text-success-700 border-success-100' : 'bg-error-50 text-error-700 border-error-100',
+    sign: sens === 'CREDIT' ? '+' : '-',
+  };
+
   if (sens === 'CREDIT' && base.sign === '-') {
     return { ...base, sign: '+', colorClass: 'text-success-600' };
   }
   return base;
 }
 
-export function formatFCFA(amount: number): string {
+export function formatFCFA(amount: number | string | null | undefined): string {
+  const val = Number(amount ?? 0);
+  const safe = Number.isNaN(val) ? 0 : val;
   return new Intl.NumberFormat('fr-SN', {
     maximumFractionDigits: 0,
-  }).format(amount) + ' FCFA';
+  }).format(safe) + ' FCFA';
 }
