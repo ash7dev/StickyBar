@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import { createPortal } from 'react-dom';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import { Building2, CalendarDays, LayoutDashboard, Settings, Wallet } from 'lucide-react';
@@ -33,21 +34,23 @@ const BOTTOM_NAV: BottomNavItem[] = [
 
 function BottomNav() {
   const pathname = usePathname();
+  const [mounted, setMounted] = useState(false);
 
-  return (
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
+  if (!mounted) return null;
+
+  return createPortal(
     <nav
       aria-label="Navigation principale"
-      className="fixed inset-x-0 z-40 mx-auto w-[calc(100%-1.5rem)] max-w-md lg:hidden"
-      // marginBottom sur un element fixe positionne par `bottom` fonctionne,
-      // mais melange deux systemes. Le decalage appartient a l'offset.
+      className="fixed inset-x-0 z-[9999] mx-auto w-[calc(100%-1.5rem)] max-w-md lg:hidden"
       style={{ bottom: 'calc(0.75rem + env(safe-area-inset-bottom, 0px))' }}
     >
       <ul
         className={cn(
           'flex items-stretch justify-between gap-0.5 rounded-card border border-white/10 p-1.5',
-          // backdrop-blur-2xl vaut 40px de flou sur un element fixe present
-          // pendant tout le scroll : compositing continu sur mobile bas de
-          // gamme. blur-lg suffit visuellement et coute nettement moins.
           'bg-forest-950/92 shadow-lg backdrop-blur-lg',
         )}
       >
@@ -60,8 +63,6 @@ function BottomNav() {
                 href={href}
                 aria-current={active ? 'page' : undefined}
                 className={cn(
-                  // py-2.5 px-3 donnait environ 40px de haut, sous le minimum
-                  // de 44px recommande pour une cible tactile.
                   'flex min-h-[3.25rem] flex-col items-center justify-center gap-1 rounded-inner px-1 py-1.5',
                   'transition-colors duration-150',
                   active ? 'text-on-inverse-marker' : 'text-forest-200 hover:text-neutral-50',
@@ -70,23 +71,12 @@ function BottomNav() {
                 <span
                   className={cn(
                     'grid h-6 w-10 place-items-center rounded-pill transition-colors duration-150',
-                    // L'etat actif etait une pastille lime PLEINE avec halo
-                    // colore. Ici l'indicateur est une teinte : le lime reste
-                    // present sans devenir le bloc le plus lourd de l'ecran.
                     active && 'bg-marker-bg',
                   )}
                 >
                   <Icon className="h-5 w-5" strokeWidth={active ? 2.25 : 1.9} />
                 </span>
 
-                {/*
-                  Avant, seul l'onglet actif affichait son libelle, et il
-                  passait en flex-1 pendant que les autres restaient shrink-0.
-                  Consequence : la largeur des cinq elements changeait a chaque
-                  navigation, la barre se reorganisait sous le doigt.
-                  Et une navigation en icones seules s'apprend mal : rien ne
-                  distingue « Sejours » de « Wallet » au premier usage.
-                */}
                 <span className="text-[0.625rem] font-medium leading-none">
                   {label}
                 </span>
@@ -95,7 +85,8 @@ function BottomNav() {
           );
         })}
       </ul>
-    </nav>
+    </nav>,
+    document.body
   );
 }
 

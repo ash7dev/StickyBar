@@ -3,6 +3,7 @@
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
+import { createPortal } from 'react-dom';
 import {
   ArrowLeftRight, CalendarDays, Compass, Home, List, Loader2, Map, Settings,
 } from 'lucide-react';
@@ -31,6 +32,11 @@ export function MobileBottomNav() {
   const { switchRole, isSwitching } = useSwitchRole();
   const [switchError, setSwitchError] = useState(false);
   const [explorerView, setExplorerView] = useState<'list' | 'map'>('list');
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   useEffect(() => {
     const handleViewChanged = (e: Event) => {
@@ -51,7 +57,7 @@ export function MobileBottomNav() {
     sur le dashboard (/dashboard*).
   */
   const hidden = pathname.startsWith('/dashboard') || !VISIBLE_ON.has(pathname);
-  if (hidden) return null;
+  if (!mounted || hidden) return null;
 
   const isOwner = activeRole === 'PROPRIETAIRE';
 
@@ -75,15 +81,11 @@ export function MobileBottomNav() {
     router.push('/become-host');
   }
 
-  return (
-    <>
-      {/* Spacer réduit sous la navbar sur mobile (14px) */}
-      <div aria-hidden="true" className="md:hidden h-3.5" />
-
-      <div
-        className="fixed inset-x-0 z-50 mx-auto flex w-[calc(100%-1.5rem)] max-w-md flex-col gap-2 md:hidden"
-        style={{ bottom: 'calc(0.75rem + env(safe-area-inset-bottom, 0px))' }}
-      >
+  return createPortal(
+    <div
+      className="fixed inset-x-0 z-[9999] mx-auto flex w-[calc(100%-1.5rem)] max-w-md flex-col gap-2 md:hidden"
+      style={{ bottom: 'calc(0.75rem + env(safe-area-inset-bottom, 0px))' }}
+    >
         {switchError && (
           <p role="alert" className="self-end rounded-pill bg-error-600 px-3.5 py-2 text-xs font-medium text-white shadow-lg">
             Basculement impossible. Réessayez.
@@ -199,7 +201,7 @@ export function MobileBottomNav() {
             })}
           </ul>
         </nav>
-      </div>
-    </>
-  );
-}
+      </div>,
+      document.body
+    );
+  }
