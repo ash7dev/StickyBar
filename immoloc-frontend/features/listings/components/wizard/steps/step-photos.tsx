@@ -8,7 +8,8 @@ import { useListingFormStore } from '@/stores/listing-form.store';
 import { type PhotoItem } from '@/schemas/listing.schema';
 import { cn } from '@/lib/utils/cn';
 
-const MIN_PHOTOS = 5;
+const MIN_PHOTOS = 1;
+const RECOMMENDED_PHOTOS = 5;
 const MAX_PHOTOS = 10;
 const MAX_VIDEO_SECONDS = 90;
 const MAX_PHOTO_BYTES = 10 * 1024 * 1024;
@@ -66,7 +67,7 @@ export function StepPhotos({ onNext, submitRef }: Props) {
 
   const list = photos.photos;
   const isComplete = list.length >= MIN_PHOTOS;
-  const remaining = MIN_PHOTOS - list.length;
+  const isRecommendedMet = list.length >= RECOMMENDED_PHOTOS;
   const slotsLeft = MAX_PHOTOS - list.length;
 
   const handleFiles = useCallback((files: FileList | null) => {
@@ -126,7 +127,7 @@ export function StepPhotos({ onNext, submitRef }: Props) {
       <SectionCard
         icon={Camera}
         title="Photos du logement"
-        description={`Entre ${MIN_PHOTOS} et ${MAX_PHOTOS} photos. La première visible est celle qui décide du clic.`}
+        description={`Ajoutez au moins ${MIN_PHOTOS} photo de couverture pour continuer (${RECOMMENDED_PHOTOS} recommandées, ${MAX_PHOTOS} max).`}
       >
         {/* ── Progression ──────────────────────────────────────────────── */}
 
@@ -159,9 +160,11 @@ export function StepPhotos({ onNext, submitRef }: Props) {
                 'text-sm font-semibold',
                 isComplete ? 'text-success-700' : hasTriedSubmit ? 'text-error-700' : 'text-foreground',
               )}>
-                {isComplete
-                  ? 'Minimum atteint'
-                  : `Encore ${remaining} photo${remaining > 1 ? 's' : ''}`}
+                {isRecommendedMet
+                  ? 'Nombre idéal de photos atteint'
+                  : isComplete
+                    ? `Photo de couverture ajoutée (${list.length}/${RECOMMENDED_PHOTOS} recommandées)`
+                    : 'Au moins 1 photo requise'}
               </p>
               <p className="mt-0.5 text-xs tabular-nums text-foreground-muted">
                 {list.length} / {MAX_PHOTOS} sélectionnées
@@ -277,9 +280,7 @@ export function StepPhotos({ onNext, submitRef }: Props) {
           <div role="alert" className="flex items-center gap-2.5 rounded-inner border border-error-500/20 bg-error-50 p-3.5">
             <AlertCircle className="h-4 w-4 shrink-0 text-error-600" aria-hidden="true" />
             <p className="text-xs text-error-700">
-              {list.length === 0
-                ? `Ajoutez au moins ${MIN_PHOTOS} photos pour continuer.`
-                : `Il manque ${remaining} photo${remaining > 1 ? 's' : ''}.`}
+              Veuillez ajouter au moins 1 photo de couverture pour continuer vers l&apos;étape suivante.
             </p>
           </div>
         )}
