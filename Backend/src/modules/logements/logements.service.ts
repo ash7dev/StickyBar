@@ -138,9 +138,9 @@ export class LogementsService {
       totalSejours: true,
       derniereMinuteActive: true,
       photos: {
-        where: { estPrincipale: true },
+        orderBy: [{ estPrincipale: 'desc' }, { position: 'asc' }],
         select: { url: true, categorie: true },
-        take: 1,
+        take: 10,
       },
       tarifsPersonnes: {
         select: { personnesMin: true, personnesMax: true, supplement: true },
@@ -313,9 +313,9 @@ export class LogementsService {
       derniereMinuteActive: true,
       videoUrl: true,
       photos: {
-        where: { estPrincipale: true },
+        orderBy: [{ estPrincipale: 'desc' }, { position: 'asc' }],
         select: { url: true, estPrincipale: true },
-        take: 1,
+        take: 10,
       },
       equipements: {
         select: {

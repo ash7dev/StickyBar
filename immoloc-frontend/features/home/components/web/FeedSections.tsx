@@ -169,8 +169,8 @@ function getPrioritySectionIds(preferences: HomePreferences): string[] {
 }
 
 // Cache clés pour localStorage avec motif Stale-While-Revalidate (SWR)
-const FEED_CACHE_KEY = 'klef_feed_cache_v4';
-const FEED_CACHE_TIMESTAMP_KEY = 'klef_feed_cache_ts_v4';
+const FEED_CACHE_KEY = 'klef_feed_cache_v5';
+const FEED_CACHE_TIMESTAMP_KEY = 'klef_feed_cache_ts_v5';
 
 function getSectionConfig(sectionId: string) {
   if (SECTION_CONFIG[sectionId]) return SECTION_CONFIG[sectionId];

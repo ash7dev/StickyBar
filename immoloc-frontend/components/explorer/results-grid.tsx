@@ -158,7 +158,7 @@ function ListingRow({
         onTouchStart={handleTouchStart}
         onTouchMove={handleTouchMove}
         onTouchEnd={handleTouchEnd}
-        className="relative aspect-[4/3] w-full shrink-0 overflow-hidden bg-neutral-100 sm:aspect-auto sm:min-h-[12.5rem] sm:w-[16.5rem] lg:w-[18.5rem] select-none touch-pan-y"
+        className="relative aspect-[16/10] w-full shrink-0 overflow-hidden bg-neutral-100 sm:aspect-auto sm:min-h-[11rem] sm:w-[15.5rem] lg:w-[17.5rem] select-none touch-pan-y"
       >
         {current ? (
           <Image
@@ -179,13 +179,13 @@ function ListingRow({
         {/* Dégradé bas pour lisibilité des puces */}
         {photos.length > 1 && (
           <div
-            className="pointer-events-none absolute inset-x-0 bottom-0 h-16 bg-gradient-to-t from-forest-950/60 to-transparent"
+            className="pointer-events-none absolute inset-x-0 bottom-0 h-14 bg-gradient-to-t from-forest-950/60 to-transparent"
             aria-hidden="true"
           />
         )}
 
         {verifie && (
-          <span className="glass-dark absolute left-3 top-3 z-20 inline-flex items-center gap-1.5 rounded-pill px-2.5 py-1 text-[0.6875rem] font-semibold text-gold-300">
+          <span className="glass-dark absolute left-3 top-3 z-20 inline-flex items-center gap-1.5 rounded-pill px-2.5 py-0.5 text-[0.6875rem] font-semibold text-gold-300">
             <ShieldCheck className="h-3.5 w-3.5" aria-hidden="true" />
             Vérifié
           </span>
@@ -201,13 +201,13 @@ function ListingRow({
           aria-pressed={isFavorite}
           aria-label={isFavorite ? `Retirer ${titre} des favoris` : `Ajouter ${titre} aux favoris`}
           className={cn(
-            'absolute right-3 top-3 z-20 grid h-9 w-9 place-items-center rounded-pill border transition-colors duration-150 active:scale-95 cursor-pointer',
+            'absolute right-3 top-3 z-20 grid h-8 w-8 place-items-center rounded-pill border transition-colors duration-150 active:scale-95 cursor-pointer',
             isFavorite
               ? 'border-error-500/25 bg-white text-error-500 shadow-sm'
               : 'border-white/60 bg-white/85 text-forest-700 backdrop-blur-md hover:bg-white',
           )}
         >
-          <Heart className={cn('h-4 w-4', isFavorite && 'fill-current')} aria-hidden="true" />
+          <Heart className={cn('h-3.5 w-3.5', isFavorite && 'fill-current')} aria-hidden="true" />
         </button>
 
         {photos.length > 1 && (
@@ -232,7 +232,7 @@ function ListingRow({
             </button>
 
             {/* Puces interactives en bas de la photo */}
-            <div className="absolute inset-x-0 bottom-3 z-20 flex items-center justify-center gap-1.5" aria-hidden="true">
+            <div className="absolute inset-x-0 bottom-2.5 z-20 flex items-center justify-center gap-1.5" aria-hidden="true">
               {photos.slice(0, 5).map((_, i) => (
                 <button
                   key={i}
@@ -257,25 +257,19 @@ function ListingRow({
         )}
       </div>
 
-      {/* ── Contenu ─────────────────────────────────────────────────────── */}
-      <div className="flex min-w-0 flex-1 flex-col justify-between p-3.5 sm:p-4">
+      {/* ── Contenu (Style épuré ListingCard) ─────────────────────────────── */}
+      <div className="flex min-w-0 flex-1 flex-col justify-between p-3 sm:p-3.5">
         <div>
+          {/* Ligne 1 : Titre + Note */}
           <div className="flex items-start justify-between gap-2">
-            <p className="flex min-w-0 items-center gap-1.5 text-[0.8125rem] text-foreground-muted flex-wrap">
-              <MapPin className="h-3.5 w-3.5 shrink-0 text-forest-600" aria-hidden="true" />
-              <span className="truncate">{lieu}</span>
-              {typeLibelle && (
-                <>
-                  <span className="text-foreground-faint">·</span>
-                  <span className="truncate font-semibold text-forest-900">{typeLibelle}</span>
-                </>
-              )}
-              {listing.distanceKm !== undefined && listing.distanceKm !== null && (
-                <span className="inline-flex items-center gap-0.5 rounded-full bg-forest-50 px-2 py-0.5 text-[10px] font-extrabold text-forest-800 border border-forest-100/80 shrink-0">
-                  📍 À {(listing.distanceKm as number).toFixed(1)} km
-                </span>
-              )}
-            </p>
+            <h3 className="min-w-0 font-display text-base font-semibold leading-snug tracking-[-0.01em] text-forest-900">
+              <Link
+                href={`/explorer/${listing.id}`}
+                className="line-clamp-1 after:absolute after:inset-0 after:z-10 after:content-[''] focus-visible:outline-none focus-visible:after:outline-2 focus-visible:after:outline-offset-2 focus-visible:after:outline-ring"
+              >
+                {titre}
+              </Link>
+            </h3>
 
             {hasNote && (
               <span className="flex shrink-0 items-center gap-1 text-xs sm:text-sm">
@@ -288,16 +282,24 @@ function ListingRow({
             )}
           </div>
 
-          <h3 className="mt-1 font-display text-base sm:text-lg font-semibold leading-snug tracking-[-0.015em] text-forest-900">
-            <Link
-              href={`/explorer/${listing.id}`}
-              className="line-clamp-1 after:absolute after:inset-0 after:z-10 after:content-[''] focus-visible:outline-none focus-visible:after:outline-2 focus-visible:after:outline-offset-2 focus-visible:after:outline-ring"
-            >
-              {titre}
-            </Link>
-          </h3>
+          {/* Ligne 2 : Localisation · Sous-type */}
+          <p className="mt-0.5 line-clamp-1 text-xs sm:text-sm text-foreground-muted flex items-center gap-1 flex-wrap">
+            <span className="truncate">{lieu}</span>
+            {typeLibelle && (
+              <>
+                <span className="text-foreground-faint">·</span>
+                <span className="truncate text-foreground-faint">{typeLibelle}</span>
+              </>
+            )}
+            {listing.distanceKm !== undefined && listing.distanceKm !== null && (
+              <span className="ml-1 inline-flex items-center gap-0.5 rounded-full bg-forest-50 px-1.5 py-0.5 text-[10px] font-extrabold text-forest-800 border border-forest-100/80 shrink-0">
+                📍 À {(listing.distanceKm as number).toFixed(1)} km
+              </span>
+            )}
+          </p>
 
-          <ul className="mt-2 flex flex-wrap gap-1.5">
+          {/* Ligne 3 : Badges / Chips des caractéristiques */}
+          <ul className="mt-2 flex flex-wrap gap-1">
             <Chip>
               <Users className="h-3.5 w-3.5 text-neutral-500" aria-hidden="true" />
               <span>{listing.capaciteMax ?? 1} pers. max</span>
@@ -326,7 +328,8 @@ function ListingRow({
           </ul>
         </div>
 
-        <div className="mt-2 flex items-center justify-end border-t border-border/50 pt-2">
+        {/* Ligne 4 : Prix bas de carte */}
+        <div className="mt-auto flex items-end justify-between gap-3 pt-2">
           <TenantPriceDisplay
             prixBase={listing.prixBase}
             derniereMinuteActive={derniereMinuteActive}
@@ -342,7 +345,7 @@ function ListingRow({
 
 function Chip({ children }: { children: React.ReactNode }) {
   return (
-    <li className="inline-flex items-center gap-1.5 rounded-pill bg-neutral-100 px-3 py-1 text-xs font-medium text-neutral-700">
+    <li className="inline-flex items-center gap-1 rounded-pill bg-neutral-100 px-2.5 py-0.5 text-[11px] font-medium text-neutral-700">
       {children}
     </li>
   );
