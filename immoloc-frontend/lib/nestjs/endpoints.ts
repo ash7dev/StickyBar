@@ -75,6 +75,7 @@ export const NEST_API = {
     DEMANDE_FRAIS_CREATE:   (id: string) => `${BASE}/reservations/${id}/frais`,
     DEMANDE_FRAIS_LIST:     (id: string) => `${BASE}/reservations/${id}/frais`,
     DEMANDE_FRAIS_PAYER:    (id: string, fraisId: string) => `${BASE}/reservations/${id}/frais/${fraisId}/payer`,
+    DEMANDE_FRAIS_PAYER_LIQUIDE: (id: string, fraisId: string) => `${BASE}/reservations/${id}/frais/${fraisId}/payer-liquide`,
     DEMANDE_FRAIS_REFUSER:  (id: string, fraisId: string) => `${BASE}/reservations/${id}/frais/${fraisId}/refuser`,
   },
   USERS: {

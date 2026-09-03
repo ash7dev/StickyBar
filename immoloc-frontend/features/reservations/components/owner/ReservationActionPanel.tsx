@@ -1037,14 +1037,18 @@ export function ReservationActionPanel({ id, res, onRefetch }: Props) {
                 </>
               )}
 
-              <div className="space-y-3 border-t border-border pt-4">
-                <p className="text-xs font-semibold uppercase tracking-wider text-foreground-muted">
-                  Problème pendant le séjour ?
-                </p>
-
-                {isDisputeActive && res.litige ? (
+              {isDisputeActive && res.litige && (
+                <div className="space-y-3 border-t border-border pt-4">
                   <LitigePanel litige={res.litige} />
-                ) : (
+                </div>
+              )}
+
+              {!res.litige && (
+                <div className="space-y-3 border-t border-border pt-4">
+                  <p className="text-xs font-semibold uppercase tracking-wider text-foreground-muted">
+                    Problème pendant le séjour ?
+                  </p>
+
                   <div className="flex flex-wrap gap-2">
                     <button
                       type="button"
@@ -1063,8 +1067,8 @@ export function ReservationActionPanel({ id, res, onRefetch }: Props) {
                       Dépassement voyageurs
                     </button>
                   </div>
-                )}
-              </div>
+                </div>
+              )}
             </>
           )}
 

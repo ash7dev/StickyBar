@@ -264,4 +264,17 @@ export class ReservationsController {
   ) {
     return this.reservationsService.refuserDemandeFrais(id, fraisId, user.id, raison);
   }
+
+  @Post(':id/frais/:fraisId/payer-liquide')
+  @Roles(Role.PROPRIETAIRE, Role.GESTIONNAIRE)
+  @ApiOperation({ summary: 'Valider le règlement en espèces / liquide d\'un supplément (marque payé sans incrémenter le wallet)' })
+  @ApiParam({ name: 'id', description: 'UUID de la réservation' })
+  @ApiParam({ name: 'fraisId', description: 'UUID de la demande de frais' })
+  payerDemandeFraisLiquide(
+    @Param('id') id: string,
+    @Param('fraisId') fraisId: string,
+    @CurrentUser() user: AuthUser,
+  ) {
+    return this.reservationsService.payerDemandeFraisLiquide(id, fraisId, user.id);
+  }
 }

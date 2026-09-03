@@ -609,7 +609,6 @@ export class ReservationsService {
       await tx.transactionWallet.create({
         data: {
           walletId: hostWallet.id,
-          reservationId,
           type: TypeTransactionWallet.CREDIT_LOCATION,
           montant,
           sens: SensTransaction.CREDIT,
@@ -681,6 +680,39 @@ export class ReservationsService {
       }
 
       return updated;
+    });
+  }
+
+  async payerDemandeFraisLiquide(reservationId: string, fraisId: string, userId: string) {
+    const demande = await this.prisma.demandeFrais.findUnique({
+      where: { id: fraisId },
+      include: { reservation: { include: { logement: true } } },
+    });
+
+    if (!demande || demande.reservationId !== reservationId) {
+      throw new NotFoundException('Demande de frais introuvable');
+    }
+
+    const isProprio =
+      demande.reservation.proprietaireId === userId ||
+      demande.reservation.logement?.gestionnaireId === userId;
+
+    if (!isProprio) {
+      throw new ForbiddenException('Seul l\'hôte ou le gestionnaire peut valider un règlement en espèces');
+    }
+
+    if (demande.statut !== 'EN_ATTENTE') {
+      throw new ConflictException('Ce supplément a déjà été traité');
+    }
+
+    // Marquer PAYÉ avec méthode de paiement 'ESPECES' (sans toucher au solde du wallet)
+    return await this.prisma.demandeFrais.update({
+      where: { id: fraisId },
+      data: {
+        statut: 'PAYE',
+        payeLe: new Date(),
+        methodePaiement: 'ESPECES',
+      },
     });
   }
 }
