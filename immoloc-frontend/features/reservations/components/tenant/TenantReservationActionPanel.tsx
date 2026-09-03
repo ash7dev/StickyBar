@@ -14,6 +14,7 @@ import { CheckinGalleryModal } from './CheckinGalleryModal';
 import { RefuseCheckInModal } from './RefuseCheckInModal';
 import { DigitalWelcomeGuideModal } from './DigitalWelcomeGuideModal';
 import { TerangaRewardModal } from '@/features/teranga-club/components/TerangaRewardModal';
+import { LitigePanel } from '../shared/LitigePanel';
 import {
   Modal, Notice, Feedback, PrimaryButton, GhostButton, DangerButton,
   RefundScale, StarRating, useNow, resolveRefundTier, MOTIF_MIN, type Tone,
@@ -300,16 +301,14 @@ export function TenantReservationActionPanel({ id, res, onRefetch }: Props) {
             </Notice>
           )}
 
-          {res.litige && (
-            <Notice tone="error" icon={AlertTriangle} title="🚨 Litige en cours sur ce séjour">
-              Un litige est actif (déclaré par {res.litige.declarePar ? res.litige.declarePar.toLowerCase() : 'une partie'}). Motif :{' '}
-              <span className="font-semibold">{res.litige.motif.replace(/_/g, ' ')}</span>. Les fonds restent sécurisés en séquestre pendant l&apos;analyse par le support Klef.
-            </Notice>
+          {/* ── MODE LITIGE ACTIF (EXACTEMENT COMME CÔTÉ OWNER) ─────────────── */}
+          {(res.litige || statut === 'DISPUTED') && res.litige && (
+            <LitigePanel litige={res.litige} isOwner={false} />
           )}
 
-          {/* ── Livret d'accueil ─────────────────────────────────────────── */}
+          {/* ── Livret d'accueil (Masqué si litige en cours) ─────────────── */}
 
-          {res.logement && (
+          {res.logement && !res.litige && statut !== 'DISPUTED' && (
             <button
               type="button"
               onClick={() => setShowWelcomeGuide(true)}
@@ -332,7 +331,10 @@ export function TenantReservationActionPanel({ id, res, onRefetch }: Props) {
             </button>
           )}
 
-          {/* ── OWNER-READY ──────────────────────────────────────────────── */}
+          {/* Les actions ordinaires ne sont accessibles QUE si AUCUN litige n'est actif */}
+          {!res.litige && statut !== 'DISPUTED' && (
+            <>
+              {/* ── OWNER-READY ──────────────────────────────────────────────── */}
 
           {!hasTenantCheckin && subState === 'owner-ready' && (
             <>
@@ -539,17 +541,19 @@ export function TenantReservationActionPanel({ id, res, onRefetch }: Props) {
 
           {/* ── Annulation ───────────────────────────────────────────────── */}
 
-          {statut === 'CONFIRMED' && !hasTenantCheckin && (
-            <div className="border-t border-border pt-4">
-              <button
-                type="button"
-                onClick={() => { setErrorMsg(null); setShowCancelModal(true); }}
-                className="inline-flex items-center gap-2 rounded-pill border border-error-200 bg-error-50/60 hover:bg-error-50 hover:border-error-300 px-4 py-2.5 text-xs font-semibold text-error-600 transition-colors"
-              >
-                <X className="h-3.5 w-3.5 text-error-600" aria-hidden="true" />
-                Annuler la réservation
-              </button>
-            </div>
+              {statut === 'CONFIRMED' && !hasTenantCheckin && (
+                <div className="border-t border-border pt-4">
+                  <button
+                    type="button"
+                    onClick={() => { setErrorMsg(null); setShowCancelModal(true); }}
+                    className="inline-flex items-center gap-2 rounded-pill border border-error-200 bg-error-50/60 hover:bg-error-50 hover:border-error-300 px-4 py-2.5 text-xs font-semibold text-error-600 transition-colors"
+                  >
+                    <X className="h-3.5 w-3.5 text-error-600" aria-hidden="true" />
+                    Annuler la réservation
+                  </button>
+                </div>
+              )}
+            </>
           )}
         </div>
 

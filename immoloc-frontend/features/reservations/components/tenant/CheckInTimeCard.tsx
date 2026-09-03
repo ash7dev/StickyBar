@@ -57,8 +57,8 @@ export function CheckInTimeCard({ res, heureDebut, heureFin, supportTel }: Props
      lecture de `res.logement.adresse` plus bas fait planter la page. */
   if (!res.confirmeeLe || !res.logement) return null;
 
-  // Une fois le séjour commencé ou terminé (CHECKED_IN, COMPLETED...), la carte d'horaires d'arrivée n'est plus utile
-  const isStartedOrFinished = ['CHECKED_IN', 'COMPLETED', 'TERMINEE', 'ANNULEE', 'CANCELLED', 'REFUNDED'].includes(res.statut);
+  // Une fois le séjour commencé, terminé ou en litige (CHECKED_IN, DISPUTED...), la carte d'horaires d'arrivée n'est plus utile ou doit être masquée
+  const isStartedOrFinished = ['CHECKED_IN', 'COMPLETED', 'TERMINEE', 'ANNULEE', 'CANCELLED', 'REFUNDED', 'DISPUTED'].includes(res.statut) || !!res.litige;
   if (isStartedOrFinished) return null;
 
   const checkIn = resolveTime(res.dateDebut, heureDebut);
