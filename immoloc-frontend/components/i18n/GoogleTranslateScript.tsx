@@ -65,14 +65,38 @@ export function GoogleTranslateScript() {
       return false;
     };
 
+    let intervalId: NodeJS.Timeout | null = null;
     if (!applyTranslation()) {
-      const interval = setInterval(() => {
-        if (applyTranslation()) {
-          clearInterval(interval);
+      intervalId = setInterval(() => {
+        if (applyTranslation() && intervalId) {
+          clearInterval(intervalId);
         }
       }, 200);
-      return () => clearInterval(interval);
     }
+
+    // 4. Observer le DOM pour supprimer activement les iframes et réinitialiser le body.top
+    const observer = new MutationObserver(() => {
+      if (document.body.style.top !== '0px' && document.body.style.top !== '') {
+        document.body.style.top = '0px';
+      }
+      const banner = document.querySelector('.goog-te-banner-frame');
+      if (banner) {
+        banner.remove();
+      }
+      const skiptranslate = document.querySelectorAll('.skiptranslate');
+      skiptranslate.forEach((el) => {
+        if (el.tagName === 'IFRAME') {
+          (el as HTMLElement).style.display = 'none';
+        }
+      });
+    });
+
+    observer.observe(document.body, { attributes: true, childList: true, subtree: true });
+
+    return () => {
+      if (intervalId) clearInterval(intervalId);
+      observer.disconnect();
+    };
   }, [language]);
 
   return (

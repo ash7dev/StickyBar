@@ -43,27 +43,32 @@ export function CurrencyLanguageModal({ isOpen, onClose }: Props) {
 
   if (!isOpen || !mounted) return null;
 
+  const applyGoogleCookie = (lang: LanguageCode) => {
+    const targetCode = lang === 'fr' ? 'fr' : lang === 'en' ? 'en' : 'es';
+    const cookieValue = `/fr/${targetCode}`;
+    document.cookie = `googtrans=${cookieValue}; path=/; domain=${window.location.hostname}`;
+    document.cookie = `googtrans=${cookieValue}; path=/;`;
+  };
+
   const handleSelectCurrency = (code: CurrencyCode) => {
     setCurrency(code);
-    const targetInfo = supportedCurrencies.find((c) => c.code === code);
-    
-    toast.success(
-      `Devise passée en ${targetInfo?.name || code} (${targetInfo?.symbol || ''})`,
-      {
-        description: code === 'USD' || code === 'GBP' || code === 'CAD'
-          ? 'Langue configurée automatiquement sur English 🇬🇧'
-          : 'Langue configurée sur Français 🇫🇷',
-        duration: 3500,
-      }
-    );
+    const targetLang = (code === 'USD' || code === 'GBP' || code === 'CAD') ? 'en' : language;
+    applyGoogleCookie(targetLang);
+
     onClose();
+    setTimeout(() => {
+      window.location.reload();
+    }, 150);
   };
 
   const handleSelectLanguage = (code: LanguageCode) => {
     setLanguage(code);
-    const targetLang = supportedLanguages.find((l) => l.code === code);
-    toast.success(`Langue d’affichage : ${targetLang?.native || code}`, { duration: 3000 });
+    applyGoogleCookie(code);
+
     onClose();
+    setTimeout(() => {
+      window.location.reload();
+    }, 150);
   };
 
   return createPortal(
