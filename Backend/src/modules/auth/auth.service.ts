@@ -407,6 +407,11 @@ export class AuthService {
     if (!utilisateur) throw new NotFoundException('Aucun compte associé à ce numéro');
     if (!utilisateur.actif) throw new UnauthorizedException('Compte désactivé');
 
+    if (this.isFakeOtpEnabled()) {
+      this.logger.log(`OTP mock activé pour la connexion : ${phoneClean}`);
+      return { message: 'Code OTP simulé envoyé par SMS (mode développement)', mocked: true };
+    }
+
     // Rate limiting : max 3 SMS OTP par minute par numéro
     const rlKey = `auth:otp:rl:${phoneClean}`;
     const current = await this.redis.get(rlKey);
@@ -418,8 +423,8 @@ export class AuthService {
 
     const { error } = await this.supabase.getAnon().auth.signInWithOtp({ phone: phoneClean });
     if (error) {
-      this.logger.error(`OTP SMS error: ${error.message}`);
-      throw new BadRequestException("Impossible d'envoyer le SMS. Réessayez dans quelques instants.");
+      this.logger.error(`OTP SMS error (${phoneClean}): ${error.message}`);
+      throw new BadRequestException("Impossible d'envoyer le SMS pour le moment. Veuillez réessayer plus tard ou utiliser la connexion par email.");
     }
 
     return { message: 'Code OTP envoyé par SMS' };
@@ -431,22 +436,29 @@ export class AuthService {
     const phoneClean = normalizePhoneNumber(dto.phone);
     const variants = getPhoneSearchVariants(dto.phone);
 
-    const { data, error } = await this.supabase.getAnon().auth.verifyOtp({
-      phone: phoneClean,
-      token: dto.token,
-      type: 'sms',
-    });
+    let supabaseAuthUserId: string | null = null;
 
-    if (error || !data.session) {
-      throw new UnauthorizedException('Code OTP invalide ou expiré');
+    if (!this.isFakeOtpEnabled()) {
+      const { data, error } = await this.supabase.getAnon().auth.verifyOtp({
+        phone: phoneClean,
+        token: dto.token,
+        type: 'sms',
+      });
+
+      if (error || !data.session) {
+        throw new UnauthorizedException('Code OTP invalide ou expiré');
+      }
+      supabaseAuthUserId = data.session.user.id;
     }
 
     const utilisateur = await this.prisma.utilisateur.findFirst({
       where: { telephone: { in: variants } },
       select: {
         id: true,
+        userId: true,
         prenom: true,
         nom: true,
+        email: true,
         estProprietaire: true,
         phoneVerified: true,
         actif: true,
@@ -468,16 +480,14 @@ export class AuthService {
 
     const tokens = await this.generateTokens({
       id: utilisateur.id,
-      userId: data.session.user.id,
-      email: data.session.user.email ?? '',
-      telephone: dto.phone,
+      userId: supabaseAuthUserId || utilisateur.userId,
+      email: utilisateur.email ?? '',
+      telephone: phoneClean,
       estProprietaire: utilisateur.estProprietaire,
     });
 
     return {
       ...tokens,
-      supabaseAccessToken: data.session.access_token,
-      supabaseRefreshToken: data.session.refresh_token,
       user: {
         id: utilisateur.id,
         prenom: utilisateur.prenom,
