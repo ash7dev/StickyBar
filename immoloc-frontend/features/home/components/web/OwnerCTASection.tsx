@@ -48,7 +48,7 @@ export function OwnerCTASection() {
                 Votre logement dort ?<br />Faites-le travailler.
               </h2>
               <p className="text-xs leading-relaxed text-on-inverse-muted">
-                0% de commission à l’inscription. Vous ne payez que sur les séjours réellement effectués.
+                0% de commission hôte. Vous percevez 100% du prix de nuitée que vous fixez.
               </p>
             </div>
 
@@ -110,7 +110,7 @@ export function OwnerCTASection() {
                 <p className="mt-3 text-lg text-on-inverse">
                   de commission à l’inscription
                   <span className="mt-1 block text-base text-on-inverse-muted">
-                    Vous ne payez que sur les séjours réellement effectués.
+                    Vous percevez 100 % du prix de nuitée que vous fixez, sans aucun frais masqué.
                   </span>
                 </p>
               </div>
