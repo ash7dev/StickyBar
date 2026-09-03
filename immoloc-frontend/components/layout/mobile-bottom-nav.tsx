@@ -19,7 +19,7 @@ const NAV = [
   { href: '/', label: 'Accueil', icon: Home, exact: true },
   { href: '/explorer', label: 'Explorer', icon: Compass, exact: false },
   { href: '/reservations', label: 'Réservations', icon: CalendarDays, exact: false },
-  { href: '/parametres', label: 'Réglages', icon: Settings, exact: false },
+  { href: '/parametres', label: 'Paramètres', icon: Settings, exact: false },
 ] as const;
 
 const VISIBLE_ON = new Set<string>(['/', '/explorer', '/reservations', '/parametres']);
