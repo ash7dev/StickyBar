@@ -1,5 +1,6 @@
 'use client';
 
+import { ArrowUpDown, ChevronDown } from 'lucide-react';
 import type { SearchFilters } from '@/lib/explorer/filters-schema';
 import { TRI_VALUES } from '@/lib/explorer/filters-schema';
 
@@ -9,24 +10,27 @@ interface ResultsHeaderProps {
 }
 
 /**
- * En-tête de résultats avec compte et tri
- * Gère gracieusement les cas 0 résultats, erreurs, etc.
+ * En-tête de résultats ultra-premium avec compte compact et tri chip (1 seule ligne)
  */
 export function ResultsHeader({ total, filters }: ResultsHeaderProps) {
   // Sécurise total
   const count = typeof total === 'number' && total >= 0 ? total : 0;
 
   return (
-    <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-6">
-      {/* Compte de résultats */}
-      <div>
-        <h1 className="text-lg sm:text-xl font-semibold text-forest-900">
+    <div className="flex flex-row items-center justify-between gap-3 mb-4 sm:mb-6">
+      {/* Compte de résultats compact */}
+      <div className="min-w-0 flex-1">
+        <h1 className="font-display text-sm sm:text-lg font-bold text-foreground truncate">
           {count > 0 ? (
             <>
-              {count.toLocaleString('fr-FR')} {count > 1 ? 'logements disponibles' : 'logement disponible'}
-              {filters.ville && (
-                <span className="text-foreground-muted font-normal ml-1">
+              {count.toLocaleString('fr-FR')} {count > 1 ? 'logements' : 'logement'}
+              {filters.ville ? (
+                <span className="text-foreground-muted font-medium ml-1">
                   à {filters.ville}
+                </span>
+              ) : (
+                <span className="text-foreground-muted font-medium ml-1">
+                  disponible{count > 1 ? 's' : ''}
                 </span>
               )}
             </>
@@ -34,7 +38,7 @@ export function ResultsHeader({ total, filters }: ResultsHeaderProps) {
             <>
               0 logement disponible
               {filters.ville && (
-                <span className="text-foreground-muted font-normal ml-1">
+                <span className="text-foreground-muted font-medium ml-1">
                   à {filters.ville}
                 </span>
               )}
@@ -43,34 +47,32 @@ export function ResultsHeader({ total, filters }: ResultsHeaderProps) {
         </h1>
       </div>
 
-      {/* Tri - Visible uniquement si résultats */}
+      {/* Tri Chip Premium — Visible uniquement si résultats */}
       {count > 0 && (
-        <div className="flex items-center gap-2">
-          <label
-            htmlFor="sort-select"
-            className="text-sm font-medium text-foreground-muted whitespace-nowrap"
-          >
-            Trier par
-          </label>
-          <select
-            id="sort-select"
-            value={filters.tri || 'pertinence'}
-            onChange={(e) => {
-              const params = new URLSearchParams(window.location.search);
-              params.set('tri', e.target.value);
-              // Garder page à 1 quand on change le tri
-              params.set('page', '1');
-              window.history.replaceState(null, '', `?${params.toString()}`);
-              window.location.reload(); // Force re-fetch côté serveur
-            }}
-            className="px-3 py-2 text-sm font-medium bg-white border border-border rounded-pill text-forest-900 hover:border-forest-300 focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 transition-colors cursor-pointer"
-          >
-            {TRI_VALUES.map((value) => (
-              <option key={value} value={value}>
-                {getTriLabel(value)}
-              </option>
-            ))}
-          </select>
+        <div className="relative shrink-0">
+          <div className="relative flex items-center">
+            <ArrowUpDown className="pointer-events-none absolute left-3 h-3.5 w-3.5 text-forest-700 dark:text-forest-400" aria-hidden="true" />
+            <select
+              id="sort-select"
+              aria-label="Trier les résultats"
+              value={filters.tri || 'pertinence'}
+              onChange={(e) => {
+                const params = new URLSearchParams(window.location.search);
+                params.set('tri', e.target.value);
+                params.set('page', '1');
+                window.history.replaceState(null, '', `?${params.toString()}`);
+                window.location.reload();
+              }}
+              className="appearance-none rounded-pill border border-border bg-background-card py-1.5 pl-8 pr-7 text-xs font-semibold text-foreground hover:border-forest-400 focus:border-forest-600 focus:outline-none transition-colors cursor-pointer shadow-2xs"
+            >
+              {TRI_VALUES.map((value) => (
+                <option key={value} value={value}>
+                  {getTriLabel(value)}
+                </option>
+              ))}
+            </select>
+            <ChevronDown className="pointer-events-none absolute right-2.5 h-3.5 w-3.5 text-foreground-muted" aria-hidden="true" />
+          </div>
         </div>
       )}
     </div>
@@ -90,3 +92,4 @@ function getTriLabel(value: string): string {
   };
   return labels[value] || value;
 }
+
