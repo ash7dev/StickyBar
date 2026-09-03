@@ -9,6 +9,7 @@ import { PWARegister } from '@/components/pwa-register';
 import { CookieConsentModal } from '@/components/cookies/CookieConsentModal';
 import { InstallAppModal } from '@/components/pwa/InstallAppModal';
 import { KlefAssistantWidget } from '@/components/assistant/KlefAssistantWidget';
+import { ScrollRestorationReset } from '@/components/layout/ScrollRestorationReset';
 import './globals.css';
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -96,6 +97,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
 
         <ThemeProvider defaultMode="light">
           <QueryProvider>
+            <ScrollRestorationReset />
             <NestSessionSync />
             <PWARegister />
 

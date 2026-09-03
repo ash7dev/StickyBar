@@ -392,7 +392,6 @@ export function HeroSection({ listings = [] }: Props) {
                       <MapPin className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-forest-600" />
                       <input
                         type="text"
-                        autoFocus
                         value={place}
                         onChange={(e) => setPlace(e.target.value)}
                         placeholder="Saisissez une ville (Dakar, Saly, Ngor...)"
