@@ -23,13 +23,13 @@ export function useActionGate(): ActionGateState {
   if (!profileCompleted) steps.push('profile');
   if (!phoneVerified) steps.push('phone');
 
+  // Le KYC (Pièce d'identité) est requis lors de la réservation/publication.
+  // Dès le dépôt du document (statut EN_ATTENTE), l'utilisateur est débloqué immédiatement sans attendre la validation manuelle Admin.
   if (statutKyc === 'NON_VERIFIE' || statutKyc === 'REJETE' || statutKyc === 'A_RENOUVELER') {
     steps.push('kyc');
   } else if (statutKyc === 'SUSPENDU') {
     block = 'kyc_suspended';
-  }
-
-  // ── SELFIE DÉSACTIVÉ ──
+  } // ── SELFIE DÉSACTIVÉ ──
   // L'étape selfie est temporairement masquée (mode simulation uniquement)
   // if (statutKyc === 'EN_ATTENTE' && !selfieFaceDetected) {
   //   steps.push('selfie');

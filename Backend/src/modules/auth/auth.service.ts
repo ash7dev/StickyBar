@@ -40,7 +40,7 @@ export class AuthService {
     private readonly redis: RedisService,
     private readonly jwtService: JwtService,
     private readonly configService: ConfigService,
-  ) {}
+  ) { }
 
   private isFakeOtpEnabled() {
     return this.configService.get<string>('AUTH_FAKE_OTP_ENABLED', 'false') === 'true';
@@ -122,7 +122,7 @@ export class AuthService {
 
     const accessToken = this.jwtService.sign(payload);
     const refreshToken = randomUUID();
-    
+
     // Stockage du refresh token dans Redis
     const refreshExpiresIn = this.configService.get<string>('JWT_REFRESH_EXPIRES_IN', '7d');
     // Convertir '7d' ou '15m' en secondes pour Redis (approximation simple)
@@ -815,13 +815,13 @@ export class AuthService {
   async refresh(dto: RefreshDto) {
     const redisKey = `auth:refresh:${dto.refreshToken}`;
     const payloadStr = await this.redis.get(redisKey);
-    
+
     if (!payloadStr) {
       throw new UnauthorizedException('Session expirée ou refresh token invalide');
     }
 
     const payload = JSON.parse(payloadStr);
-    
+
     // Vérifier que l'utilisateur existe toujours et est actif
     const user = await this.prisma.utilisateur.findUnique({
       where: { id: payload.sub },
@@ -853,7 +853,7 @@ export class AuthService {
     } catch (e) {
       this.logger.warn('Échec du décodage du token lors du logout');
     }
-    
+
     return { message: 'Déconnecté avec succès' };
   }
 
@@ -1064,74 +1064,138 @@ export class AuthService {
       },
     });
 
+    if (!utilisateur) {
+      const email = user.email?.trim() || '';
+      const phone = user.phone?.trim() || null;
+      const phoneVariants = phone ? getPhoneSearchVariants(phone) : [];
+
+      const [existingProfileByEmail, existingUserByEmail, existingProfileByPhone, existingUserByPhone] = await Promise.all([
+        email
+          ? this.prisma.profile.findUnique({
+            where: { email },
+            select: { id: true, userId: true },
+          })
+          : null,
+        email
+          ? this.prisma.utilisateur.findUnique({
+            where: { email },
+            select: { id: true, userId: true },
+          })
+          : null,
+        phone
+          ? this.prisma.profile.findFirst({
+            where: { phone: { in: phoneVariants } },
+            select: { id: true, userId: true },
+          })
+          : null,
+        phone
+          ? this.prisma.utilisateur.findFirst({
+            where: { telephone: { in: phoneVariants } },
+            select: { id: true, userId: true },
+          })
+          : null,
+      ]);
+
+      const conflictingUserId =
+        existingProfileByEmail?.userId ||
+        existingUserByEmail?.userId ||
+        existingProfileByPhone?.userId ||
+        existingUserByPhone?.userId;
+
+      if (conflictingUserId && conflictingUserId !== user.id) {
+        const oldUserId = conflictingUserId;
+        const newUserId = user.id;
+        this.logger.warn(`Conflit d'UID détecté pour l'email ${email}. Migration de l'ancien UID [${oldUserId}] vers le nouvel UID Supabase [${newUserId}].`);
+
+        await this.prisma.$transaction(async (tx) => {
+          const oldUser = await tx.utilisateur.findUnique({ where: { userId: oldUserId } });
+          if (oldUser) {
+            await tx.utilisateur.update({
+              where: { userId: oldUserId },
+              data: { userId: newUserId },
+            });
+
+            await tx.pushSubscription.updateMany({
+              where: { userId: oldUserId },
+              data: { userId: newUserId },
+            });
+          }
+
+          const oldProf = await tx.profile.findUnique({ where: { userId: oldUserId } });
+          if (oldProf) {
+            await tx.profile.update({
+              where: { id: oldProf.id },
+              data: { userId: newUserId },
+            });
+          }
+        });
+
+        utilisateur = await this.prisma.utilisateur.findUnique({
+          where: { userId: newUserId },
+          select: {
+            id: true,
+            userId: true,
+            email: true,
+            telephone: true,
+            prenom: true,
+            nom: true,
+            dateNaissance: true,
+            estProprietaire: true,
+            actif: true,
+            profileCompleted: true,
+            phoneVerified: true,
+            statutKyc: true,
+            selfieFaceDetected: true,
+            selfieMatchScore: true,
+            logements: {
+              where: { statut: 'PUBLISHED', archiveLe: null },
+              select: { id: true },
+            },
+          },
+        });
+      }
+
       if (!utilisateur) {
-        const email = user.email?.trim() || '';
-        const phone = user.phone?.trim() || null;
-        const phoneVariants = phone ? getPhoneSearchVariants(phone) : [];
+        const userMetadata = user.user_metadata || {};
+        const emailPrefix = email ? email.split('@')[0] : '';
+        const fullName = userMetadata.full_name || userMetadata.name || emailPrefix || 'Utilisateur';
+        const [prenom, ...nomParts] = fullName.trim().split(' ');
+        const nom = nomParts.join(' ') || prenom || 'Klef';
+        const avatarUrl = userMetadata.avatar_url || userMetadata.picture || null;
 
-        const [existingProfileByEmail, existingUserByEmail, existingProfileByPhone, existingUserByPhone] = await Promise.all([
-          email
-            ? this.prisma.profile.findUnique({
-                where: { email },
-                select: { id: true, userId: true },
-              })
-            : null,
-          email
-            ? this.prisma.utilisateur.findUnique({
-                where: { email },
-                select: { id: true, userId: true },
-              })
-            : null,
-          phone
-            ? this.prisma.profile.findFirst({
-                where: { phone: { in: phoneVariants } },
-                select: { id: true, userId: true },
-              })
-            : null,
-          phone
-            ? this.prisma.utilisateur.findFirst({
-                where: { telephone: { in: phoneVariants } },
-                select: { id: true, userId: true },
-              })
-            : null,
-        ]);
+        this.logger.log(`Création automatique de l'utilisateur Google: ${user.id}, nom: ${fullName}, avatar: ${avatarUrl}`);
 
-        const conflictingUserId =
-          existingProfileByEmail?.userId ||
-          existingUserByEmail?.userId ||
-          existingProfileByPhone?.userId ||
-          existingUserByPhone?.userId;
+        const codeParrainage = await this.generateUniqueReferralCode(prenom || emailPrefix || 'Utilisateur');
 
-        if (conflictingUserId && conflictingUserId !== user.id) {
-          const oldUserId = conflictingUserId;
-          const newUserId = user.id;
-          this.logger.warn(`Conflit d'UID détecté pour l'email ${email}. Migration de l'ancien UID [${oldUserId}] vers le nouvel UID Supabase [${newUserId}].`);
-          
-          await this.prisma.$transaction(async (tx) => {
-            const oldUser = await tx.utilisateur.findUnique({ where: { userId: oldUserId } });
-            if (oldUser) {
-              await tx.utilisateur.update({
-                where: { userId: oldUserId },
-                data: { userId: newUserId },
-              });
-              
-              await tx.pushSubscription.updateMany({
-                where: { userId: oldUserId },
-                data: { userId: newUserId },
-              });
-            }
-
-            const oldProf = await tx.profile.findUnique({ where: { userId: oldUserId } });
-            if (oldProf) {
-              await tx.profile.update({
-                where: { id: oldProf.id },
-                data: { userId: newUserId },
-              });
-            }
+        const createdUser = await this.prisma.$transaction(async (tx) => {
+          await tx.profile.upsert({
+            where: { userId: user.id },
+            create: {
+              userId: user.id,
+              email,
+              phone,
+            },
+            update: {
+              email,
+              phone,
+            },
           });
 
-          utilisateur = await this.prisma.utilisateur.findUnique({
-            where: { userId: newUserId },
+          return tx.utilisateur.create({
+            data: {
+              userId: user.id,
+              email,
+              telephone: phone || `google_${user.id}`,
+              prenom: prenom || 'Utilisateur',
+              nom: nom || 'Google',
+              dateNaissance: null,
+              estProprietaire: false,
+              actif: true,
+              profileCompleted: false,
+              phoneVerified: false,
+              avatarUrl: avatarUrl,
+              codeParrainage,
+            },
             select: {
               id: true,
               userId: true,
@@ -1153,79 +1217,15 @@ export class AuthService {
               },
             },
           });
-        }
+        });
 
-        if (!utilisateur) {
-          const userMetadata = user.user_metadata || {};
-          const emailPrefix = email ? email.split('@')[0] : '';
-          const fullName = userMetadata.full_name || userMetadata.name || emailPrefix || 'Utilisateur';
-          const [prenom, ...nomParts] = fullName.trim().split(' ');
-          const nom = nomParts.join(' ') || prenom || 'Klef';
-          const avatarUrl = userMetadata.avatar_url || userMetadata.picture || null;
-
-          this.logger.log(`Création automatique de l'utilisateur Google: ${user.id}, nom: ${fullName}, avatar: ${avatarUrl}`);
-
-          const codeParrainage = await this.generateUniqueReferralCode(prenom || emailPrefix || 'Utilisateur');
-
-          const createdUser = await this.prisma.$transaction(async (tx) => {
-            await tx.profile.upsert({
-              where: { userId: user.id },
-              create: {
-                userId: user.id,
-                email,
-                phone,
-              },
-              update: {
-                email,
-                phone,
-              },
-            });
-
-            return tx.utilisateur.create({
-              data: {
-                userId: user.id,
-                email,
-                telephone: phone || `google_${user.id}`,
-                prenom: prenom || 'Utilisateur',
-                nom: nom || 'Google',
-                dateNaissance: null,
-                estProprietaire: false,
-                actif: true,
-                profileCompleted: false,
-                phoneVerified: false,
-                avatarUrl: avatarUrl,
-                codeParrainage,
-              },
-              select: {
-                id: true,
-                userId: true,
-                email: true,
-                telephone: true,
-                prenom: true,
-                nom: true,
-                dateNaissance: true,
-                estProprietaire: true,
-                actif: true,
-                profileCompleted: true,
-                phoneVerified: true,
-                statutKyc: true,
-                selfieFaceDetected: true,
-                selfieMatchScore: true,
-                logements: {
-                  where: { statut: 'PUBLISHED', archiveLe: null },
-                  select: { id: true },
-                },
-              },
-            });
-          });
-
-          utilisateur = createdUser;
-        }
+        utilisateur = createdUser;
       }
+    }
 
-      if (!utilisateur) {
-        throw new UnauthorizedException('Impossible de créer ou récupérer l\'utilisateur');
-      }
+    if (!utilisateur) {
+      throw new UnauthorizedException('Impossible de créer ou récupérer l\'utilisateur');
+    }
 
     if (!utilisateur.actif) {
       throw new UnauthorizedException('Compte désactivé');

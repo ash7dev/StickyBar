@@ -40,6 +40,7 @@ export function useGatedAction(onReady: () => void) {
     if (!profileCompleted) steps.push('profile');
     if (!phoneVerified) steps.push('phone');
 
+    // Le KYC (Pièce d'identité) est requis pour tous. Dès le dépôt (EN_ATTENTE), l'action est débloquée.
     if (statutKyc === 'NON_VERIFIE' || statutKyc === 'REJETE' || statutKyc === 'A_RENOUVELER') {
       steps.push('kyc');
     } else if (statutKyc === 'SUSPENDU') {
