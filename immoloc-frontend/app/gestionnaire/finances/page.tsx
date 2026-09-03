@@ -24,7 +24,7 @@ export default function GestionnaireFinancesPage() {
   // Récupération des données financières du dashboard conciergerie
   const { data, isLoading, error } = useQuery<any>({
     queryKey: ['gestionnaire', 'dashboard'],
-    queryFn: () => nestFetch<any>(NEST_API.GESTIONNAIRE.DASHBOARD),
+    queryFn: () => nestFetch<any>(NEST_API.GESTIONNAIRE.DASHBOARD()),
   });
 
   const kpis = data?.kpis;

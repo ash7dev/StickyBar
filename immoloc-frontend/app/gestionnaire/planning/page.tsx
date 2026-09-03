@@ -39,7 +39,7 @@ export default function GestionnairePlanningPage() {
   // 3. Récupération des données du dashboard conciergerie (KPIs)
   const { data: dashboardData, isLoading: loadingDashboard, error: errorDashboard } = useQuery<any>({
     queryKey: ['gestionnaire', 'dashboard'],
-    queryFn: () => nestFetch<any>(NEST_API.GESTIONNAIRE.DASHBOARD),
+    queryFn: () => nestFetch<any>(NEST_API.GESTIONNAIRE.DASHBOARD()),
   });
 
   const handleFilterChange = (updated: Partial<PlanningFilterOptions>) => {
