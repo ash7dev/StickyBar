@@ -42,37 +42,35 @@ export function PersonalizationTrigger({ className }: Props) {
       <div
         key={syncKey}
         className={cn(
-          'flex flex-wrap items-center justify-between gap-3 rounded-card border border-border bg-background-card p-4 shadow-sm sm:p-5',
+          'flex flex-nowrap items-center justify-between gap-2.5 sm:gap-4 rounded-card border border-border bg-background-card p-3 sm:p-4 shadow-sm',
           className,
         )}
       >
-        <div className="flex min-w-0 items-center gap-3.5">
-          <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-inner border border-forest-100 bg-forest-50 text-forest-700">
-            <Sparkles className="h-5 w-5" aria-hidden="true" />
+        <div className="flex min-w-0 items-center gap-2.5 sm:gap-3.5">
+          <span className="flex h-9 w-9 sm:h-10 sm:w-10 shrink-0 items-center justify-center rounded-inner border border-forest-100 bg-forest-50 text-forest-700">
+            <Sparkles className="h-4 w-4 sm:h-5 sm:w-5" aria-hidden="true" />
           </span>
 
           <div className="min-w-0">
-            <div className="flex flex-wrap items-center gap-2">
-              <h2 className="font-display text-sm font-semibold text-foreground sm:text-base">
+            <div className="flex items-center gap-1.5 sm:gap-2">
+              <h2 className="font-display text-xs sm:text-base font-semibold text-foreground truncate">
                 Votre fil personnalisé
               </h2>
               {hasActivePreferences && (
-                <span className="inline-flex items-center gap-1 rounded-pill border border-forest-100 bg-forest-50 px-2.5 py-0.5 text-xs font-semibold text-forest-700">
-                  <span className="tabular-nums">{count}</span> filtre{count > 1 ? 's' : ''}
+                <span className="inline-flex shrink-0 items-center gap-1 rounded-pill border border-forest-100 bg-forest-50 px-2 py-0.5 text-[10px] sm:text-xs font-semibold text-forest-700">
+                  <span className="tabular-nums">{count}</span>
                 </span>
               )}
             </div>
 
-            {/* `join(', ')` sur huit entrées produisait une ligne tronquée en
-               plein milieu d'un nom de zone. */}
-            <p className="mt-0.5 truncate text-xs text-foreground-muted">
+            <p className="mt-0.5 truncate text-[11px] sm:text-xs text-foreground-muted">
               {hasActivePreferences ? (
                 <>
                   {selection.slice(0, 3).join(', ')}
                   {count > 3 && ` et ${count - 3} autre${count - 3 > 1 ? 's' : ''}`}
                 </>
               ) : (
-                'Choisissez vos zones et vos types de logement préférés.'
+                'Choisissez vos zones et logements préférés'
               )}
             </p>
           </div>
@@ -81,10 +79,10 @@ export function PersonalizationTrigger({ className }: Props) {
         <button
           type="button"
           onClick={() => setIsOpen(true)}
-          className="inline-flex shrink-0 items-center gap-2 rounded-pill border border-border bg-background-alt px-4 py-2.5 text-sm font-semibold text-foreground transition-colors hover:border-border-hover hover:bg-background-card"
+          className="inline-flex shrink-0 items-center gap-1.5 sm:gap-2 rounded-pill border border-border bg-background-alt px-3 py-1.5 sm:px-4 sm:py-2 text-xs sm:text-sm font-semibold text-foreground transition-colors hover:border-border-hover hover:bg-background-card"
         >
-          <SlidersHorizontal className="h-3.5 w-3.5" aria-hidden="true" />
-          {hasActivePreferences ? 'Modifier' : 'Personnaliser'}
+          <SlidersHorizontal className="h-3.5 w-3.5 shrink-0" aria-hidden="true" />
+          <span>{hasActivePreferences ? 'Modifier' : 'Personnaliser'}</span>
         </button>
       </div>
 
