@@ -35,14 +35,14 @@ export class DashboardService {
         _sum: { netProprietaire: true },
         _count: { id: true },
       }),
-      // 2b. Montant en séquestre pour réservations DEPOSIT (acomptes payés en ligne AVANT check-in)
-      this.prisma.reservation.aggregate({
+      // 2b. Montant net en séquestre pour l'hôte sur les réservations DEPOSIT (acompte en ligne moins commission Klef)
+      this.prisma.reservation.findMany({
         where: {
           proprietaireId: ownerId,
           typePaiement: 'DEPOSIT',
           statut: { in: [StatutReservation.PAID, StatutReservation.CONFIRMED] }
         },
-        _sum: { montantAcompte: true }
+        select: { montantAcompte: true, montantCommission: true }
       }),
       // 2c. Montant en séquestre pour réservations FULL (100% payé en ligne AVANT check-in)
       this.prisma.reservation.aggregate({
@@ -84,7 +84,11 @@ export class DashboardService {
       }),
     ]);
 
-    const pendingAmount = Number(pendingDeposit._sum.montantAcompte || 0) + Number(pendingFull._sum.netProprietaire || 0);
+    const netDepositAmount = (pendingDeposit as any[]).reduce(
+      (sum, r) => sum + Math.max(0, Number(r.montantAcompte || 0) - Number(r.montantCommission || 0)),
+      0,
+    );
+    const pendingAmount = netDepositAmount + Number(pendingFull._sum.netProprietaire || 0);
 
     // Retraits en cours et calcul du solde retirable propre à l'activité hôte
     let processingWithdrawals = 0;
