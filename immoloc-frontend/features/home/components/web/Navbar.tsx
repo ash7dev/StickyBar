@@ -19,6 +19,8 @@ import {
 import { useIsAuthenticated, useRoleStore } from '@/stores/role.store';
 import { useAuth } from '@/features/auth/hooks/use-auth';
 import { useSwitchRole } from '@/features/auth/hooks/use-switch-role';
+import { useGatedAction } from '@/features/gate/hooks/use-gated-action';
+import { ActionGateModal } from '@/features/gate/components/ActionGateModal';
 import { createClient } from '@/lib/supabase/client';
 import { MobileBottomNav } from '@/components/layout/mobile-bottom-nav';
 import { CurrencySelector } from '@/components/layout/currency-selector';
@@ -82,12 +84,22 @@ export function Navbar() {
     };
   }, []);
 
+  const goToPublier = useCallback(() => {
+    if (activeRole === 'PROPRIETAIRE' || useRoleStore.getState().estProprietaire) {
+      router.push('/dashboard/annonces/nouvelle');
+    } else {
+      router.push('/become-host');
+    }
+  }, [activeRole, router]);
+
+  const { gateState, trigger: triggerPublierGate, complete: completePublierGate, cancel: cancelPublierGate } = useGatedAction(goToPublier);
+
   const handlePublierClick = (e: React.MouseEvent<HTMLAnchorElement>) => {
     e.preventDefault();
     if (!isAuthenticated) {
       router.push(`/login?next=${encodeURIComponent('/become-host')}`);
     } else {
-      router.push('/become-host');
+      triggerPublierGate();
     }
   };
 
@@ -397,6 +409,15 @@ export function Navbar() {
       </nav>
 
       <MobileBottomNav />
+
+      {gateState.open && (
+        <ActionGateModal
+          steps={gateState.steps}
+          block={gateState.block}
+          onComplete={completePublierGate}
+          onCancel={cancelPublierGate}
+        />
+      )}
     </>
   );
 }

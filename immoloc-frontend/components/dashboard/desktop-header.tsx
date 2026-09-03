@@ -10,6 +10,8 @@ import { createClient } from '@/lib/supabase/client';
 import { useRoleStore } from '@/stores/role.store';
 import { useSwitchRole } from '@/features/auth/hooks/use-switch-role';
 import { useCurrentUser } from '@/hooks/use-current-user';
+import { useGatedAction } from '@/features/gate/hooks/use-gated-action';
+import { ActionGateModal } from '@/features/gate/components/ActionGateModal';
 import { cn } from '@/lib/utils/cn';
 
 const PAGE_TITLES: Array<[string, string]> = [
@@ -131,6 +133,12 @@ export function DesktopHeader({ onMenuToggle, unreadCount = 0 }: DesktopHeaderPr
 
   const roleCible = activeRole === 'PROPRIETAIRE' ? 'LOCATAIRE' : 'PROPRIETAIRE';
   const roleLabel = roleCible === 'LOCATAIRE' ? 'Passer en mode locataire' : 'Passer en mode propriétaire';
+  const goToNouvelleAnnonce = useCallback(() => {
+    router.push('/dashboard/annonces/nouvelle');
+  }, [router]);
+
+  const { gateState, trigger: triggerCreateGate, complete: completeCreateGate, cancel: cancelCreateGate } =
+    useGatedAction(goToNouvelleAnnonce);
 
   return (
     <header className="sticky top-0 z-40 border-b border-border bg-background-card/95 text-foreground backdrop-blur-md">
@@ -149,11 +157,6 @@ export function DesktopHeader({ onMenuToggle, unreadCount = 0 }: DesktopHeaderPr
               <Menu className="h-5 w-5" />
             </button>
 
-            {/* Le titre de page redevient le <h1>.
-                L'ancienne version remplaçait entièrement le titre par
-                « Bonjour, Prénom » dès que l'utilisateur était chargé : sur
-                chaque page du dashboard, le seul <h1> disait la même chose et
-                l'utilisateur ne savait plus où il se trouvait. */}
             <div className="min-w-0">
               {prenom && (
                 <p className="truncate text-xs text-foreground-muted">
@@ -214,9 +217,6 @@ export function DesktopHeader({ onMenuToggle, unreadCount = 0 }: DesktopHeaderPr
                 className="relative flex h-10 w-10 items-center justify-center rounded-inner border border-border bg-background-alt text-foreground transition-colors hover:bg-background-card"
               >
                 <Bell className="h-4 w-4" aria-hidden="true" />
-                {/* La pastille était affichée en permanence, juste au-dessus
-                    d'un panneau qui annonçait « aucune notification non lue ».
-                    Elle n'apparaît plus que s'il y en a vraiment. */}
                 {unreadCount > 0 && (
                   <span
                     aria-hidden="true"
@@ -262,14 +262,15 @@ export function DesktopHeader({ onMenuToggle, unreadCount = 0 }: DesktopHeaderPr
             </div>
 
             {/* ★ Le seul aplat lime du header : l'action de création. */}
-            <Link
-              href="/dashboard/annonces/nouvelle"
+            <button
+              type="button"
+              onClick={triggerCreateGate}
               className="inline-flex h-10 items-center gap-2 rounded-pill bg-action px-4 text-xs font-semibold text-on-action shadow-action transition-[background-color,box-shadow,transform] hover:bg-action-hover hover:shadow-action-hover active:scale-[0.98]"
             >
               <Plus className="h-4 w-4" aria-hidden="true" />
               <span className="hidden sm:inline">Créer une annonce</span>
               <span className="sm:hidden">Créer</span>
-            </Link>
+            </button>
 
             {/* Compte */}
             <div ref={accountRef} className="relative">
@@ -348,6 +349,15 @@ export function DesktopHeader({ onMenuToggle, unreadCount = 0 }: DesktopHeaderPr
           </div>
         </div>
       </div>
+
+      {gateState.open && (
+        <ActionGateModal
+          steps={gateState.steps}
+          block={gateState.block}
+          onComplete={completeCreateGate}
+          onCancel={cancelCreateGate}
+        />
+      )}
     </header>
   );
 }
