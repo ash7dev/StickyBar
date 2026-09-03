@@ -58,10 +58,10 @@ export class DisputesService {
         throw new UnprocessableEntityException('Litige non autorisé pour ce statut de réservation');
       }
     } else {
-      // Le propriétaire peut ouvrir un litige si CHECKED_IN ou COMPLETED
-      const autorise = (([StatutReservation.CHECKED_IN, StatutReservation.COMPLETED] as StatutReservation[]).includes(reservation.statut));
+      // Le propriétaire ou gestionnaire peut ouvrir un litige si CONFIRMED, CHECKED_IN ou COMPLETED
+      const autorise = (([StatutReservation.CONFIRMED, StatutReservation.CHECKED_IN, StatutReservation.COMPLETED] as StatutReservation[]).includes(reservation.statut));
       if (!autorise) {
-        throw new UnprocessableEntityException('Le propriétaire ne peut ouvrir un litige que sur une réservation en séjour ou terminée');
+        throw new UnprocessableEntityException('Le propriétaire ne peut ouvrir un litige que sur une réservation confirmée, en séjour ou terminée');
       }
     }
 
