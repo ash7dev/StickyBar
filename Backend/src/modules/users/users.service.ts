@@ -1,7 +1,8 @@
-import { Injectable, NotFoundException, Logger } from '@nestjs/common';
+import { Injectable, NotFoundException, BadRequestException, ConflictException, Logger } from '@nestjs/common';
 import { PrismaService } from '@infrastructure/prisma/prisma.service';
 import { SupabaseService } from '@shared/supabase/supabase.service';
 import { UpdateProfileDto } from './dto/update-user.dto';
+import { UpdateSecurityDto } from './dto/update-security.dto';
 
 @Injectable()
 export class UsersService {
@@ -181,6 +182,90 @@ export class UsersService {
     });
 
     return updated;
+  }
+
+  /**
+   * Définir ou mettre à jour les identifiants de sécurité (Email & Mot de passe)
+   */
+  async updateSecurity(userId: string, dto: UpdateSecurityDto) {
+    const utilisateur = await this.prisma.utilisateur.findUnique({
+      where: { id: userId },
+      select: { id: true, userId: true, email: true, telephone: true, prenom: true, nom: true },
+    });
+
+    if (!utilisateur) {
+      throw new NotFoundException('Utilisateur introuvable');
+    }
+
+    if (!dto.email && !dto.password) {
+      throw new BadRequestException('Veuillez fournir un email ou un mot de passe à mettre à jour.');
+    }
+
+    const cleanEmail = dto.email ? dto.email.trim().toLowerCase() : undefined;
+
+    // 1. Contrôle strict d'unicité de l'email si un nouvel email est soumis
+    if (cleanEmail && cleanEmail !== utilisateur.email?.toLowerCase()) {
+      const existingUser = await this.prisma.utilisateur.findUnique({
+        where: { email: cleanEmail },
+        select: { id: true },
+      });
+
+      if (existingUser && existingUser.id !== userId) {
+        throw new ConflictException('Cette adresse email est déjà associée à un autre compte Klef.');
+      }
+    }
+
+    // 2. Mise à jour dans Supabase Auth
+    try {
+      const supabaseUpdates: { email?: string; password?: string; email_confirm?: boolean } = {};
+      if (cleanEmail) supabaseUpdates.email = cleanEmail;
+      if (dto.password) supabaseUpdates.password = dto.password;
+
+      const { error } = await this.supabase.getAdmin().auth.admin.updateUserById(
+        utilisateur.userId,
+        supabaseUpdates,
+      );
+
+      if (error) {
+        this.logger.error(`Erreur mise à jour Supabase Auth security: ${error.message}`);
+        throw new BadRequestException(`Échec de la mise à jour des identifiants : ${error.message}`);
+      }
+    } catch (e: any) {
+      if (e instanceof ConflictException || e instanceof BadRequestException) throw e;
+      this.logger.error(`Exception mise à jour Supabase Auth: ${e?.message}`);
+      throw new BadRequestException("Impossible d'enregistrer vos accès dans le service d'authentification.");
+    }
+
+    // 3. Synchronisation en base PostgreSQL (Prisma transaction)
+    await this.prisma.$transaction([
+      this.prisma.utilisateur.update({
+        where: { id: userId },
+        data: {
+          ...(cleanEmail && { email: cleanEmail }),
+        },
+      }),
+      this.prisma.profile.upsert({
+        where: { userId: utilisateur.userId },
+        create: {
+          userId: utilisateur.userId,
+          email: cleanEmail || utilisateur.email || '',
+          phone: utilisateur.telephone || '',
+        },
+        update: {
+          ...(cleanEmail && { email: cleanEmail }),
+        },
+      }),
+    ]);
+
+    this.logger.log(`Identifiants de sécurité mis à jour pour l'utilisateur ${userId}`);
+
+    return {
+      success: true,
+      emailUpdated: !!cleanEmail,
+      passwordUpdated: !!dto.password,
+      email: cleanEmail || utilisateur.email,
+      message: 'Vos identifiants de sécurité ont été mis à jour avec succès.',
+    };
   }
 
   /**

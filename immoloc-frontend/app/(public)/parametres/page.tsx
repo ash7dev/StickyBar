@@ -14,6 +14,7 @@ import type { UserProfile } from '@/features/profile/types';
 import { TenantReservationsGuard } from '@/features/reservations/components/tenant/TenantReservationsGuard';
 import { ProfileHero }        from '@/features/profile/components/ProfileHero';
 import { ProfileInfoCard }    from '@/features/profile/components/ProfileInfoCard';
+import { ProfileSecurityCard }from '@/features/profile/components/ProfileSecurityCard';
 import { ProfileKycCard }     from '@/features/profile/components/ProfileKycCard';
 import { ProfileActionsCard } from '@/features/profile/components/ProfileActionsCard';
 import { ParametresSkeleton } from '@/features/profile/components/ParametresSkeleton';
@@ -109,6 +110,10 @@ function ParametresContent() {
               onKycClick={() => setGateOpen(true)}
             />
             <div className="lg:col-span-2 space-y-6">
+              <ProfileSecurityCard
+                user={user}
+                onUpdated={() => queryClient.invalidateQueries({ queryKey: ['users', 'me'] })}
+              />
               <TerangaClubWidgetCard />
               <PushNotificationWidget userId={user.id} />
               <ProfileActionsCard user={user} />

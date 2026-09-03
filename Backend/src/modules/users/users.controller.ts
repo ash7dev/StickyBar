@@ -6,6 +6,7 @@ import { CurrentUser } from '@shared/decorators/current-user.decorator';
 import { AuthUser } from '@shared/types/jwt-payload.type';
 import { UsersService } from './users.service';
 import { UpdateProfileDto } from './dto/update-user.dto';
+import { UpdateSecurityDto } from './dto/update-security.dto';
 
 @ApiTags('Users')
 @UseGuards(JwtAuthGuard)
@@ -31,6 +32,12 @@ export class UsersController {
   @ApiOperation({ summary: 'Mettre à jour le profil (prénom, nom) et marquer profileCompleted' })
   updateProfile(@CurrentUser() user: AuthUser, @Body() dto: UpdateProfileDto) {
     return this.usersService.updateProfile(user.id, dto);
+  }
+
+  @Patch('me/security')
+  @ApiOperation({ summary: 'Définir ou mettre à jour l\'email et le mot de passe du compte' })
+  updateSecurity(@CurrentUser() user: AuthUser, @Body() dto: UpdateSecurityDto) {
+    return this.usersService.updateSecurity(user.id, dto);
   }
 
   @Delete('me')

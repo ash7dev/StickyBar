@@ -75,6 +75,7 @@ export const NEST_API = {
   },
   USERS: {
     ME: `${BASE}/users/me`,
+    ME_SECURITY: `${BASE}/users/me/security`,
     DELETE_ME: `${BASE}/users/me`,
     OWNER_PROFILE: (id: string) => `${BASE}/users/owner-profile/${id}`,
     PREFERENCES: `${BASE}/users/preferences`,
