@@ -460,30 +460,43 @@ export class AuthService {
         nom: true,
         email: true,
         estProprietaire: true,
+        isShadowAccount: true,
         phoneVerified: true,
         actif: true,
         profileCompleted: true,
         statutKyc: true,
+        logements: {
+          where: { archiveLe: null },
+          select: { id: true },
+        },
       },
     });
 
     if (!utilisateur) throw new NotFoundException('Utilisateur introuvable');
     if (!utilisateur.actif) throw new UnauthorizedException('Compte désactivé');
 
-    // Marquer le téléphone comme vérifié si ce n'est pas encore fait
-    if (!utilisateur.phoneVerified) {
+    // Marquer le téléphone comme vérifié et réclamer le compte s'il s'agissait d'un compte d'ombre
+    if (!utilisateur.phoneVerified || utilisateur.isShadowAccount) {
       await this.prisma.utilisateur.update({
         where: { id: utilisateur.id },
-        data: { phoneVerified: true },
+        data: {
+          phoneVerified: true,
+          ...(utilisateur.isShadowAccount && { isShadowAccount: false }),
+        },
       });
     }
+
+    const hasAnnonce = (utilisateur.logements?.length ?? 0) > 0;
+    const estProprietaire = utilisateur.estProprietaire || hasAnnonce;
+    const activeRole = estProprietaire ? Role.PROPRIETAIRE : Role.LOCATAIRE;
 
     const tokens = await this.generateTokens({
       id: utilisateur.id,
       userId: supabaseAuthUserId || utilisateur.userId,
       email: utilisateur.email ?? '',
       telephone: phoneClean,
-      estProprietaire: utilisateur.estProprietaire,
+      estProprietaire,
+      activeRole,
     });
 
     return {
@@ -492,9 +505,13 @@ export class AuthService {
         id: utilisateur.id,
         prenom: utilisateur.prenom,
         nom: utilisateur.nom,
-        activeRole: utilisateur.estProprietaire ? Role.PROPRIETAIRE : Role.LOCATAIRE,
+        email: utilisateur.email,
+        telephone: phoneClean,
+        activeRole,
+        estProprietaire,
+        hasAnnonce,
         profileCompleted: utilisateur.profileCompleted,
-        phoneVerified: utilisateur.phoneVerified,
+        phoneVerified: true,
         statutKyc: utilisateur.statutKyc,
       },
     };
@@ -913,15 +930,43 @@ export class AuthService {
   async switchRole(userId: string, _supabaseUserId: string, dto: SwitchRoleDto) {
     const utilisateur = await this.prisma.utilisateur.findUnique({
       where: { id: userId },
-      select: { id: true, userId: true, email: true, telephone: true, estProprietaire: true },
+      select: {
+        id: true,
+        userId: true,
+        email: true,
+        telephone: true,
+        estProprietaire: true,
+        isShadowAccount: true,
+        logements: { select: { id: true } },
+      },
     });
     if (!utilisateur) throw new NotFoundException('Utilisateur introuvable');
 
-    if (dto.role === Role.PROPRIETAIRE && !utilisateur.estProprietaire) {
+    const hasLogements = (utilisateur.logements?.length ?? 0) > 0;
+    const isOwner = utilisateur.estProprietaire || hasLogements || utilisateur.isShadowAccount;
+
+    if (dto.role === Role.PROPRIETAIRE && !isOwner) {
       throw new BadRequestException("Vous n'êtes pas encore enregistré comme propriétaire");
     }
 
-    const tokens = await this.generateTokens({ ...utilisateur, activeRole: dto.role as Role });
+    if (isOwner && (!utilisateur.estProprietaire || utilisateur.isShadowAccount)) {
+      await this.prisma.utilisateur.update({
+        where: { id: userId },
+        data: {
+          estProprietaire: true,
+          ...(utilisateur.isShadowAccount && { isShadowAccount: false }),
+        },
+      });
+    }
+
+    const tokens = await this.generateTokens({
+      id: utilisateur.id,
+      userId: utilisateur.userId,
+      email: utilisateur.email,
+      telephone: utilisateur.telephone,
+      estProprietaire: true,
+      activeRole: dto.role as Role,
+    });
     return { ...tokens, activeRole: dto.role };
   }
 
@@ -1022,6 +1067,7 @@ export class AuthService {
       if (!utilisateur) {
         const email = user.email?.trim() || '';
         const phone = user.phone?.trim() || null;
+        const phoneVariants = phone ? getPhoneSearchVariants(phone) : [];
 
         const [existingProfileByEmail, existingUserByEmail, existingProfileByPhone, existingUserByPhone] = await Promise.all([
           email
@@ -1037,14 +1083,14 @@ export class AuthService {
               })
             : null,
           phone
-            ? this.prisma.profile.findUnique({
-                where: { phone },
+            ? this.prisma.profile.findFirst({
+                where: { phone: { in: phoneVariants } },
                 select: { id: true, userId: true },
               })
             : null,
           phone
-            ? this.prisma.utilisateur.findUnique({
-                where: { telephone: phone },
+            ? this.prisma.utilisateur.findFirst({
+                where: { telephone: { in: phoneVariants } },
                 select: { id: true, userId: true },
               })
             : null,
