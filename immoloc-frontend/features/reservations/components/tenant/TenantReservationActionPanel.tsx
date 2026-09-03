@@ -658,10 +658,12 @@ export function TenantReservationActionPanel({ id, res, onRefetch }: Props) {
               <textarea
                 id="tenant-cancel-reason"
                 rows={3}
+                autoFocus
                 value={cancelReason}
                 onChange={(e) => setCancelReason(e.target.value)}
+                onFocus={(e) => e.target.scrollIntoView({ block: 'center', behavior: 'smooth' })}
                 placeholder="Ex : je ne pourrai finalement pas voyager à ces dates."
-                className="w-full resize-none rounded-field border border-border bg-background px-4 py-3 text-foreground placeholder:text-foreground-faint focus:border-forest-500 focus:outline-none"
+                className="w-full resize-none rounded-xl border border-border bg-white p-3 text-sm font-medium text-foreground placeholder:text-foreground-faint focus:border-forest-600 focus:bg-white focus:outline-none focus:ring-2 focus:ring-forest-500/20"
               />
               <p className="mt-1.5 text-xs text-foreground-muted">
                 Minimum {MOTIF_MIN} caractères · {cancelReason.trim().length} saisis

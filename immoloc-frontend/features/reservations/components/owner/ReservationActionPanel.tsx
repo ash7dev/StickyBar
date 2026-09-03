@@ -146,7 +146,7 @@ function Modal({
 
   return (
     <div
-      className="fixed inset-0 z-100 flex items-end justify-center bg-forest-950/70 backdrop-blur-sm sm:items-center sm:p-4"
+      className="fixed inset-0 z-[9999] flex items-center justify-center bg-forest-950/75 p-3 backdrop-blur-sm sm:p-4"
       onClick={() => dismissible && onClose()}
     >
       <div
@@ -155,9 +155,9 @@ function Modal({
         aria-modal="true"
         aria-labelledby={titleId}
         onClick={(e) => e.stopPropagation()}
-        className="flex max-h-[92vh] w-full flex-col overflow-hidden rounded-t-card border border-border bg-background-card shadow-xl sm:max-w-lg sm:rounded-card"
+        className="flex max-h-[85vh] w-full max-w-lg flex-col overflow-hidden rounded-2xl border border-border bg-background-card shadow-2xl transition-all"
       >
-        <header className="flex shrink-0 items-center justify-between gap-3 border-b border-border px-6 py-5">
+        <header className="flex shrink-0 items-center justify-between gap-3 border-b border-border px-5 py-4 sm:px-6 sm:py-5">
           <h2 id={titleId} className="font-display text-base font-semibold text-foreground">
             {title}
           </h2>
@@ -1430,10 +1430,12 @@ export function ReservationActionPanel({ id, res, onRefetch }: Props) {
               <textarea
                 id="cancel-reason"
                 rows={3}
+                autoFocus
                 value={cancelReason}
                 onChange={(e) => setCancelReason(e.target.value)}
+                onFocus={(e) => e.target.scrollIntoView({ block: 'center', behavior: 'smooth' })}
                 placeholder="Ex : le logement n’est plus disponible à ces dates."
-                className="w-full resize-none rounded-field border border-border bg-background px-4 py-3 text-foreground placeholder:text-foreground-faint focus:border-forest-500 focus:outline-none"
+                className="w-full resize-none rounded-xl border border-border bg-white p-3 text-sm font-medium text-foreground placeholder:text-foreground-faint focus:border-forest-600 focus:bg-white focus:outline-none focus:ring-2 focus:ring-forest-500/20"
               />
               <p className="mt-1.5 text-xs text-foreground-muted">
                 Minimum {MOTIF_MIN} caractères · {cancelReason.trim().length} saisis
