@@ -73,9 +73,9 @@ export class CancelReservationUseCase {
         reservation.statut === StatutReservation.CHECKED_IN;
 
       if (wasConfirmed) {
-        if (diffDays > 7) penaliteProprio = 5000;
-        else if (diffDays >= 2) penaliteProprio = 10000;
-        else penaliteProprio = 20000;
+        if (diffDays > 5) penaliteProprio = 0;
+        else if (diffHours >= 24) penaliteProprio = 2500;
+        else penaliteProprio = 10000;
       } else {
         penaliteProprio = 0;
       }

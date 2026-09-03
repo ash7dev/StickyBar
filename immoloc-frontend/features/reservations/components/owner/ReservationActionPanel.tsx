@@ -24,7 +24,7 @@ const NOSHOW_DELAY_MS = 2 * 60 * 60 * 1000;    // délai avant signalement d'abs
 const MOTIF_MIN = 15;
 const TOTAL_STEPS = 5;
 
-const PENALITES = { early: 5_000, mid: 10_000, late: 20_000 } as const;
+const PENALITES = { early: 0, mid: 2_500, late: 10_000 } as const;
 
 const MOTIFS_LITIGE = [
   { value: 'LOGEMENT_NON_CONFORME', label: 'Logement non conforme à l’annonce' },
@@ -618,7 +618,7 @@ export function ReservationActionPanel({ id, res, onRefetch }: Props) {
 
   const daysToCheckin = (debutMs - now) / 86_400_000;
   const penaliteOwner =
-    daysToCheckin > 7 ? PENALITES.early : daysToCheckin >= 2 ? PENALITES.mid : PENALITES.late;
+    daysToCheckin > 5 ? PENALITES.early : daysToCheckin >= 1 ? PENALITES.mid : PENALITES.late;
 
   const ownerCheckinDone = !!res.checkinProprioLe;
   const ownerCheckoutDone = !!res.checkoutProprioLe;
@@ -1618,7 +1618,7 @@ export function ReservationActionPanel({ id, res, onRefetch }: Props) {
               },
               {
                 icon: AlertTriangle, tone: 'error' as Tone, title: '4. Pénalités d’annulation',
-                body: `Après confirmation : ${PENALITES.early.toLocaleString('fr-FR')} FCFA au-delà de 7 jours, ${PENALITES.mid.toLocaleString('fr-FR')} FCFA entre 2 et 7 jours, ${PENALITES.late.toLocaleString('fr-FR')} FCFA à moins de 48 h. Trois annulations entraînent une suspension automatique.`,
+                body: `Après confirmation : Gratuit (0 FCFA) au-delà de 5 jours, ${PENALITES.mid.toLocaleString('fr-FR')} FCFA entre 24 h et 5 jours, ${PENALITES.late.toLocaleString('fr-FR')} FCFA à moins de 24 h (dernière minute).`,
               },
             ].map(({ icon, tone, title, body }) => (
               <Notice key={title} tone={tone} icon={icon} title={title}>
