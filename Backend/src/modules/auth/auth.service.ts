@@ -892,7 +892,10 @@ export class AuthService {
       }),
       this.prisma.utilisateur.update({
         where: { id: userId },
-        data: { estProprietaire: true },
+        data: {
+          estProprietaire: true,
+          isShadowAccount: false,
+        },
       }),
       // Créer le Wallet seulement s'il n'existe pas
       ...(!utilisateur.wallet
