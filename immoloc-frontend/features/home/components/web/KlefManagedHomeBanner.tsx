@@ -116,7 +116,7 @@ export function KlefManagedHomeBanner() {
               {/* Headline & Description */}
               <div className="space-y-4">
                 <h2
-                  className="font-display text-[clamp(1.75rem,4vw,2.75rem)] font-semibold leading-[1.1] tracking-[-0.025em]"
+                  className="font-display text-[clamp(1.65rem,4vw,2.75rem)] font-semibold leading-[1.15] tracking-[-0.025em]"
                   style={{ color: 'var(--forest-950)' }}
                 >
                   Pas le temps de gérer{' '}
@@ -138,20 +138,71 @@ export function KlefManagedHomeBanner() {
                   </span>
                 </h2>
                 <p
-                  className="max-w-xl text-base leading-relaxed sm:text-lg"
+                  className="max-w-xl text-sm sm:text-lg leading-relaxed"
                   style={{ color: 'var(--foreground-muted)' }}
                 >
                   Déléguez 100% de la gestion locative de vos biens avec{' '}
                   <strong className="font-semibold" style={{ color: 'var(--forest-800)' }}>
                     Klef Managed
                   </strong>
-                  . Nos agents locaux s&apos;occupent de chaque détail sur le terrain pour vous faire
-                  gagner du temps et sécuriser vos revenus.
+                  . Nos agents locaux s&apos;occupent de tout sur le terrain.
                 </p>
+
+                {/* ── Mobile Immediate CTA ────────────────────────────── */}
+                <div className="pt-2 flex flex-col items-stretch gap-2.5 sm:hidden">
+                  <button
+                    type="button"
+                    onClick={() => setIsModalOpen(true)}
+                    className="group flex w-full items-center justify-center gap-2.5 rounded-xl py-3.5 px-5 text-sm font-bold transition-all duration-200 cursor-pointer active:scale-[0.98]"
+                    style={{
+                      background: 'var(--lime-400)',
+                      color: 'var(--forest-800)',
+                      border: '1px solid var(--action-edge)',
+                      boxShadow: '0 6px 20px rgba(211,242,110,0.35)',
+                    }}
+                  >
+                    <span>Demander une prise en charge</span>
+                    <ArrowRight className="h-4 w-4 transition-transform duration-200 group-hover:translate-x-1" />
+                  </button>
+                  <p
+                    className="flex items-center justify-center gap-1.5 text-[11px] font-medium"
+                    style={{ color: 'var(--foreground-muted)' }}
+                  >
+                    <ShieldCheck className="h-3.5 w-3.5 shrink-0" style={{ color: 'var(--forest-600)' }} />
+                    Sans engagement · Réponse sous 24h
+                  </p>
+                </div>
               </div>
 
-              {/* Feature cards — 2×2 dark grid */}
-              <div className="grid grid-cols-1 gap-3.5 sm:grid-cols-2">
+              {/* ── Mobile Micro-Pills (Ultra-compact) ────────────────── */}
+              <div className="grid grid-cols-2 gap-2 sm:hidden pt-1">
+                {FEATURES.map(({ icon: Icon, title }) => (
+                  <div
+                    key={title}
+                    className="flex items-center gap-2 rounded-xl border p-2.5 transition-all"
+                    style={{
+                      background: 'linear-gradient(145deg, var(--forest-900) 0%, var(--forest-950) 100%)',
+                      borderColor: 'rgba(255,255,255,0.08)',
+                    }}
+                  >
+                    <span
+                      className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg"
+                      style={{
+                        background: 'rgba(211,242,110,0.12)',
+                        border: '1px solid rgba(211,242,110,0.2)',
+                      }}
+                    >
+                      <Icon className="h-3.5 w-3.5" style={{ color: 'var(--lime-300)' }} />
+                    </span>
+                    <p className="text-[11px] font-bold leading-tight line-clamp-1" style={{ color: 'var(--neutral-50)' }}>
+                      {title}
+                    </p>
+                  </div>
+                ))}
+              </div>
+
+              {/* ── Desktop/Tablet Full Feature Cards ─────────────────── */}
+              <div className="hidden sm:grid sm:grid-cols-2 gap-3.5">
                 {FEATURES.map(({ icon: Icon, title, desc }, i) => (
                   <div
                     key={title}
@@ -161,7 +212,6 @@ export function KlefManagedHomeBanner() {
                       borderColor: 'rgba(255,255,255,0.06)',
                     }}
                   >
-                    {/* Subtle gradient hover overlay */}
                     <div
                       aria-hidden="true"
                       className="pointer-events-none absolute inset-0 opacity-0 transition-opacity duration-300 group-hover:opacity-100"
@@ -189,7 +239,6 @@ export function KlefManagedHomeBanner() {
                       </div>
                     </div>
 
-                    {/* Step number — subtle watermark */}
                     <span
                       className="absolute bottom-3 right-4 font-mono text-[0.6rem] font-bold tabular-nums"
                       style={{ color: 'rgba(255,255,255,0.08)' }}
@@ -203,8 +252,8 @@ export function KlefManagedHomeBanner() {
 
             {/* ════ RIGHT COLUMN ══════════════════════════════════════ */}
             <div className="lg:col-span-5 flex flex-col justify-end">
-              {/* ── Mobile: simple CTA only ────────────────────────────── */}
-              <div className="flex flex-col items-center gap-3 lg:hidden">
+              {/* ── Mobile: Bottom Action (hidden on mobile now that top CTA exists) ── */}
+              <div className="hidden flex-col items-center gap-3">
                 <button
                   type="button"
                   onClick={() => setIsModalOpen(true)}
