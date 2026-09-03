@@ -16,7 +16,7 @@ export default function TerangaClubPage() {
   const { data, quests, isLoading, isAuthenticated, refetch } = useTerangaClub();
 
   return (
-    <main className="bg-canvas min-h-screen py-8 sm:py-12">
+    <main className="bg-canvas min-h-screen w-full max-w-full overflow-x-hidden py-8 sm:py-12">
       <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 space-y-8">
         {/* Fil d'Ariane / Retour */}
         <div className="flex items-center justify-between">

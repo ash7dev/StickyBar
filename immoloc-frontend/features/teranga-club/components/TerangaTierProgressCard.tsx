@@ -93,7 +93,7 @@ export function TerangaTierProgressCard({ data, isAuthenticated }: Props) {
   }, [currentTier, gmv, sejours, isAuthenticated]);
 
   return (
-    <section className="card space-y-6 p-5 sm:p-8">
+    <section className="card space-y-6 overflow-hidden p-5 sm:p-8">
 
       <header className="flex flex-col justify-between gap-4 border-b border-border pb-4 sm:flex-row sm:items-center">
         <div className="flex min-w-0 items-center gap-3">
@@ -126,7 +126,7 @@ export function TerangaTierProgressCard({ data, isAuthenticated }: Props) {
         {...bindAutoScroll}
         role="list"
         aria-label="Paliers du Teranga Club"
-        className="no-scrollbar -mx-4 flex snap-x snap-mandatory gap-4 overflow-x-auto scroll-smooth px-4 pb-2 sm:mx-0 sm:grid sm:grid-cols-3 sm:px-0"
+        className="no-scrollbar -mx-5 flex snap-x snap-mandatory gap-4 overflow-x-auto scroll-smooth px-5 pb-2 sm:mx-0 sm:grid sm:grid-cols-3 sm:px-0"
       >
         {steps.map(({
           tier, label, icon: Icon, cashback, reqText, idx,

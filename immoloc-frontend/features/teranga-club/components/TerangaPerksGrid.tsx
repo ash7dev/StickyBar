@@ -82,7 +82,7 @@ export function TerangaPerksGrid({ data, isAuthenticated }: Props) {
          `snap-mandatory` masquait la nature de liste aux lecteurs d'écran. */
       role="list"
       aria-label="Avantages du Teranga Club"
-      className="no-scrollbar -mx-4 flex snap-x snap-mandatory gap-4 overflow-x-auto scroll-smooth px-4 pb-2 sm:mx-0 sm:grid sm:grid-cols-3 sm:px-0"
+      className="no-scrollbar flex snap-x snap-mandatory gap-4 overflow-x-auto scroll-smooth pb-2 sm:grid sm:grid-cols-3"
     >
       {perks.map(({ key, icon: Icon, badge, eyebrow, value, description, highlight }) => (
         <div

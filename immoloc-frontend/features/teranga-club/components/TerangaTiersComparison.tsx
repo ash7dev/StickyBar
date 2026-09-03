@@ -67,7 +67,7 @@ export function TerangaTiersComparison({ data }: Props) {
   });
 
   return (
-    <section className="card space-y-6 p-5 sm:p-8">
+    <section className="card space-y-6 overflow-hidden p-5 sm:p-8">
 
       <header className="flex items-center gap-3 border-b border-border pb-4">
         <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-inner border border-gold-200 bg-gold-50 text-gold-700">
@@ -88,7 +88,7 @@ export function TerangaTiersComparison({ data }: Props) {
         {...bindAutoScroll}
         role="list"
         aria-label="Paliers du Teranga Club"
-        className="no-scrollbar -mx-4 flex snap-x snap-mandatory gap-4 overflow-x-auto scroll-smooth px-4 pb-2 sm:mx-0 sm:grid sm:grid-cols-3 sm:px-0"
+        className="no-scrollbar -mx-5 flex snap-x snap-mandatory gap-4 overflow-x-auto scroll-smooth px-5 pb-2 sm:mx-0 sm:grid sm:grid-cols-3 sm:px-0"
       >
         {TIERS.map(({ code, name, icon: Icon, cashback, condition, perks }) => {
           /* `currentTier` valait `'BRONZE'` par défaut : un visiteur non
