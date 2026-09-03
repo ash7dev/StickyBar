@@ -152,10 +152,10 @@ export default function TenantReservationDetailPage({ params }: { params: Promis
   const { id } = use(params);
 
   return (
-    <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 pt-10 lg:pt-12 pb-24">
-      <TenantReservationsGuard>
+    <TenantReservationsGuard>
+      <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 pt-10 lg:pt-12 pb-24">
         <TenantReservationDetailContent id={id} />
-      </TenantReservationsGuard>
-    </div>
+      </div>
+    </TenantReservationsGuard>
   );
 }

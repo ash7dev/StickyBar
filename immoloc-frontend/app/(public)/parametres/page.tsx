@@ -131,10 +131,10 @@ function ParametresContent() {
 
 export default function ParametresPage() {
   return (
-    <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 pt-10 lg:pt-12 pb-24">
-      <TenantReservationsGuard>
+    <TenantReservationsGuard>
+      <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 pt-10 lg:pt-12 pb-24">
         <ParametresContent />
-      </TenantReservationsGuard>
-    </div>
+      </div>
+    </TenantReservationsGuard>
   );
 }
