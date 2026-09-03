@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
-import { useRouter } from 'next/navigation';
+import { usePathname, useRouter } from 'next/navigation';
 import {
   Lock, ArrowLeftRight, Building2, LogIn,
   UserPlus, Loader2, ShieldCheck, ChevronRight,
@@ -19,6 +19,7 @@ interface TenantReservationsGuardProps {
 
 export function TenantReservationsGuard({ children }: TenantReservationsGuardProps) {
   const router = useRouter();
+  const pathname = usePathname();
   const { nestToken, activeRole, hasHydrated } = useRoleStore();
   const { syncFromSupabaseSession } = useNestToken();
   const { switchRole, isSwitching } = useSwitchRole();
@@ -48,7 +49,18 @@ export function TenantReservationsGuard({ children }: TenantReservationsGuardPro
 
   // ── 2. Cas : Non connecté / Token manquant / Session expirée ──────────────
   if (!nestToken) {
-    const loginUrl = `/login?next=${encodeURIComponent('/reservations')}`;
+    const isParametres = pathname?.includes('/parametres');
+    const targetPath = isParametres ? '/parametres' : '/reservations';
+    const loginUrl = `/login?next=${encodeURIComponent(targetPath)}`;
+
+    const title = isParametres
+      ? 'Connectez-vous pour accéder à vos paramètres'
+      : 'Connectez-vous pour voir vos réservations';
+
+    const subtitle = isParametres
+      ? 'Gérez vos informations personnelles, votre sécurité et la vérification de votre identité Klef.'
+      : 'Accédez à l’historique complet de vos séjours, vos contrats de réservation et vos reçus sécurisés par le séquestre Klef.';
+
     return (
       <div className="max-w-2xl mx-auto px-4 py-12">
         <div className="relative rounded-[28px] border border-forest-800/80 bg-forest-950 p-8 sm:p-12 shadow-2xl text-center overflow-hidden">
@@ -74,10 +86,10 @@ export function TenantReservationsGuard({ children }: TenantReservationsGuardPro
             {/* Titre & Description */}
             <div className="space-y-3 max-w-lg mx-auto">
               <h2 className="font-display text-2xl sm:text-3xl font-bold tracking-tight text-white leading-snug">
-                Connectez-vous pour voir vos réservations
+                {title}
               </h2>
               <p className="text-sm text-forest-200/80 leading-relaxed font-sans">
-                Accédez à l'historique complet de vos séjours, vos contrats de réservation et vos reçus sécurisés par le séquestre Klef.
+                {subtitle}
               </p>
             </div>
 

@@ -1,8 +1,8 @@
 import { createServerClient } from '@supabase/ssr';
 import { NextResponse, type NextRequest } from 'next/server';
 
-// Routes protégées nécessitant une authentification
-const PROTECTED_ROUTES = ['/dashboard', '/reservations', '/parametres', '/reserver', '/admin'];
+// Routes protégées nécessitant une redirection serveur automatique vers /login
+const PROTECTED_ROUTES = ['/dashboard', '/admin'];
 
 // Routes d'authentification (rediriger si déjà connecté)
 const AUTH_ROUTES = ['/login', '/register', '/verify', '/complete-profile', '/auth/login', '/auth/register'];
