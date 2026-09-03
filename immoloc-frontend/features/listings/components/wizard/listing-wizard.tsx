@@ -118,17 +118,22 @@ export function ListingWizard({
     return () => window.removeEventListener('beforeunload', warn);
   }, [isSubmitting]);
 
+  useEffect(() => {
+    // Remonter immédiatement en haut de page à chaque changement d'étape
+    window.scrollTo({ top: 0, left: 0, behavior: 'instant' as ScrollBehavior });
+  }, [currentStep]);
+
   const handleStepValidated = useCallback(() => {
     markCompleted(currentStep);
     nextStep();
     setApiError(null);
-    window.scrollTo({ top: 0, behavior: 'smooth' });
+    window.scrollTo({ top: 0, left: 0, behavior: 'instant' as ScrollBehavior });
   }, [currentStep, markCompleted, nextStep]);
 
   const handlePrev = useCallback(() => {
     prevStep();
     setApiError(null);
-    window.scrollTo({ top: 0, behavior: 'smooth' });
+    window.scrollTo({ top: 0, left: 0, behavior: 'instant' as ScrollBehavior });
   }, [prevStep]);
 
   const handleNext = useCallback(() => {
