@@ -9,8 +9,6 @@ import { PWARegister } from '@/components/pwa-register';
 import { CookieConsentModal } from '@/components/cookies/CookieConsentModal';
 import { InstallAppModal } from '@/components/pwa/InstallAppModal';
 import { KlefAssistantWidget } from '@/components/assistant/KlefAssistantWidget';
-import { I18nProvider } from '@/lib/i18n/i18n.context';
-import { GoogleTranslateScript } from '@/components/i18n/GoogleTranslateScript';
 import './globals.css';
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -98,26 +96,23 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
 
         <ThemeProvider defaultMode="light">
           <QueryProvider>
-            <I18nProvider>
-              <NestSessionSync />
-              <PWARegister />
+            <NestSessionSync />
+            <PWARegister />
 
-              <main id="contenu" className="flex-1">
-                {children}
-              </main>
+            <main id="contenu" className="flex-1">
+              {children}
+            </main>
 
-              <Toaster
-                position="bottom-center"
-                offset="calc(env(safe-area-inset-bottom) + 1rem)"
-                richColors
-                closeButton
-              />
+            <Toaster
+              position="bottom-center"
+              offset="calc(env(safe-area-inset-bottom) + 1rem)"
+              richColors
+              closeButton
+            />
 
-              <CookieConsentModal />
-              <InstallAppModal />
-              <KlefAssistantWidget />
-              <GoogleTranslateScript />
-            </I18nProvider>
+            <CookieConsentModal />
+            <InstallAppModal />
+            <KlefAssistantWidget />
           </QueryProvider>
         </ThemeProvider>
       </body>

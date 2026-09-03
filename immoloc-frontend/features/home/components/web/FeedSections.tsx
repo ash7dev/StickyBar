@@ -197,23 +197,36 @@ export function FeedSections({ afterFirstSection }: FeedSectionsProps) {
 
   useEffect(() => {
     let mounted = true;
+    let isFreshCache = false;
 
     // 1. Lecture prioritaire du cache local (0ms de latence - Rendu immédiat)
     try {
       const cached = localStorage.getItem(FEED_CACHE_KEY);
+      const cachedTs = localStorage.getItem(FEED_CACHE_TIMESTAMP_KEY);
+      const TEN_MINUTES_MS = 10 * 60 * 1000;
+
       if (cached) {
         const parsed = JSON.parse(cached);
-        if (parsed && Array.isArray(parsed.sections)) {
+        if (parsed && Array.isArray(parsed.sections) && parsed.sections.length > 0) {
           setFeed(parsed);
           setLoading(false);
+
+          if (cachedTs && Date.now() - Number(cachedTs) < TEN_MINUTES_MS) {
+            isFreshCache = true;
+          }
         }
       }
     } catch (e) {
       console.warn('[FeedSections] Erreur lecture cache local:', e);
     }
 
-    // 2. Revalidation en arrière-plan (Stale-While-Revalidate)
-    const revalidateFeed = async () => {
+    // 2. Si le cache local est encore valide (< 10 min), ne pas relancer de requête réseau
+    if (isFreshCache) {
+      return;
+    }
+
+    // 3. Récupération réseau si pas de cache ou expiré
+    const fetchFeed = async () => {
       try {
         const response = await fetch('/api/v1/listings/feed');
         if (!response.ok) throw new Error('Failed to fetch feed');
@@ -226,20 +239,20 @@ export function FeedSections({ afterFirstSection }: FeedSectionsProps) {
 
         setFeed(data);
       } catch (error) {
-        console.error('[FeedSections] Erreur revalidation feed:', error);
+        console.error('[FeedSections] Erreur récupération feed:', error);
       } finally {
         if (mounted) setLoading(false);
       }
     };
 
-    revalidateFeed();
+    fetchFeed();
 
     return () => {
       mounted = false;
     };
   }, []);
 
-  if (loading || !prefsLoaded) {
+  if ((loading && !feed) || (!prefsLoaded && !feed)) {
     return (
       <div className="space-y-4">
         <div className="max-w-7xl mx-auto px-6 pt-4">

@@ -2,7 +2,6 @@ import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 
 export type CurrencyCode = 'XOF' | 'EUR' | 'USD' | 'GBP' | 'CAD';
-export type LanguageCode = 'fr' | 'en' | 'es';
 
 export interface CurrencyInfo {
   code: CurrencyCode;
@@ -12,25 +11,12 @@ export interface CurrencyInfo {
   decimals: number;
 }
 
-export interface LanguageInfo {
-  code: LanguageCode;
-  name: string;
-  flag: string;
-  native: string;
-}
-
 export const SUPPORTED_CURRENCIES: Record<CurrencyCode, CurrencyInfo> = {
   XOF: { code: 'XOF', symbol: 'FCFA', name: 'Franc CFA (WAEMU)', flag: '🇸🇳', decimals: 0 },
   EUR: { code: 'EUR', symbol: '€', name: 'Euro', flag: '🇪🇺', decimals: 2 },
   USD: { code: 'USD', symbol: '$', name: 'US Dollar', flag: '🇺🇸', decimals: 2 },
   GBP: { code: 'GBP', symbol: '£', name: 'British Pound', flag: '🇬🇧', decimals: 2 },
   CAD: { code: 'CAD', symbol: 'CA$', name: 'Canadian Dollar', flag: '🇨🇦', decimals: 2 },
-};
-
-export const SUPPORTED_LANGUAGES: Record<LanguageCode, LanguageInfo> = {
-  fr: { code: 'fr', name: 'Français', flag: '🇫🇷', native: 'Français' },
-  en: { code: 'en', name: 'English', flag: '🇬🇧', native: 'English' },
-  es: { code: 'es', name: 'Español', flag: '🇪🇸', native: 'Español' },
 };
 
 /* Taux de secours si le réseau est indisponible (1 XOF = x Devises) */
@@ -52,57 +38,27 @@ export interface FormattedPriceResult {
 
 interface CurrencyStore {
   currency: CurrencyCode;
-  language: LanguageCode;
   rates: Record<CurrencyCode, number>;
   lastUpdated: number | null;
   isLoadingRates: boolean;
   
-  setCurrency: (code: CurrencyCode, manualOverrideLanguage?: boolean) => void;
-  setLanguage: (code: LanguageCode) => void;
+  setCurrency: (code: CurrencyCode) => void;
   fetchRates: () => Promise<void>;
   formatAmount: (amountInXof: number | string) => string;
   getFormattedPrice: (amountInXof: number | string) => FormattedPriceResult;
   convertFromXof: (amountInXof: number) => number;
 }
 
-/**
- * Appariement intelligent Devise ➔ Langue par défaut :
- * - EUR / XOF ➔ Français (fr) sauf si déjà en Espagnol (es)
- * - USD / GBP / CAD ➔ Anglais (en)
- */
-function getIntelligentLanguagePairing(currency: CurrencyCode, currentLang: LanguageCode): LanguageCode {
-  if (currency === 'USD' || currency === 'GBP' || currency === 'CAD') {
-    return 'en';
-  }
-  if (currency === 'EUR' || currency === 'XOF') {
-    return currentLang === 'es' ? 'es' : 'fr';
-  }
-  return currentLang;
-}
-
 export const useCurrencyStore = create<CurrencyStore>()(
   persist(
     (set, get) => ({
       currency: 'XOF',
-      language: 'fr',
       rates: DEFAULT_RATES,
       lastUpdated: null,
       isLoadingRates: false,
 
-      setCurrency: (code, manualOverrideLanguage = false) => {
-        const currentLang = get().language;
-        const nextLang = manualOverrideLanguage
-          ? currentLang
-          : getIntelligentLanguagePairing(code, currentLang);
-
-        set({
-          currency: code,
-          language: nextLang,
-        });
-      },
-
-      setLanguage: (code) => {
-        set({ language: code });
+      setCurrency: (code) => {
+        set({ currency: code });
       },
 
       fetchRates: async () => {
@@ -205,7 +161,6 @@ export const useCurrencyStore = create<CurrencyStore>()(
       name: 'klef-currency-storage',
       partialize: (state) => ({
         currency: state.currency,
-        language: state.language,
         rates: state.rates,
         lastUpdated: state.lastUpdated,
       }),

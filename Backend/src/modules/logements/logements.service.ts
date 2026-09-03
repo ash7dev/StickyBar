@@ -285,6 +285,16 @@ export class LogementsService {
   // ── Feed public — toutes les sections en un seul appel ─────────────────────
 
   async getFeed() {
+    const cacheKey = 'listings:feed:all';
+    try {
+      const cached = await this.redis.get(cacheKey);
+      if (cached) {
+        return JSON.parse(cached);
+      }
+    } catch (e) {
+      this.logger.warn(`Échec lecture cache Redis feed : ${(e as Error).message}`);
+    }
+
     const base: Prisma.LogementWhereInput = {
       statut: StatutLogement.PUBLISHED,
       archiveLe: null,
@@ -333,13 +343,9 @@ export class LogementsService {
     };
 
     const sections: SectionDef[] = [
-      // Règle stricte : au moins 1 réservation confirmée (trié par succès)
       { id: 'popular', where: { ...base, totalSejours: { gt: 0 } }, orderBy: [{ totalSejours: 'desc' }, { note: 'desc' }], shuffle: false },
-      // 12 derniers ajoutés — tri strict par date de création décroissante (plus récents en premier)
       { id: 'newest', where: base, orderBy: { creeLe: 'desc' }, shuffle: false },
-      // Règle stricte : note >= 4 — tri strict par note décroissante (meilleures notes en premier)
       { id: 'rated', where: { ...base, note: { gte: 4 } }, orderBy: [{ note: 'desc' }, { totalAvis: 'desc' }], shuffle: false },
-      // En vedette par type — au moins 1 réservation, sinon fallback sans filtre
       { id: 'villas', where: { ...base, type: TypeLogement.VILLA, totalSejours: { gt: 0 } }, orderBy: { totalSejours: 'desc' } },
       { id: 'appartements', where: { ...base, type: TypeLogement.APPARTEMENT, totalSejours: { gt: 0 } }, orderBy: { totalSejours: 'desc' } },
       { id: 'chambres', where: { ...base, type: TypeLogement.CHAMBRE, note: { gt: 0 } }, orderBy: { note: 'desc' } },
@@ -352,7 +358,6 @@ export class LogementsService {
       { id: 'villa-event', where: { ...base, type: TypeLogement.VILLA, sousType: 'Villa pour événement' }, orderBy: { note: 'desc' } },
       { id: 'suite', where: { ...base, type: TypeLogement.CHAMBRE, sousType: 'Suite meublée' }, orderBy: { note: 'desc' } },
       { id: 'maison', where: { ...base, type: TypeLogement.AUTRES, sousType: 'Maison entière' }, orderBy: { note: 'desc' } },
-      // Sections par zone géographique
       { id: 'zone-almadies', where: { ...base, ville: { contains: 'Almadies', mode: 'insensitive' } }, orderBy: { note: 'desc' } },
       { id: 'zone-saly', where: { ...base, ville: { contains: 'Saly', mode: 'insensitive' } }, orderBy: { note: 'desc' } },
       { id: 'zone-ngor', where: { ...base, ville: { contains: 'Ngor', mode: 'insensitive' } }, orderBy: { note: 'desc' } },
@@ -365,59 +370,62 @@ export class LogementsService {
       { id: 'zone-somone', where: { ...base, ville: { contains: 'Somone', mode: 'insensitive' } }, orderBy: { note: 'desc' } },
     ];
 
-    const BATCH_SIZE = 2;
-    const results = [];
+    // Exécution parallèle rapide de toutes les sections en une seule passe Promise.all
+    const results = await Promise.all(
+      sections.map(async (s) => {
+        const logements = await this.prisma.logement.findMany({
+          where: s.where,
+          select: cardSelect,
+          orderBy: s.orderBy,
+          take: s.shuffle === false ? LIMIT : POOL,
+        });
 
-    for (let i = 0; i < sections.length; i += BATCH_SIZE) {
-      const batch = sections.slice(i, i + BATCH_SIZE);
-      const batchResults = await Promise.all(
-        batch.map(async (s) => {
-          const logements = await this.prisma.logement.findMany({
-            where: s.where,
-            select: cardSelect,
-            orderBy: s.orderBy,
-            take: s.shuffle === false ? LIMIT : POOL,
-          });
-          // Ne mélanger aléatoirement que si shuffle n'est pas explicitement désactivé
-          if (s.shuffle !== false) {
-            for (let k = logements.length - 1; k > 0; k--) {
-              const j = Math.floor(Math.random() * (k + 1));
-              [logements[k], logements[j]] = [logements[j], logements[k]];
-            }
+        if (s.shuffle !== false) {
+          for (let k = logements.length - 1; k > 0; k--) {
+            const j = Math.floor(Math.random() * (k + 1));
+            [logements[k], logements[j]] = [logements[j], logements[k]];
           }
-          return {
-            id: s.id,
-            listings: (s.shuffle !== false ? logements.slice(0, LIMIT) : logements).map((l) => ({
-              id: l.id,
-              titre: l.titre,
-              type: l.type,
-              sousType: l.sousType,
-              ville: l.ville,
-              quartier: l.quartier,
-              prixBase: Number(l.prixBase),
-              capaciteMax: l.capaciteMax,
-              nombreChambres: l.nombreChambres ?? null,
-              nombreSallesBain: l.nombreSallesBain ?? null,
-              nuitesMinimum: l.nuitesMinimum ?? 1,
-              acomptePourcentage: l.acomptePourcentage ? Number(l.acomptePourcentage) : 30,
-              note: l.note ? Number(l.note) : null,
-              totalSejours: l.totalSejours,
-              createdAt: l.creeLe.toISOString(),
-              isInstantBooking: l.isInstantBooking,
-              derniereMinuteActive: l.derniereMinuteActive,
-              videoUrl: l.videoUrl ?? null,
-              photos: l.photos,
-              equipements: l.equipements
-                .map((e) => e.equipement)
-                .filter((e): e is NonNullable<typeof e> => e != null),
-            })),
-          };
-        }),
-      );
-      results.push(...batchResults);
+        }
+
+        return {
+          id: s.id,
+          listings: (s.shuffle !== false ? logements.slice(0, LIMIT) : logements).map((l) => ({
+            id: l.id,
+            titre: l.titre,
+            type: l.type,
+            sousType: l.sousType,
+            ville: l.ville,
+            quartier: l.quartier,
+            prixBase: Number(l.prixBase),
+            capaciteMax: l.capaciteMax,
+            nombreChambres: l.nombreChambres ?? null,
+            nombreSallesBain: l.nombreSallesBain ?? null,
+            nuitesMinimum: l.nuitesMinimum ?? 1,
+            acomptePourcentage: l.acomptePourcentage ? Number(l.acomptePourcentage) : 30,
+            note: l.note ? Number(l.note) : null,
+            totalSejours: l.totalSejours,
+            createdAt: l.creeLe.toISOString(),
+            isInstantBooking: l.isInstantBooking,
+            derniereMinuteActive: l.derniereMinuteActive,
+            videoUrl: l.videoUrl ?? null,
+            photos: l.photos,
+            equipements: l.equipements
+              .map((e) => e.equipement)
+              .filter((e): e is NonNullable<typeof e> => e != null),
+          })),
+        };
+      }),
+    );
+
+    const payload = { sections: results };
+
+    try {
+      await this.redis.set(cacheKey, JSON.stringify(payload), 300); // Cache 5 min
+    } catch (e) {
+      this.logger.warn(`Échec écriture cache Redis feed : ${(e as Error).message}`);
     }
 
-    return { sections: results };
+    return payload;
   }
 
   private async geocodeAddress(adresse: string, ville: string, quartier?: string): Promise<{ lat: number; lng: number } | null> {

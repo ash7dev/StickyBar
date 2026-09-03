@@ -22,22 +22,20 @@ import { useSwitchRole } from '@/features/auth/hooks/use-switch-role';
 import { createClient } from '@/lib/supabase/client';
 import { MobileBottomNav } from '@/components/layout/mobile-bottom-nav';
 import { CurrencySelector } from '@/components/layout/currency-selector';
-import { useTranslation } from '@/lib/i18n/i18n.context';
+
+const LINKS = [
+  { href: '/',                 label: 'Accueil'           },
+  { href: '/explorer',         label: 'Explorer'          },
+  { href: '/comment-ca-marche', label: 'Comment ça marche' },
+] as const;
 
 export function Navbar() {
-  const { t } = useTranslation();
   const pathname = usePathname();
   const router = useRouter();
   const isAuthenticated = useIsAuthenticated();
   const { activeRole } = useRoleStore();
   const { logout } = useAuth();
   const { switchRole, isSwitching } = useSwitchRole();
-
-  const links = [
-    { href: '/', label: t('nav.home') || 'Accueil' },
-    { href: '/explorer', label: t('nav.explorer') || 'Explorer' },
-    { href: '/comment-ca-marche', label: t('nav.howItWorks') || 'Comment ça marche' },
-  ];
 
   const [isScrolled, setIsScrolled] = useState(false);
   const [dropdownOpen, setDropdownOpen] = useState(false);
@@ -203,7 +201,7 @@ export function Navbar() {
                   : { left: 0, width: 0, opacity: 0 }
               }
             />
-            {links.map(({ href, label }) => {
+            {LINKS.map(({ href, label }) => {
               const active = isActive(href);
               return (
                 <Link
@@ -381,7 +379,7 @@ export function Navbar() {
                 href="/login"
                 className="btn-ghost !px-3 !py-2 !text-[0.8125rem] sm:!px-4 sm:!text-sm whitespace-nowrap"
               >
-                {t('nav.login')}
+                Se connecter
               </Link>
             )}
 
@@ -391,7 +389,7 @@ export function Navbar() {
               className="btn-action !px-3 !py-2 !text-[0.8125rem] sm:!px-4 sm:!text-sm whitespace-nowrap hidden sm:inline-flex"
             >
               <span>
-                {t('nav.publishProperty')}
+                Publier un bien
               </span>
             </Link>
           </div>
