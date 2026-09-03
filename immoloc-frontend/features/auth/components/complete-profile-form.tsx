@@ -2,12 +2,13 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { useForm } from 'react-hook-form';
+import { useForm, Controller } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { Loader2, User, Phone, Info } from 'lucide-react';
 import { completeProfileSchema, type CompleteProfileInput } from '@/schemas/auth.schema';
 import { useAuth } from '@/features/auth/hooks/use-auth';
 import { ApiError } from '@/lib/nestjs/api-client';
+import { PhoneInputWithCountry } from '@/components/ui/PhoneInputWithCountry';
 
 interface CompleteProfileFormProps {
   accessToken: string;
@@ -21,7 +22,7 @@ export function CompleteProfileForm({ accessToken, userEmail, next }: CompletePr
   const [error, setError] = useState<string | null>(null);
   const [skipped, setSkipped] = useState(false);
 
-  const { register, handleSubmit, formState: { errors, isSubmitting } } = useForm<CompleteProfileInput>({
+  const { register, handleSubmit, control, formState: { errors, isSubmitting } } = useForm<CompleteProfileInput>({
     resolver: zodResolver(completeProfileSchema),
   });
 
@@ -81,18 +82,19 @@ export function CompleteProfileForm({ accessToken, userEmail, next }: CompletePr
         </div>
 
         <div>
-          <label className="block text-sm font-medium text-neutral-700 mb-1">Téléphone</label>
-          <div className="relative">
-            <Phone className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-neutral-400" />
-            <input
-              {...register('telephone')}
-              type="tel"
-              placeholder="+221771234567"
-              className="w-full pl-10 pr-3 py-2.5 border border-border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-success-600"
-            />
-          </div>
-          <p className="text-neutral-400 text-xs mt-1">Format international : +221 Sénégal, +33 France…</p>
-          {errors.telephone && <p className="text-error-500 text-xs mt-1">{errors.telephone.message}</p>}
+          <label className="block text-sm font-medium text-neutral-700 mb-1">Numéro de téléphone</label>
+          <Controller
+            name="telephone"
+            control={control}
+            render={({ field }) => (
+              <PhoneInputWithCountry
+                id="telephone-complete"
+                value={field.value || ''}
+                onChange={field.onChange}
+                error={errors.telephone?.message}
+              />
+            )}
+          />
         </div>
 
         {error && (

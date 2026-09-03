@@ -1,7 +1,8 @@
 'use client';
 
 import { useEffect, useId, useState } from 'react';
-import { useForm } from 'react-hook-form';
+import { useForm, Controller } from 'react-hook-form';
+import { PhoneInputWithCountry } from '@/components/ui/PhoneInputWithCountry';
 import { zodResolver } from '@hookform/resolvers/zod';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
@@ -43,7 +44,7 @@ export function RegisterForm({ next, referralCode }: Props) {
     prenom: useId(), nom: useId(), tel: useId(), email: useId(), password: useId(),
   };
 
-  const { register, handleSubmit, watch, formState: { errors, isSubmitting } } =
+  const { register, handleSubmit, watch, control, formState: { errors, isSubmitting } } =
     useForm<RegisterInput>({
       resolver: zodResolver(registerSchema),
       mode: 'onBlur',
@@ -222,25 +223,28 @@ export function RegisterForm({ next, referralCode }: Props) {
           </Field>
         </div>
 
-        <Field
-          id={ids.tel}
-          label="Téléphone"
-          icon={<Phone className="h-4 w-4" aria-hidden="true" />}
-          error={errors.telephone?.message}
-          hint="Indicatif compris : +221 pour le Sénégal."
-        >
-          <input
-            {...register('telephone')}
-            id={ids.tel}
-            type="tel"
-            inputMode="tel"
-            autoComplete="tel"
-            placeholder="+221 77 123 45 67"
-            aria-invalid={!!errors.telephone}
-            aria-describedby={errors.telephone ? `${ids.tel}-error` : `${ids.tel}-hint`}
-            className={inputClass(!!errors.telephone)}
+        <div className="space-y-1.5">
+          <label htmlFor={ids.tel} className="block text-xs font-semibold text-foreground">
+            Numéro de téléphone
+          </label>
+          <Controller
+            name="telephone"
+            control={control}
+            render={({ field }) => (
+              <PhoneInputWithCountry
+                id={ids.tel}
+                value={field.value || ''}
+                onChange={field.onChange}
+                error={errors.telephone?.message}
+              />
+            )}
           />
-        </Field>
+          {errors.telephone && (
+            <p id={`${ids.tel}-error`} className="text-xs text-error-600 font-medium pt-1">
+              {errors.telephone.message}
+            </p>
+          )}
+        </div>
 
         <Field id={ids.email} label="Email" icon={<Mail className="h-4 w-4" aria-hidden="true" />} error={errors.email?.message}>
           <input

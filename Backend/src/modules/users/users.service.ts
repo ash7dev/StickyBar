@@ -3,6 +3,7 @@ import { PrismaService } from '@infrastructure/prisma/prisma.service';
 import { SupabaseService } from '@shared/supabase/supabase.service';
 import { UpdateProfileDto } from './dto/update-user.dto';
 import { UpdateSecurityDto } from './dto/update-security.dto';
+import { normalizePhoneNumber } from '@shared/utils/phone-utils';
 
 @Injectable()
 export class UsersService {
@@ -160,12 +161,14 @@ export class UsersService {
     });
     if (!utilisateur) throw new NotFoundException('Utilisateur introuvable');
 
+    const normalizedPhone = dto.telephone ? normalizePhoneNumber(dto.telephone) : dto.telephone;
+
     const updated = await this.prisma.utilisateur.update({
       where: { id: userId },
       data: {
         prenom: dto.prenom,
         nom: dto.nom,
-        telephone: dto.telephone,
+        telephone: normalizedPhone,
         avatarUrl: dto.avatarUrl,
         dateNaissance: dto.dateNaissance ? new Date(dto.dateNaissance) : undefined,
         profileCompleted: true,

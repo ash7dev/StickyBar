@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import { Check, CreditCard, Landmark, Loader2, Save, Smartphone, Wallet } from 'lucide-react';
+import { PhoneInputWithCountry } from '@/components/ui/PhoneInputWithCountry';
 
 export function GestionnaireParametresCoordonneesVirement() {
   const [methodePreferee, setMethodePreferee] = useState<'WAVE' | 'ORANGE_MONEY' | 'BANQUE'>('WAVE');
@@ -130,14 +131,9 @@ export function GestionnaireParametresCoordonneesVirement() {
               <label className="text-xs font-bold block" style={{ color: 'var(--forest-900)' }}>
                 Numéro de téléphone {methodePreferee === 'WAVE' ? 'Wave' : 'Orange Money'}
               </label>
-              <input
-                type="tel"
+              <PhoneInputWithCountry
                 value={telephoneMobileMoney}
-                onChange={(e) => setTelephoneMobileMoney(e.target.value)}
-                placeholder="+221 77 000 00 00"
-                required
-                className="w-full rounded-pill border px-4 py-2.5 text-xs font-medium outline-none bg-white [color-scheme:light]"
-                style={{ borderColor: 'var(--border)', color: 'var(--foreground)' }}
+                onChange={setTelephoneMobileMoney}
               />
               <p className="text-[0.65rem] font-medium" style={{ color: 'var(--foreground-muted)' }}>
                 Assurez-vous que le compte Mobile Money est actif et identifié à votre nom.

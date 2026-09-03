@@ -5,6 +5,7 @@ import { User, Mail, Phone, Calendar, Hash, Pencil, Check, X, Loader2, AlertTria
 import { cn } from '@/lib/utils/cn';
 import { nestFetch } from '@/lib/nestjs/api-client';
 import { NEST_API } from '@/lib/nestjs/endpoints';
+import { PhoneInputWithCountry } from '@/components/ui/PhoneInputWithCountry';
 import type { UserProfile } from '../types';
 
 interface Props {
@@ -220,7 +221,12 @@ export function ProfileInfoCard({ user, onUpdated }: Props) {
           <>
             <EditRow icon={User} label="Prénom" value={draft.prenom} onChange={set('prenom')} placeholder="Votre prénom" autoComplete="given-name" />
             <EditRow icon={User} label="Nom de famille" value={draft.nom} onChange={set('nom')} placeholder="Votre nom" autoComplete="family-name" />
-            <EditRow icon={Phone} label="Téléphone" value={draft.telephone} onChange={set('telephone')} placeholder="+221 7X XXX XX XX" type="tel" autoComplete="tel" />
+            <FieldShell icon={Phone} label="Téléphone">
+              <PhoneInputWithCountry
+                value={draft.telephone}
+                onChange={set('telephone')}
+              />
+            </FieldShell>
             <EditRow icon={Calendar} label="Date de naissance" value={draft.dateNaissance} onChange={set('dateNaissance')} type="date" autoComplete="bday" />
             <ReadRow icon={Mail} label="E-mail (non modifiable)" value={user.email} />
             <ReadRow icon={Hash} label="Identifiant" value={user.id.slice(0, 16).toUpperCase()} mono />

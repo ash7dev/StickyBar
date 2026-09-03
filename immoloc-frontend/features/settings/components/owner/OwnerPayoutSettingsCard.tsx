@@ -5,6 +5,7 @@ import { Wallet, Smartphone, Save, Loader2, CheckCircle2, AlertCircle, ShieldChe
 import { cn } from '@/lib/utils/cn';
 import { nestFetch } from '@/lib/nestjs/api-client';
 import { NEST_API } from '@/lib/nestjs/endpoints';
+import { PhoneInputWithCountry } from '@/components/ui/PhoneInputWithCountry';
 
 type Operateur = 'WAVE' | 'ORANGE_MONEY';
 
@@ -204,27 +205,13 @@ export function OwnerPayoutSettingsCard({ telephoneInitial = '' }: Props) {
               <label htmlFor={numeroId} className="eyebrow mb-2 block">
                 Numéro de réception
               </label>
-              <input
+              <PhoneInputWithCountry
                 id={numeroId}
-                type="tel"
-                inputMode="numeric"
-                autoComplete="tel-national"
                 value={numero}
-                onChange={(e) => { setNumero(e.target.value); setSuccess(false); }}
-                onBlur={() => setNumero((v) => formatSN(v))}
-                placeholder="77 123 45 67"
-                aria-describedby={hintId}
-                aria-invalid={numero.length > 0 && !isValid}
-                className={cn(
-                  'w-full rounded-field border bg-background-alt px-4 py-3 tabular-nums text-foreground placeholder:text-foreground-faint focus:outline-none',
-                  numero.length > 0 && !isValid
-                    ? 'border-error-500 focus:border-error-600'
-                    : 'border-border focus:border-forest-500',
-                )}
+                onChange={(val) => { setNumero(val); setSuccess(false); }}
               />
               <p id={hintId} className="mt-1.5 text-xs leading-relaxed text-foreground-muted">
-                Mobile sénégalais à 9 chiffres. Ce numéro est présélectionné lors de vos demandes
-                de retrait — vérifiez-le, c’est lui qui reçoit vos fonds.
+                Ce numéro est présélectionné lors de vos demandes de retrait — vérifiez-le, c’est lui qui reçoit vos fonds.
               </p>
             </div>
 

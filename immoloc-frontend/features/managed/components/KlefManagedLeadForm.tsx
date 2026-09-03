@@ -3,6 +3,7 @@
 import { useId, useState } from 'react';
 import { Building2, CheckCircle2, Mail, MapPin, Phone, Send, User } from 'lucide-react';
 import { nestFetch } from '@/lib/nestjs/api-client';
+import { PhoneInputWithCountry } from '@/components/ui/PhoneInputWithCountry';
 
 const LABEL_CLS = 'mb-1 block text-xs font-semibold text-forest-900';
 
@@ -146,16 +147,14 @@ export function KlefManagedLeadForm() {
 
           <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
             <div>
-              <Field
-                icon={Phone} id={ids.telephone} label="Téléphone (WhatsApp)" required
-                type="tel" value={telephone} onChange={(e) => setTelephone(e.target.value)}
-                placeholder="+221 77 XXX XX XX" aria-invalid={phoneLooksOff}
+              <label htmlFor={ids.telephone} className={LABEL_CLS}>
+                Téléphone / WhatsApp <span className="text-error-600" aria-hidden="true">*</span>
+              </label>
+              <PhoneInputWithCountry
+                id={ids.telephone}
+                value={telephone}
+                onChange={setTelephone}
               />
-              {phoneLooksOff && (
-                <p className="mt-1 text-xs text-warning-600">
-                  Format sénégalais : 9 chiffres (70/75/76/77/78…).
-                </p>
-              )}
             </div>
             <Field
               icon={Mail} id={ids.email} label="Email (optionnel)"

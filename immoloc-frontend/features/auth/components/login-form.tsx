@@ -12,6 +12,7 @@ import { toast } from 'sonner';
 import { loginSchema, type LoginInput } from '@/schemas/auth.schema';
 import { useAuth, mapSupabaseError } from '@/features/auth/hooks/use-auth';
 import { ApiError } from '@/lib/nestjs/api-client';
+import { PhoneInputWithCountry } from '@/components/ui/PhoneInputWithCountry';
 
 // ─────────────────────────────────────────────────────────────────────────────
 // AuthShell — mise en page desktop
@@ -310,8 +311,8 @@ function PhoneLoginSection({ next }: { next?: string }) {
   }, [step]);
 
   async function handleSend() {
-    if (!/^\+[1-9]\d{6,14}$/.test(phone)) {
-      setError('Numéro invalide. Indiquez l’indicatif, par exemple +221 77 123 45 67.');
+    if (!phone || phone.replace(/\D/g, '').length < 8) {
+      setError('Veuillez saisir votre numéro de téléphone.');
       return;
     }
     setError(null);
@@ -344,27 +345,21 @@ function PhoneLoginSection({ next }: { next?: string }) {
   if (step === 'phone') {
     return (
       <div className="space-y-4">
-        <Field
-          id={phoneId}
-          label="Numéro de téléphone"
-          icon={<Phone className="h-4 w-4" aria-hidden="true" />}
-          error={error ?? undefined}
-          hint="Format international, indicatif compris."
-        >
-          <input
+        <div className="space-y-1.5">
+          <label htmlFor={phoneId} className="block text-xs font-semibold text-foreground">
+            Numéro de téléphone
+          </label>
+          <PhoneInputWithCountry
             id={phoneId}
-            type="tel"
-            inputMode="tel"
-            autoComplete="tel"
             value={phone}
-            onChange={(e) => setPhone(e.target.value)}
-            onKeyDown={(e) => e.key === 'Enter' && handleSend()}
-            placeholder="+221 77 123 45 67"
-            aria-invalid={!!error}
-            aria-describedby={error ? `${phoneId}-error` : `${phoneId}-hint`}
-            className={inputClass(!!error)}
+            onChange={(val) => {
+              setPhone(val);
+              if (error) setError(null);
+            }}
+            error={error ?? undefined}
           />
-        </Field>
+          {error && <p id={`${phoneId}-error`} className="text-xs text-error-600 font-medium pt-1">{error}</p>}
+        </div>
 
         <SubmitButton loading={loading} loadingLabel="Envoi…" onClick={handleSend} type="button">
           Recevoir un code SMS

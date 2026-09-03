@@ -28,6 +28,7 @@ import { BecomeHostDto } from './dto/become-host.dto';
 import { VerifyCurrentPhoneConfirmDto, VerifyCurrentPhoneSendDto } from './dto/verify-current-phone.dto';
 import { CompleteOnboardingDto } from './dto/complete-onboarding.dto';
 import { VerifyRegisterOtpDto, OtpChannelType } from './dto/verify-register-otp.dto';
+import { getPhoneSearchVariants, normalizePhoneNumber } from '../../shared/utils/phone-utils';
 
 @Injectable()
 export class AuthService {
@@ -149,10 +150,13 @@ export class AuthService {
   // ── Inscription email+password ─────────────────────────────────────────────
 
   async register(dto: RegisterDto) {
-    // Vérifier unicité email et téléphone en base avant d'appeler Supabase
+    const normalizedPhone = normalizePhoneNumber(dto.telephone);
+    const phoneVariants = getPhoneSearchVariants(dto.telephone);
+
+    // Vérifier unicité email et téléphone en base (sur toutes les variantes) avant d'appeler Supabase
     const [existingEmail, existingPhone] = await Promise.all([
       this.prisma.utilisateur.findUnique({ where: { email: dto.email }, select: { id: true } }),
-      this.prisma.utilisateur.findUnique({ where: { telephone: dto.telephone }, select: { id: true } }),
+      this.prisma.utilisateur.findFirst({ where: { telephone: { in: phoneVariants } }, select: { id: true } }),
     ]);
     if (existingEmail) throw new ConflictException('Email déjà utilisé');
     if (existingPhone) throw new ConflictException('Numéro de téléphone déjà utilisé');
@@ -190,14 +194,14 @@ export class AuthService {
         data: {
           userId: supabaseUserId,
           email: dto.email,
-          phone: dto.telephone,
+          phone: normalizedPhone,
         },
       }),
       this.prisma.utilisateur.create({
         data: {
           userId: supabaseUserId,
           email: dto.email,
-          telephone: dto.telephone,
+          telephone: normalizedPhone,
           prenom: dto.prenom,
           nom: dto.nom,
           codeParrainage,
@@ -392,16 +396,19 @@ export class AuthService {
   // ── Connexion par téléphone — étape 1 : envoi OTP ─────────────────────────
 
   async sendPhoneOtp(dto: PhoneSendOtpDto) {
-    // Vérifier que le numéro est enregistré
-    const utilisateur = await this.prisma.utilisateur.findUnique({
-      where: { telephone: dto.phone },
-      select: { id: true, actif: true },
+    const phoneClean = normalizePhoneNumber(dto.phone);
+    const variants = getPhoneSearchVariants(dto.phone);
+
+    // Vérifier que le numéro est enregistré (recherche multi-format intelligente)
+    const utilisateur = await this.prisma.utilisateur.findFirst({
+      where: { telephone: { in: variants } },
+      select: { id: true, actif: true, telephone: true },
     });
     if (!utilisateur) throw new NotFoundException('Aucun compte associé à ce numéro');
     if (!utilisateur.actif) throw new UnauthorizedException('Compte désactivé');
 
     // Rate limiting : max 3 SMS OTP par minute par numéro
-    const rlKey = `auth:otp:rl:${dto.phone}`;
+    const rlKey = `auth:otp:rl:${phoneClean}`;
     const current = await this.redis.get(rlKey);
     const count = current ? parseInt(current, 10) : 0;
     if (count >= 3) {
@@ -409,7 +416,7 @@ export class AuthService {
     }
     await this.redis.set(rlKey, String(count + 1), 60);
 
-    const { error } = await this.supabase.getAnon().auth.signInWithOtp({ phone: dto.phone });
+    const { error } = await this.supabase.getAnon().auth.signInWithOtp({ phone: phoneClean });
     if (error) {
       this.logger.error(`OTP SMS error: ${error.message}`);
       throw new BadRequestException("Impossible d'envoyer le SMS. Réessayez dans quelques instants.");
@@ -421,8 +428,11 @@ export class AuthService {
   // ── Connexion par téléphone — étape 2 : vérification OTP ─────────────────
 
   async verifyPhoneOtp(dto: PhoneVerifyOtpDto) {
+    const phoneClean = normalizePhoneNumber(dto.phone);
+    const variants = getPhoneSearchVariants(dto.phone);
+
     const { data, error } = await this.supabase.getAnon().auth.verifyOtp({
-      phone: dto.phone,
+      phone: phoneClean,
       token: dto.token,
       type: 'sms',
     });
@@ -431,8 +441,8 @@ export class AuthService {
       throw new UnauthorizedException('Code OTP invalide ou expiré');
     }
 
-    const utilisateur = await this.prisma.utilisateur.findUnique({
-      where: { telephone: dto.phone },
+    const utilisateur = await this.prisma.utilisateur.findFirst({
+      where: { telephone: { in: variants } },
       select: {
         id: true,
         prenom: true,
@@ -488,8 +498,9 @@ export class AuthService {
     if (!utilisateur) throw new NotFoundException('Utilisateur introuvable');
     if (!utilisateur.actif) throw new UnauthorizedException('Compte désactivé');
 
-    const existingPhone = await this.prisma.utilisateur.findUnique({
-      where: { telephone: dto.phone },
+    const phoneVariants = getPhoneSearchVariants(dto.phone);
+    const existingPhone = await this.prisma.utilisateur.findFirst({
+      where: { telephone: { in: phoneVariants } },
       select: { id: true },
     });
 
@@ -497,8 +508,10 @@ export class AuthService {
       throw new ConflictException('Numéro de téléphone déjà utilisé');
     }
 
+    const normalizedPhone = normalizePhoneNumber(dto.phone);
+
     if (this.isFakeOtpEnabled()) {
-      this.logger.log(`OTP mock activé pour ${userId} (${dto.phone})`);
+      this.logger.log(`OTP mock activé pour ${userId} (${normalizedPhone})`);
       return { message: 'Code OTP simulé prêt à être validé', mocked: true };
     }
 
@@ -510,7 +523,7 @@ export class AuthService {
     }
     await this.redis.set(rlKey, String(count + 1), 60);
 
-    const { error } = await this.supabase.getAnon().auth.signInWithOtp({ phone: dto.phone });
+    const { error } = await this.supabase.getAnon().auth.signInWithOtp({ phone: normalizedPhone });
     if (error) {
       this.logger.error(`Current phone OTP SMS error: ${error.message}`);
       throw new BadRequestException("Impossible d'envoyer le SMS. Réessayez dans quelques instants.");
@@ -527,17 +540,20 @@ export class AuthService {
     if (!utilisateur) throw new NotFoundException('Utilisateur introuvable');
     if (!utilisateur.actif) throw new UnauthorizedException('Compte désactivé');
 
-    const existingPhone = await this.prisma.utilisateur.findUnique({
-      where: { telephone: dto.phone },
+    const phoneVariants = getPhoneSearchVariants(dto.phone);
+    const existingPhone = await this.prisma.utilisateur.findFirst({
+      where: { telephone: { in: phoneVariants } },
       select: { id: true },
     });
     if (existingPhone && existingPhone.id !== userId) {
       throw new ConflictException('Numéro de téléphone déjà utilisé');
     }
 
+    const normalizedPhone = normalizePhoneNumber(dto.phone);
+
     if (!this.isFakeOtpEnabled()) {
       const { data, error } = await this.supabase.getAnon().auth.verifyOtp({
-        phone: dto.phone,
+        phone: normalizedPhone,
         token: dto.token,
         type: 'sms',
       });
@@ -551,7 +567,7 @@ export class AuthService {
       this.prisma.utilisateur.update({
         where: { id: userId },
         data: {
-          telephone: dto.phone,
+          telephone: normalizedPhone,
           phoneVerified: true,
         },
       }),
@@ -560,10 +576,10 @@ export class AuthService {
         create: {
           userId: utilisateur.userId,
           email: '',
-          phone: dto.phone,
+          phone: normalizedPhone,
         },
         update: {
-          phone: dto.phone,
+          phone: normalizedPhone,
         },
       }),
     ]);

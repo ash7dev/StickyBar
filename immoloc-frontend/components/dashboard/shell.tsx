@@ -42,7 +42,7 @@ const BOTTOM_NAV: BottomNavItem[] = [
 // L'encoche est un creux symetrique (deux courbes de Bezier) centre a 50%
 // de la largeur — la ou vit le FAB, positionne en CSS avec left-1/2.
 const NAV_BAR_PATH =
-  'M32 0 H150 C172 0 178 34 200 34 C222 34 228 0 250 0 H368 A32 32 0 0 1 368 64 H32 A32 32 0 0 1 32 0 Z';
+  'M32 0 H154 C174 0 180 30 200 30 C220 30 226 0 246 0 H368 A32 32 0 0 1 368 64 H32 A32 32 0 0 1 32 0 Z';
 
 function BottomNav() {
   const pathname = usePathname();
@@ -89,7 +89,7 @@ function BottomNav() {
           {/* Liseré clair sur le rebord superieur, pour le relief du chrome
               sans toucher au fond opaque (pas de .glass-dark ici). */}
           <path
-            d="M32 0.75 H150 C172 0.75 178 34.75 200 34.75 C222 34.75 228 0.75 250 0.75 H368"
+            d="M32 0.75 H154 C174 0.75 180 30.75 200 30.75 C220 30.75 226 0.75 246 0.75 H368"
             fill="none"
             className="stroke-white/10"
             strokeWidth={1}
@@ -115,7 +115,7 @@ function BottomNav() {
                   href={href}
                   aria-current={active ? 'page' : undefined}
                   className={cn(
-                    'flex h-full flex-col items-center justify-center gap-1 rounded-pill px-1',
+                    'flex h-full flex-col items-center justify-center gap-1.5 rounded-pill px-1',
                     'transition-colors duration-150',
                     // Etat actif hors-lime : la navigation n'est pas l'action
                     // unique de l'ecran, seul le FAB porte le lime.
@@ -125,14 +125,14 @@ function BottomNav() {
                 >
                   <span
                     className={cn(
-                      'grid h-6 w-10 place-items-center rounded-pill transition-all duration-200 ease-out',
+                      'grid h-7 w-12 place-items-center rounded-pill transition-all duration-200 ease-out',
                       active ? 'bg-marker-bg scale-100' : 'scale-90',
                     )}
                   >
-                    <Icon className="h-5 w-5" strokeWidth={active ? 2.25 : 1.9} />
+                    <Icon className="h-6 w-6" strokeWidth={active ? 2.15 : 1.8} />
                   </span>
 
-                  <span className="text-[0.625rem] font-medium leading-none">
+                  <span className="text-[0.625rem] font-semibold uppercase leading-none tracking-wide">
                     {label}
                   </span>
                 </Link>
@@ -147,8 +147,8 @@ function BottomNav() {
           href="/dashboard/annonces/nouvelle"
           aria-label="Ajouter un bien"
           className={cn(
-            'group absolute left-1/2 -top-6 z-20 flex h-16 w-16 -translate-x-1/2 items-center justify-center rounded-full',
-            'bg-gradient-to-b from-forest-700 to-forest-950 text-lime-400',
+            'group absolute left-1/2 -top-5 z-20 flex h-14 w-14 -translate-x-1/2 items-center justify-center rounded-full',
+            'bg-gradient-to-b from-forest-600 via-forest-800 to-forest-950 text-lime-400',
             'border-[1.5px] border-[var(--action-edge)]',
             'shadow-[var(--shadow-action)]',
             'active:scale-90 transition-transform duration-150',
@@ -159,7 +159,7 @@ function BottomNav() {
           <div className="absolute inset-0 rounded-full bg-lime-400/20 blur-md opacity-70 group-hover:opacity-100 transition-opacity pointer-events-none" />
           {/* Anneau interne : profondeur, sans lime supplementaire visible */}
           <div className="absolute inset-1 rounded-full border border-lime-400/20 pointer-events-none" />
-          <Plus className="relative z-10 h-7 w-7 stroke-[2.5]" aria-hidden="true" />
+          <Plus className="relative z-10 h-6 w-6 stroke-[2.5]" aria-hidden="true" />
         </Link>
       </div>
     </nav>,

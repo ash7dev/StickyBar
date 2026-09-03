@@ -4,6 +4,7 @@ import Image from 'next/image';
 import Link from 'next/link';
 import { Coins, Wallet } from 'lucide-react';
 
+import { PhoneInputWithCountry } from '@/components/ui/PhoneInputWithCountry';
 import { cn } from '@/lib/utils/cn';
 import { SectionCard, OptionCard, Checkbox, Alerte, Montant } from './primitives';
 import { masquerTelephone, pluriel } from '@/features/reservations/lib/reservation';
@@ -113,31 +114,14 @@ export function PaymentSection({ r, montreErreurs }: { r: ReservationState; mont
                         Numéro {r.fournisseur === 'WAVE' ? 'Wave' : 'Orange Money'}
                     </label>
 
-                    <div className="flex items-stretch overflow-hidden rounded-pill border border-border bg-background-alt transition-colors focus-within:border-forest-600">
-                        <span className="flex items-center border-r border-border px-3.5 text-sm font-medium tabular-nums text-foreground-muted">
-                            +221
-                        </span>
-                        {/*
-              Pas de `text-sm` ici : la couche utilities écrase la règle de base
-              qui force 16px, et Safari iOS zoome alors au focus.
-            */}
-                        <input
-                            id="tel-momo"
-                            type="tel"
-                            inputMode="numeric"
-                            autoComplete="tel-national"
-                            maxLength={12}
-                            value={masquerTelephone(r.telephone)}
-                            onChange={(e) => r.setTelephone(e.target.value)}
-                            placeholder="77 123 45 67"
-                            aria-invalid={montreErreurs && !!r.erreurs.telephone}
-                            className="w-full bg-transparent px-3.5 py-3 font-medium tabular-nums text-foreground placeholder:text-neutral-500 focus:outline-none"
-                        />
-                    </div>
+                    <PhoneInputWithCountry
+                        id="tel-momo"
+                        value={r.telephone}
+                        onChange={(val) => r.setTelephone(val)}
+                        error={montreErreurs && r.erreurs.telephone ? r.erreurs.telephone : undefined}
+                    />
 
-                    {montreErreurs && r.erreurs.telephone ? (
-                        <Alerte>{r.erreurs.telephone}</Alerte>
-                    ) : (
+                    {!r.erreurs.telephone && (
                         <p className="px-1 text-xs text-foreground-muted">
                             La demande de paiement arrive sur ce numéro. Validez-la depuis votre application.
                         </p>

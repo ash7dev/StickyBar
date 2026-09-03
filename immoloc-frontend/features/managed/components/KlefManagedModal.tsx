@@ -18,6 +18,7 @@ import {
   X,
 } from 'lucide-react';
 import { nestFetch } from '@/lib/nestjs/api-client';
+import { PhoneInputWithCountry } from '@/components/ui/PhoneInputWithCountry';
 
 /* ────────────────────────────────────────────────────────────────────────────
    Shared styles
@@ -399,32 +400,11 @@ export function KlefManagedModal({ isOpen, onClose }: ModalProps) {
                     >
                       Téléphone (WhatsApp) <span style={{ color: 'var(--error-500)' }}>*</span>
                     </label>
-                    <div className="relative">
-                      <Phone className="pointer-events-none absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2" style={{ color: 'var(--neutral-400)' }} />
-                      <input
-                        id={ids.telephone}
-                        type="tel"
-                        required
-                        autoComplete="tel"
-                        inputMode="tel"
-                        value={telephone}
-                        onChange={(e) => setTelephone(e.target.value)}
-                        placeholder="+221 77 XXX XX XX"
-                        aria-invalid={phoneLooksOff}
-                        aria-describedby={phoneLooksOff ? `${ids.telephone}-hint` : undefined}
-                        className={`${INPUT_CLS} ${FOCUS_RING}`}
-                        style={inputStyle(phoneLooksOff)}
-                      />
-                    </div>
-                    {phoneLooksOff && (
-                      <p
-                        id={`${ids.telephone}-hint`}
-                        className="mt-1.5 text-[0.65rem] font-semibold"
-                        style={{ color: 'var(--warning-600)' }}
-                      >
-                        Format sénégalais attendu : 9 chiffres commençant par 70/75/76/77/78.
-                      </p>
-                    )}
+                    <PhoneInputWithCountry
+                      id={ids.telephone}
+                      value={telephone}
+                      onChange={setTelephone}
+                    />
                   </div>
 
                   <div>

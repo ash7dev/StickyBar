@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { Building2, Check, Loader2, Mail, Phone, Save, User } from 'lucide-react';
 import { nestFetch } from '@/lib/nestjs/api-client';
 import { NEST_API } from '@/lib/nestjs/endpoints';
+import { PhoneInputWithCountry } from '@/components/ui/PhoneInputWithCountry';
 
 interface Props {
   user: {
@@ -210,20 +211,10 @@ export function GestionnaireParametresProfileCard({ user, onProfileUpdated }: Pr
             <label className="text-xs font-bold block" style={{ color: 'var(--forest-900)' }}>
               Téléphone Professionnel (WhatsApp)
             </label>
-            <div className="relative">
-              <Phone
-                className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4"
-                style={{ color: 'var(--foreground-muted)' }}
-              />
-              <input
-                type="tel"
-                value={telephone}
-                onChange={(e) => setTelephone(e.target.value)}
-                placeholder="+221 77 000 00 00"
-                className="w-full rounded-pill border pl-9 pr-4 py-2.5 text-xs font-medium outline-none transition-colors bg-white [color-scheme:light]"
-                style={{ borderColor: 'var(--border)', color: 'var(--foreground)' }}
-              />
-            </div>
+            <PhoneInputWithCountry
+              value={telephone}
+              onChange={setTelephone}
+            />
           </div>
 
           {/* Email Pro */}

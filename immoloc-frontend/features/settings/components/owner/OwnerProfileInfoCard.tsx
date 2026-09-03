@@ -4,6 +4,7 @@ import { useCallback, useEffect, useId, useRef, useState } from 'react';
 import { User, Save, Loader2, CheckCircle2, AlertCircle } from 'lucide-react';
 import { nestFetch } from '@/lib/nestjs/api-client';
 import { NEST_API } from '@/lib/nestjs/endpoints';
+import { PhoneInputWithCountry } from '@/components/ui/PhoneInputWithCountry';
 
 interface Props {
   prenomInitial?: string;
@@ -179,15 +180,10 @@ export function OwnerProfileInfoCard({
 
           <div>
             <label htmlFor={telId} className="eyebrow mb-2 block">Téléphone WhatsApp</label>
-            <input
+            <PhoneInputWithCountry
               id={telId}
-              type="tel"
-              inputMode="tel"
               value={telephone}
-              onChange={(e) => touch(setTelephone)(e.target.value)}
-              placeholder="77 123 45 67"
-              autoComplete="tel"
-              className={FIELD_CLS}
+              onChange={(val) => touch(setTelephone)(val)}
             />
           </div>
 

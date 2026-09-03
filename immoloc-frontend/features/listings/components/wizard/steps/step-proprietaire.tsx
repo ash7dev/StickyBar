@@ -5,6 +5,7 @@ import { User, UserPlus, Search, Check, Phone, Mail, ShieldCheck, Loader2 } from
 import { useListingFormStore } from '@/stores/listing-form.store';
 import { nestFetch } from '@/lib/nestjs/api-client';
 import { NEST_API } from '@/lib/nestjs/endpoints';
+import { PhoneInputWithCountry } from '@/components/ui/PhoneInputWithCountry';
 import { cn } from '@/lib/utils/cn';
 import { FieldError, FieldLabel, INPUT_CLS, SectionCard } from '../wizard-ui';
 
@@ -300,17 +301,10 @@ export function StepProprietaire({ onNext, submitRef }: Props) {
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div>
                 <FieldLabel required>Numéro de téléphone</FieldLabel>
-                <div className="relative">
-                  <Phone className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-foreground-muted pointer-events-none" />
-                  <input
-                    type="tel"
-                    value={telephone}
-                    onChange={(e) => setTelephone(e.target.value)}
-                    placeholder="+221 77 000 00 00"
-                    className={INPUT_CLS + ' pl-10'}
-                    required
-                  />
-                </div>
+                <PhoneInputWithCountry
+                  value={telephone}
+                  onChange={setTelephone}
+                />
               </div>
 
               <div>
