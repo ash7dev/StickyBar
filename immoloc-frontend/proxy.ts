@@ -84,6 +84,7 @@ export async function proxy(request: NextRequest) {
     },
   );
 
+  const { data: { user } } = await supabase.auth.getUser();
   const hasNestToken = request.cookies.has('nest_token');
   const isAuthenticated = !!user || hasNestToken;
 
