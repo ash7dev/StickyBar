@@ -1,6 +1,6 @@
 import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
 import { PrismaService } from '../../infrastructure/prisma/prisma.service';
-import { StatutDemandeManaged } from '@prisma/client';
+import { StatutDemandeManaged, StatutKyc } from '@prisma/client';
 
 export interface CreateLeadDto {
   prenom: string;
@@ -108,7 +108,7 @@ export class ConciergeLeadsService {
     });
 
     if (!user) {
-      // Créer un compte d'ombre bailleur partenaire
+      // Créer un compte d'ombre bailleur partenaire (KYC pré-vérifié sous mandat conciergerie)
       const generatedEmail = lead.email || `bailleur.${Date.now()}@klef.sn`;
       user = await this.prisma.utilisateur.create({
         data: {
@@ -120,16 +120,18 @@ export class ConciergeLeadsService {
           estProprietaire: true,
           isShadowAccount: true,
           estGestionnaire: false,
+          statutKyc: StatutKyc.VERIFIE,
         },
       });
     } else {
-      // Marquer comme propriétaire si pas encore le cas
-      if (!user.estProprietaire) {
-        user = await this.prisma.utilisateur.update({
-          where: { id: user.id },
-          data: { estProprietaire: true },
-        });
-      }
+      // Marquer comme propriétaire et valider le KYC sous mandat si pas encore fait
+      user = await this.prisma.utilisateur.update({
+        where: { id: user.id },
+        data: {
+          estProprietaire: true,
+          ...(user.statutKyc !== StatutKyc.VERIFIE && { statutKyc: StatutKyc.VERIFIE }),
+        },
+      });
     }
 
     // Mettre à jour la demande

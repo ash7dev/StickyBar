@@ -11,6 +11,7 @@ import {
   StatutLogement,
   StatutPaiement,
   StatutReservation,
+  StatutKyc,
   TypeTransactionWallet,
 } from '@prisma/client';
 import { PrismaService } from '../../infrastructure/prisma/prisma.service';
@@ -124,7 +125,12 @@ export class AdminListingsService {
   async publish(id: string, adminId: string) {
     const logement = await this.prisma.logement.findUnique({
       where: { id },
-      select: { statut: true },
+      select: {
+        statut: true,
+        gestionnaireId: true,
+        proprietaireId: true,
+        proprietaire: { select: { isShadowAccount: true, statutKyc: true } },
+      },
     });
 
     if (!logement) throw new NotFoundException('Logement introuvable');
@@ -143,6 +149,21 @@ export class AdminListingsService {
         valideParAdminId: adminId,
       },
     });
+
+    // Si le bien est sous conciergerie ou appartient à un compte shadow, valider automatiquement le KYC du propriétaire
+    if (
+      (logement.gestionnaireId || logement.proprietaire?.isShadowAccount) &&
+      logement.proprietaireId &&
+      logement.proprietaire?.statutKyc !== StatutKyc.VERIFIE
+    ) {
+      await this.prisma.utilisateur.update({
+        where: { id: logement.proprietaireId },
+        data: { statutKyc: StatutKyc.VERIFIE },
+      });
+      this.logger.log(
+        `[AdminPublish] KYC du propriétaire shadow ${logement.proprietaireId} passé à VERIFIE sous mandat conciergerie.`,
+      );
+    }
 
     await this.invalidateSearchCache();
     return updated;
