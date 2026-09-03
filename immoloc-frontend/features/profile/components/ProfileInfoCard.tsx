@@ -228,17 +228,13 @@ export function ProfileInfoCard({ user, onUpdated }: Props) {
               />
             </FieldShell>
             <EditRow icon={Calendar} label="Date de naissance" value={draft.dateNaissance} onChange={set('dateNaissance')} type="date" autoComplete="bday" />
-            <ReadRow icon={Mail} label="E-mail (non modifiable)" value={user.email} />
-            <ReadRow icon={Hash} label="Identifiant" value={user.id.slice(0, 16).toUpperCase()} mono />
           </>
         ) : (
           <>
             <ReadRow icon={User} label="Prénom" value={user.prenom} />
             <ReadRow icon={User} label="Nom de famille" value={user.nom} />
-            <ReadRow icon={Mail} label="Adresse e-mail" value={user.email} />
             <ReadRow icon={Phone} label="Téléphone" value={user.telephone} />
             <ReadRow icon={Calendar} label="Date de naissance" value={formatDateCivile(user.dateNaissance)} />
-            <ReadRow icon={Hash} label="Identifiant" value={user.id.slice(0, 16).toUpperCase()} mono />
           </>
         )}
       </div>

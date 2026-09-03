@@ -94,7 +94,7 @@ export function ProfileSecurityCard({ user, onUpdated }: Props) {
           </span>
           <div>
             <h2 className="font-display text-lg font-bold text-foreground">
-              Sécurité & Identifiants
+              Sécurité & Identifiants de Connexion
             </h2>
             <p className="text-xs text-foreground-muted">
               {hasExistingEmail

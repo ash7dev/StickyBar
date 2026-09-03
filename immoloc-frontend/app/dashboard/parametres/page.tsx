@@ -15,6 +15,7 @@ import { OwnerProfileInfoCard } from '@/features/settings/components/owner/Owner
 import { OwnerPayoutSettingsCard } from '@/features/settings/components/owner/OwnerPayoutSettingsCard';
 import { OwnerPreferencesCard } from '@/features/settings/components/owner/OwnerPreferencesCard';
 import { OwnerKycVerificationCard } from '@/features/settings/components/owner/OwnerKycVerificationCard';
+import { ProfileSecurityCard } from '@/features/profile/components/ProfileSecurityCard';
 import { OwnerActionsCard } from '@/features/settings/components/owner/OwnerActionsCard';
 import { OwnerSettingsSkeleton } from '@/features/settings/components/owner/OwnerSettingsSkeleton';
 
@@ -45,6 +46,20 @@ export default function OwnerParametresPage() {
   const statutKyc = apiUser?.statutKyc ?? store.statutKyc;
   const isVerified = statutKyc === 'VERIFIE';
 
+  const userProfile: UserProfile = {
+    id: apiUser?.id ?? store.userId ?? user?.id ?? '',
+    prenom: user?.prenom ?? apiUser?.prenom ?? '',
+    nom: user?.nom ?? apiUser?.nom ?? '',
+    email: apiUser?.email ?? user?.email ?? null,
+    telephone: apiUser?.telephone ?? user?.telephone ?? null,
+    dateNaissance: apiUser?.dateNaissance ?? store.dateNaissance ?? null,
+    activeRole: apiUser?.activeRole ?? store.activeRole,
+    estProprietaire: apiUser?.estProprietaire ?? store.estProprietaire,
+    profileCompleted: apiUser?.profileCompleted ?? store.profileCompleted,
+    phoneVerified: apiUser?.phoneVerified ?? store.phoneVerified,
+    statutKyc,
+  };
+
   return (
     <div className="space-y-6 pb-36 sm:pb-16">
       {/* En-tête de la page */}
@@ -68,12 +83,25 @@ export default function OwnerParametresPage() {
           nomInitial={user?.nom}
           telephoneInitial={user?.telephone}
           emailInitial={user?.email}
-          onUpdated={() => queryClient.invalidateQueries({ queryKey: ['user', 'current'] })}
+          onUpdated={() => {
+            queryClient.invalidateQueries({ queryKey: ['user', 'current'] });
+            queryClient.invalidateQueries({ queryKey: ['users', 'me'] });
+          }}
         />
 
         <OwnerPayoutSettingsCard
           telephoneInitial={user?.telephone}
         />
+
+        <div className="lg:col-span-2">
+          <ProfileSecurityCard
+            user={userProfile}
+            onUpdated={() => {
+              queryClient.invalidateQueries({ queryKey: ['user', 'current'] });
+              queryClient.invalidateQueries({ queryKey: ['users', 'me'] });
+            }}
+          />
+        </div>
 
         <div className="lg:col-span-2">
           <OwnerPreferencesCard />
