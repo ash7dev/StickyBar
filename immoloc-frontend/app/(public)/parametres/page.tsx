@@ -51,12 +51,13 @@ function ParametresContent() {
   });
 
   const meta = supabaseUser?.user_metadata ?? {};
+  const hasAuth = !!apiUser || !!store.nestToken || !!store.userId || !!supabaseUser;
 
-  const user: UserProfile | null = supabaseReady && supabaseUser ? {
-    id:               apiUser?.id               ?? store.userId          ?? supabaseUser.id,
+  const user: UserProfile | null = supabaseReady && hasAuth ? {
+    id:               apiUser?.id               ?? store.userId          ?? supabaseUser?.id ?? '',
     prenom:           apiUser?.prenom           ?? meta.prenom           ?? '',
     nom:              apiUser?.nom              ?? meta.nom              ?? '',
-    email:            apiUser?.email            ?? supabaseUser.email    ?? null,
+    email:            apiUser?.email            ?? supabaseUser?.email   ?? null,
     telephone:        apiUser?.telephone        ?? meta.telephone        ?? null,
     dateNaissance:    apiUser?.dateNaissance    ?? store.dateNaissance   ?? null,
     activeRole:       apiUser?.activeRole       ?? store.activeRole,
