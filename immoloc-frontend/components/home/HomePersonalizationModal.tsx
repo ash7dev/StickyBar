@@ -1,6 +1,7 @@
 'use client';
 
 import { useCallback, useEffect, useId, useRef, useState } from 'react';
+import { createPortal } from 'react-dom';
 import { Sparkles, MapPin, Building2, Check, X, ArrowRight, RotateCcw } from 'lucide-react';
 import {
   useHomePreferences,
@@ -24,12 +25,17 @@ export function HomePersonalizationModal({ isOpen, onClose }: Props) {
 
   const [activeStep, setActiveStep] = useState<1 | 2>(1);
   const [confirmReset, setConfirmReset] = useState(false);
+  const [mounted, setMounted] = useState(false);
 
   const titleId = useId();
   const panelId = useId();
   const panelRef = useRef<HTMLDivElement>(null);
   const closeRef = useRef<HTMLButtonElement>(null);
   const previouslyFocused = useRef<HTMLElement | null>(null);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   /* Ni Échap, ni piège à focus, ni verrou de scroll : la page défilait
      derrière la modale et Tab en sortait librement. */
@@ -79,7 +85,7 @@ export function HomePersonalizationModal({ isOpen, onClose }: Props) {
     setConfirmReset(false);
   }, [confirmReset, clearFilters]);
 
-  if (!isOpen) return null;
+  if (!isOpen || !mounted) return null;
 
   const isStep1 = activeStep === 1;
   const items = isStep1 ? AVAILABLE_ZONES : AVAILABLE_SOUS_TYPES;
@@ -88,9 +94,9 @@ export function HomePersonalizationModal({ isOpen, onClose }: Props) {
   const toggle = isStep1 ? toggleZone : toggleSousType;
   const ItemIcon = isStep1 ? MapPin : Building2;
 
-  return (
+  return createPortal(
     <div
-      className="fixed inset-0 z-100 flex items-end justify-center bg-forest-950/70 backdrop-blur-md sm:items-center sm:p-6"
+      className="fixed inset-0 z-[99999] flex items-end justify-center bg-forest-950/75 backdrop-blur-md sm:items-center sm:p-6 animate-in fade-in duration-200"
       onClick={onClose}
     >
       <div
@@ -241,6 +247,7 @@ export function HomePersonalizationModal({ isOpen, onClose }: Props) {
           </div>
         </div>
       </div>
-    </div>
+    </div>,
+    document.body
   );
 }
