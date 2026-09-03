@@ -541,6 +541,15 @@ export interface ReservationDetail {
     ville: string;
     quartier?: string | null;
     adresse: string;
+    gestionnaireId?: string | null;
+    gestionnaire?: {
+      id: string;
+      prenom: string;
+      nom: string;
+      telephone?: string | null;
+      email?: string | null;
+      avatarUrl?: string | null;
+    } | null;
     photos: Array<{ url: string; estPrincipale: boolean }>;
   };
 

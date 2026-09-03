@@ -119,7 +119,7 @@ const CFG: Record<string, StepCfg> = {
   },
 };
 
-export function ReservationTimeline({ historique, variant = 'light', isOwner = false }: Props) {
+export function ReservationTimeline({ historique, variant = 'light', isOwner = false, reservation }: Props) {
   const isDark = variant === 'dark';
 
   /* Le composant retournait null sur un historique vide : la carte
@@ -160,12 +160,17 @@ export function ReservationTimeline({ historique, variant = 'light', isOwner = f
         )}>
           <History className="h-[1.125rem] w-[1.125rem]" aria-hidden="true" />
         </span>
-        <h2 className={cn(
-          'font-display text-base font-semibold tracking-[-0.015em]',
-          isDark ? 'text-neutral-50' : 'text-forest-900',
-        )}>
-          Chronologie
-        </h2>
+        <div>
+          <h2 className={cn(
+            'font-display text-base font-semibold tracking-[-0.015em]',
+            isDark ? 'text-neutral-50' : 'text-forest-900',
+          )}>
+            Chronologie & Traçabilité des actions
+          </h2>
+          <p className={cn('text-xs', isDark ? 'text-forest-200' : 'text-foreground-muted')}>
+            Historique horodaté et nominatif des interventions
+          </p>
+        </div>
       </header>
 
       {/* Une chronologie est une liste ordonnée : <ol>, pas des <div>. */}
@@ -177,7 +182,7 @@ export function ReservationTimeline({ historique, variant = 'light', isOwner = f
             Tout statut absent de CFG disparaissait purement et simplement de
             la chronologie. Sur un historique qui sert de preuve en cas de
             litige, un trou silencieux est le pire comportement : l'evenement
-            existe en base mais personne ne le voit.
+            existe en base mais personne le voit.
           */
           const cfg = CFG[event.nouveauStatut] ?? {
             tenant: event.nouveauStatut,
@@ -190,6 +195,27 @@ export function ReservationTimeline({ historique, variant = 'light', isOwner = f
           const isLast = i === events.length - 1;
           const label = isOwner ? cfg.owner : cfg.tenant;
           const tone = TONES[cfg.tone][isDark ? 'dark' : 'light'];
+
+          let actorLabel: string | null = null;
+          if (event.modifiePar && reservation) {
+            if (event.modifiePar === reservation.proprietaire?.id) {
+              actorLabel = `Par le Propriétaire (${reservation.proprietaire.prenom} ${reservation.proprietaire.nom})`;
+            } else if (
+              event.modifiePar === reservation.logement?.gestionnaireId ||
+              (reservation.logement?.gestionnaire && event.modifiePar === reservation.logement.gestionnaire.id)
+            ) {
+              const gName = reservation.logement.gestionnaire
+                ? `${reservation.logement.gestionnaire.prenom} ${reservation.logement.gestionnaire.nom}`
+                : 'Délégué';
+              actorLabel = `Par le Gestionnaire (${gName})`;
+            } else if (event.modifiePar === reservation.locataire?.id) {
+              actorLabel = `Par le Voyageur (${reservation.locataire.prenom} ${reservation.locataire.nom})`;
+            } else if (event.modifiePar === 'SYSTEM_AUTO_CHECKIN') {
+              actorLabel = 'Système Klef (Auto Check-In H+6)';
+            } else if (event.modifiePar === 'OWNER_SIGNAL_TENANT_NOSHOW') {
+              actorLabel = 'Signalement No-show';
+            }
+          }
 
           return (
             <li key={event.id} className="flex gap-4">
@@ -206,9 +232,19 @@ export function ReservationTimeline({ historique, variant = 'light', isOwner = f
               </div>
 
               <div className={cn('min-w-0 flex-1', isLast ? 'pb-0' : 'pb-5')}>
-                <p className={cn('text-sm font-semibold', isDark ? 'text-neutral-50' : 'text-forest-900')}>
-                  {label}
-                </p>
+                <div className="flex flex-wrap items-center gap-2">
+                  <p className={cn('text-sm font-semibold', isDark ? 'text-neutral-50' : 'text-forest-900')}>
+                    {label}
+                  </p>
+                  {actorLabel && (
+                    <span className={cn(
+                      'rounded-pill px-2.5 py-0.5 text-[10px] font-bold tracking-wide uppercase',
+                      isDark ? 'bg-white/10 text-lime-300' : 'bg-forest-100 text-forest-800',
+                    )}>
+                      {actorLabel}
+                    </span>
+                  )}
+                </div>
 
                 {/* <time dateTime> : la date n'etait qu'un texte, non
                     interpretable par une machine. */}

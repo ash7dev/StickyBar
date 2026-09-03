@@ -92,7 +92,11 @@ export class ReservationsService {
         proprietaire: { select: { id: true, prenom: true, nom: true, avatarUrl: true, telephone: true } },
         logement: {
           select: {
-            id: true, titre: true, ville: true, adresse: true,
+            id: true, titre: true, ville: true, adresse: true, type: true, quartier: true,
+            gestionnaireId: true,
+            gestionnaire: {
+              select: { id: true, prenom: true, nom: true, avatarUrl: true, telephone: true, email: true },
+            },
             photos: { take: 1, where: { estPrincipale: true }, select: { url: true } },
           },
         },

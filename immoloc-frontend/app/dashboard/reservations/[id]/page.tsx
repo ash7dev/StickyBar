@@ -662,6 +662,99 @@ export default function ReservationDetailPage({ params }: { params: Promise<{ id
           </Card>
         </div>
 
+        {/* ══ TRAÇABILITÉ & MANDAT DE GESTION ════════════════════════════ */}
+
+        <Card>
+          <CardHeader icon={ShieldCheck} title="Traçabilité & Mandat de Gestion" />
+
+          <div className="space-y-4">
+            {/* Pastille de statut du mandat */}
+            <div className="flex items-center gap-2 rounded-inner border border-forest-100 bg-forest-50 p-3 text-xs font-medium text-forest-800">
+              <ShieldCheck className="h-4 w-4 shrink-0 text-forest-600" aria-hidden="true" />
+              <span>
+                {res.logement?.gestionnaire ? (
+                  <>
+                    <strong className="font-semibold text-forest-900">Mandat délégué actif</strong> — Ce bien est géré par{' '}
+                    <span className="font-semibold underline decoration-forest-400">
+                      {res.logement.gestionnaire.prenom} {res.logement.gestionnaire.nom}
+                    </span>{' '}
+                    pour le compte du propriétaire titulaire{' '}
+                    <span className="font-semibold">
+                      {res.proprietaire.prenom} {res.proprietaire.nom}
+                    </span>.
+                  </>
+                ) : (
+                  <>
+                    <strong className="font-semibold text-forest-900">Gestion directe</strong> — Ce bien est géré en direct par le propriétaire titulaire{' '}
+                    <span className="font-semibold">
+                      {res.proprietaire.prenom} {res.proprietaire.nom}
+                    </span>.
+                  </>
+                )}
+              </span>
+            </div>
+
+            {/* Fiches des intervenants */}
+            <div className="grid gap-4 sm:grid-cols-2">
+              {/* Propriétaire Titulaire */}
+              <div className="flex items-center gap-3 rounded-inner border border-border bg-background-alt p-3.5">
+                <div className="relative flex h-11 w-11 shrink-0 items-center justify-center overflow-hidden rounded-inner border border-border bg-forest-800 text-xs font-semibold text-neutral-50">
+                  {res.proprietaire.avatarUrl ? (
+                    <Image src={res.proprietaire.avatarUrl} alt="" fill sizes="44px" className="object-cover" />
+                  ) : (
+                    `${res.proprietaire.prenom?.[0] ?? ''}${res.proprietaire.nom?.[0] ?? ''}`.toUpperCase()
+                  )}
+                </div>
+                <div className="min-w-0 flex-1">
+                  <span className="block text-[10px] font-bold uppercase tracking-wider text-foreground-muted">
+                    Propriétaire Titulaire (Bailleur)
+                  </span>
+                  <span className="block truncate text-xs font-semibold text-foreground">
+                    {res.proprietaire.prenom} {res.proprietaire.nom}
+                  </span>
+                  {res.proprietaire.telephone && (
+                    <span className="block text-[11px] tabular-nums text-foreground-muted">
+                      📞 {res.proprietaire.telephone}
+                    </span>
+                  )}
+                </div>
+              </div>
+
+              {/* Gestionnaire Délégué (si présent) */}
+              {res.logement?.gestionnaire ? (
+                <div className="flex items-center gap-3 rounded-inner border border-forest-200 bg-forest-50/50 p-3.5">
+                  <div className="relative flex h-11 w-11 shrink-0 items-center justify-center overflow-hidden rounded-inner border border-forest-300 bg-forest-700 text-xs font-semibold text-neutral-50">
+                    {res.logement.gestionnaire.avatarUrl ? (
+                      <Image src={res.logement.gestionnaire.avatarUrl} alt="" fill sizes="44px" className="object-cover" />
+                    ) : (
+                      `${res.logement.gestionnaire.prenom?.[0] ?? ''}${res.logement.gestionnaire.nom?.[0] ?? ''}`.toUpperCase()
+                    )}
+                  </div>
+                  <div className="min-w-0 flex-1">
+                    <span className="block text-[10px] font-bold uppercase tracking-wider text-forest-700">
+                      Gestionnaire Délégué (Mandataire)
+                    </span>
+                    <span className="block truncate text-xs font-semibold text-foreground">
+                      {res.logement.gestionnaire.prenom} {res.logement.gestionnaire.nom}
+                    </span>
+                    {res.logement.gestionnaire.telephone && (
+                      <span className="block text-[11px] tabular-nums text-foreground-muted">
+                        📞 {res.logement.gestionnaire.telephone}
+                      </span>
+                    )}
+                  </div>
+                </div>
+              ) : (
+                <div className="flex items-center gap-3 rounded-inner border border-dashed border-border bg-background-alt p-3.5 opacity-60">
+                  <span className="text-xs text-foreground-muted">
+                    Aucun gestionnaire délégué associé à cette annonce.
+                  </span>
+                </div>
+              )}
+            </div>
+          </div>
+        </Card>
+
         {/* ══ DÉTAIL FINANCIER ═══════════════════════════════════════════ */}
 
         {isOwner && (
@@ -818,7 +911,7 @@ export default function ReservationDetailPage({ params }: { params: Promise<{ id
 
         {/* ══ CHRONOLOGIE ════════════════════════════════════════════════ */}
 
-        <ReservationTimeline historique={res.historique} variant="dark" isOwner={isOwner} />
+        <ReservationTimeline historique={res.historique} variant="dark" isOwner={isOwner} reservation={res} />
       </div>
 
       {/* ══ BARRE STICKY MOBILE ══════════════════════════════════════════ */}
