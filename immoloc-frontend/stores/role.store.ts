@@ -41,6 +41,20 @@ export function getPersistedActiveRole(): Role | null {
   return null;
 }
 
+function setNestTokenCookie(expiresInSeconds: number) {
+  if (typeof document === 'undefined') return;
+  try {
+    document.cookie = `nest_token=1; path=/; max-age=${expiresInSeconds}; SameSite=Lax`;
+  } catch {}
+}
+
+function clearNestTokenCookie() {
+  if (typeof document === 'undefined') return;
+  try {
+    document.cookie = 'nest_token=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT';
+  } catch {}
+}
+
 function persistActiveRole(role: Role) {
   if (typeof window === 'undefined') return;
   try { localStorage.setItem(ACTIVE_ROLE_KEY, role); } catch {}
@@ -148,6 +162,7 @@ export const useRoleStore = create<RoleState>()(
           onboardingDraft: null,
         }));
         persistActiveRole(role);
+        setNestTokenCookie(expiresIn);
       },
 
       setRole: (role) => {
@@ -179,7 +194,10 @@ export const useRoleStore = create<RoleState>()(
               needsOnboarding: true,
             }
           : { needsOnboarding: false });
-        if (value) clearPersistedActiveRole();
+        if (value) {
+          clearPersistedActiveRole();
+          clearNestTokenCookie();
+        }
       },
 
       setOnboardingDraft: (draft) => set({ onboardingDraft: draft }),
@@ -192,6 +210,7 @@ export const useRoleStore = create<RoleState>()(
           hasHydrated: state.hasHydrated,
         }));
         clearPersistedActiveRole();
+        clearNestTokenCookie();
         // Broadcast logout to other tabs
         if (typeof window !== 'undefined') {
           import('../lib/nestjs/token-manager').then(({ tokenManager }) => {

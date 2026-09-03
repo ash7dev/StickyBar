@@ -84,12 +84,29 @@ export async function proxy(request: NextRequest) {
     },
   );
 
-  const { data: { user } } = await supabase.auth.getUser();
+  const hasNestToken = request.cookies.has('nest_token');
+  const isAuthenticated = !!user || hasNestToken;
 
-  // ── Protection des routes authentifiées ────────────────────────────────────
-  // Les guards React côté client (AuthGuard, OwnerGuard, GestionnaireGuard) 
-  // gèrent l'authentification et l'autorisation souveraine NestJS + Supabase.
-  // Le middleware passe la main à la page client sans intercepter par défaut.
+  // ── Protection des routes authentifiées sur l'Edge ───────────────────────
+  if (PROTECTED_ROUTES.some((route) => pathname.startsWith(route))) {
+    if (!isAuthenticated) {
+      const redirectUrl = new URL('/login', request.url);
+      redirectUrl.searchParams.set('next', pathname);
+      return NextResponse.redirect(redirectUrl);
+    }
+  }
+
+  // ── Redirection des utilisateurs déjà connectés hors des pages auth ───────
+  if (AUTH_ROUTES.some((route) => pathname.startsWith(route))) {
+    if (isAuthenticated) {
+      const next = searchParams.get('next');
+      if (next && next.startsWith('/') && !next.startsWith('//') && !AUTH_ROUTES.some((r) => next.startsWith(r))) {
+        return NextResponse.redirect(new URL(next, request.url));
+      }
+      return NextResponse.redirect(new URL('/dashboard', request.url));
+    }
+  }
+
   return supabaseResponse;
 }
 
