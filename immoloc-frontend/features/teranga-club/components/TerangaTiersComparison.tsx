@@ -35,11 +35,11 @@ const TIERS = [
     name: 'Clé d’Argent',
     icon: Award,
     cashback: 2,
-    condition: '3 séjours ou 300 000 FCFA',
+    condition: '7 séjours ou 500 000 FCFA',
     perks: [
       'Cashback augmenté sur tous vos séjours',
       'Traitement prioritaire de vos réservations',
-      'Quêtes exclusives',
+      'Déblocage des quêtes Explorateur (+1 500 à +2 500 Coins)',
     ],
   },
   {
@@ -47,11 +47,11 @@ const TIERS = [
     name: 'Clé d’Or',
     icon: Crown,
     cashback: 3,
-    condition: '8 séjours ou 1 000 000 FCFA',
+    condition: '15 séjours ou 2 000 000 FCFA',
     perks: [
-      'Cashback maximal',
+      'Cashback maximal VIP (3.0%)',
       'Priorité auprès des hôtes',
-      'Badge Certifié Teranga sur votre profil',
+      'Déblocage des quêtes Légendaires (+5 000 à +10 000 Coins)',
     ],
   },
 ] as const;

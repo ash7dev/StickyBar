@@ -124,6 +124,7 @@ export class TerangaClubService {
         description: 'Effectuez votre 1er séjour réservé et validé sur Klef.',
         bonusCoins: 1000,
         icone: '🔑',
+        requiredTier: 'BRONZE',
         unlocked: unlockedBadges.includes(CodeBadgeTeranga.FIRST_STAY),
       },
       {
@@ -132,6 +133,7 @@ export class TerangaClubService {
         description: 'Laissez un avis détaillé et constructif après votre séjour.',
         bonusCoins: 500,
         icone: '⭐',
+        requiredTier: 'BRONZE',
         unlocked: unlockedBadges.includes(CodeBadgeTeranga.AVIS_STAR),
       },
       {
@@ -140,6 +142,7 @@ export class TerangaClubService {
         description: 'Réservez un hébergement à Saly, Somone, Ngaparou ou Popenguine.',
         bonusCoins: 1500,
         icone: '🌊',
+        requiredTier: 'SILVER',
         unlocked: unlockedBadges.includes(CodeBadgeTeranga.PETITE_COTE_CAPTAIN),
       },
       {
@@ -148,6 +151,7 @@ export class TerangaClubService {
         description: 'Invitez un ami qui effectue sa 1ère réservation sur Klef.',
         bonusCoins: 2500,
         icone: '🤝',
+        requiredTier: 'SILVER',
         unlocked: unlockedBadges.includes(CodeBadgeTeranga.SUPER_PARRAIN),
       },
       {
@@ -156,6 +160,7 @@ export class TerangaClubService {
         description: 'Effectuez un séjour de 7 nuits ou plus sur Klef.',
         bonusCoins: 5000,
         icone: '🏕️',
+        requiredTier: 'GOLD',
         unlocked: unlockedBadges.includes(CodeBadgeTeranga.GRAND_RESIDENT),
       },
       {
@@ -164,6 +169,7 @@ export class TerangaClubService {
         description: 'Réservez des séjours dans au moins 3 villes ou destinations différentes.',
         bonusCoins: 5000,
         icone: '👑',
+        requiredTier: 'GOLD',
         unlocked: unlockedBadges.includes(CodeBadgeTeranga.LEGENDE_SENEGAL),
       },
       {
@@ -172,6 +178,7 @@ export class TerangaClubService {
         description: 'Atteignez 1 000 000 FCFA de réservations cumulées sur 12 mois.',
         bonusCoins: 10000,
         icone: '💎',
+        requiredTier: 'GOLD',
         unlocked: unlockedBadges.includes(CodeBadgeTeranga.CERCLE_MILLION),
       },
     ];
