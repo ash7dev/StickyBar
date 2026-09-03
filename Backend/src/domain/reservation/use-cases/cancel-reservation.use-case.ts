@@ -65,9 +65,20 @@ export class CancelReservationUseCase {
     if (isProprio) {
       politique = ResultatAnnulation.UC4_PROPRIO_MOINS_3J;
       montantRembourse = Number(reservation.totalLocataire);
-      if (diffDays > 7) penaliteProprio = 5000;
-      else if (diffDays >= 2) penaliteProprio = 10000;
-      else penaliteProprio = 20000;
+
+      // Les pénalités d'annulation et le décompte de fautes ne s'appliquent QUE si la réservation était déjà CONFIRMÉE.
+      // Refuser une demande en attente (statut PAID ou PENDING) est un droit de l'hôte et ne génère AUCUNE pénalité.
+      const wasConfirmed =
+        reservation.statut === StatutReservation.CONFIRMED ||
+        reservation.statut === StatutReservation.CHECKED_IN;
+
+      if (wasConfirmed) {
+        if (diffDays > 7) penaliteProprio = 5000;
+        else if (diffDays >= 2) penaliteProprio = 10000;
+        else penaliteProprio = 20000;
+      } else {
+        penaliteProprio = 0;
+      }
     } else {
       if (diffDays > 7) {
         politique = ResultatAnnulation.UC2_LOCATAIRE_PLUS_3J;
