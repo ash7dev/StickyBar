@@ -212,18 +212,32 @@ export class DisputesService {
         },
       });
 
-      // 2. Si FONDE : Sanctions et conséquences
+      // 2. Déterminer le statut réel à restaurer pour la réservation
+      const is100PercentRefund = (dto.statut === StatutLitige.FONDE && (effectiveTaux >= 100 || litige.motif === 'LOGEMENT_NON_CONFORME' || litige.motif === 'LOGEMENT_INACCESSIBLE'));
+      const now = new Date();
+      const dateFin = new Date(reservation.dateFin);
+
+      let nouveauStatutResa: StatutReservation;
+      if (dto.statut === StatutLitige.FONDE && is100PercentRefund) {
+        nouveauStatutResa = StatutReservation.CANCELLED;
+      } else if (reservation.checkoutLocataireLe || reservation.checkoutProprioLe || now >= dateFin) {
+        nouveauStatutResa = StatutReservation.COMPLETED;
+      } else if (reservation.checkinLocataireLe || reservation.checkinProprioLe) {
+        nouveauStatutResa = StatutReservation.CHECKED_IN;
+      } else {
+        nouveauStatutResa = StatutReservation.CONFIRMED;
+      }
+
+      await tx.reservation.update({
+        where: { id: litige.reservationId },
+        data: { statut: nouveauStatutResa },
+      });
+
+      // 3. Si FONDE : Attribution des fautes et compensations
       if (dto.statut === StatutLitige.FONDE) {
         const estLocataireVictime = litige.declarePar === RoleLitige.LOCATAIRE;
 
         if (estLocataireVictime) {
-          // Si remboursement 100%, annulation. Si partiel, marquer completed (séjour partiellement maintenu)
-          const nouveauStatutResa = effectiveTaux >= 100 ? StatutReservation.CANCELLED : StatutReservation.COMPLETED;
-          await tx.reservation.update({
-            where: { id: litige.reservationId },
-            data: { statut: nouveauStatutResa },
-          });
-
           // Ajouter une faute au propriétaire
           await tx.compteurFaute.create({
             data: {
@@ -235,11 +249,6 @@ export class DisputesService {
           });
         } else {
           // Proprio victime (ex: dommages ou dépassement personnes)
-          await tx.reservation.update({
-            where: { id: litige.reservationId },
-            data: { statut: StatutReservation.COMPLETED },
-          });
-
           const typeFauteLocataire =
             litige.motif === 'DEPASSEMENT_PERSONNES'
               ? TypeFaute.DEPASSEMENT_PERSONNES
@@ -256,35 +265,31 @@ export class DisputesService {
 
           // Si dédommagement accordé au propriétaire (ex: dégâts)
           if (calculatedCompensation > 0) {
-            const hostWallet = await tx.wallet.findUnique({
+            const hostWallet = await tx.wallet.upsert({
               where: { utilisateurId: reservation.proprietaireId },
+              create: {
+                utilisateurId: reservation.proprietaireId,
+                soldeDisponible: calculatedCompensation,
+              },
+              update: {
+                soldeDisponible: { increment: calculatedCompensation },
+              },
             });
-            if (hostWallet) {
-              const soldeApres = Number(hostWallet.soldeDisponible) + calculatedCompensation;
-              await tx.wallet.update({
-                where: { id: hostWallet.id },
-                data: { soldeDisponible: { increment: calculatedCompensation } },
-              });
-              await tx.transactionWallet.create({
-                data: {
-                  walletId: hostWallet.id,
-                  reservationId: reservation.id,
-                  type: TypeTransactionWallet.CREDIT_LOCATION,
-                  montant: calculatedCompensation,
-                  sens: SensTransaction.CREDIT,
-                  soldeApres,
-                  description: `Dédommagement litige FONDÉ (${calculatedCompensation.toLocaleString('fr-FR')} FCFA) — résa ${reservation.id.slice(0, 8).toUpperCase()}`,
-                },
-              });
-            }
+
+            const soldeApres = Number(hostWallet.soldeDisponible);
+            await tx.transactionWallet.create({
+              data: {
+                walletId: hostWallet.id,
+                reservationId: reservation.id,
+                type: TypeTransactionWallet.CREDIT_LOCATION,
+                montant: calculatedCompensation,
+                sens: SensTransaction.CREDIT,
+                soldeApres,
+                description: `Dédommagement litige FONDÉ (${calculatedCompensation.toLocaleString('fr-FR')} FCFA) — résa ${reservation.id.slice(0, 8).toUpperCase()}`,
+              },
+            });
           }
         }
-      } else {
-        // 3. Si NON_FONDE : Retour à COMPLETED
-        await tx.reservation.update({
-          where: { id: litige.reservationId },
-          data: { statut: StatutReservation.COMPLETED },
-        });
       }
 
       this.logger.log(`Litige [${id}] résolu par l'admin [${adminId}] : ${dto.statut} (Taux: ${effectiveTaux}%)`);
