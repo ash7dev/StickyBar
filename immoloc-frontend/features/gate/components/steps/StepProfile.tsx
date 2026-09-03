@@ -40,7 +40,7 @@ const inputCls = cn(
 
 export function StepProfile({ onDone }: Props) {
   const { onboardingDraft, dateNaissance: storeDate, setGateStatus, setOnboardingDraft, needsOnboarding } = useRoleStore();
-  const { refreshIfNeeded } = useNestToken();
+  const { refreshIfNeeded, syncFromSupabaseSession } = useNestToken();
 
   const { register, handleSubmit, control, formState: { errors, isSubmitting } } = useForm<FormData>({
     resolver: zodResolver(schema),
@@ -63,14 +63,23 @@ export function StepProfile({ onDone }: Props) {
       return;
     }
 
-    const token = await refreshIfNeeded();
-    await nestFetch(NEST_API.USERS.ME, {
-      method: 'PATCH',
-      token: token ?? undefined,
-      body: JSON.stringify(data),
-    });
-    setGateStatus({ profileCompleted: true, dateNaissance: data.dateNaissance });
-    onDone();
+    try {
+      const token = await refreshIfNeeded();
+      await nestFetch(NEST_API.USERS.ME, {
+        method: 'PATCH',
+        token: token ?? undefined,
+        body: JSON.stringify(data),
+      });
+
+      setGateStatus({ profileCompleted: true, dateNaissance: data.dateNaissance });
+
+      // Générer et rafraîchir les tokens de session souverains immédiatement avec le profil mis à jour
+      await syncFromSupabaseSession();
+
+      onDone();
+    } catch (err) {
+      console.error('[StepProfile] Erreur lors de la mise à jour du profil', err);
+    }
   }
 
   return (
