@@ -78,6 +78,17 @@ export function FilterBar({ filters }: FilterBarProps) {
     setMounted(true);
   }, []);
 
+  // Lock du scroll de fond quand le modal filtres est ouvert
+  useEffect(() => {
+    if (activePopover === 'modal') {
+      const prevOverflow = document.body.style.overflow;
+      document.body.style.overflow = 'hidden';
+      return () => {
+        document.body.style.overflow = prevOverflow;
+      };
+    }
+  }, [activePopover]);
+
   // Fermeture des popovers au clic extérieur ou au scroll
   useEffect(() => {
     function handleClickOutside(e: MouseEvent) {
@@ -419,7 +430,7 @@ export function FilterBar({ filters }: FilterBarProps) {
       {activePopover === 'ville' && popoverPos && mounted && createPortal(
         <div
           style={{ top: popoverPos.top, left: popoverPos.left }}
-          className="fixed w-56 p-2 rounded-2xl bg-white border border-border shadow-2xl z-[100] animate-in fade-in zoom-in-95"
+          className="fixed w-56 p-2 rounded-2xl bg-white border border-border shadow-2xl z-[99999] animate-in fade-in zoom-in-95"
         >
           <div className="text-[11px] font-bold text-foreground-muted uppercase tracking-wider px-2 py-1.5">
             Sélectionner une ville
@@ -447,7 +458,7 @@ export function FilterBar({ filters }: FilterBarProps) {
       {activePopover === 'dates' && popoverPos && mounted && createPortal(
         <div
           style={{ top: popoverPos.top, left: popoverPos.left }}
-          className="fixed w-72 p-4 rounded-2xl bg-white border border-border shadow-2xl z-[100] animate-in fade-in zoom-in-95 space-y-3"
+          className="fixed w-72 p-4 rounded-2xl bg-white border border-border shadow-2xl z-[99999] animate-in fade-in zoom-in-95 space-y-3"
         >
           <div className="text-[11px] font-bold text-foreground-muted uppercase tracking-wider">
             Dates de séjour
@@ -488,7 +499,7 @@ export function FilterBar({ filters }: FilterBarProps) {
       {activePopover === 'voyageurs' && popoverPos && mounted && createPortal(
         <div
           style={{ top: popoverPos.top, left: popoverPos.left }}
-          className="fixed w-64 p-4 rounded-2xl bg-white border border-border shadow-2xl z-[100] animate-in fade-in zoom-in-95"
+          className="fixed w-64 p-4 rounded-2xl bg-white border border-border shadow-2xl z-[99999] animate-in fade-in zoom-in-95"
         >
           <div className="flex items-center justify-between">
             <span className="text-xs font-bold text-foreground">Personnes min.</span>
@@ -517,7 +528,7 @@ export function FilterBar({ filters }: FilterBarProps) {
       {activePopover === 'prix' && popoverPos && mounted && createPortal(
         <div
           style={{ top: popoverPos.top, left: popoverPos.left }}
-          className="fixed w-64 p-3 rounded-2xl bg-white border border-border shadow-2xl z-[100] animate-in fade-in zoom-in-95"
+          className="fixed w-64 p-3 rounded-2xl bg-white border border-border shadow-2xl z-[99999] animate-in fade-in zoom-in-95"
         >
           <div className="text-[11px] font-bold text-foreground-muted uppercase tracking-wider px-2 py-1 mb-1">
             Presets de Prix
@@ -545,7 +556,7 @@ export function FilterBar({ filters }: FilterBarProps) {
       {activePopover === 'type' && popoverPos && mounted && createPortal(
         <div
           style={{ top: popoverPos.top, left: popoverPos.left }}
-          className="fixed w-56 p-2 rounded-2xl bg-white border border-border shadow-2xl z-[100] animate-in fade-in zoom-in-95"
+          className="fixed w-56 p-2 rounded-2xl bg-white border border-border shadow-2xl z-[99999] animate-in fade-in zoom-in-95"
         >
           <div className="text-[11px] font-bold text-foreground-muted uppercase tracking-wider px-2 py-1.5">
             Type de logement
@@ -578,14 +589,14 @@ export function FilterBar({ filters }: FilterBarProps) {
       {/* ── MODAL COMPLET ⚙ FILTRES (Rendu via Portal sur document.body) ── */}
       {activePopover === 'modal' && mounted && createPortal(
         <>
-          {/* Backdrop avec z-[100] sur tout l'écran */}
+          {/* Backdrop avec z-[99990] sur tout l'écran */}
           <div
-            className="fixed inset-0 z-[100] bg-black/60 backdrop-blur-sm animate-in fade-in duration-200"
+            className="fixed inset-0 z-[99990] bg-black/65 backdrop-blur-sm animate-in fade-in duration-200"
             onClick={() => setActivePopover(null)}
           />
 
-          {/* Modal / Sheet container avec z-[110] centré sur l'écran */}
-          <div className="fixed inset-x-0 bottom-0 sm:bottom-auto sm:top-1/2 sm:left-1/2 sm:-translate-x-1/2 sm:-translate-y-1/2 z-[110] w-full sm:max-w-lg bg-white rounded-t-[32px] sm:rounded-[28px] border border-border shadow-2xl overflow-hidden flex flex-col max-h-[88dvh] sm:max-h-[85vh] animate-in slide-in-from-bottom-8 sm:slide-in-from-bottom-0 sm:zoom-in-95 duration-200">
+          {/* Modal / Sheet container avec z-[99999] au tout premier plan */}
+          <div className="fixed inset-x-0 bottom-0 sm:bottom-auto sm:top-1/2 sm:left-1/2 sm:-translate-x-1/2 sm:-translate-y-1/2 z-[99999] w-full sm:max-w-lg bg-white rounded-t-[32px] sm:rounded-[28px] border border-border shadow-2xl overflow-hidden flex flex-col max-h-[88dvh] sm:max-h-[85vh] animate-in slide-in-from-bottom-8 sm:slide-in-from-bottom-0 sm:zoom-in-95 duration-200">
             
             {/* Header Modal avec poignée de glissement sur mobile */}
             <div className="p-4 sm:p-5 border-b border-border bg-neutral-50/70">
