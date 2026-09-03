@@ -28,23 +28,75 @@ export function OwnerCTASection() {
   return (
     <section className="overflow-hidden py-6 sm:py-20">
       <div className="mx-auto max-w-7xl px-3 sm:px-6">
-        {/* `.section-inverse` porte déjà le dégradé forest-900 → 950 et bascule
-            correctement en mode sombre. */}
-        <div className="section-inverse relative overflow-hidden">
+        <div className="section-inverse relative overflow-hidden rounded-3xl">
 
-          {/* Un seul halo. Les trois précédents, la grille, les quatre icônes
-              flottantes, le carré rotatif et le cercle pulsant animaient en
-              continu — y compris hors du viewport — sans respecter
-              prefers-reduced-motion, que le <style jsx> court-circuitait. */}
+          {/* Halo d'ambiance */}
           <div
             aria-hidden="true"
             className="pointer-events-none absolute -top-32 -right-32 h-96 w-96 rounded-pill bg-forest-700/40 blur-3xl"
           />
 
-          <div className="relative grid gap-8 sm:gap-12 p-5 sm:p-8 md:p-12 lg:grid-cols-2 lg:p-16">
+          {/* ════ MOBILE VERSION (Sleek & Direct) ════════════════════════════ */}
+          <div className="relative p-6 space-y-6 sm:hidden">
+            <span className="inline-flex items-center gap-1.5 rounded-pill border border-gold-400/30 bg-gold-400/12 px-3 py-1 text-[0.6875rem] font-semibold uppercase tracking-wider text-gold-300">
+              <Star className="h-3 w-3 fill-current" aria-hidden="true" />
+              Espace propriétaires
+            </span>
+
+            <div className="space-y-2">
+              <h2 className="font-display text-2xl font-bold leading-tight text-on-inverse-display">
+                Votre logement dort ?<br />Faites-le travailler.
+              </h2>
+              <p className="text-xs leading-relaxed text-on-inverse-muted">
+                0% de commission à l’inscription. Vous ne payez que sur les séjours réellement effectués.
+              </p>
+            </div>
+
+            {/* Statistiques clés mobile */}
+            <div className="grid grid-cols-3 gap-2 rounded-2xl border border-border-inverse bg-white/5 p-3 text-center">
+              {PROMESSES.map(({ value, label }) => (
+                <div key={label} className="min-w-0">
+                  <p className="font-display text-lg font-bold tabular-nums text-on-inverse">
+                    {value}
+                  </p>
+                  <p className="text-[0.625rem] leading-tight text-on-inverse-muted truncate mt-0.5">
+                    {label}
+                  </p>
+                </div>
+              ))}
+            </div>
+
+            {/* Bouton d'action principal immédiat */}
+            <div className="space-y-2 pt-1">
+              <Link href="/devenir-hote" className="btn-action w-full justify-center py-3.5 text-sm font-bold shadow-action">
+                <span>Devenir hôte</span>
+                <ArrowRight className="h-4 w-4" aria-hidden="true" />
+              </Link>
+              <p className="flex items-center justify-center gap-1.5 text-[0.6875rem] text-on-inverse-muted">
+                <Check className="h-3.5 w-3.5 shrink-0 text-lime-400" aria-hidden="true" />
+                Gratuit · sans engagement · 5 minutes
+              </p>
+            </div>
+
+            {/* Avantages essentiels en 2 colonnes */}
+            <div className="grid grid-cols-2 gap-2 pt-2">
+              {BENEFITS.slice(0, 4).map(({ icon: Icon, title }) => (
+                <div key={title} className="flex items-center gap-2 rounded-xl border border-border-inverse bg-white/5 p-2.5">
+                  <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-white/10 text-lime-300">
+                    <Icon className="h-3.5 w-3.5" />
+                  </span>
+                  <p className="text-[0.6875rem] font-semibold text-on-inverse leading-tight line-clamp-1">
+                    {title}
+                  </p>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {/* ════ DESKTOP VERSION (Rich Narrative) ═══════════════════════════ */}
+          <div className="hidden sm:grid relative gap-8 sm:gap-12 p-8 md:p-12 lg:grid-cols-2 lg:p-16">
 
             {/* ── Gauche ─────────────────────────────────────────────────── */}
-
             <div className="flex flex-col justify-center">
               <span className="mb-8 inline-flex items-center gap-2 self-start rounded-pill border border-gold-400/30 bg-gold-400/12 px-3 py-1.5 text-xs font-semibold uppercase tracking-wider text-gold-300">
                 <Star className="h-3 w-3 fill-current" aria-hidden="true" />
@@ -78,7 +130,6 @@ export function OwnerCTASection() {
             </div>
 
             {/* ── Droite ─────────────────────────────────────────────────── */}
-
             <div className="flex flex-col justify-center">
               <h2 className="mb-4 font-display text-3xl font-semibold leading-tight tracking-tight text-on-inverse-display md:text-4xl lg:text-5xl">
                 Votre logement dort ?<br />Faites-le travailler.
@@ -111,7 +162,6 @@ export function OwnerCTASection() {
               </ul>
 
               <div className="flex flex-col items-start gap-4 sm:flex-row sm:items-center">
-                {/* ★ Seul aplat lime de la section. */}
                 <Link href="/devenir-hote" className="btn-action px-8 py-4 text-lg">
                   Devenir hôte
                   <ArrowRight className="h-5 w-5" aria-hidden="true" />
