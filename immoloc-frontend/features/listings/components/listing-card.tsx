@@ -40,8 +40,10 @@ export interface ListingCard {
    Helpers
    ═══════════════════════════════════════════════════════════════════════════ */
 
+import { useCurrencyStore } from '@/stores/currency.store';
+
 function formatFCFA(amount: number): string {
-  return new Intl.NumberFormat('fr-FR').format(amount);
+  return useCurrencyStore.getState().formatAmount(amount);
 }
 
 function formatDate(value: string): string {

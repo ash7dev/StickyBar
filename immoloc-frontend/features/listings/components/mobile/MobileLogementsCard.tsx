@@ -4,6 +4,7 @@ import Image from 'next/image';
 import Link from 'next/link';
 import { MapPin, Star, Users, BedDouble, Bath, ArrowRight } from 'lucide-react';
 import type { Listing } from '@/lib/nestjs/types';
+import { TenantPriceDisplay } from '@/components/ui/TenantPriceDisplay';
 
 const TYPE_LABELS: Record<string, string> = {
   APPARTEMENT: 'Appartement',
@@ -18,7 +19,6 @@ const TYPE_LABELS: Record<string, string> = {
 export function MobileLogementsCard({ listing }: { listing: Listing }) {
   const photo    = listing.photos.find((p) => p.estPrincipale)?.url ?? listing.photos[0]?.url;
   const location = [listing.quartier, listing.ville].filter(Boolean).join(', ');
-  const price    = Math.round(Number(listing.prixBase) * 1.07).toLocaleString('fr-FR');
   const rating   = listing.note && listing.note > 0 ? listing.note : null;
 
   return (
@@ -109,15 +109,17 @@ export function MobileLogementsCard({ listing }: { listing: Listing }) {
           </span>
         </div>
 
-        {/* Prix - design amélioré */}
+        {/* Prix - design amélioré avec conversion dynamique */}
         <div
           className="flex items-center justify-between mt-3 px-3.5 py-2.5 rounded-[1rem] shadow-sm"
           style={{ background: 'linear-gradient(135deg, var(--primary-600) 0%, var(--primary-500) 100%)' }}
         >
-          <div className="flex flex-col gap-0.5">
-            <span className="text-[16px] font-black text-white leading-none tracking-tight">{price}</span>
-            <span className="text-[8px] font-bold text-white/70 uppercase tracking-wide">FCFA/nuit</span>
-          </div>
+          <TenantPriceDisplay
+            prixBase={listing.prixBase}
+            derniereMinuteActive={listing.derniereMinuteActive}
+            size="sm"
+            textColor="text-white"
+          />
           <div className="w-6 h-6 rounded-full bg-white/25 flex items-center justify-center backdrop-blur-sm">
             <ArrowRight className="w-3.5 h-3.5 text-white" strokeWidth={2.5} />
           </div>

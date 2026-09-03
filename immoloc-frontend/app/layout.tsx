@@ -9,6 +9,8 @@ import { PWARegister } from '@/components/pwa-register';
 import { CookieConsentModal } from '@/components/cookies/CookieConsentModal';
 import { InstallAppModal } from '@/components/pwa/InstallAppModal';
 import { KlefAssistantWidget } from '@/components/assistant/KlefAssistantWidget';
+import { I18nProvider } from '@/lib/i18n/i18n.context';
+import { GoogleTranslateScript } from '@/components/i18n/GoogleTranslateScript';
 import './globals.css';
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -96,39 +98,26 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
 
         <ThemeProvider defaultMode="light">
           <QueryProvider>
-            <NestSessionSync />
-            <PWARegister />
+            <I18nProvider>
+              <NestSessionSync />
+              <PWARegister />
 
-            <main id="contenu" className="flex-1">
-              {children}
-            </main>
+              <main id="contenu" className="flex-1">
+                {children}
+              </main>
 
-            {/* ⛔ TenantBottomNav a été retiré du layout racine.
-                Il s'affichait sur /login, /inscription, l'espace bailleur et
-                l'admin — soit une navigation locataire montrée à des gens qui
-                ne sont pas locataires, et un décalage de 4rem en bas de pages
-                qui n'en ont pas besoin.
+              <Toaster
+                position="bottom-center"
+                offset="calc(env(safe-area-inset-bottom) + 1rem)"
+                richColors
+                closeButton
+              />
 
-                À déplacer dans le layout du groupe de routes concerné :
-                  app/(locataire)/layout.tsx
-
-                Ce layout devra aussi porter le dégagement bas :
-                  <div className="pb-[calc(4rem+env(safe-area-inset-bottom))]" />
-                sinon la barre fixe recouvre le dernier élément de chaque page. */}
-
-            <Toaster
-              // 'top-center' passait sous la navbar flottante (sticky, top: 1rem).
-              // 'bottom-center' avec décalage safe-area évite le chevauchement
-              // et rapproche le toast du pouce sur mobile.
-              position="bottom-center"
-              offset="calc(env(safe-area-inset-bottom) + 1rem)"
-              richColors
-              closeButton
-            />
-
-            <CookieConsentModal />
-            <InstallAppModal />
-            <KlefAssistantWidget />
+              <CookieConsentModal />
+              <InstallAppModal />
+              <KlefAssistantWidget />
+              <GoogleTranslateScript />
+            </I18nProvider>
           </QueryProvider>
         </ThemeProvider>
       </body>

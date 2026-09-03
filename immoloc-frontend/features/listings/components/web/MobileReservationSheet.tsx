@@ -170,7 +170,7 @@ export function MobileReservationSheet({
     }
   }
 
-  const getFormattedPrice = useCurrencyStore((s) => s.getFormattedPrice);
+  const { currency, getFormattedPrice } = useCurrencyStore();
 
   return (
     <>

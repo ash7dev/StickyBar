@@ -4,6 +4,7 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
 import { Play, Volume2, VolumeX, X, Zap } from 'lucide-react';
 import type { Listing } from '@/lib/nestjs/types';
+import { useCurrencyStore } from '@/stores/currency.store';
 
 /**
  * Majoration appliquée au prix de base avant affichage.
@@ -249,7 +250,7 @@ export function VideoReelsModal({ listing, isOpen, onClose, posterUrl }: Props) 
               {listing.titre}
             </h3>
             <p className="mt-1.5 text-sm font-semibold tabular-nums text-neutral-50">
-              {formatPrixPublic(listing.prixBase)} FCFA
+              {useCurrencyStore.getState().formatAmount(Math.round(listing.prixBase * MARKUP))}
               <span className="ml-1 text-xs font-normal text-neutral-50/70">/ nuit</span>
             </p>
           </div>

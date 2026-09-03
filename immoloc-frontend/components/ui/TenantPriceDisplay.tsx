@@ -44,7 +44,7 @@ export function TenantPriceDisplay({
   textColor,
   isInverse = false,
 }: TenantPriceDisplayProps) {
-  const getFormattedPrice = useCurrencyStore((s) => s.getFormattedPrice);
+  const { currency, getFormattedPrice } = useCurrencyStore();
   const prixPublic = getPrixPublic(prixBase);
   const isDiscounted = derniereMinuteActive && prixPublic > 0;
   const prixFinal = isDiscounted ? getPrixDerniereMinute(prixPublic) : prixPublic;

@@ -1,3 +1,5 @@
+import { useCurrencyStore } from '@/stores/currency.store';
+
 /**
  * Taux de commission locataire appliqué aux prix de base (7%).
  * ⚠️ SOURCE DE VÉRITÉ FRONTEND POUR LE PRIX PUBLIC LOCATAIRE.
@@ -17,12 +19,12 @@ export function getPrixPublic(prixBase: number | string | null | undefined): num
 }
 
 /**
- * Formate un prix public locataire en FCFA (ex: "53 500").
+ * Formate un prix public locataire dans la devise active (FCFA, EUR, USD, etc.).
  */
 export function formatPrixPublic(prixBase: number | string | null | undefined): string {
   const prixPublic = getPrixPublic(prixBase);
   if (prixPublic <= 0) return '—';
-  return prixPublic.toLocaleString('fr-FR');
+  return useCurrencyStore.getState().formatAmount(prixPublic);
 }
 
 /**
@@ -38,25 +40,18 @@ export function getPrixDerniereMinute(prixPublic: number): number {
 }
 
 /**
- * Formate le prix réduit "Dernière Minute" en FCFA (ex: "45 475").
+ * Formate le prix réduit "Dernière Minute" dans la devise active.
  */
 export function formatPrixDerniereMinute(prixPublic: number): string {
   const reduced = getPrixDerniereMinute(prixPublic);
-  return reduced <= 0 ? '—' : reduced.toLocaleString('fr-FR');
+  return reduced <= 0 ? '—' : useCurrencyStore.getState().formatAmount(reduced);
 }
 
 /**
- * Formate un montant en tenant compte de la devise active (FCFA, EUR, USD).
+ * Formate un montant en tenant compte de la devise active (FCFA, EUR, USD, GBP, CAD).
  */
 export function formatPriceWithCurrency(priceInFcfa: number | string | null | undefined): string {
-  if (typeof window !== 'undefined') {
-    try {
-      const { useCurrencyStore } = require('@/stores/currency.store');
-      const fn = useCurrencyStore.getState().getFormattedPrice;
-      return fn(priceInFcfa).fullStr;
-    } catch {}
-  }
-  const prixPublic = getPrixPublic(priceInFcfa);
-  if (prixPublic <= 0) return '—';
-  return `${prixPublic.toLocaleString('fr-FR')} FCFA`;
+  const num = typeof priceInFcfa === 'string' ? parseFloat(priceInFcfa) : priceInFcfa;
+  if (!num || Number.isNaN(num) || num <= 0) return '—';
+  return useCurrencyStore.getState().formatAmount(num);
 }

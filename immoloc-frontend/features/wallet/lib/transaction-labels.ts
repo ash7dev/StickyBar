@@ -1,4 +1,5 @@
 import type { TransactionType, TransactionSens } from '@/lib/nestjs';
+import { useCurrencyStore } from '@/stores/currency.store';
 
 export interface TransactionMeta {
   label: string;
@@ -57,7 +58,5 @@ export function getTransactionMeta(type: string, sens: string): TransactionMeta 
 export function formatFCFA(amount: number | string | null | undefined): string {
   const val = Number(amount ?? 0);
   const safe = Number.isNaN(val) ? 0 : val;
-  return new Intl.NumberFormat('fr-SN', {
-    maximumFractionDigits: 0,
-  }).format(safe) + ' FCFA';
+  return useCurrencyStore.getState().formatAmount(safe);
 }
