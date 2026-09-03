@@ -181,7 +181,11 @@ export class DisputesService {
     let calculatedCompensation = 0;
 
     if (dto.statut === StatutLitige.FONDE && litige.declarePar === RoleLitige.LOCATAIRE) {
-      if (dto.montantCompensation != null && totalMontant > 0) {
+      if (['LOGEMENT_NON_CONFORME', 'LOGEMENT_INACCESSIBLE', 'ANNULATION_ABUSIVE_HOTE'].includes(litige.motif)) {
+        // Pour logement non conforme ou inaccessible : remboursement 100% automatique et départ du voyageur
+        effectiveTaux = 100;
+        calculatedCompensation = totalMontant;
+      } else if (dto.montantCompensation != null && totalMontant > 0) {
         calculatedCompensation = Math.min(dto.montantCompensation, totalMontant);
         effectiveTaux = Math.round((calculatedCompensation / totalMontant) * 100);
       } else if (dto.tauxRemboursement != null) {
@@ -226,7 +230,7 @@ export class DisputesService {
               utilisateurId: reservation.proprietaireId,
               type: TypeFaute.NON_CONFORMITE_LOGEMENT,
               reservationId: reservation.id,
-              description: `Litige FONDE (${effectiveTaux}% remboursé) : ${dto.decisionAdmin}`,
+              description: `Litige FONDE (${effectiveTaux}% remboursé) [Motif: ${litige.motif}] : ${dto.decisionAdmin}`,
             },
           });
         } else {
@@ -236,12 +240,17 @@ export class DisputesService {
             data: { statut: StatutReservation.COMPLETED },
           });
 
+          const typeFauteLocataire =
+            litige.motif === 'DEPASSEMENT_PERSONNES'
+              ? TypeFaute.DEPASSEMENT_PERSONNES
+              : TypeFaute.NON_CONFORMITE_LOGEMENT;
+
           await tx.compteurFaute.create({
             data: {
               utilisateurId: reservation.locataireId,
-              type: TypeFaute.DEPASSEMENT_PERSONNES,
+              type: typeFauteLocataire,
               reservationId: reservation.id,
-              description: `Litige FONDE : ${dto.decisionAdmin}`,
+              description: `Litige FONDE [Motif: ${litige.motif}] : ${dto.decisionAdmin}`,
             },
           });
 

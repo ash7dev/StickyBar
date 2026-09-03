@@ -355,6 +355,29 @@ export function AdminDisputeResolveModal({ dispute, isOpen, onClose, onConfirmRe
               </div>
             </fieldset>
 
+            {/* ── Notice périmètre Klef & règles spécifiques ───────────── */}
+            {verdict === 'FONDE' && (
+              <div className="space-y-2">
+                {['LOGEMENT_NON_CONFORME', 'LOGEMENT_INACCESSIBLE', 'ANNULATION_ABUSIVE_HOTE'].includes(dispute.motif) && (
+                  <div className="rounded-inner bg-forest-50 p-3.5 border border-forest-200 text-xs text-forest-900 space-y-1">
+                    <p className="font-semibold text-forest-900">🏠 Non-conformité / Inaccessibilité retenue</p>
+                    <p className="leading-relaxed text-forest-800">
+                      Remboursement **100% intégral** appliqué d'office au voyageur. La réservation repasse en statut annulé (`CANCELLED`) et l'hôte ne perçoit aucun versement.
+                    </p>
+                  </div>
+                )}
+
+                {['DEPASSEMENT_PERSONNES', 'DEGRADATION', 'DOMMAGES'].includes(dispute.motif) && (
+                  <div className="rounded-inner bg-warning-50 p-3.5 border border-warning-200 text-xs text-warning-900 space-y-1">
+                    <p className="font-semibold text-warning-900">⚖️ Périmètre Klef & Dédommagement</p>
+                    <p className="leading-relaxed text-warning-800">
+                      Le dédommagement est prélevé en priorité sur les fonds retenus en séquestre. Si les fonds sont insuffisants ou en cas de refus du voyageur, une dette sera inscrite sur son profil Klef bloquant ses futures réservations. Klef décline toute responsabilité pour la médiation physique ou le règlement liquide hors plateforme.
+                    </p>
+                  </div>
+                )}
+              </div>
+            )}
+
             {/* ── Compensation ────────────────────────────────────────────── */}
             {verdict === 'FONDE' && (
               <div className="space-y-2">
