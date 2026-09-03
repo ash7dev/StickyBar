@@ -261,6 +261,10 @@ function ReservationsContent() {
       {!isLoading && !error && filtered.length === 0 && (
         <OwnerReservationsEmptyState
           hasFilter={searchQuery.trim().length > 0 || activeTab !== 'ALL'}
+          onResetFilter={() => {
+            setSearchQuery('');
+            setActiveTab('ALL');
+          }}
         />
       )}
 
