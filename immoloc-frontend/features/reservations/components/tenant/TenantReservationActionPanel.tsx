@@ -310,7 +310,7 @@ export function TenantReservationActionPanel({ id, res, onRefetch }: Props) {
           )}
 
           {/* ── FRAIS & SUPPLÉMENTS (LOCATAIRE) ───────────────────────── */}
-          {statut !== 'PENDING' && (
+          {statut !== 'PENDING' && ((res as unknown as { demandesFrais?: any[] }).demandesFrais?.length ?? 0) > 0 && (
             <ExtraFeesCard
               reservationId={res.id}
               demandesFrais={(res as unknown as { demandesFrais?: any[] }).demandesFrais || []}
