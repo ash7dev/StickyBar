@@ -1,5 +1,5 @@
 import Link from 'next/link';
-import { ShieldCheck, ShieldAlert, ShieldX, Clock, FileCheck, ArrowRight, RefreshCw } from 'lucide-react';
+import { ShieldCheck, ShieldAlert, ShieldX, Clock, FileCheck, ArrowRight, RefreshCw, Lock } from 'lucide-react';
 import { cn } from '@/lib/utils/cn';
 import type { StatutKyc } from '@/features/profile/types';
 
@@ -134,7 +134,10 @@ export function OwnerKycVerificationCard({ statutKyc = 'NON_VERIFIE', onKycClick
       </div>
 
       {s.note && (
-        <p className="text-xs leading-relaxed text-foreground-muted">{s.note}</p>
+        <div className="flex items-start gap-2.5 rounded-inner border border-border bg-background-alt p-3">
+          <Lock className="h-3.5 w-3.5 text-foreground-muted shrink-0 mt-0.5" aria-hidden="true" />
+          <p className="text-[11px] leading-relaxed text-foreground-muted">{s.note}</p>
+        </div>
       )}
 
       {s.cta && (

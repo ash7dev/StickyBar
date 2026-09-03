@@ -9,7 +9,7 @@ import { useRoleStore } from '@/stores/role.store';
 import { useNestToken } from '@/features/auth/hooks/use-nest-token';
 import { BirthdatePicker } from '@/features/gate/components/BirthdatePicker';
 import { cn } from '@/lib/utils/cn';
-import { Loader2 } from 'lucide-react';
+import { Loader2, User, CalendarDays, Lock } from 'lucide-react';
 
 const schema = z.object({
   prenom: z.string().min(2, 'Minimum 2 caractères'),
@@ -32,7 +32,7 @@ type FormData = z.infer<typeof schema>;
 interface Props { onDone: () => void }
 
 const inputCls = cn(
-  'w-full rounded-field bg-background-alt border border-border px-4 py-3 text-sm font-semibold text-foreground',
+  'w-full rounded-field bg-background-alt border border-border pl-11 pr-4 py-3 text-sm font-semibold text-foreground',
   'placeholder:text-foreground-faint',
   'outline-none transition-all',
   'focus:border-forest-600 focus:ring-2 focus:ring-forest-500/20',
@@ -71,33 +71,49 @@ export function StepProfile({ onDone }: Props) {
   return (
     <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
       <div className="grid grid-cols-2 gap-3">
+        {/* Prénom */}
         <div>
           <label className="eyebrow block mb-1.5">Prénom</label>
-          <input
-            {...register('prenom')}
-            placeholder="Mamadou"
-            className={cn(inputCls, errors.prenom && 'border-error-500/50 focus:border-error-600')}
-          />
+          <div className="relative">
+            <span className="pointer-events-none absolute left-3.5 top-1/2 -translate-y-1/2 text-foreground-muted">
+              <User className="h-4 w-4" aria-hidden="true" />
+            </span>
+            <input
+              {...register('prenom')}
+              placeholder="Mamadou"
+              className={cn(inputCls, errors.prenom && 'border-error-500/50 focus:border-error-600')}
+            />
+          </div>
           {errors.prenom && (
             <p className="text-[11px] font-semibold text-error-600 mt-1">{errors.prenom.message}</p>
           )}
         </div>
 
+        {/* Nom */}
         <div>
           <label className="eyebrow block mb-1.5">Nom</label>
-          <input
-            {...register('nom')}
-            placeholder="Diallo"
-            className={cn(inputCls, errors.nom && 'border-error-500/50 focus:border-error-600')}
-          />
+          <div className="relative">
+            <span className="pointer-events-none absolute left-3.5 top-1/2 -translate-y-1/2 text-foreground-muted">
+              <User className="h-4 w-4" aria-hidden="true" />
+            </span>
+            <input
+              {...register('nom')}
+              placeholder="Diallo"
+              className={cn(inputCls, errors.nom && 'border-error-500/50 focus:border-error-600')}
+            />
+          </div>
           {errors.nom && (
             <p className="text-[11px] font-semibold text-error-600 mt-1">{errors.nom.message}</p>
           )}
         </div>
       </div>
 
+      {/* Date de naissance */}
       <div>
-        <label className="eyebrow block mb-1.5">Date de naissance</label>
+        <label className="eyebrow flex items-center gap-1.5 mb-1.5">
+          <CalendarDays className="h-3 w-3 text-foreground-muted" aria-hidden="true" />
+          Date de naissance
+        </label>
         <Controller
           control={control}
           name="dateNaissance"
@@ -125,6 +141,12 @@ export function StepProfile({ onDone }: Props) {
           'Continuer'
         )}
       </button>
+
+      {/* Réassurance sécurité */}
+      <p className="flex items-center justify-center gap-1.5 text-[10px] text-foreground-faint">
+        <Lock className="h-2.5 w-2.5" aria-hidden="true" />
+        Vos données sont protégées et chiffrées par Klef
+      </p>
     </form>
   );
 }
