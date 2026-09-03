@@ -72,6 +72,10 @@ export const NEST_API = {
     SIGNAL_NOSHOW:          (id: string) => `${BASE}/reservations/${id}/signal-noshow`,
     REOPEN_LATE_CHECKIN:    (id: string) => `${BASE}/reservations/${id}/reopen-late-checkin`,
     EXTEND_ABSENT_TIMEOUT:  (id: string) => `${BASE}/reservations/${id}/extend-absent-timeout`,
+    DEMANDE_FRAIS_CREATE:   (id: string) => `${BASE}/reservations/${id}/frais`,
+    DEMANDE_FRAIS_LIST:     (id: string) => `${BASE}/reservations/${id}/frais`,
+    DEMANDE_FRAIS_PAYER:    (id: string, fraisId: string) => `${BASE}/reservations/${id}/frais/${fraisId}/payer`,
+    DEMANDE_FRAIS_REFUSER:  (id: string, fraisId: string) => `${BASE}/reservations/${id}/frais/${fraisId}/refuser`,
   },
   USERS: {
     ME: `${BASE}/users/me`,

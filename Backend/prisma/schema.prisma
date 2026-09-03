@@ -411,6 +411,7 @@ model Reservation {
   historique     ReservationHistorique[]
   idempotencyKey IdempotencyKey?
   refunds        Refund[]
+  demandesFrais  DemandeFrais[]
 
   @@index([logementId, statut])
   @@index([logementId, statut, dateDebut, dateFin])
@@ -722,6 +723,32 @@ model Litige {
   @@index([creeLe(sort: Desc)])
 }
 
+model DemandeFrais {
+  id              String             @id @default(uuid())
+  reservationId   String
+  titre           String
+  description     String?
+  montant         Decimal            @db.Decimal(10, 2)
+  statut          StatutDemandeFrais @default(EN_ATTENTE)
+  methodePaiement String?
+
+  creeLe          DateTime           @default(now())
+  payeLe          DateTime?
+  refuseLe        DateTime?
+
+  reservation Reservation @relation(fields: [reservationId], references: [id], onDelete: Cascade)
+
+  @@index([reservationId])
+  @@index([statut])
+}
+
+enum StatutDemandeFrais {
+  EN_ATTENTE
+  PAYE
+  REFUSE
+  CONTESTE
+}
+
 // =============================================================================
 // AVIS & NOTATION
 // =============================================================================
@@ -920,6 +947,7 @@ enum MotifLitige {
   LOGEMENT_INACCESSIBLE
   DEPASSEMENT_PERSONNES
   DOMMAGES
+  NON_PAIEMENT
   AUTRE
 }
 

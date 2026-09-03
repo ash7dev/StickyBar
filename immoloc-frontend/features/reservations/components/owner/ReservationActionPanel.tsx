@@ -15,6 +15,7 @@ import { NEST_API } from '@/lib/nestjs/endpoints';
 import type { ReservationDetail } from '@/lib/nestjs/types';
 import { CheckinModal, CheckoutModal } from './EtatLieuxModal';
 import { LitigePanel } from '../shared/LitigePanel';
+import { ExtraFeesCard } from '../shared/ExtraFeesCard';
 
 /* ═══════════════════════════════════════════════════════════════════════════
    CONSTANTES MÉTIER
@@ -1018,6 +1019,21 @@ export function ReservationActionPanel({ id, res, onRefetch }: Props) {
                   </PrimaryButton>
                 </>
               )}
+
+              {/* ── Frais et Suppléments Séjour ─────────────────────────────── */}
+              <div className="border-t border-border pt-4">
+                <ExtraFeesCard
+                  reservationId={res.id}
+                  demandesFrais={(res as unknown as { demandesFrais?: any[] }).demandesFrais || []}
+                  isOwner={true}
+                  onRefresh={onRefetch}
+                  onOpenDisputeWithMotif={(motif, description) => {
+                    setLitigeMotif(motif);
+                    setLitigeDescription(description);
+                    setShowLitigeModal(true);
+                  }}
+                />
+              </div>
 
               <div className="space-y-3 border-t border-border pt-4">
                 <p className="text-xs font-semibold uppercase tracking-wider text-foreground-muted">

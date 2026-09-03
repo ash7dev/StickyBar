@@ -214,4 +214,54 @@ export class ReservationsController {
   ) {
     return this.reservationsService.rateOwner(user.id, id, dto.note, dto.commentaire);
   }
+
+  // ── DEMANDES DE FRAIS SUPPLÉMENTAIRES ────────────────────────────────────────
+
+  @Post(':id/frais')
+  @Roles(Role.PROPRIETAIRE, Role.GESTIONNAIRE)
+  @ApiOperation({ summary: 'Demander des frais supplémentaires / supplément (propriétaire ou gestionnaire)' })
+  @ApiParam({ name: 'id', description: 'UUID de la réservation' })
+  createDemandeFrais(
+    @Param('id') id: string,
+    @CurrentUser() user: AuthUser,
+    @Body('titre') titre: string,
+    @Body('montant') montant: number,
+    @Body('description') description?: string,
+  ) {
+    return this.reservationsService.createDemandeFrais(id, user.id, titre, Number(montant), description);
+  }
+
+  @Get(':id/frais')
+  @ApiOperation({ summary: 'Lister les demandes de frais supplémentaires d\'une réservation' })
+  @ApiParam({ name: 'id', description: 'UUID de la réservation' })
+  getDemandesFrais(@Param('id') id: string) {
+    return this.reservationsService.getDemandesFrais(id);
+  }
+
+  @Post(':id/frais/:fraisId/payer')
+  @Roles(Role.LOCATAIRE)
+  @ApiOperation({ summary: 'Régler une demande de frais supplémentaire (crédite le Wallet hôte)' })
+  @ApiParam({ name: 'id', description: 'UUID de la réservation' })
+  @ApiParam({ name: 'fraisId', description: 'UUID de la demande de frais' })
+  payerDemandeFrais(
+    @Param('id') id: string,
+    @Param('fraisId') fraisId: string,
+    @CurrentUser() user: AuthUser,
+    @Body('methodePaiement') methodePaiement?: string,
+  ) {
+    return this.reservationsService.payerDemandeFrais(id, fraisId, user.id, methodePaiement);
+  }
+
+  @Post(':id/frais/:fraisId/refuser')
+  @ApiOperation({ summary: 'Déclarer un refus ou contestation sur une demande de frais (ouvre un litige)' })
+  @ApiParam({ name: 'id', description: 'UUID de la réservation' })
+  @ApiParam({ name: 'fraisId', description: 'UUID de la demande de frais' })
+  refuserDemandeFrais(
+    @Param('id') id: string,
+    @Param('fraisId') fraisId: string,
+    @CurrentUser() user: AuthUser,
+    @Body('raison') raison?: string,
+  ) {
+    return this.reservationsService.refuserDemandeFrais(id, fraisId, user.id, raison);
+  }
 }

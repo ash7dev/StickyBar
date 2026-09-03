@@ -15,6 +15,7 @@ import { RefuseCheckInModal } from './RefuseCheckInModal';
 import { DigitalWelcomeGuideModal } from './DigitalWelcomeGuideModal';
 import { TerangaRewardModal } from '@/features/teranga-club/components/TerangaRewardModal';
 import { LitigePanel } from '../shared/LitigePanel';
+import { ExtraFeesCard } from '../shared/ExtraFeesCard';
 import {
   Modal, Notice, Feedback, PrimaryButton, GhostButton, DangerButton,
   RefundScale, StarRating, useNow, resolveRefundTier, MOTIF_MIN, type Tone,
@@ -334,6 +335,17 @@ export function TenantReservationActionPanel({ id, res, onRefetch }: Props) {
           {/* Les actions ordinaires ne sont accessibles QUE si AUCUN litige n'est actif */}
           {!res.litige && statut !== 'DISPUTED' && (
             <>
+              {/* ── FRAIS & SUPPLÉMENTS (LOCATAIRE) ───────────────────────── */}
+              <ExtraFeesCard
+                reservationId={res.id}
+                demandesFrais={(res as unknown as { demandesFrais?: any[] }).demandesFrais || []}
+                isOwner={false}
+                onRefresh={onRefetch}
+                onOpenDisputeWithMotif={(motif, description) => {
+                  setShowRefuseModal(true);
+                }}
+              />
+
               {/* ── OWNER-READY ──────────────────────────────────────────────── */}
 
           {!hasTenantCheckin && subState === 'owner-ready' && (

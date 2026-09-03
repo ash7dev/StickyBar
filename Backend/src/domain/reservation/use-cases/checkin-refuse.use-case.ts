@@ -5,7 +5,7 @@ import {
   ConflictException,
   ForbiddenException,
 } from '@nestjs/common';
-import { StatutReservation, StatutPaiement } from '@prisma/client';
+import { StatutReservation, StatutPaiement, RoleLitige, MotifLitige, StatutLitige } from '@prisma/client';
 import { PrismaService } from '../../../infrastructure/prisma/prisma.service';
 import { ReservationStateMachine } from '../reservation.state-machine';
 import { NotificationsService } from '../../../modules/notifications/notifications.service';
@@ -52,7 +52,32 @@ export class CheckInRefuseUseCase {
         });
       }
 
-      // 3. Créer le litige (si une table Dispute existe, sinon Historique)
+      // 3. Mapper le motif locataire vers MotifLitige enum et créer/mettre à jour la fiche Litige
+      let motifEnum: MotifLitige = MotifLitige.LOGEMENT_NON_CONFORME;
+      if (motif === 'ACCES_IMPOSSIBLE') motifEnum = MotifLitige.LOGEMENT_INACCESSIBLE;
+      else if (motif === 'DEGATS') motifEnum = MotifLitige.DOMMAGES;
+      else if (motif === 'AUTRE') motifEnum = MotifLitige.AUTRE;
+      else if (Object.values(MotifLitige).includes(motif as MotifLitige)) {
+        motifEnum = motif as MotifLitige;
+      }
+
+      await tx.litige.upsert({
+        where: { reservationId },
+        create: {
+          reservationId,
+          declarePar: RoleLitige.LOCATAIRE,
+          motif: motifEnum,
+          description: commentaire || `Refus check-in: ${motif}`,
+          statut: StatutLitige.EN_ATTENTE,
+        },
+        update: {
+          declarePar: RoleLitige.LOCATAIRE,
+          motif: motifEnum,
+          description: commentaire || `Refus check-in: ${motif}`,
+          statut: StatutLitige.EN_ATTENTE,
+        },
+      });
+
       await tx.reservationHistorique.create({
         data: {
           reservationId,

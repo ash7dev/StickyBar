@@ -1,4 +1,4 @@
-import { Injectable, BadRequestException, NotFoundException } from '@nestjs/common';
+import { Injectable, BadRequestException, NotFoundException, ForbiddenException, ConflictException } from '@nestjs/common';
 import { CloudinaryService } from '../../infrastructure/cloudinary/cloudinary.service';
 import { CreateReservationUseCase, CreateReservationInput } from '../../domain/reservation/use-cases/create-reservation.use-case';
 import { ConfirmReservationUseCase } from '../../domain/reservation/use-cases/confirm-reservation.use-case';
@@ -17,7 +17,7 @@ import { PrismaService } from '../../infrastructure/prisma/prisma.service';
 import { AuthUser, Role } from '../../shared/types/jwt-payload.type';
 import { CreateReservationDto } from './dto/create-reservation.dto';
 import { NotificationsService } from '../notifications/notifications.service';
-import { StatutReservation, TypeAvis } from '@prisma/client';
+import { StatutReservation, TypeAvis, RoleLitige, MotifLitige, StatutLitige, TypeTransactionWallet, SensTransaction } from '@prisma/client';
 import { Decimal } from '@prisma/client/runtime/library';
 
 @Injectable()
@@ -103,6 +103,7 @@ export class ReservationsService {
         paiement: true,
         photosEtatLieu: true,
         litige: true,
+        demandesFrais: { orderBy: { creeLe: 'desc' } },
         historique: { orderBy: { modifieLe: 'desc' }, take: 20 },
       },
     });
@@ -517,5 +518,169 @@ export class ReservationsService {
         },
       });
     }, { isolationLevel: 'Serializable' });
+  }
+
+  // ── DEMANDES DE FRAIS SUPPLÉMENTAIRES ────────────────────────────────────────
+
+  async createDemandeFrais(reservationId: string, userId: string, titre: string, montant: number, description?: string) {
+    const reservation = await this.prisma.reservation.findUnique({
+      where: { id: reservationId },
+      include: { logement: { select: { gestionnaireId: true } } },
+    });
+    if (!reservation) throw new NotFoundException('Réservation introuvable');
+
+    const isProprioOrGestionnaire =
+      reservation.proprietaireId === userId || reservation.logement?.gestionnaireId === userId;
+
+    if (!isProprioOrGestionnaire) {
+      throw new ForbiddenException('Seul le propriétaire ou gestionnaire peut demander des frais supplémentaires');
+    }
+
+    const demande = await this.prisma.demandeFrais.create({
+      data: {
+        reservationId,
+        titre,
+        description,
+        montant,
+        statut: 'EN_ATTENTE',
+      },
+    });
+
+    this.notifications.sendReservationPush(
+      reservation.locataireId,
+      '⚡ Supplément demandé par votre hôte',
+      `Votre hôte demande un supplément de ${montant.toLocaleString('fr-FR')} FCFA (${titre}).`,
+      `/reservations/${reservationId}`,
+    ).catch(() => {});
+
+    return demande;
+  }
+
+  async getDemandesFrais(reservationId: string) {
+    return this.prisma.demandeFrais.findMany({
+      where: { reservationId },
+      orderBy: { creeLe: 'desc' },
+    });
+  }
+
+  async payerDemandeFrais(reservationId: string, fraisId: string, userId: string, methodePaiement?: string) {
+    const demande = await this.prisma.demandeFrais.findUnique({
+      where: { id: fraisId },
+      include: { reservation: true },
+    });
+
+    if (!demande || demande.reservationId !== reservationId) {
+      throw new NotFoundException('Demande de frais introuvable');
+    }
+
+    if (demande.reservation.locataireId !== userId) {
+      throw new ForbiddenException('Seul le locataire peut régler ce supplément');
+    }
+
+    if (demande.statut !== 'EN_ATTENTE') {
+      throw new ConflictException('Ce supplément a déjà été traité');
+    }
+
+    const montant = Number(demande.montant);
+
+    return await this.prisma.$transaction(async (tx) => {
+      const updated = await tx.demandeFrais.update({
+        where: { id: fraisId },
+        data: {
+          statut: 'PAYE',
+          payeLe: new Date(),
+          methodePaiement: methodePaiement || 'WAVE',
+        },
+      });
+
+      const hostWallet = await tx.wallet.upsert({
+        where: { utilisateurId: demande.reservation.proprietaireId },
+        create: {
+          utilisateurId: demande.reservation.proprietaireId,
+          soldeDisponible: montant,
+        },
+        update: {
+          soldeDisponible: { increment: montant },
+        },
+      });
+
+      const soldeApres = Number(hostWallet.soldeDisponible);
+
+      await tx.transactionWallet.create({
+        data: {
+          walletId: hostWallet.id,
+          reservationId,
+          type: TypeTransactionWallet.CREDIT_LOCATION,
+          montant,
+          sens: SensTransaction.CREDIT,
+          soldeApres,
+          description: `Règlement supplément (${demande.titre}) via ${methodePaiement || 'Mobile Money'} — résa ${reservationId.slice(0, 8).toUpperCase()}`,
+        },
+      });
+
+      this.notifications.sendReservationPush(
+        demande.reservation.proprietaireId,
+        '💰 Supplément réglé par le locataire !',
+        `Le locataire a réglé le supplément de ${montant.toLocaleString('fr-FR')} FCFA (${demande.titre}). Les fonds ont été crédités sur votre portefeuille.`,
+        `/dashboard/reservations/${reservationId}`,
+      ).catch(() => {});
+
+      return updated;
+    });
+  }
+
+  async refuserDemandeFrais(reservationId: string, fraisId: string, userId: string, raison?: string) {
+    const demande = await this.prisma.demandeFrais.findUnique({
+      where: { id: fraisId },
+      include: { reservation: { include: { logement: true } } },
+    });
+
+    if (!demande || demande.reservationId !== reservationId) {
+      throw new NotFoundException('Demande de frais introuvable');
+    }
+
+    const isLocataire = demande.reservation.locataireId === userId;
+    const isProprio = demande.reservation.proprietaireId === userId || demande.reservation.logement?.gestionnaireId === userId;
+
+    if (!isLocataire && !isProprio) {
+      throw new ForbiddenException('Accès non autorisé');
+    }
+
+    return await this.prisma.$transaction(async (tx) => {
+      const updated = await tx.demandeFrais.update({
+        where: { id: fraisId },
+        data: {
+          statut: 'REFUSE',
+          refuseLe: new Date(),
+        },
+      });
+
+      const existingLitige = await tx.litige.findUnique({
+        where: { reservationId },
+      });
+
+      if (!existingLitige) {
+        const isDepassement = demande.titre.toLowerCase().includes('personne') || demande.titre.toLowerCase().includes('surnombre');
+        const motifEnum = isDepassement ? MotifLitige.DEPASSEMENT_PERSONNES : MotifLitige.NON_PAIEMENT;
+
+        await tx.litige.create({
+          data: {
+            reservationId,
+            declarePar: isLocataire ? RoleLitige.LOCATAIRE : RoleLitige.PROPRIETAIRE,
+            motif: motifEnum,
+            description: `Refus/Contestation du supplément "${demande.titre}" d'un montant de ${Number(demande.montant).toLocaleString('fr-FR')} FCFA. ${raison || ''}`.trim(),
+            coutEstime: demande.montant,
+            statut: StatutLitige.EN_ATTENTE,
+          },
+        });
+
+        await tx.reservation.update({
+          where: { id: reservationId },
+          data: { statut: StatutReservation.DISPUTED },
+        });
+      }
+
+      return updated;
+    });
   }
 }
