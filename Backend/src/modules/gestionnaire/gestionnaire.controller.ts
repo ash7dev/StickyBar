@@ -21,8 +21,11 @@ export class GestionnaireController {
 
   @Get('dashboard')
   @ApiOperation({ summary: 'Obtenir la vue synthétique complète du tableau de bord conciergerie (KPIs, graphiques, séjours)' })
-  async getDashboardStats(@CurrentUser() user: AuthUser) {
-    return this.gestionnaireService.getDashboardStats(user.id);
+  async getDashboardStats(
+    @CurrentUser() user: AuthUser,
+    @Query('ownerId') ownerId?: string,
+  ) {
+    return this.gestionnaireService.getDashboardStats(user.id, ownerId);
   }
 
   @Get('logements')

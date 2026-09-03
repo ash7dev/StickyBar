@@ -90,14 +90,18 @@ export class GestionnaireService {
 
   constructor(private readonly prisma: PrismaService) {}
 
-  async getDashboardStats(managerId: string): Promise<DashboardStatsResponse> {
+  async getDashboardStats(managerId: string, ownerId?: string): Promise<DashboardStatsResponse> {
     const now = new Date();
     const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
     const endOfMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0, 23, 59, 59);
 
-    // 1. Récupérer tous les logements gérés par ce gestionnaire
+    // 1. Récupérer les logements gérés par ce gestionnaire (filtrés éventuellement par propriétaire)
     const managedListings = await this.prisma.logement.findMany({
-      where: { gestionnaireId: managerId, archiveLe: null },
+      where: {
+        gestionnaireId: managerId,
+        archiveLe: null,
+        ...(ownerId && { proprietaireId: ownerId }),
+      },
       select: {
         id: true,
         titre: true,
@@ -157,9 +161,25 @@ export class GestionnaireService {
       .sort((a, b) => b.count - a.count)
       .slice(0, 5);
 
-    // Propriétaires uniques sous mandat
+    // Propriétaires uniques sous mandat (tous les propriétaires pour alimenter la barre de filtre)
+    const allOwnersListings = await this.prisma.logement.findMany({
+      where: { gestionnaireId: managerId, archiveLe: null },
+      select: {
+        proprietaireId: true,
+        proprietaire: {
+          select: {
+            id: true,
+            prenom: true,
+            nom: true,
+            telephone: true,
+            email: true,
+          },
+        },
+      },
+    });
+
     const uniqueOwnersMap = new Map<string, any>();
-    managedListings.forEach((l) => {
+    allOwnersListings.forEach((l) => {
       if (l.proprietaire && !uniqueOwnersMap.has(l.proprietaire.id)) {
         uniqueOwnersMap.set(l.proprietaire.id, l.proprietaire);
       }

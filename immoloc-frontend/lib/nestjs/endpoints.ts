@@ -181,7 +181,10 @@ export const NEST_API = {
     REFERRAL:    `${BASE}/teranga-club/referral`,
   },
   GESTIONNAIRE: {
-    DASHBOARD: `${BASE}/gestionnaire/dashboard`,
+    DASHBOARD: (ownerId?: string) =>
+      ownerId
+        ? `${BASE}/gestionnaire/dashboard?ownerId=${ownerId}`
+        : `${BASE}/gestionnaire/dashboard`,
     LOGEMENTS: `${BASE}/gestionnaire/logements`,
     PROPRIETAIRES: `${BASE}/gestionnaire/proprietaires`,
     PROPRIETAIRES_ALL: `${BASE}/gestionnaire/proprietaires-all`,
