@@ -43,6 +43,10 @@ function getUpcomingWeekend(): WeekendInfo {
   };
 }
 
+const WEEKEND_CACHE_KEY = 'klef_weekend_cache_v1';
+const WEEKEND_CACHE_TS_KEY = 'klef_weekend_cache_ts_v1';
+const FIFTEEN_MIN_MS = 15 * 60 * 1000;
+
 export function WeekendListingsSection() {
   const [listings, setListings] = useState<Listing[]>([]);
   const [loading, setLoading] = useState(true);
@@ -55,6 +59,24 @@ export function WeekendListingsSection() {
     const info = getUpcomingWeekend();
     setWeekend(info);
 
+    let isFresh = false;
+    try {
+      const cached = localStorage.getItem(WEEKEND_CACHE_KEY);
+      const cachedTs = localStorage.getItem(WEEKEND_CACHE_TS_KEY);
+      if (cached) {
+        const parsed = JSON.parse(cached);
+        if (Array.isArray(parsed) && parsed.length > 0) {
+          setListings(parsed);
+          setLoading(false);
+          if (cachedTs && Date.now() - Number(cachedTs) < FIFTEEN_MIN_MS) {
+            isFresh = true;
+          }
+        }
+      }
+    } catch {}
+
+    if (isFresh) return;
+
     (async () => {
       try {
         const response = await listingsApi.search({
@@ -62,7 +84,13 @@ export function WeekendListingsSection() {
           dateFin: info.dateFin,
           limit: 12,
         });
-        if (!cancelled) setListings(response.data ?? []);
+        if (!cancelled && response.data) {
+          setListings(response.data);
+          try {
+            localStorage.setItem(WEEKEND_CACHE_KEY, JSON.stringify(response.data));
+            localStorage.setItem(WEEKEND_CACHE_TS_KEY, Date.now().toString());
+          } catch {}
+        }
       } catch (error) {
         console.error('[WeekendListings] Échec du chargement', error);
       } finally {
