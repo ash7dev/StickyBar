@@ -157,11 +157,22 @@ export class UsersService {
   async updateProfile(userId: string, dto: UpdateProfileDto) {
     const utilisateur = await this.prisma.utilisateur.findUnique({
       where: { id: userId },
-      select: { id: true },
+      select: { id: true, userId: true, email: true },
     });
     if (!utilisateur) throw new NotFoundException('Utilisateur introuvable');
 
     const normalizedPhone = dto.telephone ? normalizePhoneNumber(dto.telephone) : dto.telephone;
+    const cleanEmail = dto.email ? dto.email.trim().toLowerCase() : undefined;
+
+    if (cleanEmail && cleanEmail !== utilisateur.email?.toLowerCase()) {
+      const existingUser = await this.prisma.utilisateur.findUnique({
+        where: { email: cleanEmail },
+        select: { id: true },
+      });
+      if (existingUser && existingUser.id !== userId) {
+        throw new ConflictException('Cette adresse email est déjà associée à un autre compte.');
+      }
+    }
 
     const updated = await this.prisma.utilisateur.update({
       where: { id: userId },
@@ -169,6 +180,7 @@ export class UsersService {
         prenom: dto.prenom,
         nom: dto.nom,
         telephone: normalizedPhone,
+        ...(cleanEmail && { email: cleanEmail }),
         avatarUrl: dto.avatarUrl,
         dateNaissance: dto.dateNaissance ? new Date(dto.dateNaissance) : undefined,
         profileCompleted: true,
@@ -177,12 +189,20 @@ export class UsersService {
         id: true,
         prenom: true,
         nom: true,
+        email: true,
         telephone: true,
         avatarUrl: true,
         dateNaissance: true,
         profileCompleted: true,
       },
     });
+
+    if (cleanEmail) {
+      await this.prisma.profile.updateMany({
+        where: { userId: utilisateur.userId },
+        data: { email: cleanEmail },
+      }).catch(() => {});
+    }
 
     return updated;
   }

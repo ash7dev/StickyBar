@@ -28,6 +28,7 @@ export function OwnerProfileInfoCard({
   const [prenom, setPrenom] = useState(prenomInitial);
   const [nom, setNom] = useState(nomInitial);
   const [telephone, setTelephone] = useState(telephoneInitial);
+  const [email, setEmail] = useState(emailInitial);
   const [isSaving, setIsSaving] = useState(false);
   const [saveSuccess, setSaveSuccess] = useState(false);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
@@ -37,11 +38,9 @@ export function OwnerProfileInfoCard({
   const telId = useId();
   const emailId = useId();
 
+  const isShadowEmail = emailInitial.startsWith('shadow_') || emailInitial.includes('@klef.sn');
   const mounted = useRef(true);
   const successTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
-  /* Passe à false à la première frappe : sans ce garde-fou, le refetch
-     déclenché par `onUpdated` réécrivait les trois champs et effaçait la
-     saisie en cours de l'utilisateur. */
   const isPristine = useRef(true);
 
   useEffect(() => {
@@ -57,7 +56,8 @@ export function OwnerProfileInfoCard({
     setPrenom(prenomInitial);
     setNom(nomInitial);
     setTelephone(telephoneInitial);
-  }, [prenomInitial, nomInitial, telephoneInitial]);
+    setEmail(emailInitial);
+  }, [prenomInitial, nomInitial, telephoneInitial, emailInitial]);
 
   const touch = useCallback(<T,>(setter: (v: T) => void) => (v: T) => {
     isPristine.current = false;
@@ -70,9 +70,8 @@ export function OwnerProfileInfoCard({
     const p = prenom.trim();
     const n = nom.trim();
     const t = telephone.trim();
+    const em = email.trim();
 
-    /* `required` ne bloque que les champs vides : deux espaces passaient la
-       validation du navigateur et partaient tels quels vers l'API. */
     if (!p || !n) {
       setErrorMsg('Le prénom et le nom sont obligatoires.');
       return;
@@ -85,16 +84,19 @@ export function OwnerProfileInfoCard({
     try {
       await nestFetch(NEST_API.USERS.ME, {
         method: 'PATCH',
-        /* `|| null` plutôt qu'omettre la clé : un téléphone effacé était
-           auparavant absent du corps, donc ignoré par le PATCH, et
-           réapparaissait au refetch. */
-        body: JSON.stringify({ prenom: p, nom: n, telephone: t || null }),
+        body: JSON.stringify({
+          prenom: p,
+          nom: n,
+          telephone: t || null,
+          ...(em && em !== emailInitial ? { email: em } : {}),
+        }),
       });
 
       if (!mounted.current) return;
       setPrenom(p);
       setNom(n);
       setTelephone(t);
+      setEmail(em);
       isPristine.current = true;
       setSaveSuccess(true);
       onUpdated?.();
@@ -113,7 +115,7 @@ export function OwnerProfileInfoCard({
     } finally {
       if (mounted.current) setIsSaving(false);
     }
-  }, [prenom, nom, telephone, onUpdated]);
+  }, [prenom, nom, telephone, email, emailInitial, onUpdated]);
 
   return (
     <section className="card space-y-6 p-6 sm:p-8">
@@ -189,20 +191,23 @@ export function OwnerProfileInfoCard({
 
           <div>
             <label htmlFor={emailId} className="eyebrow mb-2 block">
-              Adresse e-mail
+              Adresse e-mail {isShadowEmail && <span className="text-forest-600 font-semibold text-xs ml-1.5">(Modifiable)</span>}
             </label>
             <input
               id={emailId}
               type="email"
-              value={emailInitial}
-              disabled
-              readOnly
+              value={email}
+              onChange={(e) => touch(setEmail)(e.target.value)}
+              disabled={!isShadowEmail && false}
               autoComplete="email"
+              placeholder="votre.email@exemple.com"
               aria-describedby={`${emailId}-hint`}
-              className={`${FIELD_CLS} cursor-not-allowed text-foreground-muted opacity-70`}
+              className={FIELD_CLS}
             />
             <p id={`${emailId}-hint`} className="mt-1.5 text-xs text-foreground-muted">
-              Votre identifiant de connexion. Il n’est pas modifiable ici.
+              {isShadowEmail
+                ? 'Adresse email générée par la conciergerie. Saisissez votre véritable adresse email pour recevoir vos notifications.'
+                : 'Votre adresse email associée à votre compte Klef.'}
             </p>
           </div>
         </div>

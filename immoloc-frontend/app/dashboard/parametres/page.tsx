@@ -46,7 +46,7 @@ export default function OwnerParametresPage() {
   const isVerified = statutKyc === 'VERIFIE';
 
   return (
-    <div className="space-y-6 pb-16">
+    <div className="space-y-6 pb-36 sm:pb-16">
       {/* En-tête de la page */}
       <OwnerSettingsHeader />
 
