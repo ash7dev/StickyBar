@@ -14,6 +14,7 @@ interface Props {
   historique: Historique;
   variant?: 'light' | 'dark';
   isOwner?: boolean;
+  reservation?: ReservationDetail;
 }
 
 /* ═══════════════════════════════════════════════════════════════════════════
