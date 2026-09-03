@@ -17,11 +17,11 @@ interface FilterBarProps {
 }
 
 const VILLES = [
-  'Dakar', 'Saly', 'Ngor', 'Almadies', 'Somone', 'Saint-Louis', 'Mbour', 'Thiès', 'Cap Skirring',
+  'Dakar', 'Saly', 'Somone', 'Ngaparou', 'Toubab Dialaw', 'Popenguine', 'Mbour', 'Saint-Louis', 'Cap Skirring', 'Thiès',
 ];
 
-const QUARTIERS_POPULAIRES = [
-  'Almadies', 'Ngor', 'Mermoz', 'Virage', 'Les Mamelles', 'Point E', 'Sacré-Cœur', 'Cité Keur Gorgui', 'Nord Foire', 'Yoff', 'Ouakam', 'Plateau', 'Hann Maristes', 'Saly', 'Somone', 'Popenguine',
+const QUARTIERS_DAKAR = [
+  'Almadies', 'Ngor', 'Mermoz', 'Virage', 'Les Mamelles', 'Ouakam', 'Point E', 'Sacré-Cœur', 'Cité Keur Gorgui', 'Yoff', 'Plateau',
 ];
 
 const PRIX_PRESETS = [
@@ -626,18 +626,18 @@ export function FilterBar({ filters }: FilterBarProps) {
               </div>
             </div>
 
-            {/* Corps du Modal avec scroll fluide */}
-            <div className="p-5 sm:p-6 overflow-y-auto space-y-6 flex-1">
+            {/* Corps du Modal avec scroll vertical fluide et sans débordement horizontal */}
+            <div className="p-4 sm:p-6 overflow-y-auto overflow-x-hidden space-y-6 flex-1">
               
               {/* 0. GPS Autour de moi */}
-              <div className="bg-forest-50/70 border border-forest-100 p-3.5 rounded-2xl flex items-center justify-between gap-3">
-                <div className="flex items-center gap-2.5">
+              <div className="bg-forest-50/70 border border-forest-100 p-3.5 rounded-2xl flex items-center justify-between gap-3 min-w-0">
+                <div className="flex items-center gap-2.5 min-w-0">
                   <div className="w-8 h-8 rounded-xl bg-forest-900 text-on-inverse-marker flex items-center justify-center shrink-0">
                     <Compass className="w-4 h-4 text-on-inverse-marker" />
                   </div>
-                  <div>
-                    <p className="text-xs font-bold text-forest-950">Autour de vous (GPS)</p>
-                    <p className="text-[10px] font-medium text-foreground-muted">Rechercher les annonces les plus proches</p>
+                  <div className="min-w-0">
+                    <p className="text-xs font-bold text-forest-950 truncate">Autour de vous (GPS)</p>
+                    <p className="text-[10px] font-medium text-foreground-muted truncate">Rechercher les annonces les plus proches</p>
                   </div>
                 </div>
 
@@ -652,18 +652,18 @@ export function FilterBar({ filters }: FilterBarProps) {
               </div>
 
               {/* 1. Ville */}
-              <div>
+              <div className="min-w-0">
                 <label className="block text-xs font-bold text-foreground-muted uppercase tracking-wider mb-2.5">
                   Ville / Destination
                 </label>
-                <div className="grid grid-cols-3 gap-2">
+                <div className="grid grid-cols-3 gap-2 min-w-0">
                   {VILLES.map((v) => (
                     <button
                       key={v}
                       type="button"
                       onClick={() => updateFilters({ ville: filters.ville === v ? null : v, lat: null, lng: null })}
                       className={cn(
-                        'py-2.5 px-3 rounded-xl text-xs font-semibold border transition-all text-center truncate active:scale-95',
+                        'py-2.5 px-2.5 rounded-xl text-xs font-semibold border transition-all text-center min-w-0 truncate active:scale-95',
                         filters.ville === v
                           ? 'bg-forest-900 text-on-inverse-marker border-forest-900 font-bold shadow-xs'
                           : 'bg-neutral-50 border-border text-foreground hover:bg-neutral-100'
@@ -675,13 +675,13 @@ export function FilterBar({ filters }: FilterBarProps) {
                 </div>
               </div>
 
-              {/* 1.5. Quartiers Populaires */}
-              <div>
+              {/* 1.5. Quartiers de Dakar */}
+              <div className="min-w-0">
                 <label className="block text-xs font-bold text-foreground-muted uppercase tracking-wider mb-2.5">
-                  Quartiers Prisés
+                  Quartiers de Dakar
                 </label>
-                <div className="flex flex-wrap gap-1.5">
-                  {QUARTIERS_POPULAIRES.map((q) => {
+                <div className="flex flex-wrap gap-1.5 min-w-0">
+                  {QUARTIERS_DAKAR.map((q) => {
                     const isSelected = filters.quartier === q;
                     return (
                       <button
@@ -689,7 +689,7 @@ export function FilterBar({ filters }: FilterBarProps) {
                         type="button"
                         onClick={() => updateFilters({ quartier: isSelected ? null : q, lat: null, lng: null })}
                         className={cn(
-                          'py-1.5 px-3 rounded-full text-xs font-semibold border transition-all active:scale-95',
+                          'py-1.5 px-3 rounded-full text-xs font-semibold border transition-all active:scale-95 shrink-0',
                           isSelected
                             ? 'bg-forest-950 text-on-inverse-marker border-forest-950 font-bold'
                             : 'bg-background-alt border-border text-foreground hover:bg-neutral-100'
@@ -703,44 +703,44 @@ export function FilterBar({ filters }: FilterBarProps) {
               </div>
 
               {/* 2. Dates de séjour */}
-              <div>
+              <div className="min-w-0">
                 <label className="block text-xs font-bold text-foreground-muted uppercase tracking-wider mb-2.5">
                   Dates de séjour
                 </label>
-                <div className="grid grid-cols-2 gap-3">
-                  <div>
+                <div className="grid grid-cols-2 gap-3 min-w-0">
+                  <div className="min-w-0">
                     <span className="text-[10px] font-bold text-foreground-muted block mb-1">Arrivée</span>
                     <input
                       type="date"
                       min={new Date().toISOString().split('T')[0]}
                       value={filters.arrivee || ''}
                       onChange={(e) => updateFilters({ arrivee: e.target.value || null })}
-                      className="w-full px-3 py-2.5 text-xs font-semibold bg-neutral-50 border border-border rounded-xl focus:outline-none focus:border-forest-600"
+                      className="w-full px-3 py-2.5 text-xs font-semibold bg-neutral-50 border border-border rounded-xl focus:outline-none focus:border-forest-600 min-w-0"
                     />
                   </div>
-                  <div>
+                  <div className="min-w-0">
                     <span className="text-[10px] font-bold text-foreground-muted block mb-1">Départ</span>
                     <input
                       type="date"
                       min={filters.arrivee || new Date().toISOString().split('T')[0]}
                       value={filters.depart || ''}
                       onChange={(e) => updateFilters({ depart: e.target.value || null })}
-                      className="w-full px-3 py-2.5 text-xs font-semibold bg-neutral-50 border border-border rounded-xl focus:outline-none focus:border-forest-600"
+                      className="w-full px-3 py-2.5 text-xs font-semibold bg-neutral-50 border border-border rounded-xl focus:outline-none focus:border-forest-600 min-w-0"
                     />
                   </div>
                 </div>
               </div>
 
               {/* 3. Nombre de Voyageurs */}
-              <div>
-                <div className="flex items-center justify-between">
-                  <div>
+              <div className="min-w-0">
+                <div className="flex items-center justify-between min-w-0">
+                  <div className="min-w-0">
                     <label className="block text-xs font-bold text-foreground-muted uppercase tracking-wider">
                       Voyageurs
                     </label>
-                    <span className="text-[11px] text-foreground-faint">Nombre de personnes min.</span>
+                    <span className="text-[11px] text-foreground-faint block truncate">Nombre de personnes min.</span>
                   </div>
-                  <div className="flex items-center gap-3">
+                  <div className="flex items-center gap-3 shrink-0">
                     <button
                       type="button"
                       onClick={() => updateFilters({ voyageurs: Math.max(1, (filters.voyageurs || 1) - 1) })}
@@ -764,11 +764,11 @@ export function FilterBar({ filters }: FilterBarProps) {
               </div>
 
               {/* 4. Type de bien */}
-              <div>
+              <div className="min-w-0">
                 <label className="block text-xs font-bold text-foreground-muted uppercase tracking-wider mb-2.5">
                   Type de bien
                 </label>
-                <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 min-w-0">
                   {TYPE_LOGEMENT_VALUES.map((t) => {
                     const isSelected = filters.type?.includes(t);
                     return (
@@ -782,7 +782,7 @@ export function FilterBar({ filters }: FilterBarProps) {
                           updateFilters({ type: nextTypes.length > 0 ? nextTypes.join(',') : null });
                         }}
                         className={cn(
-                          'py-2.5 px-3 rounded-xl text-xs font-semibold border transition-all text-center capitalize active:scale-95',
+                          'py-2.5 px-3 rounded-xl text-xs font-semibold border transition-all text-center capitalize min-w-0 truncate active:scale-95',
                           isSelected
                             ? 'bg-forest-900 text-on-inverse-marker border-forest-900 font-bold shadow-xs'
                             : 'bg-neutral-50 border-border text-foreground hover:bg-neutral-100'
@@ -796,18 +796,18 @@ export function FilterBar({ filters }: FilterBarProps) {
               </div>
 
               {/* 5. Intervalle de prix */}
-              <div>
+              <div className="min-w-0">
                 <label className="block text-xs font-bold text-foreground-muted uppercase tracking-wider mb-2.5">
                   Budget max par nuit (FCFA)
                 </label>
-                <div className="grid grid-cols-2 gap-2">
+                <div className="grid grid-cols-2 gap-2 min-w-0">
                   {PRIX_PRESETS.map((p) => (
                     <button
                       key={p.max}
                       type="button"
                       onClick={() => updateFilters({ max: filters.max === p.max ? null : p.max, min: null })}
                       className={cn(
-                        'py-2.5 px-3 rounded-xl text-xs font-semibold border transition-all text-center active:scale-95',
+                        'py-2.5 px-3 rounded-xl text-xs font-semibold border transition-all text-center min-w-0 truncate active:scale-95',
                         filters.max === p.max
                           ? 'bg-forest-900 text-on-inverse-marker border-forest-900 font-bold shadow-xs'
                           : 'bg-neutral-50 border-border text-foreground hover:bg-neutral-100'
