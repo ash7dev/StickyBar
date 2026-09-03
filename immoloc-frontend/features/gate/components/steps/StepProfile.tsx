@@ -39,11 +39,16 @@ const inputCls = cn(
 );
 
 export function StepProfile({ onDone }: Props) {
-  const { setGateStatus, setOnboardingDraft, needsOnboarding } = useRoleStore();
+  const { onboardingDraft, dateNaissance: storeDate, setGateStatus, setOnboardingDraft, needsOnboarding } = useRoleStore();
   const { refreshIfNeeded } = useNestToken();
 
   const { register, handleSubmit, control, formState: { errors, isSubmitting } } = useForm<FormData>({
     resolver: zodResolver(schema),
+    defaultValues: {
+      prenom: onboardingDraft?.prenom || '',
+      nom: onboardingDraft?.nom || '',
+      dateNaissance: storeDate || onboardingDraft?.dateNaissance || '',
+    },
   });
 
   async function onSubmit(data: FormData) {
