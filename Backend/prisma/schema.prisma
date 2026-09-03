@@ -1132,6 +1132,9 @@ enum CodeBadgeTeranga {
   AVIS_STAR
   PETITE_COTE_CAPTAIN
   SUPER_PARRAIN
+  GRAND_RESIDENT
+  LEGENDE_SENEGAL
+  CERCLE_MILLION
 }
 
 // =============================================================================

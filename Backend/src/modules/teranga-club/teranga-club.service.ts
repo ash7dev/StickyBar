@@ -137,7 +137,7 @@ export class TerangaClubService {
       {
         code: CodeBadgeTeranga.PETITE_COTE_CAPTAIN,
         libelle: 'Capitaine de la Petite Côte',
-        description: 'Réservez un hébergement à Saly, Somone ou Popenguine.',
+        description: 'Réservez un hébergement à Saly, Somone, Ngaparou ou Popenguine.',
         bonusCoins: 1500,
         icone: '🌊',
         unlocked: unlockedBadges.includes(CodeBadgeTeranga.PETITE_COTE_CAPTAIN),
@@ -149,6 +149,30 @@ export class TerangaClubService {
         bonusCoins: 2500,
         icone: '🤝',
         unlocked: unlockedBadges.includes(CodeBadgeTeranga.SUPER_PARRAIN),
+      },
+      {
+        code: CodeBadgeTeranga.GRAND_RESIDENT,
+        libelle: 'Grand Résident',
+        description: 'Effectuez un séjour de 7 nuits ou plus sur Klef.',
+        bonusCoins: 5000,
+        icone: '🏕️',
+        unlocked: unlockedBadges.includes(CodeBadgeTeranga.GRAND_RESIDENT),
+      },
+      {
+        code: CodeBadgeTeranga.LEGENDE_SENEGAL,
+        libelle: 'Légende du Sénégal',
+        description: 'Réservez des séjours dans au moins 3 villes ou destinations différentes.',
+        bonusCoins: 5000,
+        icone: '👑',
+        unlocked: unlockedBadges.includes(CodeBadgeTeranga.LEGENDE_SENEGAL),
+      },
+      {
+        code: CodeBadgeTeranga.CERCLE_MILLION,
+        libelle: 'Cercle du Million',
+        description: 'Atteignez 1 000 000 FCFA de réservations cumulées sur 12 mois.',
+        bonusCoins: 10000,
+        icone: '💎',
+        unlocked: unlockedBadges.includes(CodeBadgeTeranga.CERCLE_MILLION),
       },
     ];
 
@@ -235,7 +259,6 @@ export class TerangaClubService {
         icone = '🤝';
         bonusCoins = 2500;
         actionRequired = 'SHARE';
-        // Vérifier qu'au moins 1 filleul a un séjour validé (CHECKED_IN ou COMPLETED)
         const filleulAvecSejour = await this.prisma.utilisateur.findFirst({
           where: {
             parrainId: userId,
@@ -245,6 +268,64 @@ export class TerangaClubService {
           },
         });
         isEligible = !!filleulAvecSejour;
+        break;
+      }
+      case CodeBadgeTeranga.GRAND_RESIDENT: {
+        libelle = 'Grand Résident';
+        description = 'Félicitations pour votre séjour de plus de 7 nuits !';
+        icone = '🏕️';
+        bonusCoins = 5000;
+        actionRequired = 'RESERVE';
+        const longStay = await this.prisma.reservation.findFirst({
+          where: {
+            locataireId: userId,
+            statut: { in: ['CHECKED_IN', 'COMPLETED'] },
+          },
+        });
+        if (longStay) {
+          const diffDays = Math.ceil(
+            (new Date(longStay.dateFin).getTime() - new Date(longStay.dateDebut).getTime()) /
+              (1000 * 3600 * 24)
+          );
+          isEligible = diffDays >= 7;
+        }
+        break;
+      }
+      case CodeBadgeTeranga.LEGENDE_SENEGAL: {
+        libelle = 'Légende du Sénégal';
+        description = 'Félicitations ! Vous avez exploré 3 destinations différentes sur Klef.';
+        icone = '👑';
+        bonusCoins = 5000;
+        actionRequired = 'EXPLORE';
+        const reservations = await this.prisma.reservation.findMany({
+          where: {
+            locataireId: userId,
+            statut: { in: ['CHECKED_IN', 'COMPLETED'] },
+          },
+          select: { logement: { select: { ville: true } } },
+        });
+        const distinctVilles = new Set(reservations.map((r) => r.logement.ville).filter(Boolean));
+        isEligible = distinctVilles.size >= 3;
+        break;
+      }
+      case CodeBadgeTeranga.CERCLE_MILLION: {
+        libelle = 'Cercle du Million';
+        description = 'Félicitations ! Vous appartenez à l\'Élite du Cercle du Million Klef.';
+        icone = '💎';
+        bonusCoins = 10000;
+        actionRequired = 'RESERVE';
+        const twelveMonthsAgo = new Date();
+        twelveMonthsAgo.setFullYear(twelveMonthsAgo.getFullYear() - 1);
+        const gmvStats = await this.prisma.reservation.aggregate({
+          where: {
+            locataireId: userId,
+            statut: { in: ['CHECKED_IN', 'COMPLETED'] },
+            dateDebut: { gte: twelveMonthsAgo },
+          },
+          _sum: { totalLocataire: true },
+        });
+        const totalSpent = Number(gmvStats._sum.totalLocataire || 0);
+        isEligible = totalSpent >= 1_000_000;
         break;
       }
       default:

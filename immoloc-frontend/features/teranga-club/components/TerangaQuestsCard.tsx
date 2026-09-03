@@ -4,27 +4,23 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
   Award, CheckCircle2, Coins, Loader2, ArrowUpRight, Trophy, Target,
   UserCheck, Share2, Star, CalendarCheck, Home, MessageSquare, Wallet,
-  ShieldCheck,
+  ShieldCheck, Crown, Tent, Gem, Lock,
 } from 'lucide-react';
 import { cn } from '@/lib/utils/cn';
 import type { TerangaQuest } from '@/lib/nestjs';
 import { terangaClubApi } from '@/lib/nestjs';
 import { TerangaQuestClaimModal, type QuestClaimResult } from './TerangaQuestClaimModal';
 
-/* ─── Icônes ───────────────────────────────────────────────────────────────
-   `quest.icone` contenait un emoji rendu tel quel. Trois problèmes : le rendu
-   change sur chaque plateforme, la taille ne suit pas la typographie, et les
-   lecteurs d'écran les annoncent littéralement (« visage souriant »).
-   Les icônes sont désormais choisies par code de quête.
-
-   ⚠️ Adapte les clés à tes codes réels — le repli reste `Target`. */
 const QUEST_ICONS: Record<string, typeof Target> = {
+  FIRST_STAY: CalendarCheck,
+  AVIS_STAR: Star,
+  PETITE_COTE_CAPTAIN: Home,
+  SUPER_PARRAIN: Share2,
+  GRAND_RESIDENT: Tent,
+  LEGENDE_SENEGAL: Crown,
+  CERCLE_MILLION: Gem,
   PROFIL_COMPLET: UserCheck,
   KYC_VERIFIE: ShieldCheck,
-  PREMIERE_RESERVATION: CalendarCheck,
-  PREMIER_LOGEMENT: Home,
-  PREMIER_AVIS: Star,
-  PARRAINAGE: Share2,
   WALLET_ALIMENTE: Wallet,
   MESSAGE_ENVOYE: MessageSquare,
 };
@@ -199,6 +195,7 @@ export function TerangaQuestsCard({ quests, isAuthenticated, onClaimSuccess, use
               const isLoading = loadingCode === quest.code;
               const Icon = iconFor(quest.code);
               const done = quest.unlocked;
+              const isLegendary = (Number(quest.bonusCoins) || 0) >= 5000;
 
               return (
                 <li
@@ -207,7 +204,9 @@ export function TerangaQuestsCard({ quests, isAuthenticated, onClaimSuccess, use
                     'flex flex-col justify-between gap-4 rounded-card border p-5 transition-[border-color,box-shadow] duration-200',
                     done
                       ? 'border-gold-200 bg-gold-50/40'
-                      : 'border-border bg-background-card hover:border-border-hover hover:shadow-md',
+                      : isLegendary
+                        ? 'border-amber-400/60 bg-gradient-to-br from-amber-50/60 via-background-card to-amber-100/30 hover:border-amber-500 shadow-xs'
+                        : 'border-border bg-background-card hover:border-border-hover hover:shadow-md',
                   )}
                 >
                   <div className="flex items-start gap-3.5">
@@ -215,7 +214,9 @@ export function TerangaQuestsCard({ quests, isAuthenticated, onClaimSuccess, use
                       'flex h-11 w-11 shrink-0 items-center justify-center rounded-inner border',
                       done
                         ? 'border-gold-200 bg-gold-400 text-forest-900'
-                        : 'border-border bg-background-alt text-foreground-muted',
+                        : isLegendary
+                          ? 'border-amber-300 bg-amber-500 text-white shadow-xs'
+                          : 'border-border bg-background-alt text-foreground-muted',
                     )}>
                       <Icon className="h-5 w-5" aria-hidden="true" />
                     </span>
@@ -229,9 +230,11 @@ export function TerangaQuestsCard({ quests, isAuthenticated, onClaimSuccess, use
                             Débloqué
                           </span>
                         )}
-                        {/* Le badge « Disponible » portait une icône de cadenas :
-                           deux signaux contradictoires. Une quête non accomplie
-                           n'a pas besoin d'étiquette, son bouton le dit. */}
+                        {!done && isLegendary && (
+                          <span className="inline-flex items-center gap-1 rounded-pill border border-amber-300 bg-amber-100/80 px-2 py-0.5 text-[10px] font-black text-amber-900 tracking-wide uppercase">
+                            👑 Quête Élite
+                          </span>
+                        )}
                       </div>
                       <p className="text-xs leading-relaxed text-foreground-muted">
                         {quest.description}
