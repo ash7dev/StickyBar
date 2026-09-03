@@ -10,6 +10,7 @@ import {
 } from 'lucide-react';
 import type { Listing } from '@/lib/nestjs';
 import { TenantPriceDisplay } from '@/components/ui/TenantPriceDisplay';
+import { cn } from '@/lib/utils/cn';
 
 interface ListingHeaderProps {
   listing: Listing;
@@ -23,7 +24,12 @@ export function ListingHeader({ listing }: ListingHeaderProps) {
   const [pending, setPending] = useState<number | null>(null);
   const [copied, setCopied] = useState(false);
 
+  // Embla carousel pour la Lightbox plein écran
   const [emblaRef, embla] = useEmblaCarousel({ loop: true });
+
+  // Embla carousel pour le défilement mobile sur la fiche annonce
+  const [mobileEmblaRef, mobileEmbla] = useEmblaCarousel({ loop: true });
+  const [mobileIndex, setMobileIndex] = useState(0);
 
   const dialogRef = useRef<HTMLDivElement>(null);
   const closeRef = useRef<HTMLButtonElement>(null);
@@ -37,10 +43,7 @@ export function ListingHeader({ listing }: ListingHeaderProps) {
   const prixAffiche = Math.round(Number(listing.prixBase || 0) * 1.07);
   const prixDerniereMinute = Math.round(prixAffiche * 0.85);
 
-  // ── L'index vient d'Embla, pas d'un compteur parallèle ──────────────────
-  // L'ancienne version incrémentait un state à la main EN PLUS d'appeler
-  // scrollPrev / scrollNext. Un glissement au doigt ne passait par aucun des
-  // deux : le compteur et la vignette active se désynchronisaient aussitôt.
+  // Sync index Lightbox
   useEffect(() => {
     if (!embla) return;
     const sync = () => setIndex(embla.selectedScrollSnap());
@@ -53,7 +56,20 @@ export function ListingHeader({ listing }: ListingHeaderProps) {
     };
   }, [embla]);
 
-  // Remplace le setTimeout(..., 50) qui pariait sur le montage d'Embla.
+  // Sync index Carousel Mobile
+  useEffect(() => {
+    if (!mobileEmbla) return;
+    const syncMobile = () => setMobileIndex(mobileEmbla.selectedScrollSnap());
+    mobileEmbla.on('select', syncMobile);
+    mobileEmbla.on('reInit', syncMobile);
+    syncMobile();
+    return () => {
+      mobileEmbla.off('select', syncMobile);
+      mobileEmbla.off('reInit', syncMobile);
+    };
+  }, [mobileEmbla]);
+
+  // Scroll Lightbox vers l'index demandé
   useEffect(() => {
     if (open && embla && pending !== null) {
       embla.scrollTo(pending, true);
@@ -77,7 +93,6 @@ export function ListingHeader({ listing }: ListingHeaderProps) {
       if (e.key === 'ArrowRight') { e.preventDefault(); embla?.scrollNext(); return; }
       if (e.key !== 'Tab') return;
 
-      // Piège de focus : sans lui, la tabulation continue derrière l'overlay.
       const nodes = dialogRef.current?.querySelectorAll<HTMLElement>(
         'button:not([disabled]), [href], [tabindex]:not([tabindex="-1"])',
       );
@@ -108,8 +123,6 @@ export function ListingHeader({ listing }: ListingHeaderProps) {
       setCopied(true);
       setTimeout(() => setCopied(false), 2500);
     } catch {
-      // Le presse-papier exige un contexte sécurisé. Repli explicite plutôt
-      // qu'un échec silencieux : on ouvre le partage natif s'il existe.
       if (navigator.share) {
         navigator.share({ title: listing.titre, url: window.location.href }).catch(() => { });
       }
@@ -141,97 +154,154 @@ export function ListingHeader({ listing }: ListingHeaderProps) {
         </Link>
       </div>
 
-      {/* ── Mosaïque ─────────────────────────────────────────────────────── */}
-      {/* rounded-[2rem] valait 32px : hors du système à deux rayons. */}
+      {/* ── Mosaïque / Carousel ──────────────────────────────────────────── */}
       <div className="relative overflow-hidden rounded-card border border-border bg-background-alt shadow-sm">
         {photos.length > 0 ? (
-          <div className="grid h-[19rem] grid-cols-1 gap-2 sm:h-[24rem] md:grid-cols-2 lg:h-[28rem]">
+          <>
+            {/* ═══ CAROUSEL SWIPE MOBILE (md:hidden) ════════════════════════════ */}
+            <div className="relative md:hidden h-[20rem] sm:h-[24rem] w-full overflow-hidden">
+              <div ref={mobileEmblaRef} className="h-full w-full overflow-hidden">
+                <div className="flex h-full">
+                  {photos.map((photo, i) => (
+                    <button
+                      key={photo.id ?? i}
+                      type="button"
+                      onClick={() => openAt(i)}
+                      aria-label={`Photo ${i + 1} sur ${photos.length} — Cliquer pour ouvrir la galerie`}
+                      className="relative h-full flex-[0_0_100%] cursor-pointer group focus:outline-none"
+                    >
+                      <Image
+                        src={photo.url}
+                        alt={`${listing.titre} — photo ${i + 1}`}
+                        fill
+                        priority={i === 0}
+                        sizes="100vw"
+                        className="object-cover transition-transform duration-300 group-active:scale-[1.02]"
+                      />
+                      <span className="absolute inset-0 bg-forest-950/0 transition-colors group-active:bg-forest-950/15" />
+                    </button>
+                  ))}
+                </div>
+              </div>
 
-            {/* Photo principale — bouton, pas div onClick : les cellules
-                n'étaient ni focalisables ni actionnables au clavier. */}
-            <button
-              type="button"
-              onClick={() => openAt(0)}
-              aria-label={`Ouvrir la galerie, ${photos.length} photos`}
-              className="group relative h-full w-full overflow-hidden focus-visible:outline-2 focus-visible:outline-offset-[-3px] focus-visible:outline-ring"
-            >
-              {main ? (
-                <>
-                  <Image
-                    src={main.url}
-                    alt=""
-                    fill
-                    priority
-                    sizes="(max-width: 768px) 100vw, 50vw"
-                    className="object-cover transition-transform duration-[320ms] ease-[cubic-bezier(0.22,1,0.36,1)] group-hover:scale-[1.03] motion-reduce:transform-none"
-                  />
-                  {/* Le système n'a pas de noir pur : forest-950 remplace black. */}
-                  <span className="absolute inset-0 bg-forest-950/0 transition-colors duration-200 group-hover:bg-forest-950/10" />
-                  <span className="glass-dark absolute bottom-4 left-4 hidden rounded-inner p-2.5 opacity-0 transition-opacity duration-150 group-hover:opacity-100 md:block">
-                    <ZoomIn className="h-4 w-4 text-neutral-50" aria-hidden="true" />
-                  </span>
-                </>
-              ) : (
-                <span className="grid h-full place-items-center text-neutral-300">
-                  <ImageOff className="h-8 w-8" aria-hidden="true" />
-                </span>
-              )}
-
-              {/* Sur mobile, la grille secondaire est masquée et le bouton
-                  « Voir les N photos » vivait à l'intérieur : rien n'indiquait
-                  qu'il existait d'autres photos. */}
+              {/* Navigation Flèches Mobile */}
               {photos.length > 1 && (
-                <span className="absolute bottom-4 right-4 inline-flex items-center gap-2 rounded-pill border border-white/60 bg-white/90 px-3.5 py-2 text-xs font-semibold text-forest-800 shadow-md backdrop-blur-md md:hidden">
-                  <Grid2x2 className="h-3.5 w-3.5" aria-hidden="true" />
-                  {photos.length} photos
-                </span>
-              )}
-            </button>
-
-            {/* Grille secondaire */}
-            <div className="relative hidden grid-cols-2 grid-rows-2 gap-2 md:grid">
-              {Array.from({ length: 4 }).map((_, i) => {
-                const photo = secondary[i];
-                const at = photo ? photos.findIndex((p) => p.id === photo.id) : 0;
-
-                return photo ? (
+                <>
                   <button
-                    key={photo.id}
                     type="button"
-                    onClick={() => openAt(at)}
-                    aria-label={`Photo ${i + 2} sur ${photos.length}`}
-                    className="group relative h-full w-full overflow-hidden bg-neutral-100 focus-visible:outline-2 focus-visible:outline-offset-[-3px] focus-visible:outline-ring"
+                    onClick={(e) => { e.stopPropagation(); mobileEmbla?.scrollPrev(); }}
+                    aria-label="Photo précédente"
+                    className="absolute left-3 top-1/2 -translate-y-1/2 flex h-8 w-8 items-center justify-center rounded-full border border-white/30 bg-forest-950/50 text-white backdrop-blur-md transition-transform active:scale-90"
                   >
+                    <ChevronLeft className="h-4 w-4" aria-hidden="true" />
+                  </button>
+                  <button
+                    type="button"
+                    onClick={(e) => { e.stopPropagation(); mobileEmbla?.scrollNext(); }}
+                    aria-label="Photo suivante"
+                    className="absolute right-3 top-1/2 -translate-y-1/2 flex h-8 w-8 items-center justify-center rounded-full border border-white/30 bg-forest-950/50 text-white backdrop-blur-md transition-transform active:scale-90"
+                  >
+                    <ChevronRight className="h-4 w-4" aria-hidden="true" />
+                  </button>
+
+                  {/* Badge Compteur dynamique mobile (ouvre la galerie au clic) */}
+                  <button
+                    type="button"
+                    onClick={() => openAt(mobileIndex)}
+                    className="absolute bottom-3 right-3 inline-flex items-center gap-1.5 rounded-pill border border-white/60 bg-white/90 px-3 py-1 text-xs font-semibold text-forest-800 shadow-md backdrop-blur-md active:scale-95"
+                  >
+                    <Grid2x2 className="h-3.5 w-3.5" aria-hidden="true" />
+                    <span className="tabular-nums">{mobileIndex + 1} / {photos.length}</span>
+                  </button>
+
+                  {/* Dots de défilement mobile */}
+                  <div className="pointer-events-none absolute bottom-3 left-1/2 -translate-x-1/2 flex items-center gap-1.5 px-2 py-1 rounded-pill bg-forest-950/40 backdrop-blur-xs">
+                    {photos.map((_, i) => (
+                      <span
+                        key={i}
+                        className={cn(
+                          'h-1.5 rounded-pill transition-all duration-300',
+                          i === mobileIndex ? 'w-4 bg-white' : 'w-1.5 bg-white/40'
+                        )}
+                      />
+                    ))}
+                  </div>
+                </>
+              )}
+            </div>
+
+            {/* ═══ GRILLE MOSAÏQUE DESKTOP (hidden md:grid) ═════════════════════ */}
+            <div className="hidden md:grid h-[24rem] lg:h-[28rem] grid-cols-2 gap-2">
+              {/* Photo principale */}
+              <button
+                type="button"
+                onClick={() => openAt(0)}
+                aria-label={`Ouvrir la galerie, ${photos.length} photos`}
+                className="group relative h-full w-full overflow-hidden focus-visible:outline-2 focus-visible:outline-offset-[-3px] focus-visible:outline-ring"
+              >
+                {main ? (
+                  <>
                     <Image
-                      src={photo.url}
+                      src={main.url}
                       alt=""
                       fill
-                      sizes="25vw"
+                      priority
+                      sizes="50vw"
                       className="object-cover transition-transform duration-[320ms] ease-[cubic-bezier(0.22,1,0.36,1)] group-hover:scale-[1.03] motion-reduce:transform-none"
                     />
                     <span className="absolute inset-0 bg-forest-950/0 transition-colors duration-200 group-hover:bg-forest-950/10" />
-                  </button>
+                    <span className="glass-dark absolute bottom-4 left-4 hidden rounded-inner p-2.5 opacity-0 transition-opacity duration-150 group-hover:opacity-100 md:block">
+                      <ZoomIn className="h-4 w-4 text-neutral-50" aria-hidden="true" />
+                    </span>
+                  </>
                 ) : (
-                  <div key={`empty-${i}`} className="h-full w-full bg-neutral-100" aria-hidden="true" />
-                );
-              })}
+                  <span className="grid h-full place-items-center text-neutral-300">
+                    <ImageOff className="h-8 w-8" aria-hidden="true" />
+                  </span>
+                )}
+              </button>
 
-              <div className="absolute bottom-4 right-4 z-10">
-                {/* Le bouton était sur deux hex ambre codés en dur, hors
-                    tokens, en concurrence directe avec l'or du badge
-                    « Vérifié ». Un bouton blanc en glass lit plus premium
-                    et laisse la photo parler. */}
-                <button
-                  type="button"
-                  onClick={() => openAt(0)}
-                  className="inline-flex items-center gap-2 rounded-pill border border-white/60 bg-white/90 px-4 py-2.5 text-sm font-semibold text-forest-800 shadow-md backdrop-blur-md transition-colors duration-150 hover:bg-white"
-                >
-                  <Grid2x2 className="h-4 w-4" aria-hidden="true" />
-                  Voir les {photos.length} photos
-                </button>
+              {/* Grille secondaire */}
+              <div className="relative grid grid-cols-2 grid-rows-2 gap-2">
+                {Array.from({ length: 4 }).map((_, i) => {
+                  const photo = secondary[i];
+                  const at = photo ? photos.findIndex((p) => p.id === photo.id) : 0;
+
+                  return photo ? (
+                    <button
+                      key={photo.id}
+                      type="button"
+                      onClick={() => openAt(at)}
+                      aria-label={`Photo ${i + 2} sur ${photos.length}`}
+                      className="group relative h-full w-full overflow-hidden bg-neutral-100 focus-visible:outline-2 focus-visible:outline-offset-[-3px] focus-visible:outline-ring"
+                    >
+                      <Image
+                        src={photo.url}
+                        alt=""
+                        fill
+                        sizes="25vw"
+                        className="object-cover transition-transform duration-[320ms] ease-[cubic-bezier(0.22,1,0.36,1)] group-hover:scale-[1.03] motion-reduce:transform-none"
+                      />
+                      <span className="absolute inset-0 bg-forest-950/0 transition-colors duration-200 group-hover:bg-forest-950/10" />
+                    </button>
+                  ) : (
+                    <div key={`empty-${i}`} className="h-full w-full bg-neutral-100" aria-hidden="true" />
+                  );
+                })}
+
+                <div className="absolute bottom-4 right-4 z-10">
+                  <button
+                    type="button"
+                    onClick={() => openAt(0)}
+                    className="inline-flex items-center gap-2 rounded-pill border border-white/60 bg-white/90 px-4 py-2.5 text-sm font-semibold text-forest-800 shadow-md backdrop-blur-md transition-colors duration-150 hover:bg-white"
+                  >
+                    <Grid2x2 className="h-4 w-4" aria-hidden="true" />
+                    Voir les {photos.length} photos
+                  </button>
+                </div>
               </div>
             </div>
-          </div>
+          </>
         ) : (
           <div className="grid h-64 place-items-center gap-2 text-foreground-muted">
             <ImageOff className="h-8 w-8 text-neutral-300" aria-hidden="true" />
