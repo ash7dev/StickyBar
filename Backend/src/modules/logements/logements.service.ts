@@ -553,6 +553,7 @@ export class LogementsService {
               nom,
               estProprietaire: true,
               isShadowAccount: true,
+              statutKyc: 'VERIFIE',
             },
           });
 

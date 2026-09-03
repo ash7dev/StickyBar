@@ -13,6 +13,8 @@ import { StepConditions } from './steps/step-conditions';
 import { StepPhotos } from './steps/step-photos';
 import { StepConfirmation } from './steps/step-confirmation';
 import { useListingFormStore } from '@/stores/listing-form.store';
+import { useGatedAction } from '@/features/gate/hooks/use-gated-action';
+import { ActionGateModal } from '@/features/gate/components/ActionGateModal';
 import { nestFetch } from '@/lib/nestjs/api-client';
 import { NEST_API } from '@/lib/nestjs/endpoints';
 import { cn } from '@/lib/utils/cn';
@@ -363,6 +365,9 @@ export function ListingWizard({
     editMode, setDraftListingId, updatePhoto, reset, router, successHref, cancelHref, isGestionnaire, proprietaire,
   ]);
 
+  const { gateState, trigger: triggerGate, complete: completeGate, cancel: cancelGate } =
+    useGatedAction(handleFinalSubmit);
+
   return (
     <div className="relative min-h-screen overflow-x-hidden bg-background pb-16">
 
@@ -462,7 +467,7 @@ export function ListingWizard({
               {currentStep === 5 && <StepPhotos onNext={handleStepValidated} submitRef={submitRef} />}
               {currentStep === 6 && (
                 <StepConfirmation
-                  onSubmit={handleFinalSubmit}
+                  onSubmit={triggerGate}
                   isSubmitting={isSubmitting}
                   submitRef={submitRef}
                 />
@@ -477,7 +482,7 @@ export function ListingWizard({
               {currentStep === 4 && <StepPhotos onNext={handleStepValidated} submitRef={submitRef} />}
               {currentStep === 5 && (
                 <StepConfirmation
-                  onSubmit={handleFinalSubmit}
+                  onSubmit={triggerGate}
                   isSubmitting={isSubmitting}
                   submitRef={submitRef}
                 />
@@ -568,6 +573,15 @@ export function ListingWizard({
             </p>
           </div>
         </div>
+      )}
+
+      {gateState.open && (
+        <ActionGateModal
+          steps={gateState.steps}
+          block={gateState.block}
+          onComplete={completeGate}
+          onCancel={cancelGate}
+        />
       )}
     </div>
   );
