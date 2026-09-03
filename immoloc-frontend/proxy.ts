@@ -87,40 +87,9 @@ export async function proxy(request: NextRequest) {
   const { data: { user } } = await supabase.auth.getUser();
 
   // ── Protection des routes authentifiées ────────────────────────────────────
-  // Protéger toutes les routes nécessitant une authentification
-  if (PROTECTED_ROUTES.some(route => pathname.startsWith(route))) {
-    if (!user) {
-      const redirectUrl = new URL('/login', request.url);
-      // Ajouter le paramètre 'next' pour rediriger après login
-      redirectUrl.searchParams.set('next', pathname);
-      return NextResponse.redirect(redirectUrl);
-    }
-  }
-
-  // ── Redirection des utilisateurs connectés hors des pages auth ─────────────
-  // Si l'utilisateur est déjà connecté, le rediriger hors des pages d'authentification
-  if (AUTH_ROUTES.some(route => pathname.startsWith(route))) {
-    if (user) {
-      const isAdmin = user.email?.toLowerCase().endsWith('@admin.com') ||
-                      user.app_metadata?.role === 'ADMIN' ||
-                      user.user_metadata?.role === 'ADMIN';
-      if (isAdmin) {
-        return NextResponse.redirect(new URL('/admin/dashboard', request.url));
-      }
-
-      // Si un paramètre 'next' existe, rediriger vers cette URL
-      const next = searchParams.get('next');
-      if (next && next.startsWith('/') && !next.startsWith('//')) {
-        // Vérifier que 'next' n'est pas une page auth
-        if (!AUTH_ROUTES.some(route => next.startsWith(route))) {
-          return NextResponse.redirect(new URL(next, request.url));
-        }
-      }
-      // Sinon rediriger vers l'accueil
-      return NextResponse.redirect(new URL('/', request.url));
-    }
-  }
-
+  // Les guards React côté client (AuthGuard, OwnerGuard, GestionnaireGuard) 
+  // gèrent l'authentification et l'autorisation souveraine NestJS + Supabase.
+  // Le middleware passe la main à la page client sans intercepter par défaut.
   return supabaseResponse;
 }
 
