@@ -199,13 +199,18 @@ export function TenantReservationActionPanel({ id, res, onRefetch }: Props) {
   /* Bloc « signaler un problème », identique dans trois sous-états. */
   const reportProblem = (titre: string, libelle: string) => (
     <div className="border-t border-border pt-4">
-      <p className="mb-3 text-xs font-semibold uppercase tracking-wider text-foreground-muted">
+      <p className="mb-2.5 text-xs font-semibold uppercase tracking-wider text-foreground-muted">
         {titre}
       </p>
-      <GhostButton onClick={() => setShowRefuseModal(true)} disabled={isSubmitting}>
+      <button
+        type="button"
+        onClick={() => setShowRefuseModal(true)}
+        disabled={isSubmitting}
+        className="inline-flex items-center justify-center gap-2 rounded-pill border border-error-200 bg-error-50 px-4 py-2.5 text-xs font-semibold text-error-700 shadow-2xs transition-[border-color,background-color,box-shadow,transform] duration-150 hover:border-error-300 hover:bg-error-100 hover:shadow-xs active:scale-[0.98] disabled:opacity-50"
+      >
         <AlertTriangle className="h-3.5 w-3.5 text-error-600" aria-hidden="true" />
         {libelle}
-      </GhostButton>
+      </button>
     </div>
   );
 
