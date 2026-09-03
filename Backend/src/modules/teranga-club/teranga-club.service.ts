@@ -208,6 +208,7 @@ export class TerangaClubService {
     let description = '';
     let icone = '';
     let actionRequired: 'RESERVE' | 'REVIEW' | 'EXPLORE' | 'SHARE' = 'RESERVE';
+    let notEligibleReason = '';
 
     switch (code) {
       case CodeBadgeTeranga.FIRST_STAY: {
@@ -223,6 +224,7 @@ export class TerangaClubService {
           },
         });
         isEligible = staysCount >= 1;
+        notEligibleReason = 'Effectuez votre 1er séjour validé sur Klef pour débloquer cette quête !';
         break;
       }
       case CodeBadgeTeranga.AVIS_STAR: {
@@ -235,6 +237,7 @@ export class TerangaClubService {
           where: { auteurId: userId },
         });
         isEligible = reviewsCount >= 1;
+        notEligibleReason = 'Laissez un avis sur l\'un de vos séjours passés pour débloquer ce badge !';
         break;
       }
       case CodeBadgeTeranga.PETITE_COTE_CAPTAIN: {
@@ -258,6 +261,7 @@ export class TerangaClubService {
           },
         });
         isEligible = !!petiteCoteRes;
+        notEligibleReason = 'Réservez un hébergement à Saly, Somone, Ngaparou ou Popenguine pour débloquer cette quête !';
         break;
       }
       case CodeBadgeTeranga.SUPER_PARRAIN: {
@@ -275,6 +279,7 @@ export class TerangaClubService {
           },
         });
         isEligible = !!filleulAvecSejour;
+        notEligibleReason = 'Invitez un ami qui effectue sa première réservation validée sur Klef !';
         break;
       }
       case CodeBadgeTeranga.GRAND_RESIDENT: {
@@ -296,6 +301,7 @@ export class TerangaClubService {
           );
           isEligible = diffDays >= 7;
         }
+        notEligibleReason = 'Effectuez un séjour de 7 nuits ou plus sur Klef pour débloquer les +5 000 Coins Élite !';
         break;
       }
       case CodeBadgeTeranga.LEGENDE_SENEGAL: {
@@ -313,6 +319,7 @@ export class TerangaClubService {
         });
         const distinctVilles = new Set(reservations.map((r) => r.logement.ville).filter(Boolean));
         isEligible = distinctVilles.size >= 3;
+        notEligibleReason = 'Réservez des séjours dans au moins 3 villes/destinations différentes au Sénégal !';
         break;
       }
       case CodeBadgeTeranga.CERCLE_MILLION: {
@@ -333,6 +340,7 @@ export class TerangaClubService {
         });
         const totalSpent = Number(gmvStats._sum.totalLocataire || 0);
         isEligible = totalSpent >= 1_000_000;
+        notEligibleReason = 'Atteignez 1 000 000 FCFA de réservations cumulées sur 12 mois pour décrocher les 10 000 Coins Ultime !';
         break;
       }
       default:
@@ -344,7 +352,7 @@ export class TerangaClubService {
         success: false,
         claimed: false,
         actionRequired,
-        message: `Condition non remplie pour débloquer "${libelle}".`,
+        message: notEligibleReason || `Condition non remplie pour débloquer "${libelle}".`,
       };
     }
 
