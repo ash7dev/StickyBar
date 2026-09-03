@@ -44,6 +44,8 @@ const SUBTITLES: Record<SubState, string> = {
 export function TenantReservationActionPanel({ id, res, onRefetch }: Props) {
   const { statut, photosEtatLieu, dateDebut, absenceSignaleeLe } = res;
 
+  const isDisputeActive = statut === 'DISPUTED' || (!!res.litige && res.litige.statut === 'EN_ATTENTE');
+
   const now = useNow();
 
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -302,14 +304,27 @@ export function TenantReservationActionPanel({ id, res, onRefetch }: Props) {
             </Notice>
           )}
 
-          {/* ── MODE LITIGE ACTIF (EXACTEMENT COMME CÔTÉ OWNER) ─────────────── */}
-          {(res.litige || statut === 'DISPUTED') && res.litige && (
+          {/* ── MODE LITIGE EN ATTENTE ───────────────────────────────────────── */}
+          {isDisputeActive && res.litige && (
             <LitigePanel litige={res.litige} isOwner={false} />
           )}
 
-          {/* ── Livret d'accueil (Masqué si litige en cours) ─────────────── */}
+          {/* ── FRAIS & SUPPLÉMENTS (LOCATAIRE) ───────────────────────── */}
+          {statut !== 'PENDING' && (
+            <ExtraFeesCard
+              reservationId={res.id}
+              demandesFrais={(res as unknown as { demandesFrais?: any[] }).demandesFrais || []}
+              isOwner={false}
+              hasResolvedDispute={!!res.litige && res.litige.statut !== 'EN_ATTENTE'}
+              onRefresh={onRefetch}
+              onOpenDisputeWithMotif={(motif, description) => {
+                setShowRefuseModal(true);
+              }}
+            />
+          )}
 
-          {res.logement && !res.litige && statut !== 'DISPUTED' && (
+          {/* ── Livret d'accueil (Masqué si litige en cours) ─────────────── */}
+          {res.logement && !isDisputeActive && (
             <button
               type="button"
               onClick={() => setShowWelcomeGuide(true)}
@@ -333,19 +348,8 @@ export function TenantReservationActionPanel({ id, res, onRefetch }: Props) {
           )}
 
           {/* Les actions ordinaires ne sont accessibles QUE si AUCUN litige n'est actif */}
-          {!res.litige && statut !== 'DISPUTED' && (
+          {!isDisputeActive && (
             <>
-              {/* ── FRAIS & SUPPLÉMENTS (LOCATAIRE) ───────────────────────── */}
-              <ExtraFeesCard
-                reservationId={res.id}
-                demandesFrais={(res as unknown as { demandesFrais?: any[] }).demandesFrais || []}
-                isOwner={false}
-                onRefresh={onRefetch}
-                onOpenDisputeWithMotif={(motif, description) => {
-                  setShowRefuseModal(true);
-                }}
-              />
-
               {/* ── OWNER-READY ──────────────────────────────────────────────── */}
 
           {!hasTenantCheckin && subState === 'owner-ready' && (
@@ -491,7 +495,7 @@ export function TenantReservationActionPanel({ id, res, onRefetch }: Props) {
                 `${checkinPhotos.length} photo${checkinPhotos.length > 1 ? 's' : ''} validée${checkinPhotos.length > 1 ? 's' : ''}`,
               )}
 
-              {!res.litige && reportProblem(
+              {!isDisputeActive && reportProblem(
                 'Un problème pendant votre séjour ?',
                 'Déclarer un problème ou un litige',
               )}

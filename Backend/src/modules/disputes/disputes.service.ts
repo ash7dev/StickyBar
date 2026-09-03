@@ -217,7 +217,8 @@ export class DisputesService {
       const now = new Date();
       const dateFin = new Date(reservation.dateFin);
 
-      const isCheckinValidated = !!(reservation.checkinLocataireLe || reservation.checkinProprioLe);
+      // Le check-in n'est validé QUE si le locataire a confirmé son arrivée (checkinLocataireLe !== null)
+      const isCheckinValidated = !!reservation.checkinLocataireLe;
       const isCheckoutDone = !!(reservation.checkoutLocataireLe || reservation.checkoutProprioLe);
       const isStayEnded = isCheckoutDone || now >= dateFin;
 
@@ -226,12 +227,12 @@ export class DisputesService {
         // Remboursement 100% ou non-conformité -> Annulation définitive
         nouveauStatutResa = StatutReservation.CANCELLED;
       } else if (isCheckinValidated) {
-        // Si le check-in avait déjà été validé :
+        // Si le locataire AVAIT DÉJÀ validé son check-in :
         // - Si le séjour est terminé (checkout effectué ou date de fin dépassée) -> COMPLETED
         // - Sinon le séjour est toujours en cours -> CHECKED_IN
         nouveauStatutResa = isStayEnded ? StatutReservation.COMPLETED : StatutReservation.CHECKED_IN;
       } else {
-        // Si le check-in N'AVAIT PAS encore été validé :
+        // Si le locataire N'AVAIT PAS encore validé son check-in :
         // Le litige est levé -> Retour à CONFIRMED pour que le locataire puisse valider son check-in !
         nouveauStatutResa = StatutReservation.CONFIRMED;
       }
@@ -294,6 +295,19 @@ export class DisputesService {
                 sens: SensTransaction.CREDIT,
                 soldeApres,
                 description: `Dédommagement litige FONDÉ (${calculatedCompensation.toLocaleString('fr-FR')} FCFA) — résa ${reservation.id.slice(0, 8).toUpperCase()}`,
+              },
+            });
+
+            // Enregistrer l'élément dans demandesFrais pour affichage sur ExtraFeesCard
+            await tx.demandeFrais.create({
+              data: {
+                reservationId: reservation.id,
+                titre: `Supplément litige (${litige.motif})`,
+                description: dto.decisionAdmin || 'Montant accordé par l\'arbitrage Klef',
+                montant: calculatedCompensation,
+                statut: 'PAYE',
+                payeLe: new Date(),
+                methodePaiement: 'ARBITRAGE_ADMIN',
               },
             });
           }

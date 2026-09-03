@@ -685,7 +685,9 @@ export function ReservationActionPanel({ id, res, onRefetch }: Props) {
   const step = STEP_CONFIG[statut as Statut];
   const StepIcon = step.icon;
 
-  const sideActions = !res.litige && (
+  const isDisputeActive = statut === 'DISPUTED' || (!!res.litige && res.litige.statut === 'EN_ATTENTE');
+
+  const sideActions = !isDisputeActive && (
     <>
       <DepassementAccordion
         nbPersonnes={nbPersonnes}
@@ -752,6 +754,21 @@ export function ReservationActionPanel({ id, res, onRefetch }: Props) {
               Le locataire a indiqué être sans nouvelles de vous pour l&apos;arrivée (signalé le{' '}
               <span className="font-semibold">{formatDateTime(res.absenceSignaleeLe!)}</span>). Vous disposez de 2h à compter du signalement pour réaliser l&apos;état des lieux ou contacter le locataire, sans quoi la réservation sera annulée avec remboursement à 100%.
             </Notice>
+          )}
+
+          {/* ── Frais et Suppléments Séjour (Toujours visible pour l'Hôte) ── */}
+          {statut !== 'PENDING' && (
+            <ExtraFeesCard
+              reservationId={res.id}
+              demandesFrais={(res as unknown as { demandesFrais?: any[] }).demandesFrais || []}
+              isOwner={true}
+              onRefresh={onRefetch}
+              onOpenDisputeWithMotif={(motif, description) => {
+                setLitigeMotif(motif);
+                setLitigeDescription(description);
+                setShowLitigeModal(true);
+              }}
+            />
           )}
 
           {/* ══ PENDING ══ */}
@@ -1020,27 +1037,12 @@ export function ReservationActionPanel({ id, res, onRefetch }: Props) {
                 </>
               )}
 
-              {/* ── Frais et Suppléments Séjour ─────────────────────────────── */}
-              <div className="border-t border-border pt-4">
-                <ExtraFeesCard
-                  reservationId={res.id}
-                  demandesFrais={(res as unknown as { demandesFrais?: any[] }).demandesFrais || []}
-                  isOwner={true}
-                  onRefresh={onRefetch}
-                  onOpenDisputeWithMotif={(motif, description) => {
-                    setLitigeMotif(motif);
-                    setLitigeDescription(description);
-                    setShowLitigeModal(true);
-                  }}
-                />
-              </div>
-
               <div className="space-y-3 border-t border-border pt-4">
                 <p className="text-xs font-semibold uppercase tracking-wider text-foreground-muted">
                   Problème pendant le séjour ?
                 </p>
 
-                {res.litige ? (
+                {isDisputeActive && res.litige ? (
                   <LitigePanel litige={res.litige} />
                 ) : (
                   <div className="flex flex-wrap gap-2">
@@ -1066,8 +1068,8 @@ export function ReservationActionPanel({ id, res, onRefetch }: Props) {
             </>
           )}
 
-          {/* ══ DISPUTED ══ */}
-          {statut === 'DISPUTED' && res.litige && <LitigePanel litige={res.litige} />}
+          {/* ══ DISPUTED (EN ATTENTE D'ARBITRAGE) ══ */}
+          {isDisputeActive && res.litige && <LitigePanel litige={res.litige} />}
 
           {/* ══ COMPLETED ══ */}
           {statut === 'COMPLETED' && (

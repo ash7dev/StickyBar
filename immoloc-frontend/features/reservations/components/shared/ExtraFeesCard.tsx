@@ -24,6 +24,7 @@ interface ExtraFeesCardProps {
   reservationId: string;
   demandesFrais?: DemandeFraisItem[];
   isOwner?: boolean;
+  hasResolvedDispute?: boolean;
   onRefresh?: () => void;
   onOpenDisputeWithMotif?: (motif: string, description: string) => void;
 }
@@ -32,6 +33,7 @@ export function ExtraFeesCard({
   reservationId,
   demandesFrais = [],
   isOwner = false,
+  hasResolvedDispute = false,
   onRefresh,
   onOpenDisputeWithMotif,
 }: ExtraFeesCardProps) {
@@ -128,7 +130,7 @@ export function ExtraFeesCard({
 
   return (
     <div className="space-y-4">
-      {/* ── Entête & Bouton Demande (Owner) ──────────────────────────────── */}
+      {/* ── Entête & Bouton Demande (Owner uniquement, hors litige clos) ───── */}
       <div className="flex items-center justify-between gap-3 rounded-card border border-border bg-background-card p-4">
         <div className="flex items-center gap-3">
           <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-inner bg-forest-50 text-forest-700">
@@ -144,7 +146,7 @@ export function ExtraFeesCard({
           </div>
         </div>
 
-        {isOwner && (
+        {isOwner && !hasResolvedDispute && (
           <button
             type="button"
             onClick={() => { setShowCreateModal(true); setFeedback(null); }}
@@ -184,10 +186,16 @@ export function ExtraFeesCard({
               </div>
 
               {/* Status Pastille */}
-              {isPending && (
+              {isPending && !hasResolvedDispute && (
                 <span className="inline-flex items-center gap-1 rounded-pill border border-warning-500/30 bg-warning-100 px-2.5 py-1 text-[0.6875rem] font-semibold text-warning-800">
                   <Clock className="h-3 w-3" aria-hidden="true" />
                   En attente
+                </span>
+              )}
+              {isPending && hasResolvedDispute && (
+                <span className="inline-flex items-center gap-1 rounded-pill border border-forest-500/30 bg-forest-100 px-2.5 py-1 text-[0.6875rem] font-semibold text-forest-800">
+                  <CheckCircle2 className="h-3 w-3" aria-hidden="true" />
+                  Arbitré dans le litige
                 </span>
               )}
               {isPaid && (
@@ -212,8 +220,8 @@ export function ExtraFeesCard({
               </span>
             </div>
 
-            {/* Actions Côté LOCATAIRE */}
-            {!isOwner && isPending && (
+            {/* Actions Côté LOCATAIRE (Seulement si PAS de litige résolu) */}
+            {!isOwner && isPending && !hasResolvedDispute && (
               <div className="space-y-3 pt-2">
                 <div className="rounded-inner bg-background-card p-3 border border-border space-y-2">
                   <p className="text-xs font-semibold text-foreground">Mode de paiement :</p>
@@ -267,8 +275,8 @@ export function ExtraFeesCard({
               </div>
             )}
 
-            {/* Actions Côté PROPRIÉTAIRE */}
-            {isOwner && isPending && (
+            {/* Actions Côté PROPRIÉTAIRE (Seulement si PAS de litige résolu) */}
+            {isOwner && isPending && !hasResolvedDispute && (
               <div className="flex items-center justify-end gap-2 border-t border-border/50 pt-2.5">
                 <button
                   type="button"
