@@ -31,6 +31,7 @@ const MOTIFS: Record<string, string> = {
   LOGEMENT_INACCESSIBLE: 'Logement inaccessible',
   DEPASSEMENT_PERSONNES: 'Dépassement de personnes',
   DOMMAGES: 'Dommages',
+  NON_PAIEMENT: 'Non-paiement de suppléments',
   AUTRE: 'Autre',
 };
 

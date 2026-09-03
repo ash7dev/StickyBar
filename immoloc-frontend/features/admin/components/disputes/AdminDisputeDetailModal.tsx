@@ -30,6 +30,7 @@ interface DisputeDetails extends DisputeItem {
     dateFin?: string;
     totalLocataire?: number;
     paiement?: { statut?: string; fournisseur?: string; montant?: number };
+    demandesFrais?: Array<{ id: string; titre: string; description?: string; montant: number; statut: string; creeLe?: string }>;
   };
 }
 
@@ -45,6 +46,7 @@ const MOTIFS: Record<string, string> = {
   LOGEMENT_INACCESSIBLE: 'Logement inaccessible',
   DEPASSEMENT_PERSONNES: 'Dépassement de personnes',
   DOMMAGES: 'Dommages',
+  NON_PAIEMENT: 'Non-paiement de suppléments',
   AUTRE: 'Autre',
 };
 
@@ -376,6 +378,36 @@ export function AdminDisputeDetailModal({ dispute, isOpen, onClose, onResolve }:
                 </p>
               </Bloc>
             </div>
+
+            {/* ── Suppléments et Frais demandés ──────────────────────────── */}
+            {res?.demandesFrais && res.demandesFrais.length > 0 && (
+              <Bloc icon={CreditCard} titre="Suppléments & Frais demandés sur cette réservation">
+                <div className="space-y-2 pt-1">
+                  {res.demandesFrais.map((f) => (
+                    <div
+                      key={f.id}
+                      className="flex items-center justify-between gap-3 rounded-inner border border-border bg-background-card p-3 text-xs"
+                    >
+                      <div>
+                        <p className="font-semibold text-foreground">{f.titre}</p>
+                        {f.description && <p className="text-foreground-muted">{f.description}</p>}
+                      </div>
+                      <div className="text-right">
+                        <p className="font-display font-semibold tabular-nums text-foreground">
+                          {fmtMontant(f.montant)}
+                        </p>
+                        <span className={cn(
+                          'inline-flex items-center rounded-pill px-2 py-0.5 text-[0.625rem] font-semibold',
+                          f.statut === 'PAYE' ? 'bg-success-100 text-success-800' : 'bg-warning-100 text-warning-800'
+                        )}>
+                          {f.statut === 'PAYE' ? 'PAYÉ' : f.statut === 'REFUSE' ? 'REFUSÉ / CONTESTÉ' : 'EN ATTENTE'}
+                        </span>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </Bloc>
+            )}
 
             {/* ── Preuves ──────────────────────────────────────────────────
                 Les photos étaient en `object-cover` avec un zoom au survol :
