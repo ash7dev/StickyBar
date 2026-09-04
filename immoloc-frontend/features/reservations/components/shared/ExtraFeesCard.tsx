@@ -173,6 +173,14 @@ export function ExtraFeesCard({
     }
   };
 
+  const pendingFees = demandesFrais.filter((item) => item.statut === 'EN_ATTENTE');
+  const demandesToRender = isOwner ? demandesFrais : pendingFees;
+
+  // Option A : Côté locataire, masquer complètement le composant si aucun frais n'est en attente de paiement
+  if (!isOwner && demandesToRender.length === 0) {
+    return null;
+  }
+
   return (
     <div className="space-y-4">
       {/* ── Entête ──────────────────────────────────────────────────────── */}
@@ -184,9 +192,9 @@ export function ExtraFeesCard({
           <div>
             <h3 className="text-sm font-semibold text-foreground">Frais & suppléments séjour</h3>
             <p className="text-xs text-foreground-muted">
-              {demandesFrais.length === 0
+              {demandesToRender.length === 0
                 ? 'Aucun supplément demandé pour ce séjour'
-                : `${demandesFrais.length} supplément${demandesFrais.length > 1 ? 's' : ''} au dossier`}
+                : `${demandesToRender.length} supplément${demandesToRender.length > 1 ? 's' : ''} au dossier`}
             </p>
           </div>
         </div>
@@ -204,7 +212,7 @@ export function ExtraFeesCard({
       </div>
 
       {/* ── État vide ───────────────────────────────────────────────────── */}
-      {demandesFrais.length === 0 && (
+      {demandesToRender.length === 0 && (
         <div className="flex flex-col items-center gap-2 rounded-card border border-dashed border-border bg-background-alt/40 px-4 py-8 text-center">
           <span className="flex h-9 w-9 items-center justify-center rounded-inner bg-forest-50 text-forest-600">
             <Banknote className="h-4 w-4" aria-hidden="true" />
@@ -218,7 +226,7 @@ export function ExtraFeesCard({
       )}
 
       {/* ── Liste des suppléments ───────────────────────────────────────── */}
-      {demandesFrais.map((item) => {
+      {demandesToRender.map((item) => {
         const isPending = item.statut === 'EN_ATTENTE';
         const isPaid = item.statut === 'PAYE';
         const isRefused = item.statut === 'REFUSE' || item.statut === 'CONTESTE';
