@@ -180,7 +180,7 @@ function Tile({
 
 function Amount({ value }: { value: number | string }) {
   return (
-    <p className="font-display text-base font-semibold tabular-nums text-foreground">
+    <p className="font-display text-base font-semibold tabular-nums text-foreground whitespace-nowrap">
       {fcfa(Number(value) || 0)}{' '}
       <span className="font-sans text-xs font-semibold text-foreground-muted">FCFA</span>
     </p>

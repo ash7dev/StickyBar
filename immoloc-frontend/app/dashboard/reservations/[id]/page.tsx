@@ -761,33 +761,35 @@ export default function ReservationDetailPage({ params }: { params: Promise<{ id
           <section className="section-inverse space-y-5 p-6">
             <InverseHeader icon={TrendingUp} title="Détail financier" subtitle="Répartition du montant réglé" />
 
-            <dl className="space-y-1">
+            <dl className="space-y-1.5">
               {ligneMontants.map((row) => (
                 <div
                   key={row.label}
                   className={cn(
-                    'flex items-center justify-between gap-3 py-2.5',
-                    row.kind && 'border-t border-border-inverse pt-3',
+                    'flex items-center justify-between gap-3 py-2',
+                    row.kind && 'border-t border-border-inverse pt-3 mt-1.5',
                   )}
                 >
                   <dt className={cn(
-                    'text-sm',
-                    row.kind === 'total' || row.kind === 'net'
-                      ? 'font-semibold text-on-inverse'
-                      : 'text-on-inverse-muted',
+                    'min-w-0 flex-1 leading-snug',
+                    row.kind === 'net'
+                      ? 'font-semibold text-sm sm:text-base text-on-inverse whitespace-nowrap'
+                      : row.kind === 'total'
+                        ? 'font-semibold text-xs sm:text-sm text-on-inverse'
+                        : 'text-xs sm:text-sm text-on-inverse-muted',
                   )}>
                     {row.label}
                   </dt>
                   <dd className={cn(
-                    'text-sm font-semibold tabular-nums',
+                    'whitespace-nowrap shrink-0 text-right font-semibold tabular-nums',
                     row.kind === 'net'
                       /* ★ Le revenu net, à nouveau en lime : c'est le chiffre
                          que le propriétaire vient chercher. */
-                      ? 'rounded-pill border border-action-edge bg-marker-bg px-3 py-1 font-display text-xl text-on-inverse-marker'
+                      ? 'rounded-pill border border-action-edge bg-marker-bg px-3.5 py-1 font-display text-base sm:text-xl text-on-inverse-marker shadow-2xs'
                       /* ★ La commission : seule ligne rouge de la page. */
                       : row.kind === 'deduction'
-                        ? 'text-error-500'
-                        : 'text-on-inverse',
+                        ? 'text-xs sm:text-sm text-error-500'
+                        : 'text-xs sm:text-sm text-on-inverse',
                   )}>
                     {row.value}
                   </dd>

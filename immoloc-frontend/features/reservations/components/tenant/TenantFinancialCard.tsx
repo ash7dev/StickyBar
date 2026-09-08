@@ -119,10 +119,10 @@ export function TenantFinancialCard({
           )}
 
           <div className="flex items-center justify-between gap-3 rounded-inner border border-border-inverse bg-white/[0.07] p-4">
-            <span className="text-xs font-semibold uppercase tracking-wider text-on-inverse-muted">
+            <span className="text-xs font-semibold uppercase tracking-wider text-on-inverse-muted min-w-0 flex-1">
               Total réglé
             </span>
-            <span className="text-right">
+            <span className="text-right whitespace-nowrap shrink-0">
               <span className="font-display text-2xl font-semibold leading-none tabular-nums text-on-inverse">
                 {fcfa(total)}
               </span>
@@ -155,8 +155,8 @@ function Line({
 }) {
   return (
     <div className="flex items-baseline justify-between gap-3 text-xs">
-      <dt className="text-on-inverse-muted">{label}</dt>
-      <dd className="font-semibold tabular-nums text-on-inverse">
+      <dt className="text-on-inverse-muted min-w-0 flex-1 leading-snug">{label}</dt>
+      <dd className="font-semibold tabular-nums text-on-inverse whitespace-nowrap shrink-0 text-right">
         {prefix}
         {fcfa(Number(value) || 0)} FCFA
       </dd>
