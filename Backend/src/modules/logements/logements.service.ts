@@ -553,7 +553,6 @@ export class LogementsService {
               nom,
               estProprietaire: true,
               isShadowAccount: true,
-              statutKyc: 'VERIFIE',
             },
           });
 
@@ -1078,8 +1077,8 @@ export class LogementsService {
     await this.assertOwner(id, userId);
 
     const photoCount = await this.prisma.photoLogement.count({ where: { logementId: id } });
-    if (photoCount >= 10) {
-      throw new UnprocessableEntityException('Maximum 10 photos par logement');
+    if (photoCount >= 15) {
+      throw new UnprocessableEntityException('Maximum 15 photos par logement');
     }
 
     if (dto.estPrincipale) {

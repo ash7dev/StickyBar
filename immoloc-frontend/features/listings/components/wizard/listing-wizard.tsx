@@ -13,8 +13,6 @@ import { StepConditions } from './steps/step-conditions';
 import { StepPhotos } from './steps/step-photos';
 import { StepConfirmation } from './steps/step-confirmation';
 import { useListingFormStore } from '@/stores/listing-form.store';
-import { useGatedAction } from '@/features/gate/hooks/use-gated-action';
-import { ActionGateModal } from '@/features/gate/components/ActionGateModal';
 import { nestFetch } from '@/lib/nestjs/api-client';
 import { NEST_API } from '@/lib/nestjs/endpoints';
 import { cn } from '@/lib/utils/cn';
@@ -51,6 +49,7 @@ const GESTIONNAIRE_STEP_SUBTITLES = [
 type UploadParams = {
   uploadUrl: string; signature: string; timestamp: number;
   apiKey: string; cloudName: string; folder: string;
+  transformation?: string;
 };
 
 interface Props {
@@ -108,7 +107,7 @@ export function ListingWizard({
           setStep(1); // Saut automatique du Step 0 vers le Step 1 (Votre Logement) !
         }
       })
-      .catch(() => {});
+      .catch(() => { });
   }, [initialOwnerId, isGestionnaire, editMode, setProprietaire, markCompleted, setStep]);
 
   /* Un rafraîchissement ou une fermeture pendant le transfert perd les
@@ -176,10 +175,10 @@ export function ListingWizard({
           ? proprietaire.mode === 'EXISTING'
             ? { managedOwnerPhone: proprietaire.telephone }
             : {
-                managedOwnerPhone: proprietaire.telephone,
-                managedOwnerNom: proprietaire.nom,
-                managedOwnerPrenom: proprietaire.prenom,
-              }
+              managedOwnerPhone: proprietaire.telephone,
+              managedOwnerNom: proprietaire.nom,
+              managedOwnerPrenom: proprietaire.prenom,
+            }
           : {}),
       };
 
@@ -226,6 +225,9 @@ export function ListingWizard({
           formData.append('signature', params.signature);
           formData.append('timestamp', String(params.timestamp));
           formData.append('api_key', params.apiKey);
+          if (params.transformation) {
+            formData.append('transformation', params.transformation);
+          }
 
           const res = await fetch(params.uploadUrl, { method: 'POST', body: formData });
           if (!res.ok) {
@@ -365,9 +367,6 @@ export function ListingWizard({
     editMode, setDraftListingId, updatePhoto, reset, router, successHref, cancelHref, isGestionnaire, proprietaire,
   ]);
 
-  const { gateState, trigger: triggerGate, complete: completeGate, cancel: cancelGate } =
-    useGatedAction(handleFinalSubmit);
-
   return (
     <div className="relative min-h-screen overflow-x-hidden bg-background pb-16">
 
@@ -467,7 +466,7 @@ export function ListingWizard({
               {currentStep === 5 && <StepPhotos onNext={handleStepValidated} submitRef={submitRef} />}
               {currentStep === 6 && (
                 <StepConfirmation
-                  onSubmit={triggerGate}
+                  onSubmit={handleFinalSubmit}
                   isSubmitting={isSubmitting}
                   submitRef={submitRef}
                 />
@@ -482,7 +481,7 @@ export function ListingWizard({
               {currentStep === 4 && <StepPhotos onNext={handleStepValidated} submitRef={submitRef} />}
               {currentStep === 5 && (
                 <StepConfirmation
-                  onSubmit={triggerGate}
+                  onSubmit={handleFinalSubmit}
                   isSubmitting={isSubmitting}
                   submitRef={submitRef}
                 />
@@ -573,15 +572,6 @@ export function ListingWizard({
             </p>
           </div>
         </div>
-      )}
-
-      {gateState.open && (
-        <ActionGateModal
-          steps={gateState.steps}
-          block={gateState.block}
-          onComplete={completeGate}
-          onCancel={cancelGate}
-        />
       )}
     </div>
   );

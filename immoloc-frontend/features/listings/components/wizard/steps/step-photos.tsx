@@ -10,7 +10,7 @@ import { cn } from '@/lib/utils/cn';
 
 const MIN_PHOTOS = 1;
 const RECOMMENDED_PHOTOS = 5;
-const MAX_PHOTOS = 10;
+const MAX_PHOTOS = 15;
 const MAX_VIDEO_SECONDS = 90;
 const MAX_PHOTO_BYTES = 10 * 1024 * 1024;
 const ACCEPTED_IMAGES = ['image/jpeg', 'image/png', 'image/webp'];

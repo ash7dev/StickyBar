@@ -6,7 +6,7 @@ import { nestFetch } from '@/lib/nestjs/api-client';
 import { NEST_API } from '@/lib/nestjs/endpoints';
 import type { ListingPhoto } from '@/lib/nestjs/types';
 
-export const MAX_PHOTOS = 10;
+export const MAX_PHOTOS = 15;
 export const MAX_FILE_MB = 8;
 export const ACCEPTED = ['image/jpeg', 'image/png', 'image/webp', 'image/heic', 'image/heif'];
 
@@ -23,6 +23,7 @@ export interface LocalPhoto extends ListingPhoto {
 interface UploadParams {
     uploadUrl: string; signature: string; timestamp: number;
     apiKey: string; cloudName: string; folder: string;
+    transformation?: string;
 }
 
 export function usePhotoUpload(listingId: string, initial: ListingPhoto[]) {
@@ -147,6 +148,9 @@ export function usePhotoUpload(listingId: string, initial: ListingPhoto[]) {
                     fd.append('signature', params.signature);
                     fd.append('timestamp', String(params.timestamp));
                     fd.append('api_key', params.apiKey);
+                    if (params.transformation) {
+                        fd.append('transformation', params.transformation);
+                    }
 
                     const res = await fetch(params.uploadUrl, { method: 'POST', body: fd });
                     if (!res.ok) throw new Error();

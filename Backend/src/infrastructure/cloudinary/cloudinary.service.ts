@@ -86,11 +86,13 @@ export class CloudinaryService {
     apiKey: string;
     cloudName: string;
     folder: string;
+    transformation: string;
     uploadUrl: string;
   } {
     const timestamp = Math.round(Date.now() / 1000);
+    const transformation = 'f_auto,q_auto,w_1600';
     const signature = cloudinary.utils.api_sign_request(
-      { timestamp, folder },
+      { timestamp, folder, transformation },
       this.config.getOrThrow('CLOUDINARY_API_SECRET'),
     );
     return {
@@ -99,6 +101,7 @@ export class CloudinaryService {
       apiKey: this.config.getOrThrow('CLOUDINARY_API_KEY'),
       cloudName: this.config.getOrThrow('CLOUDINARY_CLOUD_NAME'),
       folder,
+      transformation,
       uploadUrl: `https://api.cloudinary.com/v1_1/${this.config.getOrThrow('CLOUDINARY_CLOUD_NAME')}/image/upload`,
     };
   }
