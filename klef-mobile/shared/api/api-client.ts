@@ -21,7 +21,7 @@ apiClient.interceptors.request.use(
   async (config) => {
     try {
       // 1. Récupération du Token de Session chiffré depuis le Keychain / Keystore du téléphone
-      const token = await SecureStore.getItemAsync('accessToken');
+      const token = await SecureStore.getItemAsync('klef_auth_token');
       if (token) {
         config.headers.Authorization = `Bearer ${token}`;
       }
@@ -49,7 +49,7 @@ apiClient.interceptors.response.use(
   async (error) => {
     if (error.response?.status === 401) {
       console.warn('[ApiClient] Session expirée ou non autorisée. Nettoyage...');
-      await SecureStore.deleteItemAsync('accessToken').catch(() => {});
+      await SecureStore.deleteItemAsync('klef_auth_token').catch(() => {});
     }
     return Promise.reject(error);
   },
