@@ -1,6 +1,6 @@
 import React from 'react';
 import { View, Text, StyleSheet, SafeAreaView, TouchableOpacity, ScrollView } from 'react-native';
-import { User, LogOut, Shield, Repeat } from 'lucide-react-native';
+import { LogOut, Repeat } from 'lucide-react-native';
 import { colors, radius, typography } from '../../shared/theme/tokens';
 import { useAuthStore } from '../../features/auth/stores/auth.store';
 import { useRoleStore } from '../../shared/stores/role.store';
@@ -8,10 +8,9 @@ import { useAuth } from '../../features/auth/hooks/useAuth';
 import { AppButton } from '../../shared/components/ui/AppButton';
 import { AppCard } from '../../shared/components/ui/AppCard';
 import { AppBadge } from '../../shared/components/ui/AppBadge';
-import { useRouter } from 'expo-router';
+import { AuthRequiredCard } from '../../features/auth/components/AuthRequiredCard';
 
 export default function ProfileScreen() {
-  const router = useRouter();
   const { user, isAuthenticated } = useAuthStore();
   const { activeRole, setActiveRole } = useRoleStore();
   const { logout } = useAuth();
@@ -24,24 +23,13 @@ export default function ProfileScreen() {
   return (
     <SafeAreaView style={styles.safeArea}>
       <ScrollView contentContainerStyle={styles.container}>
-        <Text style={styles.headerTitle}>Mon Profil</Text>
+        <Text style={styles.headerTitle}>Paramètres</Text>
 
         {!isAuthenticated ? (
-          <AppCard style={styles.guestCard} variant="card">
-            <View style={styles.iconBox}>
-              <User size={32} color={colors.forest[600]} />
-            </View>
-            <Text style={styles.title}>Mode Invité</Text>
-            <Text style={styles.subtitle}>
-              Connectez-vous pour gérer votre compte, basculer en mode Hôte et accéder à vos paramètres.
-            </Text>
-            <AppButton
-              label="Se connecter / S'inscrire"
-              onPress={() => router.push('/(auth)/login')}
-              size="lg"
-              variant="action"
-            />
-          </AppCard>
+          <AuthRequiredCard
+            subtitle="Gérez vos informations personnelles, votre sécurité et la vérification de votre identité Klef."
+            title="Connectez-vous pour accéder à vos paramètres"
+          />
         ) : (
           <View style={styles.profileContent}>
             {/* Card Utilisateur */}
@@ -86,19 +74,8 @@ export default function ProfileScreen() {
 
 const styles = StyleSheet.create({
   safeArea: { flex: 1, backgroundColor: colors.neutral[50] },
-  container: { padding: 24, gap: 20 },
+  container: { padding: 20, gap: 20 },
   headerTitle: { fontSize: 28, fontWeight: '700', color: colors.neutral[900] },
-  guestCard: { padding: 24, alignItems: 'center', gap: 12 },
-  iconBox: {
-    width: 64,
-    height: 64,
-    borderRadius: radius.inner,
-    backgroundColor: colors.forest[50],
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  title: { fontSize: 20, fontWeight: '700', color: colors.neutral[900] },
-  subtitle: { fontSize: typography.sizes.sm, color: colors.neutral[600], textAlign: 'center', lineHeight: 20 },
 
   profileContent: { gap: 16 },
   userCard: { flexDirection: 'row', alignItems: 'center', gap: 16, padding: 18 },

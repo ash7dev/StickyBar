@@ -1,53 +1,59 @@
 import React from 'react';
-import { View, Text, StyleSheet, SafeAreaView } from 'react-native';
-import { Calendar } from 'lucide-react-native';
-import { colors, radius, typography } from '../../shared/theme/tokens';
+import { View, Text, StyleSheet, SafeAreaView, ScrollView } from 'react-native';
+import { CalendarDays } from 'lucide-react-native';
+import { colors, typography } from '../../shared/theme/tokens';
 import { useAuthStore } from '../../features/auth/stores/auth.store';
-import { AppButton } from '../../shared/components/ui/AppButton';
-import { useRouter } from 'expo-router';
+import { useRoleStore } from '../../shared/stores/role.store';
+import { AuthRequiredCard } from '../../features/auth/components/AuthRequiredCard';
 
 export default function ReservationsScreen() {
-  const router = useRouter();
   const { isAuthenticated } = useAuthStore();
+  const { activeRole } = useRoleStore();
+
+  const isGuarded = !isAuthenticated || activeRole === 'PROPRIETAIRE';
 
   return (
     <SafeAreaView style={styles.safeArea}>
-      <View style={styles.container}>
-        <View style={styles.iconBox}>
-          <Calendar size={32} color={colors.forest[600]} />
-        </View>
-        <Text style={styles.title}>Mes Séjours & Réservations</Text>
-        <Text style={styles.subtitle}>
-          {isAuthenticated
-            ? 'Retrouvez ici tous vos séjours à venir, en cours et passés.'
-            : 'Connectez-vous pour consulter vos contrats de réservation et vos accès.'}
-        </Text>
+      <ScrollView contentContainerStyle={styles.container}>
+        <Text style={styles.headerTitle}>Mes Réservations</Text>
 
-        {!isAuthenticated ? (
-          <AppButton
-            label="Se connecter / S'inscrire"
-            onPress={() => router.push('/(auth)/login')}
-            size="md"
-            variant="action"
+        {isGuarded ? (
+          <AuthRequiredCard
+            subtitle="Accédez à l’historique complet de vos séjours, vos contrats de réservation et vos reçus sécurisés par le séquestre Klef."
+            title="Connectez-vous pour voir vos réservations"
           />
-        ) : null}
-      </View>
+        ) : (
+          <View style={styles.content}>
+            <Text style={styles.sectionTitle}>Vos séjours à venir</Text>
+            <View style={styles.emptyCard}>
+              <CalendarDays size={32} color={colors.forest[600]} />
+              <Text style={styles.emptyText}>Vous n'avez aucune réservation en cours ou à venir.</Text>
+            </View>
+          </View>
+        )}
+      </ScrollView>
     </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
   safeArea: { flex: 1, backgroundColor: colors.neutral[50] },
-  container: { flex: 1, padding: 24, justifyContent: 'center', alignItems: 'center' },
-  iconBox: {
-    width: 64,
-    height: 64,
-    borderRadius: radius.inner,
-    backgroundColor: colors.forest[50],
+  container: { padding: 20, gap: 20 },
+  headerTitle: { fontSize: 28, fontWeight: '700', color: colors.neutral[900] },
+  content: { gap: 16 },
+  sectionTitle: { fontSize: typography.sizes.md, fontWeight: '700', color: colors.neutral[900] },
+  emptyCard: {
+    backgroundColor: colors.neutral[0],
+    borderWidth: 1,
+    borderColor: colors.neutral[200],
+    borderRadius: 16,
+    padding: 32,
     alignItems: 'center',
-    justifyContent: 'center',
-    marginBottom: 16,
+    gap: 12,
   },
-  title: { fontSize: 22, fontWeight: '700', color: colors.neutral[900], marginBottom: 8, textAlign: 'center' },
-  subtitle: { fontSize: typography.sizes.sm, color: colors.neutral[600], textAlign: 'center', lineHeight: 20, marginBottom: 24 },
+  emptyText: {
+    fontSize: typography.sizes.xs,
+    color: colors.neutral[600],
+    textAlign: 'center',
+  },
 });
