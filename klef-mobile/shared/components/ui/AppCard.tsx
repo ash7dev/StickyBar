@@ -1,9 +1,9 @@
 import React from 'react';
 import { View, StyleSheet, ViewProps } from 'react-native';
-import { colors, radius } from '../../theme/tokens';
+import { colors, radius, shadows } from '../../theme/tokens';
 
 export interface AppCardProps extends ViewProps {
-  variant?: 'card' | 'inverse' | 'alt';
+  variant?: 'card' | 'inverse' | 'alt' | 'glass';
   children: React.ReactNode;
 }
 
@@ -27,18 +27,25 @@ const styles = StyleSheet.create({
     padding: 18,
   },
   variant_card: {
-    backgroundColor: colors.background.card,
+    backgroundColor: colors.neutral[0],
     borderWidth: 1,
-    borderColor: colors.border.default,
+    borderColor: colors.neutral[200],
+    ...shadows.sm,
   },
   variant_inverse: {
-    backgroundColor: colors.forest[950],
+    backgroundColor: colors.forest[900],
     borderWidth: 1,
     borderColor: colors.border.inverse,
   },
   variant_alt: {
-    backgroundColor: colors.background.alt,
+    backgroundColor: colors.neutral[100],
     borderWidth: 1,
-    borderColor: colors.border.default,
+    borderColor: colors.neutral[200],
+  },
+  variant_glass: {
+    backgroundColor: 'rgba(255, 255, 255, 0.72)',
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.64)',
+    ...shadows.float,
   },
 });

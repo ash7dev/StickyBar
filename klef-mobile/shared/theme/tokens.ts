@@ -1,85 +1,207 @@
 // =============================================================================
-// Klef Mobile — Design Tokens & Thème Visuel Officiel
-// Identité visuelle 100% conforme à la plateforme web Klef (Immoloc)
+// Klef Mobile — Design Tokens & Thème Visuel Officiel v2.1
+// SOURCE DE VÉRITÉ : 100% Miroir exact de immoloc-frontend/app/globals.css
 // =============================================================================
 
 export const colors = {
-  // Vert Forêt Signature Klef (Fonds sombres, luxe, confiance)
+  // ── Forest (Structure, marque, surfaces sombres) ─────────────────────────
   forest: {
-    950: '#04221d',
-    900: '#062822',
-    800: '#0b382f',
-    700: '#114a3e',
-    600: '#185d4f',
-    500: '#227362',
-    100: '#e1f5f0',
-    50: '#f0faf7',
+    50: '#ECF6F1',
+    100: '#D2EADF',
+    200: '#A8D5C1',
+    300: '#77BB9E', // texte secondaire sur fond sombre
+    400: '#479C79',
+    500: '#22805D',
+    600: '#14654C', // ★ Couleur de marque Klef — contrast 7.01:1 avec blanc
+    700: '#0F503D',
+    800: '#0B3D2E', // ★ Texte sur Lime (9.70:1)
+    900: '#072A20', // ★ Surface sombre
+    950: '#041912', // ★ Le "Noir" vert du système
   },
 
-  // Vert Lime Action (Boutons CTA d'action principale & montants nets)
-  action: {
-    default: '#d9f99d',
-    hover: '#bef264',
-    border: '#a3e635',
-    text: '#04221d',
+  // ── Lime (L'Action — CTA principal) ───────────────────────────────────────
+  lime: {
+    50: '#F7FCE9',
+    100: '#EEF9CE',
+    200: '#E4F7B8',
+    300: '#DFF5A4', // marqueur sur fond sombre (13.03:1)
+    400: '#D3F26E', // ★ CTA Action principal
+    500: '#BCE04A', // hover
+    600: '#9BC22C', // active
+    700: '#74941C',
+    800: '#556D15', // texte lime courant sur fond clair (5.61:1)
+    900: '#3A4A0E',
   },
 
-  // Or Teranga (Club, notations ⭐, badges certifiés)
+  // ── Gold (Le Statut — Badge Vérifié, Étoiles) ────────────────────────────
   gold: {
-    600: '#d97706',
-    500: '#f59e0b',
-    400: '#fbbf24',
-    100: '#fef3c7',
-    50: '#fffbeb',
+    50: '#FBF6E9',
+    100: '#F4E9CB',
+    200: '#E9D398',
+    300: '#DABB68',
+    400: '#C9A24B', // ★ Badge Vérifié / Étoiles de notation
+    500: '#A88336',
+    600: '#856527',
+    700: '#63491B', // ★ Texte sur gold-50 (7.79:1)
+    800: '#423110',
   },
 
-  // Neutres & Surfaces Claires / Sombres
+  // ── Neutres (Blanc vert froid) ───────────────────────────────────────────
+  neutral: {
+    0: '#FFFFFF',
+    50: '#F8FBF4',  // ★ Fond de page clair principal
+    100: '#F1F6EA', // Fond alternatif / cartes secondaires
+    200: '#E4EBDB', // Bordures
+    300: '#CDD6C3',
+    400: '#A3AE99',
+    500: '#7D8975',
+    600: '#5F6B59', // ★ Texte secondaire (5.38:1)
+    700: '#475041',
+    800: '#333A2F',
+    900: '#22271F', // ★ Texte principal (14.58:1)
+    950: '#141812',
+  },
+
+  // ── Sémantiques Retonalisés Klef ──────────────────────────────────────────
+  success: {
+    50: '#E9F6EC',
+    500: '#2E9E52',
+    600: '#1F7D3E',
+    700: '#175E2F',
+  },
+  warning: {
+    50: '#FDF4E3',
+    500: '#D99A22',
+    600: '#B47B14',
+    700: '#8A5D0E',
+  },
+  error: {
+    50: '#FBEDEB',
+    500: '#D64B3C',
+    600: '#B33628',
+    700: '#8A281D',
+  },
+  info: {
+    50: '#E9F2F5',
+    500: '#3A7D95',
+    600: '#2A6076',
+    700: '#1E4757',
+  },
+
+  // ── Abstractions Sémantiques (Composants UI) ─────────────────────────────
   background: {
-    default: '#f4f5f6',
-    card: '#ffffff',
-    alt: '#f9fafb',
-    inverse: '#04221d',
-    inverseCard: '#062822',
+    default: '#F8FBF4',      // var(--background)
+    alt: '#F1F6EA',          // var(--background-alt)
+    card: '#FFFFFF',         // var(--background-card)
+    inverse: '#072A20',      // var(--surface-inverse)
+    inverseAlt: '#041912',   // var(--surface-inverse-alt)
   },
 
-  // Textes & Contrastes
   text: {
-    primary: '#0f172a',
-    secondary: '#475569',
-    muted: '#64748b',
-    inverse: '#ffffff',
-    inverseMuted: '#94a3b8',
-    inverseMarker: '#d9f99d',
+    primary: '#22271F',       // var(--foreground)
+    secondary: '#5F6B59',     // var(--foreground-muted)
+    faint: '#A3AE99',         // var(--foreground-faint)
+    inverse: '#F8FBF4',       // var(--on-inverse)
+    inverseDisplay: '#F8FBF4',// var(--on-inverse-display)
+    inverseMuted: '#A8D5C1',  // var(--on-inverse-muted)
+    inverseMarker: '#DFF5A4', // var(--on-inverse-marker)
+    onAction: '#0B3D2E',      // var(--on-action) — JAMAIS DE BLANC SUR LIME
+    onPrimary: '#FFFFFF',     // var(--on-button-primary)
   },
 
-  // Frontières & Lignes
+  action: {
+    default: '#D3F26E', // var(--action)
+    hover: '#BCE04A',   // var(--action-hover)
+    active: '#9BC22C',  // var(--action-active)
+    edge: 'rgba(122, 158, 26, 0.30)', // var(--action-edge)
+    text: '#0B3D2E',
+  },
+
+  buttonPrimary: {
+    default: '#14654C', // var(--button-primary)
+    hover: '#0F503D',   // var(--button-primary-hover)
+    active: '#0B3D2E',  // var(--button-primary-active)
+    text: '#FFFFFF',
+  },
+
+  marker: {
+    bg: 'rgba(211, 242, 110, 0.30)', // var(--marker-bg)
+    icon: '#0B3D2E',                 // var(--marker-icon)
+  },
+
   border: {
-    default: '#e2e8f0',
-    hover: '#cbd5e1',
-    inverse: 'rgba(255, 255, 255, 0.12)',
+    default: '#E4EBDB',              // var(--border)
+    hover: '#CDD6C3',                // var(--border-hover)
+    inverse: 'rgba(255, 255, 255, 0.09)',      // var(--border-inverse)
+    inverseStrong: 'rgba(255, 255, 255, 0.22)',// var(--border-inverse-strong)
   },
 
-  // États Sémantiques
-  success: { default: '#22c55e', bg: '#f0fdf4', border: '#bbf7d0', text: '#15803d' },
-  error: { default: '#ef4444', bg: '#fef2f2', border: '#fecaca', text: '#b91c1c' },
-  warning: { default: '#f59e0b', bg: '#fffbeb', border: '#fde68a', text: '#b45309' },
+  ratingStar: '#C9A24B',
+  link: '#14654C',
+  overlay: 'rgba(4, 25, 18, 0.55)',
 };
 
 export const radius = {
-  pill: 9999, // Boutons ovales signature
-  card: 20,   // Cartes principales
-  inner: 12,  // Sous-éléments, badges et conteneurs
+  pill: 9999, // --radius-pill (interactif : boutons, badges, inputs, chips)
+  card: 20,   // --radius-card (cartes, modales, sheets)
+  inner: 12,  // --radius-inner (squircles d'icônes, images encastrées)
+  field: 14,  // --radius-field (champs de formulaires)
   sm: 8,
 };
 
+export const shadows = {
+  xs: {
+    shadowColor: '#141812',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.04,
+    shadowRadius: 2,
+    elevation: 1,
+  },
+  sm: {
+    shadowColor: '#141812',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.05,
+    shadowRadius: 3,
+    elevation: 2,
+  },
+  md: {
+    shadowColor: '#141812',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.06,
+    shadowRadius: 16,
+    elevation: 4,
+  },
+  lg: {
+    shadowColor: '#141812',
+    shadowOffset: { width: 0, height: 12 },
+    shadowOpacity: 0.08,
+    shadowRadius: 32,
+    elevation: 8,
+  },
+  float: {
+    shadowColor: '#0B3D2E',
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.07,
+    shadowRadius: 32,
+    elevation: 6,
+  },
+  action: {
+    shadowColor: '#9BC22C',
+    shadowOffset: { width: 0, height: 6 },
+    shadowOpacity: 0.30,
+    shadowRadius: 20,
+    elevation: 5,
+  },
+};
+
 export const typography = {
-  fontDisplay: 'System', // Sera raccordé à la police Display (Outfit / Serif)
-  fontBody: 'System',
+  fontDisplay: 'System', // Raccordé à la police Display (Fraunces / Serif)
+  fontBody: 'System',    // Inter
   sizes: {
-    xs: 12,
-    sm: 14,
-    md: 16,
-    lg: 18,
+    xs: 11,
+    sm: 13,
+    md: 15,
+    lg: 17,
     xl: 20,
     '2xl': 24,
     '3xl': 30,

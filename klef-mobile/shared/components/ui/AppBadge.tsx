@@ -4,15 +4,25 @@ import { colors, radius, typography } from '../../theme/tokens';
 
 export interface AppBadgeProps extends ViewProps {
   label: string;
-  tone?: 'success' | 'warning' | 'error' | 'gold' | 'lime' | 'neutral';
+  variant?: 'brand' | 'soft' | 'verified' | 'success' | 'warning' | 'error' | 'neutral';
+  tone?: 'brand' | 'soft' | 'verified' | 'success' | 'warning' | 'error' | 'neutral' | 'gold' | 'lime'; // Backwards compat alias
   leftIcon?: React.ReactNode;
 }
 
-export function AppBadge({ label, tone = 'neutral', leftIcon, style }: AppBadgeProps) {
+export function AppBadge({
+  label,
+  variant,
+  tone = 'neutral',
+  leftIcon,
+  style,
+  ...props
+}: AppBadgeProps) {
+  const activeVariant = variant || (tone === 'gold' ? 'verified' : tone === 'lime' ? 'brand' : tone);
+
   return (
-    <View style={[styles.base, styles[`tone_${tone}`], style]}>
+    <View style={[styles.base, styles[`variant_${activeVariant}`], style]} {...props}>
       {leftIcon}
-      <Text style={[styles.text, styles[`textTone_${tone}`]]}>{label}</Text>
+      <Text style={[styles.text, styles[`textVariant_${activeVariant}`]]}>{label}</Text>
     </View>
   );
 }
@@ -30,20 +40,62 @@ const styles = StyleSheet.create({
   },
   text: {
     fontSize: typography.sizes.xs,
-    fontWeight: '700',
+    fontWeight: '600',
   },
 
-  tone_success: { backgroundColor: colors.success.bg, borderColor: colors.success.border },
-  tone_warning: { backgroundColor: colors.warning.bg, borderColor: colors.warning.border },
-  tone_error: { backgroundColor: colors.error.bg, borderColor: colors.error.border },
-  tone_gold: { backgroundColor: colors.gold[50], borderColor: colors.gold[400] },
-  tone_lime: { backgroundColor: 'rgba(217, 249, 157, 0.2)', borderColor: colors.action.border },
-  tone_neutral: { backgroundColor: colors.background.alt, borderColor: colors.border.default },
+  // Variants (Miroir exact de globals.css)
+  variant_brand: {
+    backgroundColor: colors.forest[950],
+    borderColor: colors.forest[950],
+  },
+  variant_soft: {
+    backgroundColor: colors.forest[50],
+    borderColor: colors.forest[100],
+  },
+  variant_verified: {
+    backgroundColor: colors.gold[50],
+    borderColor: colors.gold[200],
+  },
+  variant_success: {
+    backgroundColor: colors.success[50],
+    borderColor: colors.success[500],
+  },
+  variant_warning: {
+    backgroundColor: colors.warning[50],
+    borderColor: colors.warning[500],
+  },
+  variant_error: {
+    backgroundColor: colors.error[50],
+    borderColor: colors.error[500],
+  },
+  variant_neutral: {
+    backgroundColor: colors.neutral[100],
+    borderColor: colors.neutral[200],
+  },
 
-  textTone_success: { color: colors.success.text },
-  textTone_warning: { color: colors.warning.text },
-  textTone_error: { color: colors.error.text },
-  textTone_gold: { color: colors.gold[600] },
-  textTone_lime: { color: colors.forest[950] },
-  textTone_neutral: { color: colors.text.secondary },
+  // Text colors & styles
+  textVariant_brand: {
+    color: colors.lime[400],
+    textTransform: 'uppercase',
+    letterSpacing: 0.8,
+    fontSize: 10,
+  },
+  textVariant_soft: {
+    color: colors.forest[800],
+  },
+  textVariant_verified: {
+    color: colors.gold[700],
+  },
+  textVariant_success: {
+    color: colors.success[700],
+  },
+  textVariant_warning: {
+    color: colors.warning[700],
+  },
+  textVariant_error: {
+    color: colors.error[700],
+  },
+  textVariant_neutral: {
+    color: colors.neutral[600],
+  },
 });
