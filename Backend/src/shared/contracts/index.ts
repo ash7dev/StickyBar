@@ -304,6 +304,126 @@ export interface WithdrawalPayload {
   destinataire: string;
 }
 
+// ── Litiges & Réclamations ───────────────────────────────────────────────────
+
+export type StatutLitige = 'EN_ATTENTE' | 'FONDE' | 'NON_FONDE';
+export type RoleLitige = 'PROPRIETAIRE' | 'LOCATAIRE';
+export type MotifLitige =
+  | 'NON_CONFORMITE'
+  | 'DEGRADATION'
+  | 'ANNULATION_ABUSIVE'
+  | 'ABSENCE_JOUR_J'
+  | 'AUTRE';
+
+export interface LitigeDetail {
+  id: string;
+  reservationId: string;
+  declarePar: RoleLitige;
+  motif: MotifLitige;
+  description: string;
+  coutEstime?: number | null;
+  statut: StatutLitige;
+  montantCompensation?: number | null;
+  decisionAdmin?: string | null;
+  creeLe: string;
+  resoluLe?: string | null;
+}
+
+export interface CreateLitigePayload {
+  reservationId: string;
+  motif: MotifLitige;
+  description: string;
+  coutEstime?: number;
+}
+
+// ── Frais Supplémentaires ─────────────────────────────────────────────────────
+
+export type StatutDemandeFrais = 'EN_ATTENTE' | 'PAYE' | 'REFUSE' | 'CONTESTE';
+
+export interface DemandeFraisDetail {
+  id: string;
+  reservationId: string;
+  titre: string;
+  description?: string | null;
+  montant: number;
+  statut: StatutDemandeFrais;
+  methodePaiement?: string | null;
+  creeLe: string;
+  payeLe?: string | null;
+}
+
+export interface CreateDemandeFraisPayload {
+  reservationId: string;
+  titre: string;
+  description?: string;
+  montant: number;
+}
+
+// ── Avis & Notes ─────────────────────────────────────────────────────────────
+
+export type TypeAvis = 'SEJOUR_LOCATAIRE' | 'EVALUATION_PROPRIETAIRE';
+
+export interface AvisDetail {
+  id: string;
+  reservationId: string;
+  auteurId: string;
+  cibleId: string;
+  logementId?: string | null;
+  note: number;
+  commentaire?: string | null;
+  typeAvis: TypeAvis;
+  creeLe: string;
+  auteur: {
+    id: string;
+    prenom: string;
+    nom: string;
+    avatarUrl?: string | null;
+  };
+}
+
+export interface CreateAvisPayload {
+  reservationId: string;
+  note: number;
+  commentaire?: string;
+}
+
+// ── Teranga Club (Fidélité & Gamification) ───────────────────────────────────
+
+export type TerangaTier = 'BRONZE' | 'SILVER' | 'GOLD';
+
+export interface TerangaBadge {
+  id: string;
+  codeBadge: string;
+  libelle: string;
+  description: string;
+  icone: string;
+  debloqueLe: string;
+}
+
+export interface TerangaTransaction {
+  id: string;
+  montantCoins: number;
+  type: string;
+  description: string;
+  reservationId?: string | null;
+  soldeApres: number;
+  creeLe: string;
+}
+
+export interface TerangaAccountData {
+  id?: string;
+  utilisateurId?: string;
+  soldeCoins: number;
+  tier: TerangaTier;
+  cashbackPct: number;
+  gmv12Mois: number;
+  nbSejours: number;
+  nextTier: TerangaTier | null;
+  gmvRemainingForNextTier: number;
+  badges: TerangaBadge[];
+  transactions: TerangaTransaction[];
+}
+
 // ── Utilities Partagés ────────────────────────────────────────────────────────
 
 /** Formate un montant numérique en FCFA de façon constante */
