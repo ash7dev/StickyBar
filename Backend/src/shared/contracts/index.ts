@@ -424,6 +424,98 @@ export interface TerangaAccountData {
   transactions: TerangaTransaction[];
 }
 
+// ── Calendrier & Indisponibilités ────────────────────────────────────────────
+
+export interface IndisponibiliteLogement {
+  id: string;
+  logementId: string;
+  dateDebut: string;
+  dateFin: string;
+  motif?: string | null;
+}
+
+export interface CreateIndisponibilitePayload {
+  dateDebut: string;
+  dateFin: string;
+  motif?: string;
+}
+
+export interface CalendrierData {
+  indisponibilites: IndisponibiliteLogement[];
+  datesReservees: Array<{ dateDebut: string; dateFin: string }>;
+}
+
+// ── Verification KYC & Documents ──────────────────────────────────────────────
+
+export interface SubmitKycPayload {
+  kycDocumentUrl: string;
+  kycDocumentPublicId: string;
+  kycVersoUrl: string;
+  kycVersoPublicId: string;
+}
+
+export interface SubmitSelfiePayload {
+  kycSelfieUrl: string;
+  kycSelfiePublicId: string;
+  selfieFaceDetected: boolean;
+  selfieMatchScore?: number;
+}
+
+// ── Support Client & Tickets ──────────────────────────────────────────────────
+
+export type StatutTicket = 'OUVERT' | 'EN_COURS' | 'RESOLU' | 'FERME';
+export type PrioriteTicket = 'BASSE' | 'MOYENNE' | 'HAUTE' | 'URGENTE';
+export type CategorieTicket =
+  | 'RESERVATION'
+  | 'PAIEMENT'
+  | 'LOGEMENT'
+  | 'KYC'
+  | 'COMPTE'
+  | 'AUTRE';
+
+export interface TicketMessageDetail {
+  id: string;
+  ticketId: string;
+  auteurId: string;
+  message: string;
+  estAdmin: boolean;
+  creeLe: string;
+}
+
+export interface TicketSupportDetail {
+  id: string;
+  sujet: string;
+  categorie: CategorieTicket;
+  priorite: PrioriteTicket;
+  statut: StatutTicket;
+  reservationId?: string | null;
+  logementId?: string | null;
+  creeLe: string;
+  misAJourLe: string;
+  messages: TicketMessageDetail[];
+}
+
+export interface CreateTicketPayload {
+  sujet: string;
+  message: string;
+  categorie?: CategorieTicket;
+  priorite?: PrioriteTicket;
+  reservationId?: string;
+  logementId?: string;
+}
+
+export interface AddTicketMessagePayload {
+  message: string;
+}
+
+// ── Notifications Push & Dispositifs ──────────────────────────────────────────
+
+export interface SubscribeExpoPushPayload {
+  expoPushToken: string;
+  platform?: 'IOS' | 'ANDROID' | 'WEB';
+  deviceType?: string;
+}
+
 // ── Utilities Partagés ────────────────────────────────────────────────────────
 
 /** Formate un montant numérique en FCFA de façon constante */
