@@ -2,13 +2,16 @@ import { Injectable, Logger, OnModuleInit } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { PrismaService } from '../../infrastructure/prisma/prisma.service';
 import * as webpush from 'web-push';
+import { Expo, ExpoPushMessage } from 'expo-server-sdk';
 import { SubscribePushDto } from './dto/subscribe-push.dto';
+import { SubscribeExpoPushDto } from './dto/subscribe-expo-push.dto';
 import { SendTestPushDto } from './dto/send-test-push.dto';
 import { PushSubscription } from '@prisma/client';
 
 @Injectable()
 export class NotificationsService implements OnModuleInit {
   private readonly logger = new Logger(NotificationsService.name);
+  private readonly expo = new Expo();
   private vapidPublicKey!: string;
   private vapidPrivateKey!: string;
   private vapidSubject!: string;
@@ -36,7 +39,7 @@ export class NotificationsService implements OnModuleInit {
     this.vapidSubject = subject;
 
     webpush.setVapidDetails(this.vapidSubject, this.vapidPublicKey, this.vapidPrivateKey);
-    this.logger.log('Service Web Push VAPID initialisé avec succès !');
+    this.logger.log('Service Web Push VAPID & Expo Push initialisés avec succès !');
   }
 
   getVapidPublicKey(): { publicKey: string } {
@@ -75,6 +78,7 @@ export class NotificationsService implements OnModuleInit {
         endpoint: dto.endpoint,
         p256dh: dto.keys.p256dh,
         auth: dto.keys.auth,
+        platform: 'WEB',
         userId: validUserId,
         userAgent: dto.userAgent,
         deviceType: dto.deviceType,
@@ -82,21 +86,72 @@ export class NotificationsService implements OnModuleInit {
       update: {
         p256dh: dto.keys.p256dh,
         auth: dto.keys.auth,
+        platform: 'WEB',
         userId: validUserId,
         userAgent: dto.userAgent,
         deviceType: dto.deviceType,
       },
     });
 
-    this.logger.log(`Abonnement Push enregistré${validUserId ? ` pour l'utilisateur ${validUserId}` : ' (anonyme)'}`);
+    this.logger.log(`Abonnement Web Push enregistré${validUserId ? ` pour l'utilisateur ${validUserId}` : ' (anonyme)'}`);
+    return { success: true, subscriptionId: subscription.id };
+  }
+
+  async subscribeExpo(dto: SubscribeExpoPushDto, currentUserId?: string) {
+    if (!Expo.isExpoPushToken(dto.expoPushToken)) {
+      this.logger.warn(`Jeton Expo Push invalide : ${dto.expoPushToken}`);
+      return { success: false, message: 'Jeton Expo Push invalide' };
+    }
+
+    const candidateUserId = dto.userId || currentUserId || null;
+    let validUserId: string | null = null;
+
+    if (candidateUserId) {
+      let userRecord = await this.prisma.utilisateur.findUnique({
+        where: { userId: candidateUserId },
+        select: { userId: true },
+      });
+
+      if (!userRecord) {
+        userRecord = await this.prisma.utilisateur.findUnique({
+          where: { id: candidateUserId },
+          select: { userId: true },
+        });
+      }
+
+      validUserId = userRecord ? userRecord.userId : null;
+    }
+
+    const subscription = await this.prisma.pushSubscription.upsert({
+      where: { expoPushToken: dto.expoPushToken },
+      create: {
+        endpoint: `expo:${dto.expoPushToken}`,
+        expoPushToken: dto.expoPushToken,
+        platform: dto.platform || 'ANDROID',
+        userId: validUserId,
+        deviceType: dto.deviceType,
+      },
+      update: {
+        platform: dto.platform || 'ANDROID',
+        userId: validUserId,
+        deviceType: dto.deviceType,
+      },
+    });
+
+    this.logger.log(`Abonnement Expo Push (${dto.platform || 'MOBILE'}) enregistré${validUserId ? ` pour ${validUserId}` : ''}`);
     return { success: true, subscriptionId: subscription.id };
   }
 
   async unsubscribe(endpoint: string) {
     await this.prisma.pushSubscription.deleteMany({
-      where: { endpoint },
+      where: {
+        OR: [
+          { endpoint },
+          { expoPushToken: endpoint },
+        ],
+      },
     });
-    this.logger.log(`Abonnement Push supprimé pour l'endpoint ${endpoint}`);
+    this.logger.log(`Abonnement Push supprimé pour l'endpoint / token ${endpoint}`);
     return { success: true };
   }
 
@@ -131,40 +186,66 @@ export class NotificationsService implements OnModuleInit {
       return { success: false, sentCount: 0 };
     }
 
-    const payload = JSON.stringify({
-      title,
-      body: message,
-      icon: '/icon.svg',
-      badge: '/icon.svg',
-      sound: '/notification.mp3',
-      silent: false,
-      vibrate: [200, 100, 200, 100, 200, 100, 400],
-      data: { url },
-    });
-
     let sentCount = 0;
 
-    await Promise.all(
-      subscriptions.map(async (sub: PushSubscription) => {
-        const pushSubscription = {
-          endpoint: sub.endpoint,
-          keys: {
-            p256dh: sub.p256dh,
-            auth: sub.auth,
-          },
-        };
+    // ── 1. Traitement des Push Natifs Mobile (Expo Push) ─────────────────────
+    const expoSubs = subscriptions.filter((s) => s.expoPushToken && Expo.isExpoPushToken(s.expoPushToken));
+    if (expoSubs.length > 0) {
+      const messages: ExpoPushMessage[] = expoSubs.map((s) => ({
+        to: s.expoPushToken!,
+        sound: 'default',
+        title,
+        body: message,
+        data: { url },
+      }));
 
+      const chunks = this.expo.chunkPushNotifications(messages);
+      for (const chunk of chunks) {
         try {
-          await webpush.sendNotification(pushSubscription, payload);
-          sentCount++;
+          const receipts = await this.expo.sendPushNotificationsAsync(chunk);
+          sentCount += receipts.length;
         } catch (error: any) {
-          this.logger.error(`Erreur d'envoi Push vers ${sub.endpoint}: ${error.message}`);
-          if (error.statusCode === 410 || error.statusCode === 404) {
-            await this.prisma.pushSubscription.delete({ where: { id: sub.id } }).catch(() => {});
-          }
+          this.logger.error(`Erreur d'envoi Expo Push : ${error.message}`);
         }
-      }),
-    );
+      }
+    }
+
+    // ── 2. Traitement des Push Web PWA (WebPush VAPID) ────────────────────────
+    const webSubs = subscriptions.filter((s) => s.endpoint && s.p256dh && s.auth);
+    if (webSubs.length > 0) {
+      const payload = JSON.stringify({
+        title,
+        body: message,
+        icon: '/icon.svg',
+        badge: '/icon.svg',
+        sound: '/notification.mp3',
+        silent: false,
+        vibrate: [200, 100, 200, 100, 200, 100, 400],
+        data: { url },
+      });
+
+      await Promise.all(
+        webSubs.map(async (sub: PushSubscription) => {
+          const pushSubscription = {
+            endpoint: sub.endpoint,
+            keys: {
+              p256dh: sub.p256dh!,
+              auth: sub.auth!,
+            },
+          };
+
+          try {
+            await webpush.sendNotification(pushSubscription, payload);
+            sentCount++;
+          } catch (error: any) {
+            this.logger.error(`Erreur d'envoi Web Push vers ${sub.endpoint}: ${error.message}`);
+            if (error.statusCode === 410 || error.statusCode === 404) {
+              await this.prisma.pushSubscription.delete({ where: { id: sub.id } }).catch(() => {});
+            }
+          }
+        }),
+      );
+    }
 
     return { success: true, sentCount };
   }
@@ -179,7 +260,7 @@ export class NotificationsService implements OnModuleInit {
         where: { endpoint: dto.endpoint },
       });
 
-      if (sub) {
+      if (sub && sub.p256dh && sub.auth) {
         const payload = JSON.stringify({
           title,
           body: message,
@@ -229,17 +310,19 @@ export class NotificationsService implements OnModuleInit {
 
     let sentCount = 0;
     for (const sub of latestSubs) {
-      try {
-        await webpush.sendNotification(
-          {
-            endpoint: sub.endpoint,
-            keys: { p256dh: sub.p256dh, auth: sub.auth },
-          },
-          payload,
-        );
-        sentCount++;
-      } catch (err: any) {
-        this.logger.error(`Erreur envoi test sur ${sub.endpoint}: ${err.message}`);
+      if (sub.p256dh && sub.auth) {
+        try {
+          await webpush.sendNotification(
+            {
+              endpoint: sub.endpoint,
+              keys: { p256dh: sub.p256dh, auth: sub.auth },
+            },
+            payload,
+          );
+          sentCount++;
+        } catch (err: any) {
+          this.logger.error(`Erreur envoi test sur ${sub.endpoint}: ${err.message}`);
+        }
       }
     }
 

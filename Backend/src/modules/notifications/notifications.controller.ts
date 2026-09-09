@@ -1,14 +1,15 @@
 import { Controller, Get, Post, Body, HttpCode, HttpStatus, UseGuards } from '@nestjs/common';
-import { ApiTags, ApiOperation, ApiBearerAuth } from '@nestjs/swagger';
+import { ApiTags, ApiOperation } from '@nestjs/swagger';
 import { NotificationsService } from './notifications.service';
 import { SubscribePushDto } from './dto/subscribe-push.dto';
+import { SubscribeExpoPushDto } from './dto/subscribe-expo-push.dto';
 import { SendTestPushDto } from './dto/send-test-push.dto';
 import { Public } from '@shared/decorators/public.decorator';
 import { CurrentUser } from '@shared/decorators/current-user.decorator';
 import { AuthUser } from '@shared/types/jwt-payload.type';
 import { JwtAuthGuard } from '@shared/guards/jwt-auth.guard';
 
-@ApiTags('Notifications Push PWA')
+@ApiTags('Notifications Push (Web & Mobile)')
 @UseGuards(JwtAuthGuard)
 @Controller('notifications')
 export class NotificationsController {
@@ -24,9 +25,17 @@ export class NotificationsController {
   @Post('subscribe')
   @Public()
   @HttpCode(HttpStatus.OK)
-  @ApiOperation({ summary: 'Enregistrer un abonnement Push pour cet appareil' })
+  @ApiOperation({ summary: 'Enregistrer un abonnement Web Push PWA pour cet appareil' })
   subscribe(@Body() dto: SubscribePushDto, @CurrentUser() user?: AuthUser) {
     return this.notificationsService.subscribe(dto, user?.id || user?.userId);
+  }
+
+  @Post('subscribe-expo')
+  @Public()
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({ summary: 'Enregistrer un abonnement Mobile Expo Push pour cette application nativité' })
+  subscribeExpo(@Body() dto: SubscribeExpoPushDto, @CurrentUser() user?: AuthUser) {
+    return this.notificationsService.subscribeExpo(dto, user?.id || user?.userId);
   }
 
   @Post('unsubscribe')

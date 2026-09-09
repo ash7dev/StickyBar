@@ -780,19 +780,22 @@ model Avis {
 // =============================================================================
 
 model PushSubscription {
-  id         String   @id @default(uuid())
-  userId     String?
-  endpoint   String   @unique
-  p256dh     String
-  auth       String
-  userAgent  String?
-  deviceType String?
-  creeLe     DateTime @default(now()) @map("created_at")
-  misAJourLe DateTime @updatedAt @map("updated_at")
+  id            String   @id @default(uuid())
+  userId        String?
+  endpoint      String   @unique
+  p256dh        String?
+  auth          String?
+  expoPushToken String?  @unique
+  platform      String?  @default("WEB") // "WEB", "IOS", "ANDROID"
+  userAgent     String?
+  deviceType    String?
+  creeLe        DateTime @default(now()) @map("created_at")
+  misAJourLe    DateTime @updatedAt @map("updated_at")
 
   utilisateur Utilisateur? @relation(fields: [userId], references: [userId], onDelete: Cascade)
 
   @@index([userId])
+  @@index([expoPushToken])
   @@map("push_subscriptions")
 }
 
