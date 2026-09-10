@@ -240,7 +240,7 @@ function EtatLieuxModal({ reservationId, type, onSuccess, onCancel }: Props) {
         try {
           const { url, publicId } = await uploadOne(entry.file, params);
           await nestFetch(NEST_API.RESERVATIONS.ADD_ETAT_LIEUX(reservationId), {
-            method: 'POST', token,
+            method: 'POST', token, preferredRole: 'PROPRIETAIRE',
             body: JSON.stringify({ type, categorie: entry.categorie, url, publicId }),
           });
           setPhotos((prev) => prev.map((p) =>
@@ -263,7 +263,7 @@ function EtatLieuxModal({ reservationId, type, onSuccess, onCancel }: Props) {
       if (photos.length > 0) {
         const params = await nestFetch<CloudinaryParams>(
           NEST_API.RESERVATIONS.ETAT_LIEUX_UPLOAD_PARAMS(reservationId),
-          { method: 'GET', token },
+          { method: 'GET', token, preferredRole: 'PROPRIETAIRE' },
         );
         await runUploads(token, params);
 
@@ -282,7 +282,7 @@ function EtatLieuxModal({ reservationId, type, onSuccess, onCancel }: Props) {
       const endpoint = type === 'CHECKIN'
         ? NEST_API.RESERVATIONS.CHECKIN_PROPRIO(reservationId)
         : NEST_API.RESERVATIONS.CHECKOUT_PROPRIO(reservationId);
-      await nestFetch(endpoint, { method: 'POST', token });
+      await nestFetch(endpoint, { method: 'POST', token, preferredRole: 'PROPRIETAIRE' });
 
       photos.forEach((p) => { URL.revokeObjectURL(p.preview); blobs.current.delete(p.preview); });
       onSuccess();

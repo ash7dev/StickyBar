@@ -15,7 +15,6 @@ import { NEST_API } from '@/lib/nestjs/endpoints';
 import type { ReservationDetail } from '@/lib/nestjs/types';
 import { CheckinModal, CheckoutModal } from './EtatLieuxModal';
 import { LitigePanel } from '../shared/LitigePanel';
-import { ExtraFeesCard } from '../shared/ExtraFeesCard';
 
 /* ═══════════════════════════════════════════════════════════════════════════
    CONSTANTES MÉTIER
@@ -592,6 +591,7 @@ export function ReservationActionPanel({ id, res, onRefetch }: Props) {
     run(async () => {
       await nestFetch(NEST_API.RESERVATIONS.CONFIRM(id), {
         method: 'PATCH',
+        preferredRole: 'PROPRIETAIRE',
         body: JSON.stringify({ heureDebut: checkinHeure, heureFin: checkoutHeureInput }),
       });
     }, 'Réservation confirmée.');
@@ -605,6 +605,7 @@ export function ReservationActionPanel({ id, res, onRefetch }: Props) {
     run(async () => {
       await nestFetch(NEST_API.RESERVATIONS.CANCEL(id), {
         method: 'PATCH',
+        preferredRole: 'PROPRIETAIRE',
         body: JSON.stringify({ raison: cancelReason.trim() }),
       });
       setShowCancelModal(false);
@@ -613,15 +614,15 @@ export function ReservationActionPanel({ id, res, onRefetch }: Props) {
   };
 
   const handleCheckinProprio = () => run(async () => {
-    await nestFetch(NEST_API.RESERVATIONS.CHECKIN_PROPRIO(id), { method: 'POST' });
+    await nestFetch(NEST_API.RESERVATIONS.CHECKIN_PROPRIO(id), { method: 'POST', preferredRole: 'PROPRIETAIRE' });
   }, 'Check-in confirmé. Le locataire peut valider son arrivée.');
 
   const handleCheckoutProprio = () => run(async () => {
-    await nestFetch(NEST_API.RESERVATIONS.CHECKOUT_PROPRIO(id), { method: 'POST' });
+    await nestFetch(NEST_API.RESERVATIONS.CHECKOUT_PROPRIO(id), { method: 'POST', preferredRole: 'PROPRIETAIRE' });
   }, 'État des lieux de sortie confirmé. Vous pouvez clôturer la réservation.');
 
   const handleCompleteCheckout = () => run(async () => {
-    await nestFetch(NEST_API.RESERVATIONS.COMPLETE_CHECKOUT(id), { method: 'PATCH' });
+    await nestFetch(NEST_API.RESERVATIONS.COMPLETE_CHECKOUT(id), { method: 'PATCH', preferredRole: 'PROPRIETAIRE' });
   }, 'Réservation clôturée avec succès.');
 
   const handleOpenLitige = () => {
@@ -632,6 +633,7 @@ export function ReservationActionPanel({ id, res, onRefetch }: Props) {
     run(async () => {
       await nestFetch(NEST_API.DISPUTES.CREATE, {
         method: 'POST',
+        preferredRole: 'PROPRIETAIRE',
         body: JSON.stringify({
           reservationId: id,
           motif: litigeMotif,
@@ -652,6 +654,7 @@ export function ReservationActionPanel({ id, res, onRefetch }: Props) {
     run(async () => {
       await nestFetch(NEST_API.RESERVATIONS.RATE_TENANT(id), {
         method: 'POST',
+        preferredRole: 'PROPRIETAIRE',
         body: JSON.stringify({ note: rating, commentaire: ratingComment.trim() || undefined }),
       });
       setRating(0);
@@ -662,6 +665,7 @@ export function ReservationActionPanel({ id, res, onRefetch }: Props) {
   const handleSignalNoshow = () => run(async () => {
     await nestFetch(NEST_API.RESERVATIONS.SIGNAL_NOSHOW(id), {
       method: 'POST',
+      preferredRole: 'PROPRIETAIRE',
       body: JSON.stringify({ commentaire: noshowComment.trim() || undefined }),
     });
     setShowNoshowModal(false);
@@ -669,7 +673,7 @@ export function ReservationActionPanel({ id, res, onRefetch }: Props) {
   }, 'Absence signalée. La réservation sera annulée si le locataire ne se présente pas sous 3 h.');
 
   const handleReopenLateCheckin = () => run(async () => {
-    await nestFetch(NEST_API.RESERVATIONS.REOPEN_LATE_CHECKIN(id), { method: 'POST' });
+    await nestFetch(NEST_API.RESERVATIONS.REOPEN_LATE_CHECKIN(id), { method: 'POST', preferredRole: 'PROPRIETAIRE' });
   }, 'Réservation ré-ouverte pour un check-in tardif.');
 
   const openLitigeDepassement = () => {
@@ -756,20 +760,6 @@ export function ReservationActionPanel({ id, res, onRefetch }: Props) {
             </Notice>
           )}
 
-          {/* ── Frais et Suppléments Séjour (Toujours visible pour l'Hôte) ── */}
-          {statut !== 'PENDING' && (
-            <ExtraFeesCard
-              reservationId={res.id}
-              demandesFrais={(res as unknown as { demandesFrais?: any[] }).demandesFrais || []}
-              isOwner={true}
-              onRefresh={onRefetch}
-              onOpenDisputeWithMotif={(motif, description) => {
-                setLitigeMotif(motif);
-                setLitigeDescription(description);
-                setShowLitigeModal(true);
-              }}
-            />
-          )}
 
           {/* ══ PENDING ══ */}
           {statut === 'PENDING' && (
