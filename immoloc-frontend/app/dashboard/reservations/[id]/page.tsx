@@ -826,7 +826,7 @@ export default function ReservationDetailPage({ params }: { params: Promise<{ id
 
         {/* ══ PAIEMENT ═══════════════════════════════════════════════════ */}
 
-        <ReservationPaymentCard paiement={res.paiement} reservation={res} />
+        <ReservationPaymentCard paiement={res.paiement} reservation={res} isOwnerView={true} />
 
         {/* ══ ÉTAT DES LIEUX ═════════════════════════════════════════════ */}
 
