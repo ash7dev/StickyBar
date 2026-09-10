@@ -12,6 +12,7 @@ import { NEST_API } from '@/lib/nestjs/endpoints';
 import type { ReservationDetail } from '@/lib/nestjs/types';
 import { CheckinGalleryModal } from './CheckinGalleryModal';
 import { RefuseCheckInModal } from './RefuseCheckInModal';
+import { ConfirmCheckinModal } from './ConfirmCheckinModal';
 import { DigitalWelcomeGuideModal } from './DigitalWelcomeGuideModal';
 import { TerangaRewardModal } from '@/features/teranga-club/components/TerangaRewardModal';
 import { LitigePanel } from '../shared/LitigePanel';
@@ -55,6 +56,7 @@ export function TenantReservationActionPanel({ id, res, onRefetch }: Props) {
   const [showGallery, setShowGallery] = useState(false);
   const [showWelcomeGuide, setShowWelcomeGuide] = useState(false);
   const [showRulesModal, setShowRulesModal] = useState(false);
+  const [showConfirmCheckinModal, setShowConfirmCheckinModal] = useState(false);
   const [showRefuseModal, setShowRefuseModal] = useState(false);
   const [showAbsentModal, setShowAbsentModal] = useState(false);
   const [showCancelModal, setShowCancelModal] = useState(false);
@@ -128,6 +130,7 @@ export function TenantReservationActionPanel({ id, res, onRefetch }: Props) {
       NEST_API.RESERVATIONS.CONFIRM_CHECKIN(id),
       { method: 'POST' }
     );
+    setShowConfirmCheckinModal(false);
     setEarnedCoins(response.earnedCoins || 0);
     setShowRewardModal(true);
   }, 'Check-in validé. Bon séjour !');
@@ -369,7 +372,7 @@ export function TenantReservationActionPanel({ id, res, onRefetch }: Props) {
               )}
 
               <PrimaryButton
-                onClick={handleConfirmCheckin}
+                onClick={() => setShowConfirmCheckinModal(true)}
                 loading={isSubmitting}
                 loadingLabel="Validation…"
                 icon={Check}
@@ -747,6 +750,17 @@ export function TenantReservationActionPanel({ id, res, onRefetch }: Props) {
             </PrimaryButton>
           </div>
         </Modal>
+      )}
+
+      {showConfirmCheckinModal && (
+        <ConfirmCheckinModal
+          isOpen={showConfirmCheckinModal}
+          onClose={() => setShowConfirmCheckinModal(false)}
+          onConfirm={handleConfirmCheckin}
+          loading={isSubmitting}
+          photos={res.photosEtatLieu || []}
+          onOpenGallery={() => setShowGallery(true)}
+        />
       )}
 
       {showRewardModal && (
