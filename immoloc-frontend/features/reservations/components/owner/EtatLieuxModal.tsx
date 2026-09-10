@@ -67,7 +67,13 @@ const ACCEPTED = ['image/jpeg', 'image/png', 'image/webp', 'image/heic', 'image/
 const CONCURRENCY = 3;
 
 interface CloudinaryParams {
-  uploadUrl: string; signature: string; timestamp: number; apiKey: string; folder: string;
+  uploadUrl: string; signature: string; timestamp: number; apiKey: string; folder: string; transformation?: string;
+}
+
+function isAcceptedImage(file: File): boolean {
+  if (file.type && file.type.startsWith('image/')) return true;
+  const ext = file.name.split('.').pop()?.toLowerCase();
+  return ['jpg', 'jpeg', 'png', 'webp', 'heic', 'heif'].includes(ext || '');
 }
 
 /* ─── Compression ─────────────────────────────────────────────────────────── */
@@ -110,6 +116,9 @@ async function uploadOne(file: File, params: CloudinaryParams) {
   const fd = new FormData();
   fd.append('file', compressed);
   fd.append('folder', params.folder);
+  if (params.transformation) {
+    fd.append('transformation', params.transformation);
+  }
   fd.append('signature', params.signature);
   fd.append('timestamp', String(params.timestamp));
   fd.append('api_key', params.apiKey);
@@ -187,8 +196,7 @@ function EtatLieuxModal({ reservationId, type, onSuccess, onCancel }: Props) {
       const room = MAX_PHOTOS - prev.length;
       for (const file of Array.from(files)) {
         if (next.length >= room) { warnings.push(`Maximum ${MAX_PHOTOS} photos.`); break; }
-        // Aucune validation n'existait : un fichier de 40 Mo partait tel quel.
-        if (!ACCEPTED.includes(file.type)) { warnings.push(`${file.name} : format non pris en charge.`); continue; }
+        if (!isAcceptedImage(file)) { warnings.push(`${file.name} : format non pris en charge.`); continue; }
         if (file.size > MAX_FILE_MB * 1024 * 1024) {
           warnings.push(`${file.name} : ${(file.size / 1048576).toFixed(1)} Mo, au-delà de ${MAX_FILE_MB} Mo.`);
           continue;
@@ -444,10 +452,7 @@ function EtatLieuxModal({ reservationId, type, onSuccess, onCancel }: Props) {
           <input
             ref={fileRef}
             type="file"
-            // capture="environment" ouvre l'appareil photo arriere sur mobile :
-            // l'hote est sur place, il photographie plutot qu'il ne televerse.
-            accept="image/jpeg,image/png,image/webp,image/heic,image/heif"
-            capture="environment"
+            accept="image/*,.heic,.heif"
             multiple
             className="hidden"
             onChange={(e) => { addFiles(e.target.files); e.target.value = ''; }}
