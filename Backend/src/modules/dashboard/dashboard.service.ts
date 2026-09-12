@@ -280,7 +280,30 @@ export class DashboardService {
     const pendingListings = listingsCount.find(l => l.statut === StatutLogement.PENDING_REVIEW)?._count || 0;
     const totalListings = activeListings + draftListings + pendingListings;
 
-    const averageRating = Number(user?.noteProprietaire || 0);
+    let averageRating = Number(user?.noteProprietaire || 0);
+    let totalReviews = user?.totalAvis || 0;
+
+    // Si noteProprietaire est à 0 dans le profil, calculer la moyenne réelle depuis la table Avis et Logements
+    if (averageRating === 0) {
+      const [reviewsAgg, listingsAgg] = await Promise.all([
+        this.prisma.avis.aggregate({
+          where: { cibleId: ownerId },
+          _avg: { note: true },
+          _count: { note: true },
+        }),
+        this.prisma.logement.aggregate({
+          where: { proprietaireId: ownerId, note: { gt: 0 } },
+          _avg: { note: true },
+        }),
+      ]);
+
+      if (reviewsAgg._avg.note && Number(reviewsAgg._avg.note) > 0) {
+        averageRating = Number(reviewsAgg._avg.note);
+        totalReviews = reviewsAgg._count.note || totalReviews;
+      } else if (listingsAgg._avg.note && Number(listingsAgg._avg.note) > 0) {
+        averageRating = Number(listingsAgg._avg.note);
+      }
+    }
 
     return {
       timeframe: timeframe || '6 mois',
@@ -300,7 +323,7 @@ export class DashboardService {
       },
       reputation: {
         rating: averageRating,
-        totalReviews: user?.totalAvis || 0,
+        totalReviews,
       },
       listings: {
         active: activeListings,
