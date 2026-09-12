@@ -582,11 +582,26 @@ export function ReservationActionPanel({ id, res, onRefetch }: Props) {
 
   /* ── Handlers ─────────────────────────────────────────────────────────── */
 
+  const hasSameDayCheckout = Boolean((res as any)?.hasSameDayCheckout || (res as any)?.aUnCheckOutLeMemeJour);
+
   const handleConfirm = () => {
     if (!/^\d{2}:\d{2}$/.test(checkinHeure) || !/^\d{2}:\d{2}$/.test(checkoutHeureInput)) {
       setErrorMsg('Indiquez des heures de check-in et check-out valides (HH:mm).');
       return;
     }
+
+    if (hasSameDayCheckout) {
+      const parseMin = (t: string) => {
+        const [h, m] = (t || '00:00').split(':').map(Number);
+        return (h || 0) * 60 + (m || 0);
+      };
+
+      if (parseMin(checkinHeure) <= parseMin(checkoutHeureInput)) {
+        setErrorMsg("⚠️ Rotation le même jour : L'heure d'arrivée (check-in) doit être postérieure à l'heure de départ (check-out, ex: 14:00 après 12:00) pour permettre le nettoyage entre les deux locataires.");
+        return;
+      }
+    }
+
     setShowTimeModal(false);
     run(async () => {
       await nestFetch(NEST_API.RESERVATIONS.CONFIRM(id), {
