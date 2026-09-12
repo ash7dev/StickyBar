@@ -10,6 +10,19 @@ const REFRESH_TOKEN_KEY = 'klef_refresh_token';
 const USER_KEY = 'klef_auth_user';
 const ONBOARDING_KEY = 'klef_has_seen_onboarding';
 
+const USER_CACHE_KEYS = [
+  USER_KEY,
+  'klef_owner_dashboard_cache_v1',
+  'klef_owner_stats_cache_v1',
+  'klef_owner_wallet_cache_v1',
+  'klef_owner_listings_cache_v1',
+  'klef_owner_reservations_cache_v1',
+  'klef_tenant_reservations_cache_v1',
+  'klef_owner_payout_cache_v1',
+  'klef_tenant_payout_cache_v1',
+  'klef_tenant_teranga_cache_v1',
+];
+
 interface AuthState {
   user: AuthUser | null;
   token: string | null;
@@ -78,9 +91,11 @@ export const useAuthStore = create<AuthState>((set, get) => ({
 
   logout: async () => {
     try {
-      await SecureStore.deleteItemAsync(TOKEN_KEY);
-      await SecureStore.deleteItemAsync(REFRESH_TOKEN_KEY);
-      await AsyncStorage.removeItem(USER_KEY);
+      await Promise.all([
+        SecureStore.deleteItemAsync(TOKEN_KEY).catch(() => {}),
+        SecureStore.deleteItemAsync(REFRESH_TOKEN_KEY).catch(() => {}),
+        AsyncStorage.multiRemove(USER_CACHE_KEYS).catch(() => {}),
+      ]);
       useRoleStore.getState().setActiveRole('LOCATAIRE').catch(() => {});
       set({
         token: null,
