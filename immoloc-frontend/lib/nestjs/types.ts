@@ -355,6 +355,8 @@ export interface TarifNuit {
   nuitsMin: number;
   nuitsMax: number | null;
   prix: number;
+  dureeMinNuits?: number;
+  pourcentageReduction?: number;
 }
 
 export interface SetTarifsPersonnesPayload {

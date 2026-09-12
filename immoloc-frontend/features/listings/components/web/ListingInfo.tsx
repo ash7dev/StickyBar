@@ -3,9 +3,10 @@ import {
   MapPin, ShieldCheck, BedDouble, Bath, Home,
   Maximize2, Users, Star, BookOpen, ScrollText,
   Moon, Banknote, ChevronRight, Info, Zap,
-  CalendarDays, Navigation, Armchair, ChefHat, Wifi, Shield, Trees, Accessibility,
+  CalendarDays, Navigation, Armchair, ChefHat, Wifi, Shield, Trees, Accessibility, Sparkles, TrendingDown, UserPlus,
 } from 'lucide-react';
 import type { Listing, TarifNuit, TarifPersonne } from '@/lib/nestjs';
+import { getPrixPublic, getPrixDerniereMinute } from '@/lib/pricing';
 
 interface Props {
   listing: Listing;
@@ -61,145 +62,101 @@ function fmt(n: number | string) {
   return Math.round(Number(n) * 1.07).toLocaleString('fr-FR');
 }
 
-/* ── Palier de nuits (progress bar) ───────────────────────────────────── */
-function NightTierBar({ tier, isBase, maxPrix, derniereMinuteActive = false }: { tier: TarifNuit; isBase?: boolean; maxPrix: number; derniereMinuteActive?: boolean }) {
-  const label =
-    tier.nuitsMax === null
-      ? `${tier.nuitsMin}+ nuits`
-      : tier.nuitsMin === tier.nuitsMax
-        ? `${tier.nuitsMin} nuit${tier.nuitsMin > 1 ? 's' : ''}`
-        : `${tier.nuitsMin} – ${tier.nuitsMax} nuits`;
-
-  const pct = maxPrix > 0 ? Math.round((tier.prix / maxPrix) * 100) : 100;
-  const saving = maxPrix > 0 && !isBase ? Math.round(((maxPrix - tier.prix) / maxPrix) * 100) : 0;
-
-  const containerClass = isBase
-    ? 'bg-gradient-to-r from-emerald-50 to-background-card border-emerald-200 shadow-[0_4px_20px_rgba(20,101,76,0.08)]'
-    : 'bg-background-card border-border hover:border-border-hover hover:shadow-sm';
-
-  const iconBgClass = isBase ? 'bg-emerald-100' : 'bg-background-alt';
-  const iconColorClass = isBase ? 'text-emerald-500' : 'text-foreground-muted';
-  const labelColorClass = isBase ? 'text-emerald-600' : 'text-foreground';
-  const priceColorClass = isBase ? 'text-emerald-600' : 'text-foreground';
-  const progressClass = isBase
-    ? 'bg-gradient-to-r from-emerald-400 to-emerald-500'
-    : saving > 15
-      ? 'bg-gradient-to-r from-emerald-400 to-emerald-500'
-      : 'bg-gradient-to-r from-emerald-300 to-emerald-400';
+/* ── Palier de nuits ───────────────────────────────────── */
+function NightTierBar({
+  tier,
+  prixBase,
+  derniereMinuteActive = false,
+}: {
+  tier: TarifNuit;
+  prixBase: number;
+  derniereMinuteActive?: boolean;
+}) {
+  const nuits = tier.nuitsMin || tier.dureeMinNuits || 7;
+  const prixPublicBase = getPrixPublic(prixBase);
+  const pxPublicTier = getPrixPublic(tier.prix);
+  const pxFinal = derniereMinuteActive ? getPrixDerniereMinute(pxPublicTier) : pxPublicTier;
+  const reduction = tier.pourcentageReduction || (prixPublicBase > 0 ? Math.round(((prixPublicBase - pxFinal) / prixPublicBase) * 100) : 0);
+  const economie = Math.max(0, prixPublicBase - pxFinal);
 
   return (
-    <div className={`relative p-3.5 md:p-4 rounded-xl md:rounded-2xl border transition-all duration-300 overflow-hidden ${containerClass}`}>
-      <div className="flex items-center justify-between mb-2.5 md:mb-3">
-        <div className="flex items-center gap-2 md:gap-2.5">
-          <div className={`w-8 h-8 md:w-9 md:h-9 rounded-lg flex items-center justify-center ${iconBgClass}`}>
-            <Moon className={`w-4 h-4 md:w-4.5 md:h-4.5 ${iconColorClass}`} />
-          </div>
-          <div>
-            <span className={`text-sm md:text-base font-bold ${labelColorClass}`}>{label}</span>
-            {isBase && (
-              <span className="ml-1.5 md:ml-2 text-[9px] md:text-[10px] font-black text-emerald-600 uppercase tracking-wider bg-emerald-100 px-2 py-0.5 rounded-md">TARIF DE BASE</span>
-            )}
-          </div>
+    <div className="relative p-4 rounded-2xl bg-background-alt border border-border transition-all duration-300 hover:border-emerald-500/30 hover:shadow-md space-y-3">
+      {/* Top Bar: Duration Pill & Discount Tag */}
+      <div className="flex items-center justify-between">
+        <div className="flex items-center gap-2 bg-background-card px-3 py-1 rounded-full border border-border">
+          <Moon className="w-3.5 h-3.5 text-emerald-600" />
+          <span className="text-xs font-bold text-foreground">Dès {nuits} nuitées</span>
         </div>
+
+        {reduction > 0 && (
+          <div className="flex items-center gap-1 bg-lime-400 px-2.5 py-1 rounded-full text-xs font-black text-forest-950">
+            <Sparkles className="w-3 h-3 text-forest-950" />
+            <span>-{reduction}%</span>
+          </div>
+        )}
+      </div>
+
+      {/* Middle: Price Comparison */}
+      <div className="flex items-center justify-between bg-background-card p-3 rounded-xl border border-border">
+        <div>
+          <span className="block text-[10px] font-bold uppercase text-foreground-muted tracking-wider">Tarif normal</span>
+          <span className="text-xs font-medium text-foreground-muted line-through">{fmt(prixPublicBase)} FCFA</span>
+        </div>
+
+        <span className="text-xs font-bold text-foreground-muted">→</span>
+
         <div className="text-right">
-          <div>
-            {derniereMinuteActive ? (
-              <div className="flex flex-col items-end">
-                <span className="text-xs font-semibold text-foreground-muted line-through tabular-nums">
-                  {fmt(tier.prix)} FCFA
-                </span>
-                <span className="text-base md:text-lg font-black tabular-nums text-forest-950">
-                  {Math.round(Number(tier.prix) * 1.07 * 0.85).toLocaleString('fr-FR')}
-                  <span className="text-xs md:text-sm font-bold text-foreground-muted ml-1"> FCFA</span>
-                </span>
-              </div>
-            ) : (
-              <>
-                <span className={`text-base md:text-lg font-black tabular-nums ${priceColorClass}`}>
-                  {fmt(tier.prix)}
-                </span>
-                <span className="text-xs md:text-sm font-bold text-foreground-muted ml-1"> FCFA</span>
-              </>
-            )}
-          </div>
-          <span className="text-[10px] md:text-xs font-medium text-foreground-muted">/ nuit</span>
-          {saving > 0 && (
-            <p className="text-[10px] md:text-xs font-black text-emerald-500 mt-0.5">-{saving}% d&apos;économie</p>
-          )}
+          <span className="block text-[10px] font-bold uppercase text-emerald-600 tracking-wider">Tarif remisé</span>
+          <span className="text-sm md:text-base font-black text-forest-950 tabular-nums">
+            {fmt(pxFinal)} <span className="text-xs font-normal text-foreground-muted">FCFA/nuit</span>
+          </span>
         </div>
       </div>
-      {/* Progress bar */}
-      <div className="h-2 md:h-2.5 bg-background-alt rounded-full overflow-hidden">
-        <div
-          className={`h-full rounded-full transition-all duration-700 ease-out ${progressClass}`}
-          style={{ width: `${pct}%` }}
-        />
-      </div>
+
+      {/* Bottom Economy Banner */}
+      {economie > 0 && (
+        <div className="flex items-center gap-1.5 bg-emerald-50 px-3 py-1.5 rounded-full w-fit">
+          <TrendingDown className="w-3.5 h-3.5 text-emerald-600" />
+          <span className="text-xs text-emerald-700 font-medium">
+            Économie de <strong className="font-bold text-forest-950">{fmt(economie)} FCFA</strong> par nuitée
+          </span>
+        </div>
+      )}
     </div>
   );
 }
 
-/* ── Palier de personnes (step visual) ───────────────────────────────── */
-function PersonTierBar({ tier, personnesBase, maxSupplement }: { tier: TarifPersonne; personnesBase?: number; maxSupplement: number }) {
-  const label =
-    tier.personnesMin === tier.personnesMax
-      ? `${tier.personnesMin} personne${tier.personnesMin > 1 ? 's' : ''}`
-      : `${tier.personnesMin} – ${tier.personnesMax} personnes`;
+/* ── Palier de personnes ───────────────────────────────── */
+function PersonTierBar({
+  tier,
+  personnesBase,
+}: {
+  tier: TarifPersonne;
+  personnesBase?: number;
+}) {
+  const minP = tier.personnesMin || (personnesBase ? personnesBase + 1 : 2);
+  const maxP = tier.personnesMax ? ` à ${tier.personnesMax}` : '';
+  const labelRange = tier.personnesMin && tier.personnesMax && tier.personnesMin === tier.personnesMax
+    ? `${tier.personnesMin}e personne`
+    : `Au-delà de ${minP - 1} pers.${maxP}`;
 
-  const isIncluded = tier.supplement === 0;
-  const isBase = personnesBase !== undefined && tier.personnesMax <= personnesBase;
-  const pct = maxSupplement > 0 && !isIncluded ? Math.round((tier.supplement / maxSupplement) * 100) : isBase || isIncluded ? 100 : 0;
-
-  const containerClass = isBase
-    ? 'bg-gradient-to-r from-emerald-50 to-background-card border-emerald-200 shadow-[0_4px_20px_rgba(20,101,76,0.08)]'
-    : 'bg-background-card border-border hover:border-border-hover hover:shadow-sm';
-
-  const iconBgClass = isBase ? 'bg-emerald-100' : 'bg-background-alt';
-  const iconColorClass = isBase ? 'text-emerald-500' : 'text-foreground-muted';
-  const labelColorClass = isBase ? 'text-emerald-600' : 'text-foreground';
-  const progressClass = isBase || isIncluded
-    ? 'bg-gradient-to-r from-emerald-400 to-emerald-500'
-    : 'bg-gradient-to-r from-accent-400 to-accent-500';
+  const suppPublic = getPrixPublic(tier.supplement);
 
   return (
-    <div className={`relative p-3.5 md:p-4 rounded-xl md:rounded-2xl border transition-all duration-300 overflow-hidden ${containerClass}`}>
-      <div className="flex items-center justify-between mb-2.5 md:mb-3">
-        <div className="flex items-center gap-2 md:gap-2.5">
-          <div className={`w-8 h-8 md:w-9 md:h-9 rounded-lg flex items-center justify-center ${iconBgClass}`}>
-            <Users className={`w-4 h-4 md:w-4.5 md:h-4.5 ${iconColorClass}`} />
-          </div>
-          <div>
-            <span className={`text-sm md:text-base font-bold ${labelColorClass}`}>{label}</span>
-            {isBase && (
-              <span className="ml-1.5 md:ml-2 text-[9px] md:text-[10px] font-black text-emerald-600 uppercase tracking-wider bg-emerald-100 px-2 py-0.5 rounded-md">INCLUS</span>
-            )}
-          </div>
+    <div className="flex items-center justify-between p-3.5 rounded-2xl bg-forest-50/60 border border-forest-100 transition-all duration-200">
+      <div className="flex items-center gap-3">
+        <div className="w-8 h-8 rounded-full bg-background-card flex items-center justify-center border border-forest-100">
+          <UserPlus className="w-4 h-4 text-forest-700" />
         </div>
-        <div className="text-right">
-          {isIncluded || isBase ? (
-            <span className="text-sm md:text-base font-black text-emerald-600 flex items-center gap-1">
-              <ShieldCheck className="w-3.5 h-3.5 md:w-4 md:h-4" /> Inclus
-            </span>
-          ) : (
-            <>
-              <div>
-                <span className="text-base md:text-lg font-black text-accent-600 tabular-nums">
-                  +{fmt(tier.supplement)}
-                </span>
-                <span className="text-xs md:text-sm font-bold text-foreground-muted ml-1"> FCFA</span>
-              </div>
-              <span className="text-[10px] md:text-xs font-medium text-foreground-muted">/ nuit</span>
-            </>
-          )}
+        <div>
+          <span className="block text-xs md:text-sm font-bold text-foreground">{labelRange}</span>
+          <span className="text-[11px] text-foreground-muted">Supplément par nuit & par pers.</span>
         </div>
       </div>
-      {/* Progress bar */}
-      <div className="h-2 md:h-2.5 bg-background-alt rounded-full overflow-hidden">
-        <div
-          className={`h-full rounded-full transition-all duration-700 ease-out ${progressClass}`}
-          style={{ width: `${pct}%` }}
-        />
-      </div>
+
+      <span className="bg-lime-400 text-forest-950 px-3 py-1 rounded-full text-xs font-black shrink-0">
+        +{fmt(suppPublic)} FCFA
+      </span>
     </div>
   );
 }
@@ -478,13 +435,12 @@ export function ListingInfo({ listing }: Props) {
                 <Moon className="w-3.5 h-3.5 md:w-4 md:h-4 text-emerald-500" />
                 <p className="text-xs md:text-sm font-black text-emerald-600 uppercase tracking-wider">Tarif selon la durée</p>
               </div>
-              <div className="flex flex-col gap-2">
+              <div className="flex flex-col gap-2.5">
                 {listing.tarifsNuits!.map((tier, i) => (
                   <NightTierBar
                     key={i}
                     tier={tier}
-                    isBase={i === 0}
-                    maxPrix={maxPrix}
+                    prixBase={listing.prixBase}
                     derniereMinuteActive={Boolean((listing as { derniereMinuteActive?: boolean }).derniereMinuteActive)}
                   />
                 ))}
@@ -500,8 +456,8 @@ export function ListingInfo({ listing }: Props) {
           {hasTarifsPersonnes && (
             <div>
               <div className="flex items-center gap-2 mb-3 md:mb-3">
-                <Users className="w-3.5 h-3.5 md:w-4 md:h-4 text-accent-500" />
-                <p className="text-xs md:text-sm font-black text-accent-600 uppercase tracking-wider">
+                <Users className="w-3.5 h-3.5 md:w-4 md:h-4 text-emerald-600" />
+                <p className="text-xs md:text-sm font-black text-emerald-600 uppercase tracking-wider">
                   Supplément selon le nombre de voyageurs
                 </p>
               </div>
@@ -519,7 +475,6 @@ export function ListingInfo({ listing }: Props) {
                     key={i}
                     tier={tier}
                     personnesBase={listing.personnesBase}
-                    maxSupplement={maxSupplement}
                   />
                 ))}
               </div>
