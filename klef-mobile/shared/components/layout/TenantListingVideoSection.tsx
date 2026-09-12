@@ -1,4 +1,4 @@
-import React, { useState, useRef } from 'react';
+import React, { useState } from 'react';
 import {
   StyleSheet,
   View,
@@ -6,7 +6,7 @@ import {
   TouchableOpacity,
 } from 'react-native';
 import { Image as ExpoImage } from 'expo-image';
-import { Video, ResizeMode } from 'expo-av';
+import { useVideoPlayer, VideoView } from 'expo-video';
 import { Film, Play } from 'lucide-react-native';
 import * as Haptics from 'expo-haptics';
 import { colors, radius, shadows, typography } from '../../theme/tokens';
@@ -22,19 +22,24 @@ export function TenantListingVideoSection({
   titre,
   posterUrl,
 }: TenantListingVideoSectionProps) {
-  const videoRef = useRef<Video>(null);
   const [isPlaying, setIsPlaying] = useState(false);
 
-  const handlePlayToggle = async () => {
+  const player = useVideoPlayer(videoUrl, (p) => {
+    p.loop = false;
+  });
+
+  const handlePlayToggle = () => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium).catch(() => {});
-    if (videoRef.current) {
-      if (isPlaying) {
-        await videoRef.current.pauseAsync();
+    try {
+      if (player.playing) {
+        player.pause();
         setIsPlaying(false);
       } else {
-        await videoRef.current.playAsync();
+        player.play();
         setIsPlaying(true);
       }
+    } catch (e) {
+      console.warn('[TenantListingVideoSection] Video player error:', e);
     }
   };
 
@@ -59,20 +64,12 @@ export function TenantListingVideoSection({
 
       {/* ── Conteneur Vidéo & Lecteur Multimédia ───────────────────────────── */}
       <View style={styles.videoCard}>
-        <Video
-          ref={videoRef}
-          source={{ uri: videoUrl }}
-          posterSource={posterUrl ? { uri: posterUrl } : undefined}
-          usePoster={!isPlaying}
-          resizeMode={ResizeMode.COVER}
-          useNativeControls={isPlaying}
-          isLooping={false}
-          onPlaybackStatusUpdate={(s: any) => {
-            if (s && s.isLoaded) {
-              setIsPlaying(s.isPlaying);
-            }
-          }}
+        <VideoView
+          player={player}
           style={styles.videoPlayer}
+          allowsFullscreen
+          allowsPictureInPicture
+          contentFit="cover"
         />
 
         {/* Overlay avec image de couverture (poster) et Bouton Play ──────── */}
