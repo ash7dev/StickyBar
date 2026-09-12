@@ -5,8 +5,8 @@ export const dashboardApi = {
   /**
    * Stats globales propriétaire
    */
-  getOwnerStats: () => 
-    nestFetch<any>(NEST_API.DASHBOARD.OWNER_STATS),
+  getOwnerStats: (timeframe?: string) => 
+    nestFetch<any>(`${NEST_API.DASHBOARD.OWNER_STATS}${timeframe ? `?timeframe=${encodeURIComponent(timeframe)}` : ''}`),
 
   /**
    * Actions en attente

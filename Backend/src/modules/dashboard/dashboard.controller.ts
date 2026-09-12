@@ -1,6 +1,7 @@
 import { 
   Controller, 
   Get, 
+  Query,
   UseGuards 
 } from '@nestjs/common';
 import { DashboardService } from './dashboard.service';
@@ -14,11 +15,14 @@ export class DashboardController {
   constructor(private readonly dashboardService: DashboardService) {}
 
   /**
-   * Stats globales du dashboard propriétaire
+   * Stats globales du dashboard propriétaire avec filtre temporel optionnel
    */
   @Get('owner/stats')
-  async getOwnerStats(@CurrentUser() user: AuthUser) {
-    return this.dashboardService.getOwnerStats(user.id);
+  async getOwnerStats(
+    @CurrentUser() user: AuthUser,
+    @Query('timeframe') timeframe?: string,
+  ) {
+    return this.dashboardService.getOwnerStats(user.id, timeframe);
   }
 
   /**
