@@ -65,27 +65,39 @@ export const colors = {
   // ── Sémantiques Retonalisés Klef ──────────────────────────────────────────
   success: {
     50: '#E9F6EC',
+    100: '#D1FAE5',
+    200: '#A7F3D0',
     500: '#2E9E52',
     600: '#1F7D3E',
     700: '#175E2F',
+    800: '#065F46',
   },
   warning: {
     50: '#FDF4E3',
+    100: '#FEF3C7',
+    200: '#FDE68A',
     500: '#D99A22',
     600: '#B47B14',
     700: '#8A5D0E',
+    800: '#92400E',
   },
   error: {
     50: '#FBEDEB',
+    100: '#FADCD9',
+    200: '#F7BAB5',
     500: '#D64B3C',
     600: '#B33628',
     700: '#8A281D',
+    800: '#621B13',
   },
   info: {
     50: '#E9F2F5',
+    100: '#D1E5ED',
+    200: '#A3CBDB',
     500: '#3A7D95',
     600: '#2A6076',
     700: '#1E4757',
+    800: '#15333E',
   },
 
   // ── Abstractions Sémantiques (Composants UI) ─────────────────────────────
@@ -195,8 +207,13 @@ export const shadows = {
 };
 
 export const typography = {
-  fontDisplay: 'System', // Raccordé à la police Display (Fraunces / Serif)
-  fontBody: 'System',    // Inter
+  fontDisplay: 'Fraunces_700Bold',
+  fontDisplaySemiBold: 'Fraunces_600SemiBold',
+  fontBody: 'Inter_400Regular',
+  fontBodyMedium: 'Inter_500Medium',
+  fontBodySemiBold: 'Inter_600SemiBold',
+  fontBodyBold: 'Inter_700Bold',
+  fontBodyExtraBold: 'Inter_800ExtraBold',
   sizes: {
     xs: 11,
     sm: 13,

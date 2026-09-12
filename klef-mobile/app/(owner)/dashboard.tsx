@@ -1,89 +1,87 @@
 import React from 'react';
-import { View, Text, StyleSheet, SafeAreaView, ScrollView, TouchableOpacity } from 'react-native';
-import { LayoutDashboard, TrendingUp, Building2, Repeat } from 'lucide-react-native';
-import { colors, radius, typography } from '../../shared/theme/tokens';
+import {
+  View,
+  Text,
+  StyleSheet,
+  SafeAreaView,
+  ScrollView,
+  RefreshControl,
+} from 'react-native';
+import { colors, typography } from '../../shared/theme/tokens';
 import { useAuthStore } from '../../features/auth/stores/auth.store';
-import { useRoleStore } from '../../shared/stores/role.store';
-import { AppCard } from '../../shared/components/ui/AppCard';
-import { AppBadge } from '../../shared/components/ui/AppBadge';
-import { AppButton } from '../../shared/components/ui/AppButton';
+import { useOwnerDashboard } from '../../features/dashboard/hooks/useOwnerDashboard';
+import { MobileCancellationWarningBanner } from '../../features/dashboard/components/owner/MobileCancellationWarningBanner';
+import { MobileKpiGridCard } from '../../features/dashboard/components/owner/MobileKpiGridCard';
+import { MobileRevenueWalletCard } from '../../features/dashboard/components/owner/MobileRevenueWalletCard';
+import { MobileQuickActionsMenuCard } from '../../features/dashboard/components/owner/MobileQuickActionsMenuCard';
+import { OwnerDashboardSkeleton } from '../../shared/components/layout/OwnerDashboardSkeleton';
 
 export default function OwnerDashboardScreen() {
   const { user } = useAuthStore();
-  const { setActiveRole } = useRoleStore();
+  const { stats, pending, isLoading, isRefetching, refetch } = useOwnerDashboard();
+
+  const userFirstName = user?.prenom || 'Propriétaire';
+
+  if (isLoading && !isRefetching) {
+    return (
+      <SafeAreaView style={styles.safeArea}>
+        <OwnerDashboardSkeleton />
+      </SafeAreaView>
+    );
+  }
 
   return (
     <SafeAreaView style={styles.safeArea}>
-      <ScrollView contentContainerStyle={styles.container}>
-        {/* Header */}
-        <View style={styles.header}>
-          <View>
-            <AppBadge label="ESPACE HÔTE & PROPRIÉTAIRE" variant="verified" />
-            <Text style={styles.title}>Tableau de Bord 📊</Text>
-          </View>
+      <ScrollView
+        contentContainerStyle={styles.container}
+        showsVerticalScrollIndicator={false}
+        refreshControl={
+          <RefreshControl
+            refreshing={isRefetching}
+            onRefresh={refetch}
+            tintColor={colors.forest[600]}
+            colors={[colors.forest[600]]}
+          />
+        }
+      >
+        {/* ── 1. Bandeau de Sécurité / Annulations (Si applicable) ─── */}
+        <MobileCancellationWarningBanner />
 
-          <TouchableOpacity
-            activeOpacity={0.8}
-            onPress={() => setActiveRole('LOCATAIRE')}
-            style={styles.switchRoleBtn}
-          >
-            <Repeat size={14} color={colors.forest[800]} />
-            <Text style={styles.switchRoleText}>Mode Voyageur</Text>
-          </TouchableOpacity>
-        </View>
+        {/* ── 2. Carte Unique Revenus & Solde Retirable ────────────── */}
+        <MobileRevenueWalletCard stats={stats} />
 
-        {/* Chiffre d'Affaires Card */}
-        <AppCard style={styles.caCard} variant="inverse">
-          <Text style={styles.caLabel}>Revenus Nets du Mois (FCFA)</Text>
-          <Text style={styles.caAmount}>1 450 000 FCFA</Text>
-          <View style={styles.caFooter}>
-            <TrendingUp size={16} color={colors.lime[300]} />
-            <Text style={styles.caTrendText}>+18.4% vs le mois dernier</Text>
-          </View>
-        </AppCard>
+        {/* ── 3. Synthèse d'Activité KPIs (Grille 2x2) ──────────────── */}
+        <MobileKpiGridCard stats={stats} pending={pending} />
 
-        {/* Statistics Grid */}
-        <View style={styles.grid}>
-          <AppCard style={styles.gridCard} variant="card">
-            <Building2 size={22} color={colors.forest[600]} />
-            <Text style={styles.gridNumber}>3</Text>
-            <Text style={styles.gridLabel}>Biens Actifs</Text>
-          </AppCard>
-
-          <AppCard style={styles.gridCard} variant="card">
-            <LayoutDashboard size={22} color={colors.forest[600]} />
-            <Text style={styles.gridNumber}>12</Text>
-            <Text style={styles.gridLabel}>Réservations</Text>
-          </AppCard>
-        </View>
+        {/* ── 4. Actions Rapides Menu ──────────────────────────────── */}
+        <MobileQuickActionsMenuCard />
       </ScrollView>
     </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
-  safeArea: { flex: 1, backgroundColor: colors.neutral[50] },
-  container: { padding: 20, gap: 20 },
-  header: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
-  title: { fontSize: 26, fontWeight: '700', color: colors.neutral[900], marginTop: 6 },
-  switchRoleBtn: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 6,
-    backgroundColor: colors.lime[400],
-    paddingVertical: 8,
-    paddingHorizontal: 12,
-    borderRadius: radius.pill,
+  safeArea: {
+    flex: 1,
+    backgroundColor: colors.neutral[50],
   },
-  switchRoleText: { fontSize: typography.sizes.xs, fontWeight: '700', color: colors.forest[800] },
-  caCard: { gap: 8, padding: 22, backgroundColor: colors.forest[950] },
-  caLabel: { fontSize: typography.sizes.xs, color: colors.forest[200], fontWeight: '600' },
-  caAmount: { fontSize: 32, fontWeight: '700', color: colors.lime[400] },
-  caFooter: { flexDirection: 'row', alignItems: 'center', gap: 6, marginTop: 4 },
-  caTrendText: { fontSize: typography.sizes.xs, color: colors.lime[300], fontWeight: '600' },
-
-  grid: { flexDirection: 'row', gap: 12 },
-  gridCard: { flex: 1, gap: 8, padding: 18 },
-  gridNumber: { fontSize: 24, fontWeight: '700', color: colors.neutral[900] },
-  gridLabel: { fontSize: typography.sizes.xs, color: colors.neutral[600] },
+  container: {
+    padding: 20,
+    gap: 20,
+    paddingBottom: 110,
+  },
+  headerTitleRow: {
+    gap: 3,
+  },
+  title: {
+    fontFamily: typography.fontDisplaySemiBold,
+    fontSize: 24,
+    color: colors.forest[950],
+    letterSpacing: -0.3,
+  },
+  subtitle: {
+    fontFamily: typography.fontBody,
+    fontSize: 12,
+    color: colors.neutral[600],
+  },
 });

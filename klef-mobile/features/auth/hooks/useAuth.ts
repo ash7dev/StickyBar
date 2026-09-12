@@ -1,7 +1,12 @@
 import { useState } from 'react';
+import * as WebBrowser from 'expo-web-browser';
+import * as Linking from 'expo-linking';
 import { apiClient } from '../../../shared/api/api-client';
 import { useAuthStore } from '../stores/auth.store';
 import { AuthTokensResponse, AuthUser } from '../../../shared/contracts';
+import { supabase } from '../../../shared/supabase/client';
+
+WebBrowser.maybeCompleteAuthSession();
 
 export function useAuth() {
   const [loading, setLoading] = useState(false);
@@ -14,11 +19,12 @@ export function useAuth() {
     setLoading(true);
     setError(null);
     try {
-      await apiClient.post('/auth/login/phone/send', { telephone });
+      await apiClient.post('/auth/login/phone/send', { phone: telephone });
       setLoading(false);
       return true;
     } catch (err: any) {
-      const msg = err.response?.data?.message || 'Erreur lors de l’envoi du SMS OTP';
+      const rawMsg = err.response?.data?.message;
+      const msg = Array.isArray(rawMsg) ? rawMsg.join(', ') : (rawMsg || 'Erreur lors de l’envoi du SMS OTP');
       setError(msg);
       setLoading(false);
       return false;
@@ -31,8 +37,8 @@ export function useAuth() {
     setError(null);
     try {
       const res = await apiClient.post<AuthTokensResponse>('/auth/login/phone/verify', {
-        telephone,
-        otp,
+        phone: telephone,
+        token: otp,
       });
 
       const { accessToken, refreshToken, user } = res.data;
@@ -40,7 +46,8 @@ export function useAuth() {
       setLoading(false);
       return true;
     } catch (err: any) {
-      const msg = err.response?.data?.message || 'Code OTP invalide ou expiré';
+      const rawMsg = err.response?.data?.message;
+      const msg = Array.isArray(rawMsg) ? rawMsg.join(', ') : (rawMsg || 'Code OTP invalide ou expiré');
       setError(msg);
       setLoading(false);
       return false;
@@ -63,7 +70,8 @@ export function useAuth() {
       setLoading(false);
       return true;
     } catch (err: any) {
-      const msg = err.response?.data?.message || 'Code de vérification email invalide ou expiré';
+      const rawMsg = err.response?.data?.message;
+      const msg = Array.isArray(rawMsg) ? rawMsg.join(', ') : (rawMsg || 'Code de vérification email invalide ou expiré');
       setError(msg);
       setLoading(false);
       return false;
@@ -85,7 +93,8 @@ export function useAuth() {
       setLoading(false);
       return true;
     } catch (err: any) {
-      const msg = err.response?.data?.message || 'Email ou mot de passe incorrect';
+      const rawMsg = err.response?.data?.message;
+      const msg = Array.isArray(rawMsg) ? rawMsg.join(', ') : (rawMsg || 'Email ou mot de passe incorrect');
       setError(msg);
       setLoading(false);
       return false;
@@ -107,7 +116,8 @@ export function useAuth() {
       setLoading(false);
       return true;
     } catch (err: any) {
-      const msg = err.response?.data?.message || 'Erreur lors de l’inscription';
+      const rawMsg = err.response?.data?.message;
+      const msg = Array.isArray(rawMsg) ? rawMsg.join(', ') : (rawMsg || 'Erreur lors de l’inscription');
       setError(msg);
       setLoading(false);
       return false;
@@ -126,7 +136,79 @@ export function useAuth() {
     }
   };
 
-  // 7. Déconnexion
+  // 7. Connexion / Inscription via Google OAuth (ou Supabase Token)
+  const loginGoogle = async (supabaseToken?: string): Promise<boolean> => {
+    setLoading(true);
+    setError(null);
+    try {
+      let activeToken = supabaseToken;
+
+      if (!activeToken) {
+        // Utiliser une URL propre 'callback' sans parenthèses '(auth)' pour éviter le blocage Cloudflare WAF sur Supabase
+        const redirectUrl = Linking.createURL('callback');
+        const { data, error: oauthError } = await supabase.auth.signInWithOAuth({
+          provider: 'google',
+          options: {
+            redirectTo: redirectUrl,
+            skipBrowserRedirect: true,
+          },
+        });
+
+        if (oauthError) throw oauthError;
+
+        if (data?.url) {
+          const result = await WebBrowser.openAuthSessionAsync(data.url, redirectUrl);
+          if (result.type === 'success' && result.url) {
+            const rawUrl = result.url;
+            let tokenFromUrl: string | null = null;
+
+            if (rawUrl.includes('#')) {
+              const hashString = rawUrl.split('#')[1];
+              const params = new URLSearchParams(hashString);
+              tokenFromUrl = params.get('access_token');
+            } else if (rawUrl.includes('?')) {
+              const queryString = rawUrl.split('?')[1];
+              const params = new URLSearchParams(queryString);
+              tokenFromUrl = params.get('access_token');
+            }
+
+            if (tokenFromUrl) {
+              activeToken = tokenFromUrl;
+            } else {
+              const { data: sessionData } = await supabase.auth.getSession();
+              activeToken = sessionData.session?.access_token;
+            }
+          } else {
+            setLoading(false);
+            return false;
+          }
+        }
+      }
+
+      if (!activeToken) {
+        throw new Error("Impossible d'obtenir le token de connexion Google");
+      }
+
+      const res = await apiClient.get<AuthTokensResponse>('/auth/me/supabase', {
+        headers: {
+          Authorization: `Bearer ${activeToken}`,
+        },
+      });
+
+      const { accessToken, refreshToken, user } = res.data;
+      await setSession(accessToken, refreshToken, user);
+      setLoading(false);
+      return true;
+    } catch (err: any) {
+      const rawMsg = err.response?.data?.message;
+      const msg = Array.isArray(rawMsg) ? rawMsg.join(', ') : (err.message || 'Erreur lors de la connexion Google');
+      setError(msg);
+      setLoading(false);
+      return false;
+    }
+  };
+
+  // 8. Déconnexion
   const logout = async () => {
     try {
       await apiClient.post('/auth/logout').catch(() => {});
@@ -145,6 +227,7 @@ export function useAuth() {
     verifyRegisterEmailOtp,
     loginEmail,
     register,
+    loginGoogle,
     fetchCurrentUser,
     logout,
   };

@@ -7,6 +7,7 @@ import {
   Injectable,
   Logger,
   NotFoundException,
+  OnModuleInit,
   UnprocessableEntityException,
 } from '@nestjs/common';
 import { Logement, PhotoLogement, Prisma, StatutLogement, StatutReservation, TarifNuits, TarifPersonnes, TypeAvis, TypeHote, TypeLogement } from '@prisma/client';
@@ -23,7 +24,7 @@ import { SearchLogementsDto } from './dto/search-logements.dto';
 
 import { NotificationsService } from '../notifications/notifications.service';
 
-type LogementWithRelations = Omit<Logement, 'equipements'> & {
+export type LogementWithRelations = Logement & {
   photos: PhotoLogement[];
   tarifsPersonnes: TarifPersonnes[];
   tarifsNuits: TarifNuits[];
@@ -31,8 +32,10 @@ type LogementWithRelations = Omit<Logement, 'equipements'> & {
 };
 
 @Injectable()
-export class LogementsService {
+export class LogementsService implements OnModuleInit {
   private readonly logger = new Logger(LogementsService.name);
+  private feedRamCache: { data: any; expiresAt: number } | null = null;
+  private detailRamCache = new Map<string, { data: LogementWithRelations; expiresAt: number }>();
 
   constructor(
     private readonly prisma: PrismaService,
@@ -40,6 +43,14 @@ export class LogementsService {
     private readonly redis: RedisService,
     private readonly notificationsService: NotificationsService,
   ) { }
+
+  async onModuleInit() {
+    setTimeout(() => {
+      this.getFeed().catch((err) => {
+        this.logger.warn(`Préchauffage cache feed échoué: ${(err as Error).message}`);
+      });
+    }, 2000);
+  }
 
   // ── Recherche publique avec cache Redis ────────────────────────────────────
 
@@ -96,12 +107,19 @@ export class LogementsService {
       statut: StatutLogement.PUBLISHED,
       archiveLe: null,
       capaciteMax: { gte: nbPersonnes },
-      ...(dto.ville && { ville: { contains: dto.ville, mode: 'insensitive' } }),
-      ...((dto as any).quartier && { quartier: { contains: (dto as any).quartier, mode: 'insensitive' } }),
+      ...(dto.ville?.trim() && { ville: { contains: dto.ville.trim(), mode: 'insensitive' } }),
+      ...((dto as any).quartier?.trim() && { quartier: { contains: (dto as any).quartier.trim(), mode: 'insensitive' } }),
       ...(((dto as any).derniereMinuteOnly || (dto as any).derniereMinute) && { derniereMinuteActive: true }),
       ...(dto.type && { type: dto.type }),
-      ...(dto.sousType && { sousType: { contains: dto.sousType, mode: 'insensitive' } }),
+      ...(dto.sousType?.trim() && {
+        OR: [
+          { sousType: { contains: dto.sousType.trim(), mode: 'insensitive' } },
+          { titre: { contains: dto.sousType.trim(), mode: 'insensitive' } },
+          { equipements: { some: { equipement: { nom: { contains: dto.sousType.trim(), mode: 'insensitive' } } } } },
+        ],
+      }),
       ...(dto.prixMax !== undefined && { prixBase: { lte: dto.prixMax } }),
+      ...(dto.prixMin !== undefined && { prixBase: { gte: dto.prixMin } }),
       ...(withDates && {
         reservations: {
           none: {
@@ -256,10 +274,20 @@ export class LogementsService {
     return payload;
   }
 
-  async invalidateSearchCache(): Promise<void> {
+  async invalidateSearchCache(logementId?: string): Promise<void> {
+    this.feedRamCache = null;
+    if (logementId) {
+      this.detailRamCache.delete(logementId);
+    } else {
+      this.detailRamCache.clear();
+    }
     try {
       await this.redis.getClient().incr('listings:search:version');
-      this.logger.debug('Cache recherche invalidé (version incrémentée)');
+      await this.redis.del('listings:feed:all');
+      if (logementId) {
+        await this.redis.del(`listings:detail:${logementId}`);
+      }
+      this.logger.debug(`Cache recherche/feed/detail invalidé${logementId ? ` [${logementId}]` : ''}`);
     } catch (err) {
       this.logger.warn(`Échec invalidation cache recherche : ${(err as Error).message}`);
     }
@@ -285,11 +313,17 @@ export class LogementsService {
   // ── Feed public — toutes les sections en un seul appel ─────────────────────
 
   async getFeed() {
+    if (this.feedRamCache && Date.now() < this.feedRamCache.expiresAt) {
+      return this.feedRamCache.data;
+    }
+
     const cacheKey = 'listings:feed:all';
     try {
       const cached = await this.redis.get(cacheKey);
       if (cached) {
-        return JSON.parse(cached);
+        const parsed = JSON.parse(cached);
+        this.feedRamCache = { data: parsed, expiresAt: Date.now() + 120000 };
+        return parsed;
       }
     } catch (e) {
       this.logger.warn(`Échec lecture cache Redis feed : ${(e as Error).message}`);
@@ -420,7 +454,8 @@ export class LogementsService {
     const payload = { sections: results };
 
     try {
-      await this.redis.set(cacheKey, JSON.stringify(payload), 300); // Cache 5 min
+      await this.redis.set(cacheKey, JSON.stringify(payload), 900); // Cache 15 min
+      this.feedRamCache = { data: payload, expiresAt: Date.now() + 120000 };
     } catch (e) {
       this.logger.warn(`Échec écriture cache Redis feed : ${(e as Error).message}`);
     }
@@ -653,6 +688,33 @@ export class LogementsService {
   }
 
   async findOne(id: string, requesterId?: string): Promise<LogementWithRelations> {
+    const cacheKey = `listings:detail:${id}`;
+
+    // 1. Check RAM Cache (0.1ms)
+    const ramCached = this.detailRamCache.get(id);
+    if (ramCached && Date.now() < ramCached.expiresAt) {
+      const isOwner = requesterId && (ramCached.data.proprietaireId === requesterId || ramCached.data.gestionnaireId === requesterId);
+      if (!isOwner) {
+        return ramCached.data;
+      }
+    }
+
+    // 2. Check Redis Cache (2-5ms)
+    try {
+      const cached = await this.redis.get(cacheKey);
+      if (cached) {
+        const parsed = JSON.parse(cached) as LogementWithRelations;
+        const isOwner = requesterId && (parsed.proprietaireId === requesterId || parsed.gestionnaireId === requesterId);
+        if (!isOwner) {
+          this.detailRamCache.set(id, { data: parsed, expiresAt: Date.now() + 120000 });
+          return parsed;
+        }
+      }
+    } catch (e) {
+      this.logger.warn(`Échec lecture cache Redis detail [${id}]: ${(e as Error).message}`);
+    }
+
+    // 3. Database query
     const logement = await this.prisma.logement.findUnique({
       where: { id },
       include: {
@@ -761,13 +823,24 @@ export class LogementsService {
       }
       : undefined;
 
-    return {
+    const result = {
       ...rest,
       proprietaire: proprietaireData,
       equipements: logement.equipements
         .map(e => e.equipement)
         .filter((e): e is NonNullable<typeof e> => e != null),
     } as unknown as LogementWithRelations;
+
+    if (!isOwner) {
+      this.detailRamCache.set(id, { data: result, expiresAt: Date.now() + 120000 });
+      try {
+        await this.redis.set(cacheKey, JSON.stringify(result), 600); // 10 min Redis
+      } catch (e) {
+        this.logger.warn(`Échec écriture cache Redis detail [${id}]: ${(e as Error).message}`);
+      }
+    }
+
+    return result;
   }
 
   async update(id: string, userId: string, dto: UpdateLogementDto): Promise<Logement> {
@@ -791,7 +864,7 @@ export class LogementsService {
 
     // Invalider le cache si le logement est publié (visible dans les recherches)
     if (logement.statut === StatutLogement.PUBLISHED) {
-      await this.invalidateSearchCache();
+      await this.invalidateSearchCache(id);
     }
 
     this.logger.log(`Logement [${id}] mis à jour par utilisateur [${userId}]`);

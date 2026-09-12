@@ -141,7 +141,8 @@ export default function ContratPage({ params }: { params: Promise<{ id: string }
   const visible = phonesVisible(res.dateDebut);
   const banner = STATUT_BANNER[res.statut] ?? STATUT_BANNER.PENDING;
   const BannerIcon = banner.icon;
-  const commissionPct = Math.round(res.tauxCommission * 100);
+  const rawTaux = Number(res.tauxCommission) || 0.07;
+  const commissionPct = rawTaux < 1 ? Math.round(rawTaux * 100) : Math.round(rawTaux);
   const ref = res.id.slice(0, 8).toUpperCase();
 
   return (

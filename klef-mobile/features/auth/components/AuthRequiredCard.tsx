@@ -42,17 +42,18 @@ export function AuthRequiredCard({ title, subtitle, redirectTo = '/(auth)/login'
         <View style={styles.actions}>
           <AppButton
             label="Se connecter"
-            onPress={() => router.push('/(auth)/login')}
+            onPress={() => router.push('/(auth)/login' as any)}
             size="lg"
             variant="action"
           />
           <AppButton
             label="Créer un compte"
-            onPress={() => router.push('/(auth)/register')}
+            onPress={() => router.push('/(auth)/register' as any)}
             size="lg"
             variant="ghost"
           />
         </View>
+
 
         <View style={styles.reassuranceRow}>
           <ShieldCheck size={16} color={colors.lime[300]} />

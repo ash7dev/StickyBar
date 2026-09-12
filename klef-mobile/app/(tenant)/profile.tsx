@@ -1,110 +1,274 @@
-import React from 'react';
-import { View, Text, StyleSheet, SafeAreaView, TouchableOpacity, ScrollView } from 'react-native';
-import { LogOut, Repeat } from 'lucide-react-native';
-import { colors, radius, typography } from '../../shared/theme/tokens';
+import React, { useState, useEffect, useCallback } from 'react';
+import {
+  StyleSheet,
+  SafeAreaView,
+  ScrollView,
+  View,
+  Text,
+  RefreshControl,
+  ActivityIndicator,
+} from 'react-native';
+import { User, ShieldCheck } from 'lucide-react-native';
+import { colors, radius, shadows, typography } from '../../shared/theme/tokens';
 import { useAuthStore } from '../../features/auth/stores/auth.store';
 import { useRoleStore } from '../../shared/stores/role.store';
-import { useAuth } from '../../features/auth/hooks/useAuth';
-import { AppButton } from '../../shared/components/ui/AppButton';
-import { AppCard } from '../../shared/components/ui/AppCard';
-import { AppBadge } from '../../shared/components/ui/AppBadge';
+import { apiClient } from '../../shared/api/api-client';
 import { AuthRequiredCard } from '../../features/auth/components/AuthRequiredCard';
+import { MobileProfileHero } from '../../features/profile/components/MobileProfileHero';
+import { MobileActiveRoleCard } from '../../features/profile/components/MobileActiveRoleCard';
+import { MobileProfileInfoCard } from '../../features/profile/components/MobileProfileInfoCard';
+import { MobileProfileKycCard } from '../../features/profile/components/MobileProfileKycCard';
+import { MobileSecurityCard } from '../../features/profile/components/MobileSecurityCard';
+import { MobileTerangaClubCard } from '../../features/profile/components/MobileTerangaClubCard';
+import { MobileProfileActionsCard } from '../../features/profile/components/MobileProfileActionsCard';
+import { TenantActionGateModal } from '../../shared/components/gate/TenantActionGateModal';
+
+function SectionDivider({ label }: { label: string }) {
+  return (
+    <View style={styles.dividerContainer}>
+      <View style={styles.dividerLine} />
+      <Text style={styles.dividerLabel}>{label}</Text>
+      <View style={styles.dividerLine} />
+    </View>
+  );
+}
 
 export default function ProfileScreen() {
-  const { user, isAuthenticated } = useAuthStore();
-  const { activeRole, setActiveRole } = useRoleStore();
-  const { logout } = useAuth();
+  const { user: authUser, isAuthenticated, setUser } = useAuthStore();
+  const { activeRole } = useRoleStore();
 
-  const handleToggleRole = () => {
-    const nextRole = activeRole === 'PROPRIETAIRE' ? 'LOCATAIRE' : 'PROPRIETAIRE';
-    setActiveRole(nextRole);
-  };
+  const [loading, setLoading] = useState(false);
+  const [refreshing, setRefreshing] = useState(false);
+  const [gateOpen, setGateOpen] = useState(false);
+  const [payoutSettings, setPayoutSettings] = useState<{
+    methode?: string;
+    telephone?: string;
+  } | null>(null);
+  const [terangaAccount, setTerangaAccount] = useState<{
+    soldeCoins?: number;
+    tier?: string;
+    nbSejours?: number;
+    gmv12Mois?: number;
+  } | null>(null);
+
+  const fetchProfileData = useCallback(async (isRefresh = false) => {
+    if (!isAuthenticated) return;
+
+    try {
+      if (isRefresh) setRefreshing(true);
+      else setLoading(true);
+
+      const [resUser, resPayout, resTeranga] = await Promise.all([
+        apiClient.get<any>('/users/me').catch(() => null),
+        apiClient.get<any>('/users/payout-settings').catch(() => null),
+        apiClient.get<any>('/teranga-club/me').catch(() => null),
+      ]);
+
+      if (resUser?.data) {
+        const u = resUser.data.data || resUser.data;
+        setUser({
+          ...authUser,
+          ...u,
+        });
+      }
+
+      if (resPayout?.data) {
+        const p = resPayout.data.data || resPayout.data;
+        setPayoutSettings(p);
+      }
+
+      if (resTeranga?.data) {
+        const t = resTeranga.data.data || resTeranga.data;
+        setTerangaAccount(t);
+      }
+    } catch (err) {
+      console.warn('[ProfileScreen] Erreur rechargement profil:', err);
+    } finally {
+      setLoading(false);
+      setRefreshing(false);
+    }
+  }, [isAuthenticated, authUser, setUser]);
+
+  useEffect(() => {
+    fetchProfileData(false);
+  }, []);
 
   return (
     <SafeAreaView style={styles.safeArea}>
-      <ScrollView contentContainerStyle={styles.container}>
-        <Text style={styles.headerTitle}>Paramètres</Text>
+      <ScrollView
+        contentContainerStyle={styles.scrollContent}
+        showsVerticalScrollIndicator={false}
+        refreshControl={
+          isAuthenticated ? (
+            <RefreshControl
+              refreshing={refreshing}
+              onRefresh={() => fetchProfileData(true)}
+              tintColor={colors.forest[800]}
+              colors={[colors.forest[800]]}
+            />
+          ) : undefined
+        }
+      >
+        {/* En-tête principal — Alignement 1:1 avec l'écran Réservations */}
+        <View style={styles.topSection}>
+          <View style={styles.contextBadge}>
+            <User size={12} color={colors.forest[700]} />
+            <Text style={styles.contextText}>Compte Utilisateur · Mon Profil</Text>
+          </View>
+
+          <Text style={styles.screenTitle}>Mon Profil & Compte</Text>
+
+          <Text style={styles.screenSubtitle}>
+            Gérez vos informations personnelles, votre sécurité et la vérification de votre identité Klef.
+          </Text>
+        </View>
 
         {!isAuthenticated ? (
-          <AuthRequiredCard
-            subtitle="Gérez vos informations personnelles, votre sécurité et la vérification de votre identité Klef."
-            title="Connectez-vous pour accéder à vos paramètres"
-          />
+          <View style={styles.guardedStack}>
+            <AuthRequiredCard
+              title="Connectez-vous pour accéder à vos paramètres"
+              subtitle="Gérez vos informations personnelles, votre sécurité et la vérification de votre identité Klef."
+            />
+          </View>
         ) : (
-          <View style={styles.profileContent}>
-            {/* Card Utilisateur */}
-            <AppCard style={styles.userCard} variant="card">
-              <View style={styles.avatarBox}>
-                <Text style={styles.avatarText}>
-                  {user?.prenom?.[0]}{user?.nom?.[0]}
-                </Text>
-              </View>
-              <View style={styles.userInfo}>
-                <Text style={styles.userName}>{user?.prenom} {user?.nom}</Text>
-                <Text style={styles.userEmail}>{user?.email || user?.telephone}</Text>
-                <AppBadge label={`Statut KYC : ${user?.statutKyc || 'NON_VERIFIE'}`} variant="soft" />
-              </View>
-            </AppCard>
+          <View style={styles.contentStack}>
+            {/* 1. Carte Hero Profil */}
+            <MobileProfileHero
+              user={{
+                ...authUser,
+                terangaTier: terangaAccount?.tier || (authUser as any)?.terangaTier,
+              }}
+              activeRole={activeRole}
+              onKycClick={() => setGateOpen(true)}
+            />
 
-            {/* Role Switcher */}
-            <AppCard style={styles.roleCard} variant="alt">
-              <View style={styles.roleHeader}>
-                <Repeat size={20} color={colors.forest[600]} />
-                <Text style={styles.roleTitle}>Espace Actif : {activeRole}</Text>
-              </View>
-              <AppButton
-                label={`Basculer en Espace ${activeRole === 'PROPRIETAIRE' ? 'Voyageur' : 'Hôte'}`}
-                onPress={handleToggleRole}
-                size="md"
-                variant="forest"
-              />
-            </AppCard>
+            {/* 2. Espace Actif (Bascule Rôle Voyageur / Hôte) */}
+            <MobileActiveRoleCard />
 
-            {/* Logout Button */}
-            <TouchableOpacity activeOpacity={0.7} onPress={logout} style={styles.logoutBtn}>
-              <LogOut size={18} color={colors.error[500]} />
-              <Text style={styles.logoutText}>Se déconnecter</Text>
-            </TouchableOpacity>
+            {/* 3. Coordonnées & Infos Personnelles */}
+            <MobileProfileInfoCard
+              user={authUser}
+              onProfileUpdated={() => fetchProfileData(false)}
+            />
+
+            {/* 3. Vérification d'Identité KYC */}
+            <MobileProfileKycCard
+              statutKyc={authUser?.statutKyc}
+              onKycClick={() => setGateOpen(true)}
+            />
+
+            <SectionDivider label="Paiements & Fidélité" />
+
+            {/* 4. Programme Teranga Club */}
+            <MobileTerangaClubCard
+              terangaTier={terangaAccount?.tier || (authUser as any)?.terangaTier || 'BRONZE'}
+              soldeCoins={terangaAccount?.soldeCoins ?? (authUser as any)?.soldeCoins ?? 0}
+              nbSejours={terangaAccount?.nbSejours ?? (authUser as any)?.nbSejours ?? 0}
+              gmv12Mois={terangaAccount?.gmv12Mois ?? (authUser as any)?.gmv12Mois ?? 0}
+            />
+
+            <SectionDivider label="Sécurité & Compte" />
+
+            {/* 6. Sécurité & Mot de Passe */}
+            <MobileSecurityCard
+              userEmail={authUser?.email}
+              onUpdated={() => fetchProfileData(false)}
+            />
+
+            {/* 7. Actions de Compte (Bascule Rôle, Déconnexion, Suppression) */}
+            <MobileProfileActionsCard />
           </View>
         )}
       </ScrollView>
+
+      {/* Modale KYC Gate */}
+      {gateOpen && (
+        <TenantActionGateModal
+          visible={gateOpen}
+          steps={['profile', 'phone', 'kyc']}
+          block={null}
+          onCancel={() => setGateOpen(false)}
+          onComplete={() => {
+            setGateOpen(false);
+            fetchProfileData(false);
+          }}
+        />
+      )}
     </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
-  safeArea: { flex: 1, backgroundColor: colors.neutral[50] },
-  container: { padding: 20, gap: 20 },
-  headerTitle: { fontSize: 28, fontWeight: '700', color: colors.neutral[900] },
-
-  profileContent: { gap: 16 },
-  userCard: { flexDirection: 'row', alignItems: 'center', gap: 16, padding: 18 },
-  avatarBox: {
-    width: 54,
-    height: 54,
-    borderRadius: radius.pill,
-    backgroundColor: colors.forest[950],
-    alignItems: 'center',
-    justifyContent: 'center',
+  safeArea: {
+    flex: 1,
+    backgroundColor: colors.neutral[50],
   },
-  avatarText: { color: colors.lime[400], fontSize: 18, fontWeight: '700' },
-  userInfo: { flex: 1, gap: 4 },
-  userName: { fontSize: 18, fontWeight: '700', color: colors.neutral[900] },
-  userEmail: { fontSize: typography.sizes.xs, color: colors.neutral[600] },
+  scrollContent: {
+    paddingTop: 16,
+    paddingHorizontal: 16,
+    paddingBottom: 140,
+    gap: 16,
+  },
 
-  roleCard: { gap: 12, padding: 16 },
-  roleHeader: { flexDirection: 'row', alignItems: 'center', gap: 8 },
-  roleTitle: { fontSize: typography.sizes.sm, fontWeight: '700', color: colors.neutral[900] },
-
-  logoutBtn: {
+  topSection: {
+    gap: 6,
+    marginBottom: 4,
+  },
+  contextBadge: {
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'center',
-    gap: 8,
-    padding: 16,
+    gap: 5,
+    backgroundColor: colors.forest[50],
+    paddingVertical: 4,
+    paddingHorizontal: 10,
     borderRadius: radius.pill,
-    backgroundColor: colors.error[50],
-    marginTop: 12,
+    alignSelf: 'flex-start',
+    borderWidth: 1,
+    borderColor: colors.forest[100],
   },
-  logoutText: { color: colors.error[700], fontWeight: '700', fontSize: typography.sizes.sm },
+  contextText: {
+    fontFamily: typography.fontBodyBold,
+    fontSize: 10,
+    color: colors.forest[800],
+    letterSpacing: 0.2,
+  },
+  screenTitle: {
+    fontFamily: typography.fontDisplay,
+    fontSize: 28,
+    color: colors.forest[950],
+    letterSpacing: -0.6,
+    lineHeight: 34,
+  },
+  screenSubtitle: {
+    fontFamily: typography.fontBody,
+    fontSize: 12,
+    color: colors.neutral[600],
+    lineHeight: 17,
+  },
+
+  guardedStack: {
+    marginTop: 10,
+  },
+  contentStack: {
+    gap: 14,
+  },
+
+  dividerContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+    marginVertical: 4,
+  },
+  dividerLine: {
+    flex: 1,
+    height: 1,
+    backgroundColor: colors.neutral[200],
+  },
+  dividerLabel: {
+    fontFamily: typography.fontBodyExtraBold,
+    fontSize: 9,
+    color: colors.neutral[400],
+    letterSpacing: 1.2,
+    textTransform: 'uppercase',
+  },
 });

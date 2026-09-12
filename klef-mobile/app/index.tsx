@@ -14,17 +14,18 @@ export default function IndexScreen() {
 
     // Décision de routage de démarrage
     if (!hasSeenOnboarding) {
-      router.replace('/(auth)/onboarding');
+      router.replace('/(auth)/onboarding' as any);
     } else if (isAuthenticated) {
       if (activeRole === 'PROPRIETAIRE' || activeRole === 'GESTIONNAIRE') {
         router.replace('/(owner)/dashboard' as any);
       } else {
-        router.replace('/(tenant)');
+        router.replace('/(tenant)' as any);
       }
     } else {
       // Accès direct en Mode Invité (Guest-First Airbnb Style)
-      router.replace('/(tenant)');
+      router.replace('/(tenant)' as any);
     }
+
 
     // Extinction du Splash Screen natif une fois la navigation prête
     SplashScreen.hideAsync().catch(() => {});

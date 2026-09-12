@@ -2,6 +2,7 @@ import React from 'react';
 import {
   TouchableOpacity,
   Text,
+  View,
   ActivityIndicator,
   StyleSheet,
   TouchableOpacityProps,
@@ -9,12 +10,28 @@ import {
 import * as Haptics from 'expo-haptics';
 import { colors, radius, shadows, typography } from '../../theme/tokens';
 
+// =============================================================================
+// AppButton — Système de boutons Klef Mobile
+// SOURCE DE VÉRITÉ : Miroir exact de globals.css btn-action / btn-primary /
+//                     btn-ghost / btn-outline / btn-inverse
+// =============================================================================
+
 export interface AppButtonProps extends TouchableOpacityProps {
   label: string;
-  variant?: 'action' | 'lime' | 'forest' | 'primary' | 'outline' | 'ghost' | 'danger';
+  variant?:
+    | 'action'    // ★ CTA Lime — UN SEUL par écran
+    | 'lime'      // alias → action
+    | 'primary'   // Vert forest structurant
+    | 'forest'    // alias → primary
+    | 'white'     // ★ Clean Hyper-Blanc + texte Vert Forest (hyper élégant)
+    | 'outline'   // Transparent + bordure
+    | 'ghost'     // Blanc + bordure
+    | 'inverse'   // Fond sombre : bordure blanche translucide
+    | 'danger';   // Rouge erreur
   size?: 'sm' | 'md' | 'lg';
   loading?: boolean;
   disabled?: boolean;
+  fullWidth?: boolean;
   leftIcon?: React.ReactNode;
   rightIcon?: React.ReactNode;
 }
@@ -25,6 +42,7 @@ export function AppButton({
   size = 'md',
   loading = false,
   disabled = false,
+  fullWidth = false,
   leftIcon,
   rightIcon,
   onPress,
@@ -37,22 +55,39 @@ export function AppButton({
     if (onPress) onPress(e);
   };
 
-  const resolvedVariant = variant === 'lime' ? 'action' : variant === 'forest' ? 'primary' : variant;
+  const resolvedVariant =
+    variant === 'lime' ? 'action' : variant === 'forest' ? 'primary' : variant;
+
+  const sizeKey = `size_${size}` as keyof typeof viewStyles;
+  const variantKey = `variant_${resolvedVariant}` as keyof typeof viewStyles;
 
   const buttonStyles = [
-    styles.base,
-    styles[`size_${size}`],
-    styles[`variant_${resolvedVariant}`],
-    (disabled || loading) && styles.disabled,
+    viewStyles.base,
+    viewStyles[sizeKey],
+    viewStyles[variantKey],
+    fullWidth && viewStyles.fullWidth,
+    (disabled || loading) && viewStyles.disabled,
     style,
   ];
 
-  const textStyles = [
-    styles.textBase,
-    styles[`textSize_${size}`],
-    styles[`textVariant_${resolvedVariant}`],
-    disabled && styles.textDisabled,
+  const textSizeKey = `textSize_${size}` as keyof typeof txtStyles;
+  const textVariantKey = `textVariant_${resolvedVariant}` as keyof typeof txtStyles;
+
+  const labelStyles = [
+    txtStyles.textBase,
+    txtStyles[textSizeKey],
+    txtStyles[textVariantKey],
+    disabled && txtStyles.textDisabled,
   ];
+
+  const spinnerColor =
+    resolvedVariant === 'action'
+      ? colors.forest[800]
+      : resolvedVariant === 'inverse'
+        ? colors.neutral[0]
+        : resolvedVariant === 'outline'
+          ? colors.neutral[900]
+          : colors.neutral[0];
 
   return (
     <TouchableOpacity
@@ -63,14 +98,11 @@ export function AppButton({
       {...props}
     >
       {loading ? (
-        <ActivityIndicator
-          color={resolvedVariant === 'action' ? colors.forest[800] : colors.neutral[0]}
-          size="small"
-        />
+        <ActivityIndicator color={spinnerColor} size="small" />
       ) : (
         <>
           {leftIcon}
-          <Text style={textStyles}>{label}</Text>
+          <Text numberOfLines={1} style={labelStyles}>{label}</Text>
           {rightIcon}
         </>
       )}
@@ -78,7 +110,8 @@ export function AppButton({
   );
 }
 
-const styles = StyleSheet.create({
+// ── View Styles ──────────────────────────────────────────────────────────
+const viewStyles = StyleSheet.create({
   base: {
     borderRadius: radius.pill,
     flexDirection: 'row',
@@ -87,12 +120,28 @@ const styles = StyleSheet.create({
     gap: 8,
   },
 
-  // Sizes
-  size_sm: { paddingVertical: 8, paddingHorizontal: 16 },
-  size_md: { paddingVertical: 13, paddingHorizontal: 22 },
-  size_lg: { paddingVertical: 16, paddingHorizontal: 28 },
+  fullWidth: {
+    width: '100%',
+  },
 
-  // Variants (Miroir exact de globals.css)
+  // Sizes
+  size_sm: {
+    paddingVertical: 8,
+    paddingHorizontal: 16,
+    minHeight: 34,
+  },
+  size_md: {
+    paddingVertical: 13,
+    paddingHorizontal: 22,
+    minHeight: 44,
+  },
+  size_lg: {
+    paddingVertical: 16,
+    paddingHorizontal: 28,
+    minHeight: 52,
+  },
+
+  // Variants
   variant_action: {
     backgroundColor: colors.lime[400],
     borderWidth: 1,
@@ -101,28 +150,46 @@ const styles = StyleSheet.create({
   },
   variant_primary: {
     backgroundColor: colors.forest[600],
+    borderWidth: 1,
+    borderColor: colors.forest[700],
   },
   variant_outline: {
     backgroundColor: 'transparent',
     borderWidth: 1,
     borderColor: colors.border.default,
   },
+  variant_white: {
+    backgroundColor: colors.neutral[0],
+    borderWidth: 1,
+    borderColor: colors.neutral[200],
+    ...shadows.xs,
+  },
   variant_ghost: {
     backgroundColor: colors.neutral[0],
     borderWidth: 1,
     borderColor: colors.border.default,
   },
+  variant_inverse: {
+    backgroundColor: 'transparent',
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.15)',
+  },
   variant_danger: {
     backgroundColor: colors.error[500],
+    borderWidth: 1,
+    borderColor: colors.error[600],
   },
 
   disabled: {
     opacity: 0.5,
   },
+});
 
-  // Text Sizes & Colors
+// ── Text Styles ──────────────────────────────────────────────────────────
+const txtStyles = StyleSheet.create({
   textBase: {
     fontWeight: '600',
+    letterSpacing: 0.1,
   },
   textSize_sm: { fontSize: typography.sizes.xs },
   textSize_md: { fontSize: typography.sizes.sm },
@@ -130,9 +197,12 @@ const styles = StyleSheet.create({
 
   textVariant_action: { color: colors.forest[800] },
   textVariant_primary: { color: colors.neutral[0] },
-  textVariant_outline: { color: colors.neutral[900] },
-  textVariant_ghost: { color: colors.neutral[900] },
+  textVariant_white: { color: colors.forest[800], fontWeight: '700' },
+  textVariant_outline: { color: colors.forest[800] },
+  textVariant_ghost: { color: colors.forest[800] },
+  textVariant_inverse: { color: colors.neutral[0], fontWeight: '500' },
   textVariant_danger: { color: colors.neutral[0] },
 
   textDisabled: { color: colors.neutral[500] },
 });
+

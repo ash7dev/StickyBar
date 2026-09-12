@@ -22,7 +22,8 @@ export function AuthGuardModal({
 
   const handleLoginPress = () => {
     onClose();
-    router.push('/(auth)/login');
+    router.push('/(auth)/login' as any);
+
   };
 
   return (

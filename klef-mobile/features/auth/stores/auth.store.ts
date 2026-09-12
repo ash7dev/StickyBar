@@ -1,10 +1,13 @@
 import { create } from 'zustand';
 import * as SecureStore from 'expo-secure-store';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { AuthUser, UserRole } from '../../../shared/contracts';
+import { AuthUser } from '../../../shared/contracts';
+import { apiClient } from '../../../shared/api/api-client';
+import { useRoleStore } from '../../../shared/stores/role.store';
 
 const TOKEN_KEY = 'klef_auth_token';
 const REFRESH_TOKEN_KEY = 'klef_refresh_token';
+const USER_KEY = 'klef_auth_user';
 const ONBOARDING_KEY = 'klef_has_seen_onboarding';
 
 interface AuthState {
@@ -17,7 +20,7 @@ interface AuthState {
 
   // Actions
   setSession: (token: string, refreshToken: string, user: AuthUser) => Promise<void>;
-  setUser: (user: AuthUser) => void;
+  setUser: (user: AuthUser) => Promise<void>;
   setHasSeenOnboarding: (seen: boolean) => Promise<void>;
   logout: () => Promise<void>;
   hydrate: () => Promise<void>;
@@ -35,6 +38,9 @@ export const useAuthStore = create<AuthState>((set, get) => ({
     try {
       await SecureStore.setItemAsync(TOKEN_KEY, token);
       await SecureStore.setItemAsync(REFRESH_TOKEN_KEY, refreshToken);
+      if (user) {
+        await AsyncStorage.setItem(USER_KEY, JSON.stringify(user));
+      }
       set({
         token,
         refreshToken,
@@ -47,8 +53,18 @@ export const useAuthStore = create<AuthState>((set, get) => ({
     }
   },
 
-  setUser: (user: AuthUser) => {
-    set({ user });
+  setUser: async (user: AuthUser) => {
+    try {
+      if (user) {
+        await AsyncStorage.setItem(USER_KEY, JSON.stringify(user));
+      } else {
+        await AsyncStorage.removeItem(USER_KEY);
+      }
+      set({ user });
+    } catch (e) {
+      console.error('[AuthStore] Error updating user in storage:', e);
+      set({ user });
+    }
   },
 
   setHasSeenOnboarding: async (seen: boolean) => {
@@ -64,6 +80,8 @@ export const useAuthStore = create<AuthState>((set, get) => ({
     try {
       await SecureStore.deleteItemAsync(TOKEN_KEY);
       await SecureStore.deleteItemAsync(REFRESH_TOKEN_KEY);
+      await AsyncStorage.removeItem(USER_KEY);
+      useRoleStore.getState().setActiveRole('LOCATAIRE').catch(() => {});
       set({
         token: null,
         refreshToken: null,
@@ -73,6 +91,14 @@ export const useAuthStore = create<AuthState>((set, get) => ({
       });
     } catch (e) {
       console.error('[AuthStore] Error clearing session:', e);
+      useRoleStore.getState().setActiveRole('LOCATAIRE').catch(() => {});
+      set({
+        token: null,
+        refreshToken: null,
+        user: null,
+        isAuthenticated: false,
+        isLoading: false,
+      });
     }
   },
 
@@ -81,22 +107,50 @@ export const useAuthStore = create<AuthState>((set, get) => ({
     try {
       const storedToken = await SecureStore.getItemAsync(TOKEN_KEY);
       const storedRefreshToken = await SecureStore.getItemAsync(REFRESH_TOKEN_KEY);
+      const storedUserRaw = await AsyncStorage.getItem(USER_KEY);
       const storedOnboarding = await AsyncStorage.getItem(ONBOARDING_KEY);
 
       const hasSeenOnboarding = storedOnboarding === 'true';
+      let storedUser: AuthUser | null = null;
+
+      if (storedUserRaw) {
+        try {
+          storedUser = JSON.parse(storedUserRaw);
+        } catch (parseErr) {
+          console.warn('[AuthStore] Error parsing stored user JSON:', parseErr);
+        }
+      }
 
       if (storedToken) {
         set({
           token: storedToken,
           refreshToken: storedRefreshToken,
+          user: storedUser,
           isAuthenticated: true,
           hasSeenOnboarding,
           isLoading: false,
         });
+
+        // Background refresh: Interroger /auth/me pour garder les infos fraîches à chaque rechargement
+        apiClient
+          .get<any>('/auth/me')
+          .then((res) => {
+            const freshUser = res.data?.data || res.data;
+            if (freshUser && freshUser.id) {
+              get().setUser(freshUser);
+            }
+          })
+          .catch((err) => {
+            console.warn('[AuthStore] Background /auth/me sync error:', err?.message);
+            if (err.response?.status === 401) {
+              get().logout();
+            }
+          });
       } else {
         set({
           token: null,
           refreshToken: null,
+          user: null,
           isAuthenticated: false,
           hasSeenOnboarding,
           isLoading: false,

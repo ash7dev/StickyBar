@@ -2,48 +2,104 @@ import React from 'react';
 import { View, Text, StyleSheet, ViewProps } from 'react-native';
 import { colors, radius, typography } from '../../theme/tokens';
 
+// =============================================================================
+// AppBadge — Système de badges Klef Mobile
+// SOURCE DE VÉRITÉ : Miroir exact de globals.css .badge-verified, .eyebrow,
+//                     et les pills utilisés dans HostWelcomeBanner, KPI cards
+// =============================================================================
+
 export interface AppBadgeProps extends ViewProps {
   label: string;
-  variant?: 'brand' | 'soft' | 'verified' | 'success' | 'warning' | 'error' | 'neutral';
-  tone?: 'brand' | 'soft' | 'verified' | 'success' | 'warning' | 'error' | 'neutral' | 'gold' | 'lime'; // Backwards compat alias
+  variant?:
+    | 'brand'     // forest-950 + lime text (logo Klef)
+    | 'soft'      // forest clair
+    | 'verified'  // gold (badge vérifié / étoiles)
+    | 'success'   // vert sémantique
+    | 'warning'   // orange sémantique
+    | 'error'     // rouge sémantique
+    | 'neutral'   // gris neutre
+    | 'inverse';  // ★ Fond sombre : bordure blanche translucide (welcome banner)
+  tone?:
+    | 'brand' | 'soft' | 'verified' | 'success' | 'warning'
+    | 'error' | 'neutral' | 'inverse'
+    | 'gold' | 'lime'; // Backwards compat aliases
+  size?: 'sm' | 'md';
   leftIcon?: React.ReactNode;
+  rightIcon?: React.ReactNode;
 }
 
 export function AppBadge({
   label,
   variant,
   tone = 'neutral',
+  size = 'sm',
   leftIcon,
+  rightIcon,
   style,
   ...props
 }: AppBadgeProps) {
-  const activeVariant = variant || (tone === 'gold' ? 'verified' : tone === 'lime' ? 'brand' : tone);
+  const activeVariant =
+    variant ||
+    (tone === 'gold'
+      ? 'verified'
+      : tone === 'lime'
+        ? 'brand'
+        : tone);
+
+  const variantKey = `variant_${activeVariant}` as keyof typeof viewStyles;
+  const sizeKey = `size_${size}` as keyof typeof viewStyles;
+  const textSizeKey = `textSize_${size}` as keyof typeof textStyles;
+  const textVariantKey = `textVariant_${activeVariant}` as keyof typeof textStyles;
 
   return (
-    <View style={[styles.base, styles[`variant_${activeVariant}`], style]} {...props}>
+    <View
+      style={[
+        viewStyles.base,
+        viewStyles[sizeKey],
+        viewStyles[variantKey],
+        style,
+      ]}
+      {...props}
+    >
       {leftIcon}
-      <Text style={[styles.text, styles[`textVariant_${activeVariant}`]]}>{label}</Text>
+      <Text
+        style={[
+          textStyles.text,
+          textStyles[textSizeKey],
+          textStyles[textVariantKey],
+        ]}
+        numberOfLines={1}
+      >
+        {label}
+      </Text>
+      {rightIcon}
     </View>
   );
 }
 
-const styles = StyleSheet.create({
+// ── View Styles (containers) ──────────────────────────────────────────────
+const viewStyles = StyleSheet.create({
   base: {
     borderRadius: radius.pill,
-    paddingVertical: 4,
-    paddingHorizontal: 10,
     flexDirection: 'row',
     alignItems: 'center',
     alignSelf: 'flex-start',
-    gap: 4,
     borderWidth: 1,
   },
-  text: {
-    fontSize: typography.sizes.xs,
-    fontWeight: '600',
+
+  // Sizes
+  size_sm: {
+    paddingVertical: 4,
+    paddingHorizontal: 10,
+    gap: 4,
+  },
+  size_md: {
+    paddingVertical: 6,
+    paddingHorizontal: 12,
+    gap: 6,
   },
 
-  // Variants (Miroir exact de globals.css)
+  // Variants
   variant_brand: {
     backgroundColor: colors.forest[950],
     borderColor: colors.forest[950],
@@ -72,13 +128,30 @@ const styles = StyleSheet.create({
     backgroundColor: colors.neutral[100],
     borderColor: colors.neutral[200],
   },
+  variant_inverse: {
+    backgroundColor: 'rgba(255, 255, 255, 0.06)',
+    borderColor: 'rgba(255, 255, 255, 0.10)',
+  },
+});
 
-  // Text colors & styles
+// ── Text Styles ──────────────────────────────────────────────────────────
+const textStyles = StyleSheet.create({
+  text: {
+    fontWeight: '600',
+  },
+  textSize_sm: {
+    fontSize: typography.sizes.xs,
+  },
+  textSize_md: {
+    fontSize: typography.sizes.sm,
+  },
+
   textVariant_brand: {
     color: colors.lime[400],
     textTransform: 'uppercase',
     letterSpacing: 0.8,
     fontSize: 10,
+    fontWeight: '700',
   },
   textVariant_soft: {
     color: colors.forest[800],
@@ -98,4 +171,12 @@ const styles = StyleSheet.create({
   textVariant_neutral: {
     color: colors.neutral[600],
   },
+  textVariant_inverse: {
+    color: colors.forest[200],
+    textTransform: 'uppercase',
+    letterSpacing: 1.2,
+    fontSize: 9,
+    fontWeight: '700',
+  },
 });
+

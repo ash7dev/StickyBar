@@ -1462,18 +1462,27 @@ export function ReservationActionPanel({ id, res, onRefetch }: Props) {
 
       {showNoshowModal && (
         <Modal
-          title="Signaler l’absence du locataire"
+          title="Signaler l’absence du locataire (No-Show)"
           onClose={() => { if (!isSubmitting) { setShowNoshowModal(false); setNoshowComment(''); clearFeedback(); } }}
         >
-          <div className="space-y-4 p-6">
-            <Notice tone="error" icon={AlertTriangle} title="Compte à rebours de 3 heures">
-              Si le locataire ne se présente pas dans ce délai, la réservation sera annulée
-              automatiquement.
-            </Notice>
+          <div className="space-y-5 p-6 bg-white">
+            <div className="flex items-start gap-3.5 rounded-xl border border-error-200 bg-error-50/70 p-4">
+              <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border border-error-200 bg-white text-error-600 shadow-2xs">
+                <AlertTriangle className="h-5 w-5" aria-hidden="true" />
+              </span>
+              <div className="space-y-1">
+                <p className="text-xs font-bold text-error-900">
+                  Délai réglementaire de 2 h post-arrivée
+                </p>
+                <p className="text-xs leading-relaxed text-error-700">
+                  Ne signalez cette absence que si le locataire est injoignable ou ne s’est pas présenté au moins 2 h après l’horaire d’arrivée convenu.
+                </p>
+              </div>
+            </div>
 
-            <div>
-              <label htmlFor="noshow-comment" className="mb-1.5 block text-xs font-semibold text-foreground">
-                Commentaire <span className="font-normal text-foreground-muted">(optionnel)</span>
+            <div className="space-y-1.5">
+              <label htmlFor="noshow-comment" className="block text-xs font-semibold text-foreground">
+                Commentaire ou précision <span className="font-normal text-foreground-muted">(optionnel)</span>
               </label>
               <textarea
                 id="noshow-comment"
@@ -1482,39 +1491,40 @@ export function ReservationActionPanel({ id, res, onRefetch }: Props) {
                 value={noshowComment}
                 onChange={(e) => setNoshowComment(e.target.value)}
                 disabled={isSubmitting}
-                placeholder="Ex : aucune réponse aux appels ni aux SMS depuis deux heures."
-                className="w-full resize-none rounded-field border border-border bg-background px-4 py-3 text-foreground placeholder:text-foreground-faint focus:border-forest-500 focus:outline-none disabled:opacity-50"
+                placeholder="Ex : tentative d’appel effectuée à 14h30 et 15h15 sans réponse, porte du logement close..."
+                className="w-full resize-none rounded-xl border border-border bg-background-alt p-3.5 text-xs text-foreground placeholder:text-foreground-faint focus:border-forest-500 focus:bg-white focus:outline-none focus:ring-2 focus:ring-forest-500/10 disabled:opacity-50"
               />
-              <p className="mt-1.5 text-right text-xs tabular-nums text-foreground-muted">
+              <p className="text-right text-[11px] tabular-nums text-foreground-muted">
                 {noshowComment.length} / 500
               </p>
             </div>
 
-            <div className="rounded-inner border border-border bg-background-alt p-3.5">
+            <div className="flex items-start gap-3 rounded-xl border border-border bg-background-alt p-4">
+              <span className="mt-0.5 flex h-7 w-7 shrink-0 items-center justify-center rounded-lg border border-border bg-white text-forest-700">
+                <Shield className="h-4 w-4" aria-hidden="true" />
+              </span>
               <p className="text-xs leading-relaxed text-foreground-muted">
-                <span className="font-semibold text-foreground">Ce qui se passe ensuite : </span>
-                le locataire dispose de 3 h pour se présenter et confirmer son check-in. Passé ce
-                délai, la réservation est annulée avec remboursement partiel (30 % pour le
-                locataire, 50 % de compensation pour vous).
+                <strong className="font-semibold text-foreground">Procédure Klef : </strong>
+                Une notification d’urgence sera transmise au locataire. S’il ne valide pas son entrée sous 3 h, la réservation sera annulée et la politique de compensation d’absence s’appliquera.
               </p>
             </div>
 
             {errorMsg && <Feedback type="error" message={errorMsg} />}
 
-            <div className="flex gap-3 pt-1">
+            <div className="flex items-center gap-3 pt-2">
               <GhostButton
                 onClick={() => { setShowNoshowModal(false); setNoshowComment(''); clearFeedback(); }}
                 disabled={isSubmitting}
-                className="flex-1 py-3 text-sm"
+                className="flex-1 py-3 text-xs font-semibold"
               >
-                Retour
+                Annuler
               </GhostButton>
               <DangerButton
                 onClick={handleSignalNoshow}
                 loading={isSubmitting}
                 loadingLabel="Envoi…"
                 icon={UserX}
-                className="flex-1 py-3 text-sm"
+                className="flex-1 py-3 text-xs font-bold"
               >
                 Confirmer le signalement
               </DangerButton>

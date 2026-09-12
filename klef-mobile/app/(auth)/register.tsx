@@ -9,23 +9,26 @@ import {
   Platform,
   ScrollView,
   SafeAreaView,
+  StatusBar,
 } from 'react-native';
 import { useRouter } from 'expo-router';
-import { ArrowLeft, User, Mail, Lock, AlertCircle, CheckCircle2 } from 'lucide-react-native';
+import { ArrowLeft, User, Mail, Lock, AlertCircle, CheckCircle2, Eye, EyeOff, ShieldCheck } from 'lucide-react-native';
 import { useAuth } from '../../features/auth/hooks/useAuth';
 import { PhoneInputWithCountry } from '../../shared/components/ui/PhoneInputWithCountry';
 import { AppButton } from '../../shared/components/ui/AppButton';
-import { colors, radius, typography } from '../../shared/theme/tokens';
+import { colors, radius, shadows, typography } from '../../shared/theme/tokens';
 
 export default function RegisterScreen() {
   const router = useRouter();
-  const { register, loading, error } = useAuth();
+  const { register, loginGoogle, loading, error } = useAuth();
 
   const [prenom, setPrenom] = useState('');
   const [nom, setNom] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [telephone, setTelephone] = useState('+221');
+  const [showPassword, setShowPassword] = useState(false);
+  const [focusedInput, setFocusedInput] = useState<string | null>(null);
   const [localError, setLocalError] = useState<string | null>(null);
   const [isSuccess, setIsSuccess] = useState(false);
 
@@ -50,144 +53,258 @@ export default function RegisterScreen() {
     });
 
     if (success) {
-      // Redirection vers l'écran d'OTP avec le paramètre email
-      router.push(`/(auth)/otp-verify?email=${encodeURIComponent(email.trim())}`);
+      router.push(`/(auth)/otp-verify?email=${encodeURIComponent(email.trim())}` as any);
+    }
+  };
+
+  const handleGoogleLogin = async () => {
+    setLocalError(null);
+    const success = await loginGoogle();
+    if (success) {
+      router.replace('/(tenant)' as any);
     }
   };
 
   if (isSuccess) {
     return (
       <SafeAreaView style={styles.safeArea}>
+        <StatusBar barStyle="dark-content" />
         <View style={styles.successContainer}>
-          <View style={styles.successIconBox}>
-            <CheckCircle2 size={48} color={colors.success[600]} />
+          <View style={styles.successCard}>
+            <View style={styles.successIconBox}>
+              <CheckCircle2 size={44} color={colors.success[600]} />
+            </View>
+            <Text style={styles.successTitle}>Compte Créé avec Succès !</Text>
+            <Text style={styles.successSubtitle}>
+              Un code de confirmation vous a été transmis. Vous êtes prêt à explorer le catalogue Klef.
+            </Text>
+            <AppButton
+              fullWidth
+              label="Se connecter"
+              onPress={() => router.replace('/(auth)/login' as any)}
+              size="lg"
+              variant="action"
+            />
           </View>
-          <Text style={styles.title}>Compte Créé avec Succès !</Text>
-          <Text style={styles.subtitle}>
-            Un email de confirmation vous a été envoyé. Vous pouvez maintenant vous connecter.
-          </Text>
-          <AppButton
-            label="Se connecter"
-            onPress={() => router.replace('/(auth)/login')}
-            size="lg"
-            variant="action"
-          />
         </View>
       </SafeAreaView>
     );
   }
 
+
   return (
     <SafeAreaView style={styles.safeArea}>
+      <StatusBar barStyle="dark-content" />
       <KeyboardAvoidingView
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
         style={styles.keyboardView}
       >
-        <ScrollView contentContainerStyle={styles.scrollContent} keyboardShouldPersistTaps="handled">
-          {/* Back Header */}
-          <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
-            <ArrowLeft size={20} color={colors.neutral[900]} />
-          </TouchableOpacity>
+        <ScrollView
+          contentContainerStyle={styles.scrollContent}
+          keyboardShouldPersistTaps="handled"
+          showsVerticalScrollIndicator={false}
+        >
+          {/* Top Bar Navigation */}
+          <View style={styles.topBar}>
+            <TouchableOpacity
+              activeOpacity={0.7}
+              onPress={() => router.back()}
+              style={styles.backButton}
+            >
+              <ArrowLeft size={18} color={colors.neutral[800]} />
+            </TouchableOpacity>
+          </View>
 
           {/* Header Title */}
           <View style={styles.header}>
-            <Text style={styles.title}>Créer un Compte</Text>
+            <Text style={styles.title}>Créer un compte Klef ✨</Text>
             <Text style={styles.subtitle}>
-              Rejoignez la communauté Klef et accédez aux meilleures offres de Dakar & du Sénégal.
+              Rejoignez la communauté Klef et accédez aux meilleures offres de logements à Dakar.
             </Text>
           </View>
 
-          {/* Alert Message */}
-          {(error || localError) ? (
+          {/* Error Alert Message */}
+          {error || localError ? (
             <View style={styles.errorAlert}>
-              <AlertCircle size={18} color={colors.error[700]} />
+              <AlertCircle size={18} color={colors.error[600]} />
               <Text style={styles.errorAlertText}>{error || localError}</Text>
             </View>
           ) : null}
 
-          {/* Form */}
-          <View style={styles.formSection}>
-            <View style={styles.nameRow}>
-              <View style={[styles.inputGroup, { flex: 1 }]}>
-                <Text style={styles.label}>Prénom *</Text>
-                <View style={styles.textInputWrapper}>
-                  <User size={16} color={colors.neutral[500]} />
+          {/* Form Card Container */}
+          <View style={styles.cardContainer}>
+            <View style={styles.formSection}>
+              {/* Prénom & Nom */}
+              <View style={styles.nameRow}>
+                <View style={[styles.inputGroup, { flex: 1 }]}>
+                  <Text style={styles.label}>Prénom *</Text>
+                  <View
+                    style={[
+                      styles.textInputWrapper,
+                      focusedInput === 'prenom' && styles.textInputWrapperFocused,
+                    ]}
+                  >
+                    <User
+                      size={16}
+                      color={focusedInput === 'prenom' ? colors.forest[600] : colors.neutral[400]}
+                    />
+                    <TextInput
+                      onBlur={() => setFocusedInput(null)}
+                      onChangeText={setPrenom}
+                      onFocus={() => setFocusedInput('prenom')}
+                      placeholder="Amadou"
+                      placeholderTextColor={colors.neutral[400]}
+                      style={styles.textInput}
+                      value={prenom}
+                    />
+                  </View>
+                </View>
+
+                <View style={[styles.inputGroup, { flex: 1 }]}>
+                  <Text style={styles.label}>Nom *</Text>
+                  <View
+                    style={[
+                      styles.textInputWrapper,
+                      focusedInput === 'nom' && styles.textInputWrapperFocused,
+                    ]}
+                  >
+                    <TextInput
+                      onBlur={() => setFocusedInput(null)}
+                      onChangeText={setNom}
+                      onFocus={() => setFocusedInput('nom')}
+                      placeholder="Diallo"
+                      placeholderTextColor={colors.neutral[400]}
+                      style={styles.textInput}
+                      value={nom}
+                    />
+                  </View>
+                </View>
+              </View>
+
+              {/* Adresse Email */}
+              <View style={styles.inputGroup}>
+                <Text style={styles.label}>Adresse Email *</Text>
+                <View
+                  style={[
+                    styles.textInputWrapper,
+                    focusedInput === 'email' && styles.textInputWrapperFocused,
+                  ]}
+                >
+                  <Mail
+                    size={18}
+                    color={focusedInput === 'email' ? colors.forest[600] : colors.neutral[400]}
+                  />
                   <TextInput
-                    onChangeText={setPrenom}
-                    placeholder="Amadou"
+                    autoCapitalize="none"
+                    keyboardType="email-address"
+                    onBlur={() => setFocusedInput(null)}
+                    onChangeText={setEmail}
+                    onFocus={() => setFocusedInput('email')}
+                    placeholder="amadou.diallo@exemple.sn"
                     placeholderTextColor={colors.neutral[400]}
                     style={styles.textInput}
-                    value={prenom}
+                    value={email}
                   />
                 </View>
               </View>
 
-              <View style={[styles.inputGroup, { flex: 1 }]}>
-                <Text style={styles.label}>Nom *</Text>
-                <View style={styles.textInputWrapper}>
-                  <TextInput
-                    onChangeText={setNom}
-                    placeholder="Diallo"
-                    placeholderTextColor={colors.neutral[400]}
-                    style={styles.textInput}
-                    value={nom}
+              {/* Téléphone */}
+              <View style={styles.inputGroup}>
+                <Text style={styles.label}>Numéro de Téléphone (Optionnel)</Text>
+                <PhoneInputWithCountry onChange={setTelephone} value={telephone} />
+              </View>
+
+              {/* Mot de Passe */}
+              <View style={styles.inputGroup}>
+                <View style={styles.labelRow}>
+                  <Text style={styles.label}>Mot de Passe *</Text>
+                  <Text style={styles.hintText}>Min. 6 caractères</Text>
+                </View>
+
+                <View
+                  style={[
+                    styles.textInputWrapper,
+                    focusedInput === 'password' && styles.textInputWrapperFocused,
+                  ]}
+                >
+                  <Lock
+                    size={18}
+                    color={focusedInput === 'password' ? colors.forest[600] : colors.neutral[400]}
                   />
+                  <TextInput
+                    autoCapitalize="none"
+                    onBlur={() => setFocusedInput(null)}
+                    onChangeText={setPassword}
+                    onFocus={() => setFocusedInput('password')}
+                    placeholder="••••••••"
+                    placeholderTextColor={colors.neutral[400]}
+                    secureTextEntry={!showPassword}
+                    style={styles.textInput}
+                    value={password}
+                  />
+                  <TouchableOpacity
+                    activeOpacity={0.7}
+                    onPress={() => setShowPassword((prev) => !prev)}
+                    style={styles.eyeBtn}
+                  >
+                    {showPassword ? (
+                      <EyeOff size={18} color={colors.neutral[500]} />
+                    ) : (
+                      <Eye size={18} color={colors.neutral[500]} />
+                    )}
+                  </TouchableOpacity>
                 </View>
               </View>
+
+              {/* Submit CTA */}
+              <AppButton
+                fullWidth
+                label="Créer mon compte Klef"
+                loading={loading}
+                onPress={handleRegister}
+                size="lg"
+                variant="action"
+              />
             </View>
 
-            <View style={styles.inputGroup}>
-              <Text style={styles.label}>Adresse Email *</Text>
-              <View style={styles.textInputWrapper}>
-                <Mail size={18} color={colors.neutral[500]} />
-                <TextInput
-                  autoCapitalize="none"
-                  keyboardType="email-address"
-                  onChangeText={setEmail}
-                  placeholder="amadou.diallo@exemple.sn"
-                  placeholderTextColor={colors.neutral[400]}
-                  style={styles.textInput}
-                  value={email}
-                />
+            {/* Social Divider */}
+            <View style={styles.dividerRow}>
+              <View style={styles.dividerLine} />
+              <Text style={styles.dividerText}>OU CONTINUER AVEC</Text>
+              <View style={styles.dividerLine} />
+            </View>
+
+            {/* Google Social Login Button */}
+            <TouchableOpacity
+              activeOpacity={0.82}
+              onPress={handleGoogleLogin}
+              style={styles.googleButton}
+            >
+              <View style={styles.googleGLogo}>
+                <Text style={styles.googleGLetter}>G</Text>
               </View>
-            </View>
-
-            <View style={styles.inputGroup}>
-              <Text style={styles.label}>Numéro de Téléphone (Optionnel)</Text>
-              <PhoneInputWithCountry onChange={setTelephone} value={telephone} />
-            </View>
-
-            <View style={styles.inputGroup}>
-              <Text style={styles.label}>Mot de Passe *</Text>
-              <View style={styles.textInputWrapper}>
-                <Lock size={18} color={colors.neutral[500]} />
-                <TextInput
-                  autoCapitalize="none"
-                  onChangeText={setPassword}
-                  placeholder="Au moins 6 caractères"
-                  placeholderTextColor={colors.neutral[400]}
-                  secureTextEntry
-                  style={styles.textInput}
-                  value={password}
-                />
-              </View>
-            </View>
-
-            <AppButton
-              label="Créer mon compte Klef"
-              loading={loading}
-              onPress={handleRegister}
-              size="lg"
-              variant="action"
-            />
+              <Text style={styles.googleButtonText}>Continuer avec Google</Text>
+            </TouchableOpacity>
           </View>
 
           {/* Footer Login Link */}
           <View style={styles.footer}>
             <Text style={styles.footerText}>Vous avez déjà un compte ?</Text>
-            <TouchableOpacity onPress={() => router.push('/(auth)/login')}>
+            <TouchableOpacity
+              activeOpacity={0.7}
+              onPress={() => router.push('/(auth)/login' as any)}
+            >
+
               <Text style={styles.loginLink}>Se connecter</Text>
             </TouchableOpacity>
+          </View>
+
+          {/* Security Badge */}
+          <View style={styles.securityBadge}>
+            <ShieldCheck size={14} color={colors.neutral[400]} />
+            <Text style={styles.securityBadgeText}>
+              Vos informations sont stockées de façon sécurisée & chiffrée.
+            </Text>
           </View>
         </ScrollView>
       </KeyboardAvoidingView>
@@ -204,42 +321,106 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   scrollContent: {
-    paddingHorizontal: 24,
-    paddingTop: 16,
-    paddingBottom: 40,
+    paddingHorizontal: 20,
+    paddingTop: Platform.OS === 'ios' ? 8 : 16,
+    paddingBottom: 36,
   },
-  successContainer: {
-    flex: 1,
-    paddingHorizontal: 24,
-    justifyContent: 'center',
+
+  // Top Bar Navigation
+  topBar: {
+    flexDirection: 'row',
     alignItems: 'center',
-  },
-  successIconBox: {
-    width: 80,
-    height: 80,
-    borderRadius: radius.pill,
-    backgroundColor: colors.success[50],
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginBottom: 24,
-  },
-  backButton: {
-    width: 40,
-    height: 40,
-    borderRadius: radius.pill,
-    backgroundColor: colors.neutral[100],
-    alignItems: 'center',
-    justifyContent: 'center',
+    justifyContent: 'space-between',
     marginBottom: 20,
   },
-  header: {
-    marginBottom: 24,
+  backButton: {
+    width: 42,
+    height: 42,
+    borderRadius: radius.pill,
+    backgroundColor: colors.neutral[0],
+    borderWidth: 1,
+    borderColor: colors.neutral[200],
+    alignItems: 'center',
+    justifyContent: 'center',
+    ...shadows.xs,
   },
-  title: {
-    fontSize: 28,
-    fontWeight: '700',
+  brandBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    backgroundColor: colors.forest[50],
+    paddingVertical: 5,
+    paddingHorizontal: 12,
+    borderRadius: radius.pill,
+    borderWidth: 1,
+    borderColor: colors.forest[100],
+  },
+  brandDot: {
+    width: 6,
+    height: 6,
+    borderRadius: 3,
+    backgroundColor: colors.forest[600],
+  },
+  brandBadgeText: {
+    fontSize: 10,
+    fontWeight: '800',
+    color: colors.forest[800],
+    letterSpacing: 1.2,
+  },
+
+  // Success Container
+  successContainer: {
+    flex: 1,
+    paddingHorizontal: 20,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  successCard: {
+    width: '100%',
+    backgroundColor: colors.neutral[0],
+    borderRadius: radius.card,
+    padding: 24,
+    borderWidth: 1,
+    borderColor: colors.neutral[200],
+    alignItems: 'center',
+    ...shadows.md,
+  },
+  successIconBox: {
+    width: 72,
+    height: 72,
+    borderRadius: radius.pill,
+    backgroundColor: colors.success[50],
+    borderWidth: 1,
+    borderColor: colors.success[500],
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 18,
+  },
+  successTitle: {
+    fontSize: 22,
+    fontWeight: '800',
     color: colors.neutral[900],
     marginBottom: 8,
+    textAlign: 'center',
+  },
+  successSubtitle: {
+    fontSize: typography.sizes.sm,
+    color: colors.neutral[600],
+    textAlign: 'center',
+    lineHeight: 20,
+    marginBottom: 24,
+  },
+
+  // Header
+  header: {
+    marginBottom: 20,
+  },
+  title: {
+    fontSize: 26,
+    fontWeight: '800',
+    color: colors.neutral[900],
+    letterSpacing: -0.5,
+    marginBottom: 6,
   },
   subtitle: {
     fontSize: typography.sizes.sm,
@@ -247,6 +428,7 @@ const styles = StyleSheet.create({
     lineHeight: 20,
   },
 
+  // Error Alert Box
   errorAlert: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -254,7 +436,7 @@ const styles = StyleSheet.create({
     backgroundColor: colors.error[50],
     borderColor: colors.error[500],
     borderWidth: 1,
-    borderRadius: radius.field,
+    borderRadius: radius.inner,
     padding: 12,
     marginBottom: 20,
   },
@@ -265,6 +447,18 @@ const styles = StyleSheet.create({
     fontWeight: '600',
   },
 
+  // Card Container
+  cardContainer: {
+    backgroundColor: colors.neutral[0],
+    borderRadius: radius.card,
+    padding: 20,
+    borderWidth: 1,
+    borderColor: colors.neutral[200],
+    ...shadows.sm,
+    marginBottom: 24,
+  },
+
+  // Form Section
   formSection: {
     gap: 16,
   },
@@ -273,24 +467,38 @@ const styles = StyleSheet.create({
     gap: 12,
   },
   inputGroup: {
-    marginBottom: 4,
+    gap: 6,
+  },
+  labelRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
   },
   label: {
     fontSize: typography.sizes.sm,
     fontWeight: '700',
     color: colors.neutral[900],
-    marginBottom: 6,
   },
+  hintText: {
+    fontSize: typography.sizes.xs,
+    color: colors.neutral[500],
+    fontWeight: '500',
+  },
+
   textInputWrapper: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 10,
-    backgroundColor: colors.neutral[0],
-    borderWidth: 1,
+    backgroundColor: colors.neutral[50],
+    borderWidth: 1.5,
     borderColor: colors.neutral[200],
     borderRadius: radius.field,
     paddingHorizontal: 14,
     height: 52,
+  },
+  textInputWrapperFocused: {
+    borderColor: colors.forest[600],
+    backgroundColor: colors.neutral[0],
   },
   textInput: {
     flex: 1,
@@ -298,13 +506,69 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     color: colors.neutral[900],
   },
+  eyeBtn: {
+    padding: 6,
+  },
 
+  // Divider
+  dividerRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+    marginVertical: 18,
+  },
+  dividerLine: {
+    flex: 1,
+    height: 1,
+    backgroundColor: colors.neutral[200],
+  },
+  dividerText: {
+    fontSize: 10,
+    fontWeight: '800',
+    color: colors.neutral[400],
+    letterSpacing: 1.1,
+  },
+
+  // Google Social Button
+  googleButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 10,
+    backgroundColor: colors.neutral[0],
+    borderWidth: 1.5,
+    borderColor: colors.neutral[200],
+    borderRadius: radius.pill,
+    height: 52,
+    ...shadows.xs,
+  },
+  googleGLogo: {
+    width: 24,
+    height: 24,
+    borderRadius: 12,
+    backgroundColor: '#4285F4',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  googleGLetter: {
+    color: '#FFFFFF',
+    fontWeight: '900',
+    fontSize: 14,
+    fontFamily: Platform.OS === 'ios' ? 'Helvetica' : 'sans-serif-medium',
+  },
+  googleButtonText: {
+    fontSize: typography.sizes.sm,
+    fontWeight: '700',
+    color: colors.neutral[800],
+  },
+
+  // Footer
   footer: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
     gap: 6,
-    marginTop: 36,
+    marginBottom: 24,
   },
   footerText: {
     fontSize: typography.sizes.sm,
@@ -314,5 +578,22 @@ const styles = StyleSheet.create({
     fontSize: typography.sizes.sm,
     fontWeight: '700',
     color: colors.forest[600],
+    textDecorationLine: 'underline',
+  },
+
+  // Security Badge
+  securityBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 6,
+    paddingHorizontal: 16,
+  },
+  securityBadgeText: {
+    fontSize: 11,
+    color: colors.neutral[500],
+    fontWeight: '500',
+    textAlign: 'center',
   },
 });
+

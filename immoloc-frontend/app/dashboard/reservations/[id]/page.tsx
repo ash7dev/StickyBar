@@ -297,8 +297,9 @@ export default function ReservationDetailPage({ params }: { params: Promise<{ id
   const checkinPhotos = res.photosEtatLieu.filter((p) => p.type === 'CHECKIN');
   const checkoutPhotos = res.photosEtatLieu.filter((p) => p.type === 'CHECKOUT');
 
-  const commissionPct = Math.round(Number(res.tauxCommission) * 100);
-  const ownPct = 100 - commissionPct;
+  const rawTaux = Number(res.tauxCommission) || 0.07;
+  const commissionPct = rawTaux < 1 ? Math.round(rawTaux * 100) : Math.round(rawTaux);
+  const ownPct = Math.max(0, 100 - commissionPct);
 
   const heureArrivee = res.confirmeeLe ? timeOrNull(res.dateDebut) : null;
   const heureDepart = res.confirmeeLe ? timeOrNull(res.dateFin) : null;

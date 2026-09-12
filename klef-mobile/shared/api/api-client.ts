@@ -4,14 +4,14 @@ import { Platform } from 'react-native';
 import { useRoleStore } from '../stores/role.store';
 import { useAuthStore } from '../../features/auth/stores/auth.store';
 
-const API_BASE_URL = process.env.EXPO_PUBLIC_API_URL || 'https://stickybar-backend.onrender.com/api/v1';
+const API_BASE_URL = process.env.EXPO_PUBLIC_API_URL || 'https://stickybar-w56o.onrender.com/api/v1';
 
 const TOKEN_KEY = 'klef_auth_token';
 const REFRESH_TOKEN_KEY = 'klef_refresh_token';
 
 export const apiClient = axios.create({
   baseURL: API_BASE_URL,
-  timeout: 15000,
+  timeout: 35000,
   headers: {
     'Content-Type': 'application/json',
   },
