@@ -8,7 +8,9 @@ import {
   ActivityIndicator,
   RefreshControl,
   Animated,
+  Image,
 } from 'react-native';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { router, useLocalSearchParams } from 'expo-router';
 import { SearchX, RotateCcw } from 'lucide-react-native';
 import { colors, radius, typography, shadows } from '../../shared/theme/tokens';
@@ -113,6 +115,8 @@ function ExplorerSkeletonList() {
   );
 }
 
+const EXPLORER_CACHE_KEY = 'klef_explorer_cache_v1';
+
 export default function ExplorerScreen() {
   const [searchModalVisible, setSearchModalVisible] = useState(false);
   const [sortBottomSheetVisible, setSortBottomSheetVisible] = useState(false);
@@ -190,6 +194,26 @@ export default function ExplorerScreen() {
   const [loadingMore, setLoadingMore] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
 
+  // 1. Instant 0ms disk cache hydration
+  useEffect(() => {
+    AsyncStorage.getItem(EXPLORER_CACHE_KEY)
+      .then((raw) => {
+        if (raw) {
+          try {
+            const parsed = JSON.parse(raw);
+            if (Array.isArray(parsed) && parsed.length > 0) {
+              setListings(parsed);
+              setTotal(parsed.length);
+              setLoading(false);
+            }
+          } catch (e) {
+            console.warn('[ExplorerScreen] Erreur lecture cache disque:', e);
+          }
+        }
+      })
+      .catch((err) => console.warn('[ExplorerScreen] Erreur AsyncStorage:', err));
+  }, []);
+
   const requestIdRef = useRef(0);
   const { prefillFromFeed } = useListingCacheStore();
 
@@ -249,12 +273,24 @@ export default function ExplorerScreen() {
         setListings((prev) => [...prev, ...finalData]);
       } else {
         setListings(finalData);
+        // Persist default catalog on disk
+        if (!selectedType && !selectedSousType && !searchParams.ville && finalData.length > 0) {
+          AsyncStorage.setItem(EXPLORER_CACHE_KEY, JSON.stringify(finalData)).catch(() => {});
+        }
       }
       setTotal(filterDerniereMinute ? finalData.length : fetchedTotal);
       setPage(pageToFetch);
 
       if (Array.isArray(fetchedData) && fetchedData.length > 0) {
         prefillFromFeed([{ id: 'explorer_catalog', listings: fetchedData }]);
+
+        // Prefetch top images for smooth rendering
+        fetchedData.slice(0, 4).forEach((item: any) => {
+          const coverUrl = item.photos?.[0] || item.coverUrl || item.imageUrl;
+          if (coverUrl && typeof coverUrl === 'string' && coverUrl.startsWith('http')) {
+            Image.prefetch(coverUrl).catch(() => {});
+          }
+        });
       }
     } catch (err) {
       if (currentRequestId === requestIdRef.current) {
@@ -384,7 +420,7 @@ export default function ExplorerScreen() {
   };
 
   const renderEmpty = () => {
-    if (loading) {
+    if (loading || isFiltering || refreshing) {
       return (
         <View style={styles.paddingHorizontal}>
           <ExplorerSkeletonList />

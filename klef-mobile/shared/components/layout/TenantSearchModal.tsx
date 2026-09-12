@@ -274,9 +274,9 @@ export function TenantSearchModal({
                     <Text style={styles.blockLabel}>SÉJOUR / DATES</Text>
                     <Text style={styles.blockValue}>
                       {dateRange.from && dateRange.to
-                        ? `${dateRange.from.getDate()}/${dateRange.from.getMonth() + 1} - ${dateRange.to.getDate()}/${dateRange.to.getMonth() + 1} (${calculatedNuits} nuits)`
+                        ? `${dateRange.from.toLocaleDateString('fr-FR', { day: 'numeric', month: 'short' })} – ${dateRange.to.toLocaleDateString('fr-FR', { day: 'numeric', month: 'short' })} (${calculatedNuits} nuits)`
                         : dateRange.from
-                        ? `Arrivée le ${dateRange.from.getDate()}/${dateRange.from.getMonth() + 1}`
+                        ? `Arrivée le ${dateRange.from.toLocaleDateString('fr-FR', { day: 'numeric', month: 'short' })}`
                         : 'Ajouter des dates'}
                     </Text>
                   </View>

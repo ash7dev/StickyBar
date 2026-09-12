@@ -22,7 +22,7 @@ import {
   Lock,
 } from 'lucide-react-native';
 import { colors, radius, shadows, typography } from '../../theme/tokens';
-import { AppDateRangeCalendar } from '../ui/AppDateRangeCalendar';
+import { AppDateRangeCalendar, DisabledDateItem } from '../ui/AppDateRangeCalendar';
 import { getPrixPublic, getPrixDerniereMinute } from '../ui/TenantPriceDisplay';
 import { router } from 'expo-router';
 import { useGatedAction } from '../../hooks/useGatedAction';
@@ -52,12 +52,20 @@ interface TenantReservationModalProps {
   derniereMinuteActive?: boolean;
   tarifsPersonnes?: TarifPersonne[];
   tarifsNuits?: TarifNuit[];
+  disabledDates?: DisabledDateItem[];
   onClose: () => void;
 }
 
 const formatMoney = (amount: number) => {
   return Math.round(amount).toString().replace(/\B(?=(\d{3})+(?!\d))/g, ' ');
 };
+
+function toLocalISODate(date: Date): string {
+  const y = date.getFullYear();
+  const m = String(date.getMonth() + 1).padStart(2, '0');
+  const d = String(date.getDate()).padStart(2, '0');
+  return `${y}-${m}-${d}`;
+}
 
 export function TenantReservationModal({
   visible,
@@ -70,13 +78,14 @@ export function TenantReservationModal({
   derniereMinuteActive = false,
   tarifsPersonnes = [],
   tarifsNuits = [],
+  disabledDates = [],
   onClose,
 }: TenantReservationModalProps) {
   const [startDate, setStartDate] = useState<string | null>(null);
   const [endDate, setEndDate] = useState<string | null>(null);
   const [nbPersonnes, setNbPersonnes] = useState(1);
   const [cguAccepted, setCguAccepted] = useState(false);
-  const [showCalendar, setShowCalendar] = useState(false);
+  const [showCalendar, setShowCalendar] = useState(true);
 
   const minNuits = nuitesMinimum ?? 1;
 
@@ -235,19 +244,13 @@ export function TenantReservationModal({
                       to: endDate ? new Date(endDate) : null,
                     }}
                     onChange={(range) => {
-                      const fromStr = range.from
-                        ? range.from.toISOString().split('T')[0]
-                        : null;
-                      const toStr = range.to
-                        ? range.to.toISOString().split('T')[0]
-                        : null;
+                      const fromStr = range.from ? toLocalISODate(range.from) : null;
+                      const toStr = range.to ? toLocalISODate(range.to) : null;
                       setStartDate(fromStr);
                       setEndDate(toStr);
-                      if (range.from && range.to) {
-                        setShowCalendar(false);
-                      }
                     }}
                     minNights={minNuits}
+                    disabledDates={disabledDates}
                   />
                 </View>
               )}

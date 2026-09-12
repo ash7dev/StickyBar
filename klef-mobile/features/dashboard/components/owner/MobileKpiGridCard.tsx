@@ -63,13 +63,17 @@ export function MobileKpiGridCard({ stats, pending }: Props) {
     },
     {
       id: 'rating',
-      href: '/(tenant)/profile',
+      href: '/(owner)/stats',
       title: 'ÉVALUATION',
-      value: noteFormat.format(stats.bookings.averageRating ?? 4.9),
+      value: (stats.bookings.averageRating && stats.bookings.averageRating > 0)
+        ? noteFormat.format(stats.bookings.averageRating)
+        : '5.0',
       unit: '/ 5',
       icon: Star,
       alert: null,
-      subtext: 'Avis voyageurs',
+      subtext: (stats.bookings.averageRating && stats.bookings.averageRating > 0)
+        ? 'Avis voyageurs'
+        : 'Note excellente',
     },
   ];
 

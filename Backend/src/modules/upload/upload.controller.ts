@@ -80,6 +80,17 @@ export class UploadController {
     return this.uploadService.uploadCheckinPhoto(file, reservationId);
   }
 
+  @Post('profile-photo')
+  @ApiOperation({ summary: 'Upload photo de profil utilisateur (webp 400×400, crop face)' })
+  @ApiConsumes('multipart/form-data')
+  @ApiBody({ schema: { type: 'object', properties: { file: { type: 'string', format: 'binary' } } } })
+  @UseInterceptors(FileInterceptor('file', multerMemory))
+  async uploadProfilePhoto(
+    @UploadedFile(new ParseFilePipe({ validators: fileValidators })) file: Express.Multer.File,
+  ) {
+    return this.uploadService.uploadProfilePhoto(file);
+  }
+
   @Get('kyc-signed-url')
   @ApiOperation({ summary: 'URL signée expirante pour un document KYC (admin)' })
   getKycSignedUrl(@Query('publicId') publicId: string) {

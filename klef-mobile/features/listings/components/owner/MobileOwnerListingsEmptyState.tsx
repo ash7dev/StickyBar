@@ -7,14 +7,19 @@ import { colors, radius, shadows, typography } from '../../../../shared/theme/to
 
 interface Props {
   hasFilter?: boolean;
+  onAddPress?: () => void;
 }
 
-export function MobileOwnerListingsEmptyState({ hasFilter }: Props) {
+export function MobileOwnerListingsEmptyState({ hasFilter, onAddPress }: Props) {
   const router = useRouter();
 
   const handleAddPress = () => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium).catch(() => {});
-    router.push('/(owner)/add-listing' as any);
+    if (onAddPress) {
+      onAddPress();
+    } else {
+      router.push('/(owner)/add-listing' as any);
+    }
   };
 
   return (

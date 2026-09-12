@@ -47,12 +47,14 @@ import { MobileOwnerCancelModal } from '../../../features/reservations/component
 import { MobileOwnerActionSheetModal } from '../../../features/reservations/components/owner/modals/MobileOwnerActionSheetModal';
 
 // API Service
+import { useQueryClient } from '@tanstack/react-query';
 import { getReservationDetail, updateReservationStatus, submitCheckinProprio, submitCheckoutProprio, submitDispute, submitRating } from '../../../features/reservations/services/reservation.service';
 
 export default function OwnerReservationDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const router = useRouter();
   const insets = useSafeAreaInsets();
+  const queryClient = useQueryClient();
 
   const [reservation, setReservation] = useState<ReservationDetail | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
@@ -72,6 +74,13 @@ export default function OwnerReservationDetailScreen() {
   const [showActionSheetModal, setShowActionSheetModal] = useState<boolean>(false);
   const [actionLoading, setActionLoading] = useState<boolean>(false);
 
+  // Invalider les caches globaux Dashboard, Wallet et Réservations
+  const invalidateGlobalStores = useCallback(() => {
+    queryClient.invalidateQueries({ queryKey: ['owner', 'dashboard-full'] });
+    queryClient.invalidateQueries({ queryKey: ['reservations', 'mine'] });
+    queryClient.invalidateQueries({ queryKey: ['wallet', 'mine'] });
+  }, [queryClient]);
+
   // Charger les détails de la réservation
   const fetchDetail = useCallback(async () => {
     if (!id) return;
@@ -80,6 +89,7 @@ export default function OwnerReservationDetailScreen() {
       const data = await getReservationDetail(id as string);
       if (data) {
         setReservation(data);
+        invalidateGlobalStores();
       } else {
         // Fallback Mock si l'API n'est pas encore connectée en local
         setReservation(getMockOwnerReservation(id as string));
@@ -92,7 +102,7 @@ export default function OwnerReservationDetailScreen() {
       setLoading(false);
       setRefreshing(false);
     }
-  }, [id]);
+  }, [id, invalidateGlobalStores]);
 
   useEffect(() => {
     setReservation(null);
@@ -494,6 +504,7 @@ export default function OwnerReservationDetailScreen() {
         onClose={() => setShowConfirmTimeModal(false)}
         onConfirm={handleConfirmReservation}
         loading={actionLoading}
+        hasSameDayCheckout={Boolean((reservation as any)?.hasSameDayCheckout || (reservation as any)?.aUnCheckOutLeMemeJour)}
       />
 
       {/* Modale 2: Photos d'état des lieux (entrée / sortie) */}

@@ -18,6 +18,7 @@ interface MobileConfirmTimeModalProps {
   onClose: () => void;
   onConfirm: (checkinHeure: string, checkoutHeure: string) => Promise<void>;
   loading?: boolean;
+  hasSameDayCheckout?: boolean;
 }
 
 function DirectTimeInputField({
@@ -148,6 +149,7 @@ export function MobileConfirmTimeModal({
   onClose,
   onConfirm,
   loading = false,
+  hasSameDayCheckout = false,
 }: MobileConfirmTimeModalProps) {
   const [selectedCheckin, setSelectedCheckin] = useState<string>('14:00');
   const [selectedCheckout, setSelectedCheckout] = useState<string>('12:00');
@@ -165,13 +167,34 @@ export function MobileConfirmTimeModal({
   const handleSubmit = async () => {
     if (busy) return;
 
+    // Validation horaire UNIQUEMENT s'il y a une rotation/check-out le même jour
+    if (hasSameDayCheckout) {
+      const parseMin = (t: string) => {
+        const [h, m] = (t || '00:00').split(':').map(Number);
+        return (h || 0) * 60 + (m || 0);
+      };
+
+      if (parseMin(selectedCheckin) <= parseMin(selectedCheckout)) {
+        Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning).catch(() => {});
+        setErrorMessage(
+          "⚠️ Rotation le même jour : L'heure d'arrivée (check-in) doit être postérieure à l'heure de départ (check-out, ex: 14:00 après 12:00) pour permettre le nettoyage entre les deux séjours."
+        );
+        return;
+      }
+    }
+
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium).catch(() => {});
     setErrorMessage(null);
     setIsSubmitting(true);
     try {
       await onConfirm(selectedCheckin, selectedCheckout);
-    } catch (err) {
-      setErrorMessage('Une erreur est survenue. Veuillez réessayer.');
+    } catch (err: any) {
+      const msg = err?.response?.data?.message || err?.message || 'Une erreur est survenue.';
+      setErrorMessage(
+        msg.includes('déjà réservé') || msg.includes('indisponible') || msg.includes('Conflict')
+          ? '⚠️ Conflit de dates : Le logement est déjà réservé ou bloqué sur ces dates.'
+          : msg
+      );
     } finally {
       setIsSubmitting(false);
     }

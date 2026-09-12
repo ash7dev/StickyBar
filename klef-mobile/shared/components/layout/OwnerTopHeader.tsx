@@ -12,12 +12,25 @@ import * as Haptics from 'expo-haptics';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useAuthStore } from '../../../features/auth/stores/auth.store';
 import { colors, radius, shadows, typography } from '../../theme/tokens';
+import { useGatedAction } from '../../hooks/useGatedAction';
+import { TenantActionGateModal } from '../gate/TenantActionGateModal';
 
 export function OwnerTopHeader() {
   const router = useRouter();
   const pathname = usePathname();
   const insets = useSafeAreaInsets();
   const { user } = useAuthStore();
+
+  const goToAddListing = React.useCallback(() => {
+    router.push('/(owner)/add-listing' as any);
+  }, [router]);
+
+  const {
+    gateState,
+    trigger: triggerGate,
+    complete: completeGate,
+    cancel: cancelGate,
+  } = useGatedAction(goToAddListing);
 
   const currentHour = new Date().getHours();
   const greeting = currentHour < 18 ? 'Bonjour' : 'Bonsoir';
@@ -34,6 +47,7 @@ export function OwnerTopHeader() {
   const isReservations = pathname.includes('reservations');
   const isWallet = pathname.includes('wallet');
   const isCalendar = pathname.includes('calendar');
+  const isProfile = pathname.includes('profile');
 
   let eyebrow: string | null = 'DASHBOARD';
   let title = `${greeting}, ${userFirstName} 👋`;
@@ -57,16 +71,20 @@ export function OwnerTopHeader() {
     eyebrow = 'PLANNING';
     title = 'Calendrier & Tarifs';
     subtitle = 'Ajustez vos tarifs et vos indisponibilités';
+  } else if (isProfile) {
+    eyebrow = 'COMPTE';
+    title = 'Profil & Paramètres';
+    subtitle = 'Gérez vos informations, KYC et préférences';
   }
 
   const handleAddPress = () => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium).catch(() => {});
-    router.push('/(owner)/add-listing' as any);
+    triggerGate();
   };
 
   const handleProfilePress = () => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {});
-    router.push('/(tenant)/profile' as any);
+    router.push('/(owner)/profile' as any);
   };
 
   return (
@@ -118,6 +136,15 @@ export function OwnerTopHeader() {
           )}
         </View>
       </View>
+
+      {/* Action Gate Modal (Profil, Téléphone, KYC) */}
+      <TenantActionGateModal
+        visible={gateState.open}
+        steps={gateState.steps}
+        block={gateState.block}
+        onComplete={completeGate}
+        onCancel={cancelGate}
+      />
     </View>
   );
 }

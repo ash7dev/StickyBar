@@ -12,6 +12,8 @@ import {
 } from 'lucide-react-native';
 import * as Haptics from 'expo-haptics';
 import { colors, radius, shadows, typography } from '../../../../shared/theme/tokens';
+import { useGatedAction } from '../../../../shared/hooks/useGatedAction';
+import { TenantActionGateModal } from '../../../../shared/components/gate/TenantActionGateModal';
 
 const ACTIONS = [
   {
@@ -62,9 +64,24 @@ const ACTIONS = [
 export function MobileQuickActionsMenuCard() {
   const router = useRouter();
 
+  const goToAddListing = React.useCallback(() => {
+    router.push('/(owner)/add-listing' as any);
+  }, [router]);
+
+  const {
+    gateState,
+    trigger: triggerGate,
+    complete: completeGate,
+    cancel: cancelGate,
+  } = useGatedAction(goToAddListing);
+
   const handleActionPress = (href: string) => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {});
-    router.push(href as any);
+    if (href === '/(owner)/add-listing') {
+      triggerGate();
+    } else {
+      router.push(href as any);
+    }
   };
 
   return (
@@ -112,6 +129,15 @@ export function MobileQuickActionsMenuCard() {
           );
         })}
       </View>
+
+      {/* Action Gate Modal (Profil, Téléphone, KYC) */}
+      <TenantActionGateModal
+        visible={gateState.open}
+        steps={gateState.steps}
+        block={gateState.block}
+        onComplete={completeGate}
+        onCancel={cancelGate}
+      />
     </View>
   );
 }

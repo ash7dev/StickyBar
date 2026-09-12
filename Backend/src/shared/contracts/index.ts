@@ -56,6 +56,7 @@ export interface AuthUser {
   phoneVerified: boolean;
   statutKyc: StatutKyc;
   avatarUrl?: string | null;
+  photoUrl?: string | null;
 }
 
 export interface AuthTokensResponse {

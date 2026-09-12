@@ -85,6 +85,14 @@ export default function OwnerTabsLayout() {
             tabBarStyle: { display: 'none' },
           }}
         />
+
+        <Tabs.Screen
+          name="profile"
+          options={{
+            title: 'Mon Profil & Compte Hôte',
+            href: null,
+          }}
+        />
       </Tabs>
     </View>
   );

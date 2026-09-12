@@ -14,6 +14,7 @@ import { TenantListingGallery } from '../../shared/components/layout/TenantListi
 import { TenantListingSpec } from '../../shared/components/layout/TenantListingSpec';
 import { TenantListingPricingInfo } from '../../shared/components/layout/TenantListingPricingInfo';
 import { TenantListingDescription } from '../../shared/components/layout/TenantListingDescription';
+import { TenantListingVideoSection } from '../../shared/components/layout/TenantListingVideoSection';
 import { TenantListingAmenities } from '../../shared/components/layout/TenantListingAmenities';
 import { TenantListingReviewsSection } from '../../shared/components/layout/TenantListingReviewsSection';
 import { TenantListingHostAndMap } from '../../shared/components/layout/TenantListingHostAndMap';
@@ -167,6 +168,21 @@ export default function ListingDetailScreen() {
         {/* 4. Description complète (repliable) */}
         <TenantListingDescription description={listing.description} />
 
+        {/* 4b. Visite en vidéo (1:1 avec la version Web) */}
+        {(listing.videoUrl || listing.video_url || listing.video) ? (
+          <TenantListingVideoSection
+            videoUrl={listing.videoUrl || listing.video_url || listing.video}
+            titre={listing.titre}
+            posterUrl={
+              Array.isArray(listing.photos) && listing.photos.length > 0
+                ? typeof listing.photos[0] === 'string'
+                  ? listing.photos[0]
+                  : listing.photos[0]?.url
+                : listing.coverUrl
+            }
+          />
+        ) : null}
+
         {/* 5. Équipements avec icônes retonalisées */}
         <TenantListingAmenities equipements={listing.equipements} />
 
@@ -208,6 +224,29 @@ export default function ListingDetailScreen() {
         derniereMinuteActive={listing.derniereMinuteActive}
         tarifsPersonnes={listing.tarifsPersonnes}
         tarifsNuits={listing.tarifsNuits}
+        disabledDates={[
+          ...(Array.isArray(listing.disabledDates) ? listing.disabledDates : []),
+          ...(Array.isArray(listing.datesBloquees)
+            ? listing.datesBloquees.map((item: any) =>
+                typeof item === 'object' && item !== null && (item.dateDebut || item.start)
+                  ? { start: item.dateDebut || item.start, end: item.dateFin || item.end }
+                  : item
+              )
+            : []),
+          ...(Array.isArray(listing.indisponibilities)
+            ? listing.indisponibilities.map((item: any) =>
+                typeof item === 'object' && item !== null && (item.dateDebut || item.start)
+                  ? { start: item.dateDebut || item.start, end: item.dateFin || item.end }
+                  : item
+              )
+            : []),
+          ...(Array.isArray(listing.reservations)
+            ? listing.reservations.map((r: any) => ({
+                start: r.dateDebut || r.debut || r.start,
+                end: r.dateFin || r.fin || r.end,
+              }))
+            : []),
+        ]}
         onClose={() => setIsModalOpen(false)}
       />
     </View>

@@ -1,4 +1,4 @@
-import React, { useState, useMemo, useCallback } from 'react';
+import React, { useState, useMemo, useCallback, useEffect } from 'react';
 import {
   StyleSheet,
   View,
@@ -10,6 +10,7 @@ import {
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Plus, LayoutGrid, List, AlertCircle } from 'lucide-react-native';
 import * as Haptics from 'expo-haptics';
 import { apiClient } from '../../shared/api/api-client';
@@ -18,6 +19,8 @@ import { MobileOwnerListingCard, MobileOwnerListingItem } from '../../features/l
 import { MobileOwnerListingsFilterRail, ListingFilterTab } from '../../features/listings/components/owner/MobileOwnerListingsFilterRail';
 import { MobileOwnerListingsEmptyState } from '../../features/listings/components/owner/MobileOwnerListingsEmptyState';
 import { MobileOwnerListingSkeleton } from '../../features/listings/components/owner/MobileOwnerListingSkeleton';
+import { useGatedAction } from '../../shared/hooks/useGatedAction';
+import { TenantActionGateModal } from '../../shared/components/gate/TenantActionGateModal';
 
 const FILTERS = [
   { id: 'ALL', label: 'Toutes' },
@@ -28,120 +31,159 @@ const FILTERS = [
   { id: 'REJECTED', label: 'Rejetées' },
 ] as const;
 
-// ── Mock data pour démonstration fluide lorsque déconnecté de l'API ──
-const MOCK_FALLBACK_LISTINGS: MobileOwnerListingItem[] = [
-  {
-    id: '1',
-    titre: 'Villa Ngor Vue Mer & Piscine Privée',
-    ville: 'Dakar',
-    commune: 'Ngor',
-    prixBase: 65000,
-    statut: 'PUBLISHED',
-    typeLogement: 'Villa',
-    capaciteMax: 8,
-    derniereMinuteActive: true,
-    photos: [
-      { url: 'https://images.unsplash.com/photo-1580587771525-78b9dba3b914?q=80&w=800&auto=format&fit=crop' },
-    ],
-  },
-  {
-    id: '2',
-    titre: 'Duplex Almadies Premium Design',
-    ville: 'Dakar',
-    commune: 'Almadies',
-    prixBase: 85000,
-    statut: 'PUBLISHED',
-    typeLogement: 'Duplex',
-    capaciteMax: 6,
-    derniereMinuteActive: false,
-    photos: [
-      { url: 'https://images.unsplash.com/photo-1600596542815-ffad4c1539a9?q=80&w=800&auto=format&fit=crop' },
-    ],
-  },
-  {
-    id: '3',
-    titre: 'Appartement Cozy Plateau Centre',
-    ville: 'Dakar',
-    commune: 'Plateau',
-    prixBase: 35000,
-    statut: 'PENDING_REVIEW',
-    typeLogement: 'Appartement',
-    capaciteMax: 3,
-    derniereMinuteActive: false,
-    photos: [
-      { url: 'https://images.unsplash.com/photo-1522708323590-d24dbb6b0267?q=80&w=800&auto=format&fit=crop' },
-    ],
-  },
-  {
-    id: '4',
-    titre: 'Penthouse Fann Résidence Vue Océan',
-    ville: 'Dakar',
-    commune: 'Fann',
-    prixBase: 120000,
-    statut: 'DRAFT',
-    typeLogement: 'Penthouse',
-    capaciteMax: 10,
-    derniereMinuteActive: false,
-    photos: [],
-  },
-];
+const LISTINGS_CACHE_KEY = 'klef_owner_listings_cache_v1';
 
 export default function OwnerListingsScreen() {
   const router = useRouter();
   const queryClient = useQueryClient();
 
+  const goToAddListing = useCallback(() => {
+    router.push('/(owner)/add-listing' as any);
+  }, [router]);
+
+  const {
+    gateState,
+    trigger: triggerGate,
+    complete: completeGate,
+    cancel: cancelGate,
+  } = useGatedAction(goToAddListing);
+
   const [activeFilter, setActiveFilter] = useState<string>('ALL');
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
   const [actionError, setActionError] = useState<string | null>(null);
+  const [cachedListings, setCachedListings] = useState<MobileOwnerListingItem[] | null>(null);
+  const [isCacheLoaded, setIsCacheLoaded] = useState(false);
 
-  // ── Query listings ──────────────────────────────────────────
-  const { data: listings = [], isLoading, isRefetching, refetch, error } = useQuery<MobileOwnerListingItem[]>({
+  // ── 1. Hydratation Persistante Instantanée (0ms sur démarrage à froid) ──
+  useEffect(() => {
+    AsyncStorage.getItem(LISTINGS_CACHE_KEY)
+      .then((raw) => {
+        if (raw) {
+          try {
+            const parsed = JSON.parse(raw);
+            if (Array.isArray(parsed)) {
+              setCachedListings(parsed);
+            }
+          } catch (e) {
+            console.warn('[OwnerListingsScreen] Erreur de lecture JSON du cache:', e);
+          }
+        }
+      })
+      .catch((err) => console.warn('[OwnerListingsScreen] Erreur de cache:', err))
+      .finally(() => setIsCacheLoaded(true));
+  }, []);
+
+  // ── 2. Query avec SWR et Cache Persistant sur disque ─────────
+  const { data: listingsData = [], isLoading, isFetching, isRefetching, refetch, error } = useQuery<MobileOwnerListingItem[]>({
     queryKey: ['listings', 'mine'],
     queryFn: async () => {
-      const response = await apiClient.get<MobileOwnerListingItem[]>('/listings/me');
-      return Array.isArray(response.data) ? response.data : [];
+      try {
+        const response = await apiClient.get<MobileOwnerListingItem[]>('/listings/me');
+        const list = Array.isArray(response.data) ? response.data : [];
+        if (list.length > 0) {
+          AsyncStorage.setItem(LISTINGS_CACHE_KEY, JSON.stringify(list)).catch(() => {});
+        }
+        return list;
+      } catch (err) {
+        if (cachedListings && cachedListings.length > 0) {
+          return cachedListings;
+        }
+        throw err;
+      }
     },
+    staleTime: 5 * 60 * 1000,
+    gcTime: 24 * 60 * 60 * 1000,
+    initialData: cachedListings || undefined,
   });
+
+  const listings = listingsData.length > 0 ? listingsData : (cachedListings || []);
 
   const invalidate = useCallback(() => {
     setActionError(null);
     queryClient.invalidateQueries({ queryKey: ['listings', 'mine'] });
+    queryClient.invalidateQueries({ queryKey: ['owner', 'dashboard-full'] });
+    queryClient.invalidateQueries({ queryKey: ['owner', 'stats-page-full'] });
   }, [queryClient]);
 
-  // ── Mutations ───────────────────────────────────────────────
+  // ── 3. Mutations Optimistes (Réponse Instantanée 0ms) ──────────
   const toggleStatus = useMutation({
     mutationFn: async ({ id, currentStatus }: { id: string; currentStatus: string }) => {
       const endpoint = currentStatus === 'PUBLISHED' ? `/listings/${id}/pause` : `/listings/${id}/republier`;
       return apiClient.patch(endpoint);
     },
-    onSuccess: invalidate,
-    onError: (e: any) => {
-      setActionError(e?.response?.data?.message || e?.message || 'Le changement de statut a échoué.');
+    onMutate: async ({ id, currentStatus }) => {
+      await queryClient.cancelQueries({ queryKey: ['listings', 'mine'] });
+      const previousListings = queryClient.getQueryData<MobileOwnerListingItem[]>(['listings', 'mine']);
+
+      const nextStatus = currentStatus === 'PUBLISHED' ? 'PAUSED' : 'PUBLISHED';
+      queryClient.setQueryData<MobileOwnerListingItem[]>(['listings', 'mine'], (old = []) =>
+        old.map((item) => (item.id === id ? { ...item, statut: nextStatus } : item))
+      );
+
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium).catch(() => {});
+      return { previousListings };
     },
+    onError: (err: any, _, context) => {
+      if (context?.previousListings) {
+        queryClient.setQueryData(['listings', 'mine'], context.previousListings);
+      }
+      setActionError(err?.response?.data?.message || err?.message || 'Le changement de statut a échoué.');
+    },
+    onSettled: () => invalidate(),
   });
 
   const toggleDerniereMinute = useMutation({
     mutationFn: async ({ id, active }: { id: string; active: boolean }) => {
       return apiClient.patch(`/listings/${id}`, { derniereMinuteActive: active });
     },
-    onSuccess: invalidate,
-    onError: (e: any) => {
-      setActionError(e?.response?.data?.message || e?.message || 'La modification de la dernière minute a échoué.');
+    onMutate: async ({ id, active }) => {
+      await queryClient.cancelQueries({ queryKey: ['listings', 'mine'] });
+      const previousListings = queryClient.getQueryData<MobileOwnerListingItem[]>(['listings', 'mine']);
+
+      queryClient.setQueryData<MobileOwnerListingItem[]>(['listings', 'mine'], (old = []) =>
+        old.map((item) => (item.id === id ? { ...item, derniereMinuteActive: active } : item))
+      );
+
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium).catch(() => {});
+      return { previousListings };
     },
+    onError: (err: any, _, context) => {
+      if (context?.previousListings) {
+        queryClient.setQueryData(['listings', 'mine'], context.previousListings);
+      }
+      setActionError(err?.response?.data?.message || err?.message || 'La modification de la dernière minute a échoué.');
+    },
+    onSettled: () => invalidate(),
   });
 
   const deleteListing = useMutation({
     mutationFn: async (id: string) => {
       return apiClient.delete(`/listings/${id}`);
     },
-    onSuccess: invalidate,
-    onError: (e: any) => {
-      setActionError(e?.response?.data?.message || e?.message || 'La suppression du bien a échoué.');
+    onMutate: async (id) => {
+      await queryClient.cancelQueries({ queryKey: ['listings', 'mine'] });
+      const previousListings = queryClient.getQueryData<MobileOwnerListingItem[]>(['listings', 'mine']);
+
+      queryClient.setQueryData<MobileOwnerListingItem[]>(['listings', 'mine'], (old = []) =>
+        old.filter((item) => item.id !== id)
+      );
+
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning).catch(() => {});
+      return { previousListings };
     },
+    onError: (err: any, _, context) => {
+      if (context?.previousListings) {
+        queryClient.setQueryData(['listings', 'mine'], context.previousListings);
+      }
+      setActionError(err?.response?.data?.message || err?.message || 'La suppression du bien a échoué.');
+    },
+    onSettled: () => invalidate(),
   });
 
   // ── Stats & Filtering ───────────────────────────────────────
-  const { filteredListings, filterTabs } = useMemo(() => {
+  const { filteredListings, filterTabs, showSkeleton } = useMemo(() => {
+    const showSkeleton = (isLoading || isFetching || isRefetching || !isCacheLoaded) && listings.length === 0;
+
     const byStatus = new Map<string, number>();
     listings.forEach((l) => {
       const st = l.statut || 'DRAFT';
@@ -158,12 +200,12 @@ export default function OwnerListingsScreen() {
         ? listings
         : listings.filter((l) => (l.statut || 'DRAFT') === activeFilter);
 
-    return { filteredListings: filtered, filterTabs: tabs };
-  }, [listings, activeFilter]);
+    return { filteredListings: filtered, filterTabs: tabs, showSkeleton };
+  }, [listings, activeFilter, isCacheLoaded, isLoading, isFetching, isRefetching]);
 
   const handleAddPress = () => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium).catch(() => {});
-    router.push('/(owner)/add-listing' as any);
+    triggerGate();
   };
 
   return (
@@ -241,14 +283,14 @@ export default function OwnerListingsScreen() {
           </View>
         )}
 
-        {isLoading ? (
+        {showSkeleton ? (
           <View style={styles.cardsStack}>
             {Array.from({ length: 4 }).map((_, i) => (
               <MobileOwnerListingSkeleton key={i} viewMode={viewMode} />
             ))}
           </View>
         ) : filteredListings.length === 0 ? (
-          <MobileOwnerListingsEmptyState hasFilter={activeFilter !== 'ALL'} />
+          <MobileOwnerListingsEmptyState hasFilter={activeFilter !== 'ALL'} onAddPress={handleAddPress} />
         ) : (
           <View
             style={
@@ -290,6 +332,15 @@ export default function OwnerListingsScreen() {
           </View>
         </TouchableOpacity>
       </ScrollView>
+
+      {/* Action Gate Modal (Profil, Téléphone, KYC) */}
+      <TenantActionGateModal
+        visible={gateState.open}
+        steps={gateState.steps}
+        block={gateState.block}
+        onComplete={completeGate}
+        onCancel={cancelGate}
+      />
     </SafeAreaView>
   );
 }

@@ -6,11 +6,13 @@ import {
   RefreshControl,
   TouchableOpacity,
   StyleSheet,
-  ActivityIndicator,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { History, ChevronDown, CalendarDays, AlertCircle } from 'lucide-react-native';
+import * as Haptics from 'expo-haptics';
 import { colors, typography } from '../../shared/theme/tokens';
 import { apiClient } from '../../shared/api/api-client';
 import { updateReservationStatus } from '../../features/reservations/services/reservation.service';
@@ -24,6 +26,7 @@ import {
 } from '../../features/reservations/components/owner/MobileOwnerReservationCard';
 
 const ACTIVE_STATUSES = ['PENDING', 'PAID', 'CONFIRMED', 'CHECKED_IN', 'DISPUTED'];
+const RESERVATIONS_CACHE_KEY = 'klef_owner_reservations_cache_v1';
 
 function SkeletonCard() {
   return (
@@ -44,48 +47,136 @@ function SkeletonCard() {
 
 export default function OwnerReservationsScreen() {
   const router = useRouter();
+  const queryClient = useQueryClient();
+
   const [activeTab, setActiveTab] = useState<OwnerStatusTabId>('ALL');
   const [searchQuery, setSearchQuery] = useState('');
-  const [reservations, setReservations] = useState<OwnerReservationItem[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [refreshing, setRefreshing] = useState(false);
   const [showHistory, setShowHistory] = useState(false);
-  const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const [actionError, setActionError] = useState<string | null>(null);
+  const [cachedReservations, setCachedReservations] = useState<OwnerReservationItem[] | null>(null);
+  const [isCacheLoaded, setIsCacheLoaded] = useState(false);
 
-  const fetchReservations = useCallback(async (isRefresh = false) => {
-    if (!isRefresh) setLoading(true);
-    setErrorMessage(null);
-
-    try {
-      let res: any = null;
-      try {
-        res = await apiClient.get<any[]>('/reservations/me');
-      } catch (err) {
-        res = await apiClient.get<any[]>('/reservations/owner');
-      }
-
-      const list = Array.isArray(res) ? res : res?.data ?? res?.reservations ?? [];
-      setReservations(list);
-    } catch (err: any) {
-      console.warn('[OwnerReservationsScreen] Erreur de chargement:', err);
-      setErrorMessage('Impossible de charger vos réservations.');
-    } finally {
-      setLoading(false);
-      setRefreshing(false);
-    }
+  // ── 1. Hydratation Persistante Instantanée (0ms au démarrage à froid) ──
+  useEffect(() => {
+    AsyncStorage.getItem(RESERVATIONS_CACHE_KEY)
+      .then((raw) => {
+        if (raw) {
+          try {
+            const parsed = JSON.parse(raw);
+            if (Array.isArray(parsed)) {
+              setCachedReservations(parsed);
+            }
+          } catch (e) {
+            console.warn('[OwnerReservationsScreen] Erreur de lecture du cache JSON:', e);
+          }
+        }
+      })
+      .catch((err) => console.warn('[OwnerReservationsScreen] Erreur de cache:', err))
+      .finally(() => setIsCacheLoaded(true));
   }, []);
 
-  useEffect(() => {
-    fetchReservations(false);
-  }, [fetchReservations]);
+  // ── 2. Query avec SWR et Cache Persistant sur disque ─────────
+  const {
+    data: reservationsData = [],
+    isLoading,
+    isFetching,
+    isRefetching,
+    refetch,
+    error,
+  } = useQuery<OwnerReservationItem[]>({
+    queryKey: ['reservations', 'mine'],
+    queryFn: async () => {
+      try {
+        let res: any = null;
+        try {
+          res = await apiClient.get<any[]>('/reservations/me');
+        } catch (err) {
+          res = await apiClient.get<any[]>('/reservations/owner');
+        }
+        const list = Array.isArray(res?.data)
+          ? res.data
+          : Array.isArray(res)
+          ? res
+          : res?.reservations ?? [];
 
-  const onRefresh = () => {
-    setRefreshing(true);
-    fetchReservations(true);
-  };
+        if (list.length > 0) {
+          AsyncStorage.setItem(RESERVATIONS_CACHE_KEY, JSON.stringify(list)).catch(() => {});
+        }
+        return list;
+      } catch (err) {
+        if (cachedReservations && cachedReservations.length > 0) {
+          return cachedReservations;
+        }
+        throw err;
+      }
+    },
+    staleTime: 5 * 60 * 1000,
+    gcTime: 24 * 60 * 60 * 1000,
+    initialData: cachedReservations || undefined,
+  });
 
-  /* ── Filtered & Grouped Data ─────────────────────────── */
-  const { filteredList, activeList, historyList, counts } = useMemo(() => {
+  const reservations = reservationsData.length > 0 ? reservationsData : (cachedReservations || []);
+
+  const invalidate = useCallback(() => {
+    setActionError(null);
+    queryClient.invalidateQueries({ queryKey: ['reservations', 'mine'] });
+    queryClient.invalidateQueries({ queryKey: ['owner', 'dashboard-full'] });
+    queryClient.invalidateQueries({ queryKey: ['owner', 'stats-page-full'] });
+    queryClient.invalidateQueries({ queryKey: ['wallet', 'mine'] });
+  }, [queryClient]);
+
+  // ── 3. Mutations Optimistes (Réponse Instantanée 0ms) ──────────
+  const confirmMutation = useMutation({
+    mutationFn: async (id: string) => {
+      return updateReservationStatus(id, 'CONFIRM', { heureDebut: '14:00', heureFin: '12:00' });
+    },
+    onMutate: async (id) => {
+      await queryClient.cancelQueries({ queryKey: ['reservations', 'mine'] });
+      const previous = queryClient.getQueryData<OwnerReservationItem[]>(['reservations', 'mine']);
+
+      queryClient.setQueryData<OwnerReservationItem[]>(['reservations', 'mine'], (old = []) =>
+        old.map((item) => (item.id === id ? { ...item, statut: 'CONFIRMED' } : item))
+      );
+
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => {});
+      return { previous };
+    },
+    onError: (err: any, _, context) => {
+      if (context?.previous) {
+        queryClient.setQueryData(['reservations', 'mine'], context.previous);
+      }
+      setActionError(err?.response?.data?.message || err?.message || 'La confirmation a échoué.');
+    },
+    onSettled: () => invalidate(),
+  });
+
+  const cancelMutation = useMutation({
+    mutationFn: async ({ id, reason }: { id: string; reason: string }) => {
+      return apiClient.patch(`/reservations/${id}/cancel`, { raison: reason });
+    },
+    onMutate: async ({ id }) => {
+      await queryClient.cancelQueries({ queryKey: ['reservations', 'mine'] });
+      const previous = queryClient.getQueryData<OwnerReservationItem[]>(['reservations', 'mine']);
+
+      queryClient.setQueryData<OwnerReservationItem[]>(['reservations', 'mine'], (old = []) =>
+        old.map((item) => (item.id === id ? { ...item, statut: 'CANCELLED' } : item))
+      );
+
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning).catch(() => {});
+      return { previous };
+    },
+    onError: (err: any, _, context) => {
+      if (context?.previous) {
+        queryClient.setQueryData(['reservations', 'mine'], context.previous);
+      }
+      setActionError(err?.response?.data?.message || err?.message || 'L’annulation a échoué.');
+    },
+    onSettled: () => invalidate(),
+  });
+
+  /* ── Data Filtrée & Groupée ─────────────────────────── */
+  const { filteredList, activeList, historyList, counts, showSkeleton } = useMemo(() => {
+    const showSkeleton = (isLoading || isFetching || isRefetching || !isCacheLoaded) && reservations.length === 0;
     const valid = reservations.filter((r) => r.statut !== 'EXPIRED');
 
     const q = searchQuery.trim().toLowerCase();
@@ -118,26 +209,16 @@ export default function OwnerReservationsScreen() {
       activeList: list.filter((r) => ACTIVE_STATUSES.includes(r.statut)),
       historyList: list.filter((r) => !ACTIVE_STATUSES.includes(r.statut)),
       counts: byStatus,
+      showSkeleton,
     };
-  }, [reservations, activeTab, searchQuery]);
+  }, [reservations, activeTab, searchQuery, isCacheLoaded, isLoading]);
 
-  /* ── Handlers ────────────────────────────────────────── */
-  const handleConfirmReservation = async (id: string) => {
-    try {
-      await updateReservationStatus(id, 'CONFIRM', { heureDebut: '14:00', heureFin: '12:00' });
-      fetchReservations(true);
-    } catch (err: any) {
-      console.error('[ConfirmReservation] Erreur:', err);
-    }
+  const handleConfirmReservation = (id: string) => {
+    confirmMutation.mutate(id);
   };
 
-  const handleCancelReservation = async (id: string, reason: string) => {
-    try {
-      await apiClient.patch(`/reservations/${id}/cancel`, { raison: reason });
-      fetchReservations(true);
-    } catch (err: any) {
-      console.error('[CancelReservation] Erreur:', err);
-    }
+  const handleCancelReservation = (id: string, reason: string) => {
+    cancelMutation.mutate({ id, reason });
   };
 
   return (
@@ -146,8 +227,8 @@ export default function OwnerReservationsScreen() {
         contentContainerStyle={styles.container}
         refreshControl={
           <RefreshControl
-            refreshing={refreshing}
-            onRefresh={onRefresh}
+            refreshing={isRefetching}
+            onRefresh={refetch}
             tintColor={colors.forest[800]}
             colors={[colors.forest[800]]}
           />
@@ -164,15 +245,17 @@ export default function OwnerReservationsScreen() {
         />
 
         {/* ── Error Banner ───────────────────────────────────── */}
-        {errorMessage && (
+        {(actionError || error) && (
           <View style={styles.errorBox}>
             <AlertCircle size={18} color="#DC2626" />
-            <Text style={styles.errorText}>{errorMessage}</Text>
+            <Text style={styles.errorText}>
+              {actionError || (error as any)?.response?.data?.message || (error as any)?.message || 'Impossible de charger vos réservations.'}
+            </Text>
           </View>
         )}
 
         {/* ── Skeleton Loading ───────────────────────────────── */}
-        {loading && !refreshing && (
+        {showSkeleton && (
           <View style={styles.listContainer}>
             <SkeletonCard />
             <SkeletonCard />
@@ -181,7 +264,7 @@ export default function OwnerReservationsScreen() {
         )}
 
         {/* ── Empty State (Aucune réservation ou aucun filtre correspondant) ───── */}
-        {!loading && filteredList.length === 0 && (
+        {!showSkeleton && filteredList.length === 0 && (
           <View style={styles.emptyCard}>
             <View style={styles.glowCircle} />
             <View style={styles.emptyIconCircle}>
@@ -244,7 +327,7 @@ export default function OwnerReservationsScreen() {
         )}
 
         {/* ── Reservations List ──────────────────────────────── */}
-        {!loading && filteredList.length > 0 && (
+        {!showSkeleton && filteredList.length > 0 && (
           <View style={styles.listContainer}>
             {activeTab === 'ALL' ? (
               <>

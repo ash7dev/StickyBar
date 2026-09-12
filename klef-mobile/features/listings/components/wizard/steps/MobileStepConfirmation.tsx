@@ -28,6 +28,8 @@ import * as Haptics from 'expo-haptics';
 import { colors, radius, shadows, typography } from '../../../../../shared/theme/tokens';
 import { useListingWizardFormStore } from '../../../stores/useListingWizardFormStore';
 import { apiClient } from '../../../../../shared/api/api-client';
+import { useGatedAction } from '../../../../../shared/hooks/useGatedAction';
+import { TenantActionGateModal } from '../../../../../shared/components/gate/TenantActionGateModal';
 
 const MARKUP = 1.07;
 
@@ -208,15 +210,7 @@ export function MobileStepConfirmation() {
   const nbPhotos = photos.length;
   const nuits = annonce.nuitesMinimum ?? 1;
 
-  const handleFinalSubmit = async () => {
-    if (photos.length < 1) {
-      Alert.alert(
-        'Photo requise',
-        'Veuillez ajouter au moins 1 photo de couverture pour continuer.'
-      );
-      return;
-    }
-
+  const proceedToFinalSubmit = React.useCallback(async () => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium).catch(() => {});
     setIsSubmitting(true);
     setSubmitError(null);
@@ -463,6 +457,39 @@ export function MobileStepConfirmation() {
       setSubmitError(errorMsg);
       setIsSubmitting(false);
     }
+  }, [
+    photos,
+    video,
+    bien,
+    annonce,
+    equipements,
+    conditions,
+    tarifsPersonnes,
+    tarifsNuits,
+    draftListingId,
+    setDraftListingId,
+    updatePhoto,
+    reset,
+    router,
+  ]);
+
+  const {
+    gateState,
+    trigger: triggerGate,
+    complete: completeGate,
+    cancel: cancelGate,
+  } = useGatedAction(proceedToFinalSubmit);
+
+  const handleFinalSubmit = () => {
+    if (photos.length < 1) {
+      Alert.alert(
+        'Photo requise',
+        'Veuillez ajouter au moins 1 photo de couverture pour continuer.'
+      );
+      return;
+    }
+
+    triggerGate();
   };
 
   return (
@@ -633,6 +660,15 @@ export function MobileStepConfirmation() {
           </View>
         </View>
       </Modal>
+
+      {/* Action Gate Modal (Profil, Téléphone, KYC) */}
+      <TenantActionGateModal
+        visible={gateState.open}
+        steps={gateState.steps}
+        block={gateState.block}
+        onComplete={completeGate}
+        onCancel={cancelGate}
+      />
     </View>
   );
 }

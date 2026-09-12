@@ -28,6 +28,11 @@ export class UploadService {
     return this.cloudinary.uploadCheckinPhoto(file.buffer, reservationId);
   }
 
+  async uploadProfilePhoto(file: Express.Multer.File): Promise<UploadResult> {
+    this.validateFile(file);
+    return this.cloudinary.uploadProfilePhoto(file.buffer, file.originalname);
+  }
+
   getKycSignedUrl(publicId: string): { url: string } {
     return { url: this.cloudinary.generateSignedUrl(publicId) };
   }

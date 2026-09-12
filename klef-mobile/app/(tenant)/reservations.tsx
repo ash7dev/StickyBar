@@ -7,10 +7,12 @@ import {
   Text,
   TouchableOpacity,
   RefreshControl,
-  ActivityIndicator,
 } from 'react-native';
 import { router } from 'expo-router';
-import { History, ChevronDown, Calendar, ArrowRight, AlertCircle } from 'lucide-react-native';
+import { useQuery } from '@tanstack/react-query';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import * as Haptics from 'expo-haptics';
+import { History, ChevronDown, Calendar, AlertCircle } from 'lucide-react-native';
 import { colors, radius, shadows, typography } from '../../shared/theme/tokens';
 import { apiClient } from '../../shared/api/api-client';
 import { useAuthStore } from '../../features/auth/stores/auth.store';
@@ -36,6 +38,8 @@ const TAB_STATUSES: Record<Exclude<ReservationTabId, 'ALL'>, string[]> = {
   CANCELLED: ['CANCELLED', 'EXPIRED'],
 };
 
+const RESERVATIONS_CACHE_KEY = 'klef_tenant_reservations_cache_v1';
+
 // ── Skeleton Loader ──────────────────────────────────────────────────
 function ReservationCardSkeleton() {
   return (
@@ -59,47 +63,85 @@ export default function ReservationsScreen() {
 
   const [activeTab, setActiveTab] = useState<ReservationTabId>('ALL');
   const [showHistory, setShowHistory] = useState(false);
-  const [reservations, setReservations] = useState<TenantReservation[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [refreshing, setRefreshing] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const [cachedReservations, setCachedReservations] = useState<TenantReservation[] | null>(null);
+  const [isCacheLoaded, setIsCacheLoaded] = useState(false);
 
   const isGuarded = !isAuthenticated || activeRole === 'PROPRIETAIRE';
 
-  const fetchReservations = async (isRefresh = false) => {
+  // 1. Hydratation Persistante Instantanée (0ms sur démarrage à froid)
+  useEffect(() => {
     if (isGuarded) {
-      setLoading(false);
+      setIsCacheLoaded(true);
       return;
     }
+    AsyncStorage.getItem(RESERVATIONS_CACHE_KEY)
+      .then((raw) => {
+        if (raw) {
+          try {
+            const parsed = JSON.parse(raw);
+            if (Array.isArray(parsed) && parsed.length > 0) {
+              setCachedReservations(parsed);
+            }
+          } catch (e) {
+            console.warn('[ReservationsScreen] Erreur de lecture cache disque:', e);
+          }
+        }
+      })
+      .catch((err) => console.warn('[ReservationsScreen] Erreur AsyncStorage:', err))
+      .finally(() => setIsCacheLoaded(true));
+  }, [isGuarded]);
 
-    try {
-      if (isRefresh) setRefreshing(true);
-      else setLoading(true);
-      setError(null);
+  // 2. Query avec SWR et Cache Persistant sur disque
+  const {
+    data: reservationsData = [],
+    isLoading,
+    isFetching,
+    isRefetching,
+    refetch,
+    error: queryError,
+  } = useQuery<TenantReservation[]>({
+    queryKey: ['tenant', 'reservations'],
+    queryFn: async () => {
+      try {
+        const response = await apiClient.get<any>('/reservations/me');
+        const data = response.data?.data || response.data?.items || response.data || [];
+        const list = Array.isArray(data) ? data : [];
 
-      const response = await apiClient.get<any>('/reservations/me');
-      const data = response.data?.data || response.data?.items || response.data || [];
-      if (Array.isArray(data)) {
-        setReservations(data);
-      } else {
-        setReservations([]);
+        if (list.length > 0) {
+          AsyncStorage.setItem(RESERVATIONS_CACHE_KEY, JSON.stringify(list)).catch(() => {});
+        }
+        return list;
+      } catch (err) {
+        if (cachedReservations && cachedReservations.length > 0) {
+          return cachedReservations;
+        }
+        throw err;
       }
-    } catch (err: any) {
-      console.warn('[ReservationsScreen] Erreur lors du chargement des réservations:', err);
-      setError('Impossible de charger vos réservations. Veuillez réessayer.');
-    } finally {
-      setLoading(false);
-      setRefreshing(false);
-    }
-  };
+    },
+    enabled: !isGuarded,
+    staleTime: 5 * 60 * 1000,
+    gcTime: 24 * 60 * 60 * 1000,
+    initialData: cachedReservations || undefined,
+  });
 
-  useEffect(() => {
-    fetchReservations(false);
-  }, [isAuthenticated, activeRole]);
+  const reservations = reservationsData.length > 0 ? reservationsData : (cachedReservations || []);
+
+  const showSkeleton = !isGuarded && (isLoading || isFetching || isRefetching || !isCacheLoaded) && reservations.length === 0;
+
+  const handleTabChange = useCallback((tab: ReservationTabId) => {
+    Haptics.selectionAsync().catch(() => {});
+    setActiveTab(tab);
+  }, []);
+
+  const handleToggleHistory = useCallback(() => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {});
+    setShowHistory((prev) => !prev);
+  }, []);
 
   const handleRefresh = useCallback(() => {
-    fetchReservations(true);
-  }, [isAuthenticated, activeRole]);
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {});
+    refetch();
+  }, [refetch]);
 
   // ── Calculation of Counts & Filtered Lists ─────────────────────────
   const { counts, filtered, activeList, historyList } = useMemo(() => {
@@ -136,7 +178,7 @@ export default function ReservationsScreen() {
           refreshControl={
             !isGuarded ? (
               <RefreshControl
-                refreshing={refreshing}
+                refreshing={isRefetching}
                 onRefresh={handleRefresh}
                 tintColor={colors.forest[800]}
                 colors={[colors.forest[800]]}
@@ -157,20 +199,22 @@ export default function ReservationsScreen() {
               {/* En-tête avec titre Display + Onglets de statut (sans cartes KPI) */}
               <TenantReservationHeaderBar
                 activeTab={activeTab}
-                onTabChange={setActiveTab}
+                onTabChange={handleTabChange}
                 counts={counts}
               />
 
               {/* Message d'erreur */}
-              {error && (
+              {queryError && (
                 <View style={styles.errorAlert}>
                   <AlertCircle size={18} color="#991B1B" />
-                  <Text style={styles.errorAlertText}>{error}</Text>
+                  <Text style={styles.errorAlertText}>
+                    {(queryError as any)?.response?.data?.message || (queryError as any)?.message || 'Impossible de charger vos réservations. Veuillez réessayer.'}
+                  </Text>
                 </View>
               )}
 
               {/* État de chargement initial */}
-              {loading && !refreshing && (
+              {showSkeleton && (
                 <View style={styles.cardsList}>
                   <ReservationCardSkeleton />
                   <ReservationCardSkeleton />
@@ -179,16 +223,16 @@ export default function ReservationsScreen() {
               )}
 
               {/* État vide ultra-premium */}
-              {!loading && !error && filtered.length === 0 && (
+              {!showSkeleton && !queryError && filtered.length === 0 && (
                 <MobileEmptyReservationCard
                   activeTab={activeTab}
                   onExplore={() => router.push('/(tenant)/explorer')}
-                  onResetTab={() => setActiveTab('ALL')}
+                  onResetTab={() => handleTabChange('ALL')}
                 />
               )}
 
               {/* Liste des réservations */}
-              {!loading && !error && filtered.length > 0 && (
+              {!showSkeleton && !queryError && filtered.length > 0 && (
                 <View style={styles.cardsList}>
                   {activeTab === 'ALL' ? (
                     <>
@@ -218,7 +262,7 @@ export default function ReservationsScreen() {
                         <View style={styles.historySection}>
                           <TouchableOpacity
                             activeOpacity={0.8}
-                            onPress={() => setShowHistory((prev) => !prev)}
+                            onPress={handleToggleHistory}
                             style={styles.historyHeaderBtn}
                           >
                             <View style={styles.historyHeaderLeft}>

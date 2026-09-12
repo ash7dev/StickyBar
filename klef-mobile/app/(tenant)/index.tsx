@@ -1,6 +1,8 @@
 import React, { useState, useCallback } from 'react';
-import { StyleSheet, ScrollView, View } from 'react-native';
+import { StyleSheet, ScrollView, View, RefreshControl } from 'react-native';
 import { router } from 'expo-router';
+import { useQueryClient } from '@tanstack/react-query';
+import * as Haptics from 'expo-haptics';
 import { colors } from '../../shared/theme/tokens';
 import { TenantSearchBarPill } from '../../shared/components/layout/TenantSearchBarPill';
 import { TenantSearchModal, SearchParams } from '../../shared/components/layout/TenantSearchModal';
@@ -9,8 +11,25 @@ import { HomeDealsBanner } from '../../shared/components/layout/HomeDealsBanner'
 import { TenantFeedSections } from '../../shared/components/layout/TenantFeedSections';
 
 export default function HomeScreen() {
+  const queryClient = useQueryClient();
   const [searchModalVisible, setSearchModalVisible] = useState(false);
   const [searchParams, setSearchParams] = useState<SearchParams>({});
+  const [isRefreshing, setIsRefreshing] = useState(false);
+
+  const handleRefresh = useCallback(async () => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {});
+    setIsRefreshing(true);
+    try {
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: ['tenant', 'feed'] }),
+        queryClient.invalidateQueries({ queryKey: ['tenant', 'deals'] }),
+      ]);
+    } catch (err) {
+      console.warn('[HomeScreen] Refresh error:', err);
+    } finally {
+      setIsRefreshing(false);
+    }
+  }, [queryClient]);
 
   const handleSearch = (params: SearchParams) => {
     setSearchParams(params);
@@ -28,6 +47,7 @@ export default function HomeScreen() {
   };
 
   const handleCategorySelect = useCallback((cat: CategoryItem) => {
+    Haptics.selectionAsync().catch(() => {});
     // Redirige directement vers la page Explorer avec la catégorie sélectionnée
     router.push({
       pathname: '/(tenant)/explorer',
@@ -48,12 +68,14 @@ export default function HomeScreen() {
           <TenantSearchBarPill
             destination={searchParams.ville}
             onPress={() => {
+              Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {});
               router.push({
                 pathname: '/(tenant)/explorer',
                 params: { openSearch: 'true' },
               });
             }}
             onFilterPress={() => {
+              Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {});
               router.push({
                 pathname: '/(tenant)/explorer',
                 params: { openSearch: 'true' },
@@ -74,7 +96,18 @@ export default function HomeScreen() {
         />
       </View>
 
-      <ScrollView contentContainerStyle={styles.container} showsVerticalScrollIndicator={false}>
+      <ScrollView
+        contentContainerStyle={styles.container}
+        showsVerticalScrollIndicator={false}
+        refreshControl={
+          <RefreshControl
+            refreshing={isRefreshing}
+            onRefresh={handleRefresh}
+            tintColor={colors.lime[400]}
+            colors={[colors.forest[800]]}
+          />
+        }
+      >
         {/* 🔥 Smart Weekend Deals Banner */}
         <HomeDealsBanner
           onSelectListing={(listing) => router.push(`/listing/${listing.id}` as any)}

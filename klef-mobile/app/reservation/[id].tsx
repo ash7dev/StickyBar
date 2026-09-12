@@ -10,7 +10,10 @@ import {
   Animated,
 } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
-import { AlertCircle, ArrowLeft, RefreshCw } from 'lucide-react-native';
+import { useQuery } from '@tanstack/react-query';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import * as Haptics from 'expo-haptics';
+import { AlertCircle, RefreshCw } from 'lucide-react-native';
 import { colors, radius, shadows, typography } from '../../shared/theme/tokens';
 import { apiClient } from '../../shared/api/api-client';
 import { ReservationDetail } from '../../features/reservations/types/reservation-detail.types';
@@ -76,47 +79,75 @@ export default function ReservationDetailScreen() {
   const params = useLocalSearchParams<{ id: string }>();
   const reservationId = params.id || '';
 
-  const [reservation, setReservation] = useState<ReservationDetail | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [refreshing, setRefreshing] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-
+  const [cachedDetail, setCachedDetail] = useState<ReservationDetail | null>(null);
+  const [isCacheLoaded, setIsCacheLoaded] = useState(false);
   const [showWelcomeGuideModal, setShowWelcomeGuideModal] = useState(false);
   const [showGalleryModal, setShowGalleryModal] = useState(false);
 
   // Fade-in animation for content
-  const fadeAnim = useRef(new Animated.Value(0)).current;
+  const fadeAnim = useRef(new Animated.Value(0.8)).current;
 
-  const fetchDetail = useCallback(async (isRefresh = false) => {
-    if (!reservationId) return;
+  const cacheKey = `klef_tenant_reservation_detail_${reservationId}`;
 
-    try {
-      if (isRefresh) setRefreshing(true);
-      else setLoading(true);
-      setError(null);
-
-      const res = await apiClient.get<any>(`/reservations/${reservationId}`);
-      const data = res.data?.data || res.data;
-      setReservation(data);
-
-      // Animate content in
-      fadeAnim.setValue(0);
-      Animated.timing(fadeAnim, { toValue: 1, duration: 400, useNativeDriver: true }).start();
-    } catch (err: any) {
-      console.warn('[ReservationDetailScreen] Error fetching reservation:', err);
-      const msg = err.response?.data?.message || 'Impossible de charger les détails de cette réservation.';
-      setError(msg);
-    } finally {
-      setLoading(false);
-      setRefreshing(false);
-    }
-  }, [reservationId]);
-
+  // 1. Hydratation Persistante Instantanée (0ms sur démarrage à froid)
   useEffect(() => {
-    setReservation(null);
-    setLoading(true);
-    fetchDetail(false);
-  }, [reservationId, fetchDetail]);
+    if (!reservationId) {
+      setIsCacheLoaded(true);
+      return;
+    }
+    AsyncStorage.getItem(cacheKey)
+      .then((raw) => {
+        if (raw) {
+          try {
+            const parsed = JSON.parse(raw);
+            if (parsed && typeof parsed === 'object') {
+              setCachedDetail(parsed);
+            }
+          } catch (e) {
+            console.warn('[ReservationDetailScreen] Erreur lecture cache:', e);
+          }
+        }
+      })
+      .catch((err) => console.warn('[ReservationDetailScreen] Erreur AsyncStorage:', err))
+      .finally(() => setIsCacheLoaded(true));
+  }, [reservationId, cacheKey]);
+
+  // 2. Query avec SWR et Cache Persistant sur disque
+  const {
+    data: reservationData = null,
+    isLoading,
+    isRefetching,
+    refetch,
+    error: queryError,
+  } = useQuery<ReservationDetail | null>({
+    queryKey: ['tenant', 'reservation-detail', reservationId],
+    queryFn: async () => {
+      if (!reservationId) return null;
+      try {
+        const res = await apiClient.get<any>(`/reservations/${reservationId}`);
+        const data = res.data?.data || res.data;
+        if (data) {
+          AsyncStorage.setItem(cacheKey, JSON.stringify(data)).catch(() => {});
+        }
+        return data;
+      } catch (err) {
+        if (cachedDetail) return cachedDetail;
+        throw err;
+      }
+    },
+    enabled: Boolean(reservationId),
+    staleTime: 5 * 60 * 1000,
+    gcTime: 24 * 60 * 60 * 1000,
+    initialData: cachedDetail || undefined,
+  });
+
+  const reservation = reservationData || cachedDetail;
+  const showSkeleton = !isCacheLoaded && isLoading && !reservation;
+
+  const handleRefresh = useCallback(() => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {});
+    refetch();
+  }, [refetch]);
 
   return (
     <SafeAreaView style={styles.safeArea}>
@@ -135,25 +166,25 @@ export default function ReservationDetailScreen() {
           showsVerticalScrollIndicator={false}
           refreshControl={
             <RefreshControl
-              refreshing={refreshing}
-              onRefresh={() => fetchDetail(true)}
+              refreshing={isRefetching}
+              onRefresh={handleRefresh}
               tintColor={colors.forest[800]}
               colors={[colors.forest[800]]}
             />
           }
         >
-          {loading && !refreshing ? (
+          {showSkeleton ? (
             <DetailSkeleton />
-          ) : error || !reservation ? (
+          ) : queryError || !reservation ? (
             <View style={styles.errorCard}>
               <View style={styles.errorIconCircle}>
                 <AlertCircle size={28} color={colors.error[600]} />
               </View>
               <Text style={styles.errorTitle}>Réservation introuvable</Text>
-              <Text style={styles.errorSub}>{error || 'Cette réservation n\'existe pas ou ne vous appartient pas.'}</Text>
+              <Text style={styles.errorSub}>{(queryError as any)?.response?.data?.message || (queryError as any)?.message || 'Cette réservation n\'existe pas ou ne vous appartient pas.'}</Text>
               <TouchableOpacity
                 activeOpacity={0.8}
-                onPress={() => fetchDetail(false)}
+                onPress={() => refetch()}
                 style={styles.retryBtn}
               >
                 <RefreshCw size={14} color={colors.forest[950]} />
@@ -178,8 +209,8 @@ export default function ReservationDetailScreen() {
                 <MobileExtraFeesCard
                   reservationId={reservation.id}
                   demandesFrais={(reservation as any).demandesFrais}
-                  onRefresh={() => fetchDetail(false)}
-                  onOpenDispute={() => fetchDetail(false)}
+                  onRefresh={() => refetch()}
+                  onOpenDispute={() => refetch()}
                 />
               ) : null}
 
@@ -229,7 +260,7 @@ export default function ReservationDetailScreen() {
           <MobileTenantActionStickyBar
             id={reservationId}
             res={reservation}
-            onRefetch={() => fetchDetail(false)}
+            onRefetch={() => refetch()}
           />
         )}
 

@@ -1,10 +1,12 @@
 import React, { useEffect, useState } from 'react';
-import { View, Text, StyleSheet, ActivityIndicator } from 'react-native';
+import { View, Text, StyleSheet, Image } from 'react-native';
+import { useQuery } from '@tanstack/react-query';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { apiClient } from '../../api/api-client';
 import { TenantListingsSection } from './TenantListingsSection';
 import { TenantFeedSkeleton } from './TenantFeedSkeleton';
 import { ListingItem } from '../ui/TenantListingCard';
-import { colors, radius } from '../../theme/tokens';
+import { colors } from '../../theme/tokens';
 import { useListingCacheStore } from '../../stores/listing-cache.store';
 
 interface FeedSectionData {
@@ -21,6 +23,8 @@ interface TenantFeedSectionsProps {
   selectedSousType?: string;
   onSelectListing?: (listing: ListingItem) => void;
 }
+
+const FEED_CACHE_KEY = 'klef_tenant_feed_cache_v1';
 
 const SECTION_CONFIG: Record<
   string,
@@ -116,69 +120,102 @@ export function TenantFeedSections({
   onSelectListing,
 }: TenantFeedSectionsProps) {
   const { setFeed, getFeed } = useListingCacheStore();
-  const cachedFeed = getFeed();
+  const memoryFeed = getFeed();
+  const [diskCacheFeed, setDiskCacheFeed] = useState<FeedSectionData[] | null>(memoryFeed || null);
+  const [isCacheLoaded, setIsCacheLoaded] = useState(false);
 
-  const [feedSections, setFeedSections] = useState<FeedSectionData[]>(cachedFeed || []);
-  const [loading, setLoading] = useState(!cachedFeed || cachedFeed.length === 0);
-  const [error, setError] = useState<string | null>(null);
-
+  // 1. Hydratation Persistante Instantanée (0ms sur démarrage à froid)
   useEffect(() => {
-    let isMounted = true;
+    AsyncStorage.getItem(FEED_CACHE_KEY)
+      .then((raw) => {
+        if (raw) {
+          try {
+            const parsed = JSON.parse(raw);
+            if (Array.isArray(parsed) && parsed.length > 0) {
+              setDiskCacheFeed(parsed);
+              setFeed(parsed as any);
+            }
+          } catch (e) {
+            console.warn('[TenantFeedSections] Erreur de lecture du cache disque:', e);
+          }
+        }
+      })
+      .catch((err) => console.warn('[TenantFeedSections] Erreur AsyncStorage:', err))
+      .finally(() => setIsCacheLoaded(true));
+  }, [setFeed]);
 
-    const fetchFeed = async () => {
+  // 2. Query avec SWR et Cache Persistant sur disque
+  const {
+    data: feedSectionsData = [],
+    isLoading,
+    isFetching,
+    isRefetching,
+    error: queryError,
+  } = useQuery<FeedSectionData[]>({
+    queryKey: ['tenant', 'feed'],
+    queryFn: async () => {
       try {
-        if (!cachedFeed || cachedFeed.length === 0) {
-          setLoading(true);
-        }
         const response = await apiClient.get<FeedApiResponse>('/listings/feed');
-        if (isMounted && response.data && Array.isArray(response.data.sections)) {
-          setFeedSections(response.data.sections);
-          setFeed(response.data.sections as any);
-          setError(null);
+        const sections = Array.isArray(response.data?.sections) ? response.data.sections : [];
+
+        if (sections.length > 0) {
+          AsyncStorage.setItem(FEED_CACHE_KEY, JSON.stringify(sections)).catch(() => {});
+          setFeed(sections as any);
+
+          // Prefetch top 6 cover images for smooth display
+          sections.slice(0, 3).flatMap((s) => s.listings || []).slice(0, 6).forEach((item: any) => {
+            const coverUrl = item.photos?.[0] || item.coverUrl || item.imageUrl;
+            if (coverUrl && typeof coverUrl === 'string' && coverUrl.startsWith('http')) {
+              Image.prefetch(coverUrl).catch(() => {});
+            }
+          });
         }
-      } catch (err: any) {
-        console.warn('[TenantFeedSections] Error fetching feed from Render API:', err);
-        if (isMounted && (!cachedFeed || cachedFeed.length === 0)) {
-          setError('Impossible de charger les annonces. Veuillez réessayer.');
+        return sections;
+      } catch (err) {
+        if (diskCacheFeed && diskCacheFeed.length > 0) {
+          return diskCacheFeed;
         }
-      } finally {
-        if (isMounted) setLoading(false);
+        throw err;
       }
-    };
+    },
+    staleTime: 10 * 60 * 1000,
+    gcTime: 24 * 60 * 60 * 1000,
+    initialData: diskCacheFeed || undefined,
+  });
 
-    fetchFeed();
+  const feedSections = feedSectionsData.length > 0 ? feedSectionsData : (diskCacheFeed || []);
 
-    return () => {
-      isMounted = false;
-    };
-  }, []);
+  const isPendingFetch = isLoading || isFetching || isRefetching || !isCacheLoaded;
+  const showSkeleton = isPendingFetch && feedSections.length === 0;
 
-  if (loading) {
+  if (showSkeleton) {
     return <TenantFeedSkeleton />;
   }
 
-  if (error && feedSections.length === 0) {
+  if (queryError && feedSections.length === 0) {
     return (
       <View style={styles.errorContainer}>
-        <Text style={styles.errorText}>{error}</Text>
+        <Text style={styles.errorText}>
+          {(queryError as any)?.response?.data?.message || (queryError as any)?.message || 'Impossible de charger les annonces. Veuillez réessayer.'}
+        </Text>
       </View>
     );
   }
 
   // Filtrage par sousType ou type si sélectionné dans la barre de filtres
   const filteredSections = feedSections
-    .map((sec) => {
+    .map((sec: FeedSectionData) => {
       let listings = sec.listings;
 
       if (selectedSousType) {
         listings = listings.filter(
-          (l) =>
+          (l: ListingItem) =>
             l.sousType?.toLowerCase() === selectedSousType.toLowerCase() ||
             l.type?.toLowerCase() === selectedSousType.toLowerCase()
         );
       } else if (selectedType) {
         listings = listings.filter(
-          (l) => l.type?.toLowerCase() === selectedType.toLowerCase()
+          (l: ListingItem) => l.type?.toLowerCase() === selectedType.toLowerCase()
         );
       }
 
@@ -187,9 +224,12 @@ export function TenantFeedSections({
         listings,
       };
     })
-    .filter((sec) => sec.listings.length > 0);
+    .filter((sec: FeedSectionData) => sec.listings.length > 0);
 
   if (filteredSections.length === 0) {
+    if (isPendingFetch) {
+      return <TenantFeedSkeleton />;
+    }
     return (
       <View style={styles.emptyContainer}>
         <Text style={styles.emptyTitle}>Aucun hébergement trouvé</Text>

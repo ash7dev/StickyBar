@@ -34,10 +34,14 @@ export function TenantFloatingTabBar({ state, descriptors, navigation }: any) {
   const tabBarStyle = focusedDescriptor?.options?.tabBarStyle;
 
   const isExplorer = currentRoute?.name === 'explorer';
-  const isListingDetail = currentRoute?.name?.includes('listing');
-  const isReservationDetail = currentRoute?.name?.includes('reservation');
-  const isReserver = currentRoute?.name?.includes('reserver');
-  const isTerangaClub = currentRoute?.name?.includes('teranga');
+  const isListingDetail =
+    currentRoute?.name?.includes('listing/') || currentRoute?.name === 'listing/[id]';
+  const isReservationDetail =
+    currentRoute?.name?.includes('reservation/') || currentRoute?.name === 'reservation/[id]';
+  const isReserver =
+    currentRoute?.name === 'reserver' || currentRoute?.name?.includes('reserver');
+  const isTerangaClub =
+    currentRoute?.name === 'teranga-club' || currentRoute?.name?.includes('teranga');
 
   if (
     tabBarStyle?.display === 'none' ||

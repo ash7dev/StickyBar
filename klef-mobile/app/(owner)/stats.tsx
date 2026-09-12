@@ -5,16 +5,19 @@ import { colors } from '../../shared/theme/tokens';
 import { useOwnerStats } from '../../features/dashboard/hooks/useOwnerStats';
 import { MobileStatsHeader } from '../../features/dashboard/components/owner/stats/MobileStatsHeader';
 import { MobileStatsKpiSection } from '../../features/dashboard/components/owner/stats/MobileStatsKpiSection';
+import { MobileStatsAdvancedMetricsCard } from '../../features/dashboard/components/owner/stats/MobileStatsAdvancedMetricsCard';
 import { MobileStatsRevenueChart } from '../../features/dashboard/components/owner/stats/MobileStatsRevenueChart';
+import { MobileStatsReservationBreakdownCard } from '../../features/dashboard/components/owner/stats/MobileStatsReservationBreakdownCard';
 import { MobileStatsPerformanceCard } from '../../features/dashboard/components/owner/stats/MobileStatsPerformanceCard';
-import { MobileStatsRecentActivityCard } from '../../features/dashboard/components/owner/stats/MobileStatsRecentActivityCard';
 
-import { OwnerDashboardSkeleton } from '../../shared/components/layout/OwnerDashboardSkeleton';
+import { OwnerStatsSkeleton } from '../../shared/components/layout/OwnerStatsSkeleton';
 
 export default function OwnerStatsScreen() {
   const {
     stats,
     recentActivity,
+    allReservations,
+    filteredReservations,
     timeframe,
     setTimeframe,
     isLoading,
@@ -22,10 +25,13 @@ export default function OwnerStatsScreen() {
     refetch,
   } = useOwnerStats();
 
+  const activeReservationsForView =
+    filteredReservations.length > 0 ? filteredReservations : allReservations;
+
   if (isLoading && !isRefetching) {
     return (
       <SafeAreaView style={styles.safeArea}>
-        <OwnerDashboardSkeleton />
+        <OwnerStatsSkeleton />
       </SafeAreaView>
     );
   }
@@ -58,11 +64,18 @@ export default function OwnerStatsScreen() {
         {/* ── 3. Évolution des Revenus & Réservations (Graphique Visuel) ──────── */}
         <MobileStatsRevenueChart stats={stats} />
 
-        {/* ── 4. Qualité, Avis & Performance du parc ───────────────────────────── */}
-        <MobileStatsPerformanceCard stats={stats} />
+        {/* ── 3b. Indicateurs Métier Avancés (ADR, Nuits, Taux d'annulation, Séquestre) ── */}
+        <MobileStatsAdvancedMetricsCard stats={stats} />
 
-        {/* ── 5. Activités & Historique Récent ─────────────────────────────────── */}
-        <MobileStatsRecentActivityCard activities={recentActivity} />
+        {/* ── 4. Répartition des Réservations par Statut ──────────────────────── */}
+        <MobileStatsReservationBreakdownCard bookings={activeReservationsForView} />
+
+        {/* ── 5. Classement des Logements les plus rentables ──────────────────── */}
+        <MobileStatsPerformanceCard
+          bookings={activeReservationsForView}
+          topListings={stats.topListings}
+          activeListings={stats.listings.active}
+        />
 
         {/* Espacement de sécurité en bas */}
         <View style={styles.bottomSpacer} />

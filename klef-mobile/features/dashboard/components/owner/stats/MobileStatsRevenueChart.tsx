@@ -115,7 +115,7 @@ export function MobileStatsRevenueChart({ stats }: MobileStatsRevenueChartProps)
   }
 
   /* ── 2. État Actif avec Courbe & Tendances ────────────────────────────── */
-  const lastValue = data[data.length - 1].value;
+  const totalPeriodRevenue = data.reduce((sum, p) => sum + p.value, 0);
   const max = Math.max(...data.map((p) => p.value), 1);
   const W = 310;
   const H = 140;
@@ -150,7 +150,7 @@ export function MobileStatsRevenueChart({ stats }: MobileStatsRevenueChartProps)
       <View style={styles.revenueSummaryStack}>
         <View style={styles.amountRow}>
           <Text style={styles.amountValue}>
-            {lastValue.toLocaleString('fr-FR')}
+            {totalPeriodRevenue.toLocaleString('fr-FR')}
           </Text>
           <Text style={styles.amountCurrency}>FCFA</Text>
         </View>

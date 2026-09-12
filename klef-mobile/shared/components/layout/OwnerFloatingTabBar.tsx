@@ -23,6 +23,8 @@ import {
 import * as Haptics from 'expo-haptics';
 import { colors, radius, shadows, typography } from '../../theme/tokens';
 import { useSwitchRole } from '../../../features/auth/hooks/useSwitchRole';
+import { useGatedAction } from '../../hooks/useGatedAction';
+import { TenantActionGateModal } from '../gate/TenantActionGateModal';
 
 export function OwnerFloatingTabBar({ state, descriptors, navigation }: any) {
   const focusedRoute = state.routes[state.index];
@@ -47,11 +49,22 @@ export function OwnerFloatingTabBar({ state, descriptors, navigation }: any) {
   const { switchRole, isSwitching, error } = useSwitchRole();
   const [modalVisible, setModalVisible] = useState(false);
 
+  const goToAddListing = React.useCallback(() => {
+    router.push('/(owner)/add-listing' as any);
+  }, [router]);
+
+  const {
+    gateState,
+    trigger: triggerGate,
+    complete: completeGate,
+    cancel: cancelGate,
+  } = useGatedAction(goToAddListing);
+
   const handleTabPress = (route: { key: string; name: string }, isFocused: boolean) => {
     Haptics.selectionAsync().catch(() => {});
 
     if (route.name === 'add-listing') {
-      router.push('/(owner)/add-listing' as any);
+      triggerGate();
       return;
     }
 
@@ -256,6 +269,15 @@ export function OwnerFloatingTabBar({ state, descriptors, navigation }: any) {
           </TouchableOpacity>
         </TouchableOpacity>
       </Modal>
+
+      {/* Action Gate Modal (Profil, Téléphone, KYC) */}
+      <TenantActionGateModal
+        visible={gateState.open}
+        steps={gateState.steps}
+        block={gateState.block}
+        onComplete={completeGate}
+        onCancel={cancelGate}
+      />
     </View>
   );
 }

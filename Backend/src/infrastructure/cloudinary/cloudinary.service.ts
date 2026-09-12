@@ -71,6 +71,16 @@ export class CloudinaryService {
     return { url: result.secure_url, publicId: result.public_id };
   }
 
+  async uploadProfilePhoto(buffer: Buffer, originalName: string): Promise<UploadResult> {
+    const result = await this.uploadStream(buffer, {
+      folder: 'immoloc/avatars',
+      transformation: [{ width: 400, height: 400, crop: 'fill', gravity: 'face', format: 'webp', quality: 'auto' }],
+      resource_type: 'image',
+    });
+    this.logger.debug(`Profile photo uploadée → ${result.public_id}`);
+    return { url: result.secure_url, publicId: result.public_id };
+  }
+
   // Génère une URL signée expirante pour un document KYC (admin uniquement)
   generateSignedUrl(publicId: string, expiresInSeconds = 3600): string {
     return cloudinary.url(publicId, {

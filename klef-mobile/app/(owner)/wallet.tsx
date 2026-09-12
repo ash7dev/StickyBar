@@ -2,78 +2,94 @@ import React, { useState, useEffect, useCallback } from 'react';
 import {
   StyleSheet,
   View,
-  Text,
   ScrollView,
   RefreshControl,
-  TouchableOpacity,
-  ActivityIndicator,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
-import { colors, typography } from '../../shared/theme/tokens';
+import { colors } from '../../shared/theme/tokens';
 import { WalletData } from '../../features/wallet/types/wallet.types';
 import { getMyWallet } from '../../features/wallet/services/wallet.service';
 import { MobileWalletBalanceCard } from '../../features/wallet/components/MobileWalletBalanceCard';
 import { MobileWalletTransactionsCard } from '../../features/wallet/components/MobileWalletTransactionsCard';
 import { MobileWithdrawModal } from '../../features/wallet/components/MobileWithdrawModal';
+import { OwnerWalletSkeleton } from '../../shared/components/layout/OwnerWalletSkeleton';
+
+const WALLET_CACHE_KEY = 'klef_owner_wallet_cache_v1';
 
 export default function OwnerWalletScreen() {
   const insets = useSafeAreaInsets();
+  const queryClient = useQueryClient();
 
-  const [wallet, setWallet] = useState<WalletData | null>(null);
-  const [loading, setLoading] = useState<boolean>(true);
-  const [refreshing, setRefreshing] = useState<boolean>(false);
-  const [error, setError] = useState<string | null>(null);
   const [showWithdrawModal, setShowWithdrawModal] = useState<boolean>(false);
+  const [cachedWallet, setCachedWallet] = useState<WalletData | null>(null);
+  const [isCacheLoaded, setIsCacheLoaded] = useState(false);
 
-  const fetchWalletData = useCallback(async () => {
-    try {
-      setError(null);
-      const data = await getMyWallet();
-      setWallet(data);
-    } catch (err: any) {
-      console.warn('Erreur chargement wallet hôte:', err);
-      // Fallback mock si l'API est indisponible hors ligne
-      setWallet({
-        soldeDisponible: 225000,
-        soldeProprietaire: 225000,
-        soldeLocataire: 0,
-        dettePenalites: 0,
-        transactions: [
-          {
-            id: 'tx-mock-1',
-            type: 'CREDIT_LOCATION',
-            montant: 225000,
-            sens: 'CREDIT',
-            soldeApres: 225000,
-            description: 'Revenu du séjour #A6DBECB1 - Villa Soléa',
-            creeLe: new Date().toISOString(),
-          },
-        ],
-      });
-    } finally {
-      setLoading(false);
-      setRefreshing(false);
-    }
+  // ── 1. Hydratation Persistante Instantanée (0ms au démarrage à froid) ──
+  useEffect(() => {
+    AsyncStorage.getItem(WALLET_CACHE_KEY)
+      .then((raw) => {
+        if (raw) {
+          try {
+            const parsed = JSON.parse(raw);
+            if (parsed && typeof parsed === 'object') {
+              setCachedWallet(parsed);
+            }
+          } catch (e) {
+            console.warn('[OwnerWalletScreen] Erreur de lecture du cache JSON:', e);
+          }
+        }
+      })
+      .catch((err) => console.warn('[OwnerWalletScreen] Erreur de cache:', err))
+      .finally(() => setIsCacheLoaded(true));
   }, []);
 
-  useEffect(() => {
-    fetchWalletData();
-  }, [fetchWalletData]);
+  // ── 2. Query avec SWR et Cache Persistant sur disque ─────────
+  const {
+    data: walletData,
+    isLoading,
+    isFetching,
+    isRefetching,
+    refetch,
+    error,
+  } = useQuery<WalletData>({
+    queryKey: ['wallet', 'mine'],
+    queryFn: async () => {
+      try {
+        const data = await getMyWallet();
+        if (data) {
+          AsyncStorage.setItem(WALLET_CACHE_KEY, JSON.stringify(data)).catch(() => {});
+        }
+        return data;
+      } catch (err) {
+        if (cachedWallet) {
+          return cachedWallet;
+        }
+        throw err;
+      }
+    },
+    staleTime: 5 * 60 * 1000,
+    gcTime: 24 * 60 * 60 * 1000,
+    initialData: cachedWallet || undefined,
+  });
 
-  const handleRefresh = () => {
-    setRefreshing(true);
-    fetchWalletData();
-  };
+  const wallet = walletData || cachedWallet;
+  const showSkeleton = (isLoading || isFetching || !isCacheLoaded) && !wallet;
+
+  const handleWithdrawSuccess = useCallback(() => {
+    refetch();
+    queryClient.invalidateQueries({ queryKey: ['owner', 'dashboard-full'] });
+    queryClient.invalidateQueries({ queryKey: ['owner', 'stats-page-full'] });
+    queryClient.invalidateQueries({ queryKey: ['wallet', 'mine'] });
+  }, [refetch, queryClient]);
 
   return (
     <View style={styles.screenContainer}>
       {/* Content ScrollView */}
-      {loading ? (
-        <View style={styles.loadingContainer}>
-          <ActivityIndicator size="large" color={colors.lime[400]} />
-          <Text style={styles.loadingText}>Chargement du portefeuille hôte…</Text>
-        </View>
+      {showSkeleton ? (
+        <OwnerWalletSkeleton />
       ) : (
         <ScrollView
           style={styles.scrollBody}
@@ -81,8 +97,8 @@ export default function OwnerWalletScreen() {
           showsVerticalScrollIndicator={false}
           refreshControl={
             <RefreshControl
-              refreshing={refreshing}
-              onRefresh={handleRefresh}
+              refreshing={isRefetching}
+              onRefresh={refetch}
               tintColor={colors.lime[400]}
               colors={[colors.lime[400]]}
             />
@@ -97,7 +113,7 @@ export default function OwnerWalletScreen() {
           )}
 
           {/* 2. Historique des transactions */}
-          {wallet && <MobileWalletTransactionsCard transactions={wallet.transactions} />}
+          {wallet && <MobileWalletTransactionsCard transactions={wallet.transactions || []} />}
         </ScrollView>
       )}
 
@@ -106,8 +122,8 @@ export default function OwnerWalletScreen() {
         <MobileWithdrawModal
           visible={showWithdrawModal}
           onClose={() => setShowWithdrawModal(false)}
-          soldeDisponible={wallet.soldeProprietaire ?? wallet.soldeDisponible}
-          onSuccess={fetchWalletData}
+          soldeDisponible={wallet.soldeProprietaire ?? wallet.soldeDisponible ?? 0}
+          onSuccess={handleWithdrawSuccess}
         />
       )}
     </View>
@@ -118,17 +134,6 @@ const styles = StyleSheet.create({
   screenContainer: {
     flex: 1,
     backgroundColor: colors.neutral[50],
-  },
-  loadingContainer: {
-    flex: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: 12,
-  },
-  loadingText: {
-    fontFamily: typography.fontBody,
-    fontSize: 13,
-    color: colors.neutral[600],
   },
   scrollBody: {
     flex: 1,

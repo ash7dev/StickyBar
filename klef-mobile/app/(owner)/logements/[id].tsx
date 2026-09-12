@@ -71,6 +71,7 @@ export default function MobileOwnerListingDetailScreen() {
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => {});
       queryClient.invalidateQueries({ queryKey: ['listing-owner', id] });
       queryClient.invalidateQueries({ queryKey: ['listings', 'mine'] });
+      queryClient.invalidateQueries({ queryKey: ['owner', 'dashboard-full'] });
     },
     onError: (err: any) => {
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error).catch(() => {});

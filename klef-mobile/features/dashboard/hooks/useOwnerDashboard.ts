@@ -1,4 +1,6 @@
-import { useQuery } from '@tanstack/react-query';
+import { useEffect, useState } from 'react';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { apiClient } from '../../../shared/api/api-client';
 
 export interface OwnerStatsData {
@@ -47,8 +49,33 @@ const EMPTY_PENDING: OwnerPendingActionsData = {
   activeDisputes: 0,
 };
 
+const DASHBOARD_CACHE_KEY = 'klef_dashboard_cache_v1';
+
 export function useOwnerDashboard() {
-  const { data, isLoading, isRefetching, refetch, error } = useQuery({
+  const [cachedData, setCachedData] = useState<OwnerDashboardFullData | null>(null);
+  const [isCacheLoaded, setIsCacheLoaded] = useState(false);
+
+  // ── 1. Instant Local Storage Hydration (0ms load on cold start) ───
+  useEffect(() => {
+    AsyncStorage.getItem(DASHBOARD_CACHE_KEY)
+      .then((raw) => {
+        if (raw) {
+          try {
+            const parsed = JSON.parse(raw);
+            if (parsed && parsed.stats) {
+              setCachedData(parsed);
+            }
+          } catch (e) {
+            console.warn('[useOwnerDashboard] Error parsing cache JSON:', e);
+          }
+        }
+      })
+      .catch((err) => console.warn('[useOwnerDashboard] Cache read error:', err))
+      .finally(() => setIsCacheLoaded(true));
+  }, []);
+
+  // ── 2. Background Revalidation Query with SWR ────────────────────
+  const { data, isLoading, isFetching, isRefetching, refetch, error } = useQuery({
     queryKey: ['owner', 'dashboard-full'],
     queryFn: async (): Promise<OwnerDashboardFullData> => {
       try {
@@ -64,13 +91,13 @@ export function useOwnerDashboard() {
           listings: {
             active: Number(statsRaw.listings?.active ?? 0),
             total: Number(statsRaw.listings?.total ?? 0),
-            draft: Number(statsRaw.listings?.draft ?? 0),
-            paused: Number(statsRaw.listings?.paused ?? 0),
+            draft: Number(statsRaw.listings?.drafts ?? statsRaw.listings?.draft ?? 0),
+            paused: Number(statsRaw.listings?.pending ?? statsRaw.listings?.paused ?? 0),
           },
           bookings: {
             total: Number(statsRaw.bookings?.total ?? 0),
             revenue: Number(statsRaw.bookings?.revenue ?? 0),
-            averageRating: Number(statsRaw.bookings?.averageRating ?? 0),
+            averageRating: Number(statsRaw.bookings?.averageRating ?? statsRaw.reputation?.rating ?? 0),
             conversionRate: Number(statsRaw.bookings?.conversionRate ?? 0),
           },
           wallet: {
@@ -86,21 +113,32 @@ export function useOwnerDashboard() {
           activeDisputes: Number(pendingRaw.activeDisputes ?? 0),
         };
 
-        return { stats, pending };
+        const result: OwnerDashboardFullData = { stats, pending };
+
+        // Save to disk cache for zero-latency initial rendering next boot
+        AsyncStorage.setItem(DASHBOARD_CACHE_KEY, JSON.stringify(result)).catch(() => { });
+
+        return result;
       } catch (err) {
-        console.warn('[useOwnerDashboard] Erreur de récupération API :', err);
-        return { stats: EMPTY_STATS, pending: EMPTY_PENDING };
+        console.warn('[useOwnerDashboard] API fetch error:', err);
+        return cachedData || { stats: EMPTY_STATS, pending: EMPTY_PENDING };
       }
     },
-    staleTime: 5 * 60 * 1000, // 5 minutes
+    staleTime: 5 * 60 * 1000, // 5 minutes fresh
+    gcTime: 24 * 60 * 60 * 1000, // Keep in memory for 24 hours
+    initialData: cachedData || undefined,
   });
 
+  const effectiveData = data || cachedData;
+  const showSkeleton = (isLoading || isFetching || !isCacheLoaded) && !effectiveData;
+
   return {
-    stats: data?.stats || EMPTY_STATS,
-    pending: data?.pending || EMPTY_PENDING,
-    isLoading,
+    stats: effectiveData?.stats || EMPTY_STATS,
+    pending: effectiveData?.pending || EMPTY_PENDING,
+    isLoading: showSkeleton,
     isRefetching,
     refetch,
     error,
   };
 }
+

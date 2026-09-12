@@ -1,281 +1,452 @@
 import React from 'react';
-import { StyleSheet, View, Text } from 'react-native';
-import {
-  Star,
-  Zap,
-  CheckCircle2,
-  Clock,
-  PieChart,
-} from 'lucide-react-native';
+import { StyleSheet, View, Text, TouchableOpacity } from 'react-native';
+import { useRouter } from 'expo-router';
+import { ArrowRight, Trophy, Sparkles } from 'lucide-react-native';
+import * as Haptics from 'expo-haptics';
 import { colors, radius, shadows, typography } from '../../../../../shared/theme/tokens';
-import { OwnerStatsData } from '../../../hooks/useOwnerStats';
 
-interface MobileStatsPerformanceCardProps {
-  stats: OwnerStatsData;
+const COUNTED = new Set(['COMPLETED', 'CHECKED_IN', 'CONFIRMED', 'PAID']);
+
+const formatFCFA = (val: number) => {
+  return new Intl.NumberFormat('fr-FR', { maximumFractionDigits: 0 }).format(val) + ' FCFA';
+};
+
+interface BookingItem {
+  statut?: string;
+  status?: string;
+  netProprietaire?: number | string;
+  totalLocataire?: number | string;
+  logement?: { id?: string; titre?: string; ville?: string };
+  title?: string;
 }
 
-export function MobileStatsPerformanceCard({ stats }: MobileStatsPerformanceCardProps) {
-  const rating = stats.bookings.averageRating || 4.9;
-  const activeCount = stats.listings.active || 0;
-  const totalCount = stats.listings.total || 0;
-  const draftCount = stats.listings.draft || 0;
+interface PerformanceCardProps {
+  bookings?: BookingItem[] | null;
+  topListings?: Array<{
+    id?: string;
+    titre: string;
+    ville?: string;
+    revenue: number;
+    nights: number;
+  }> | null;
+  activeListings: number;
+  limit?: number;
+}
 
-  const activePercent = totalCount > 0 ? Math.round((activeCount / totalCount) * 100) : 100;
+interface RankedProperty {
+  key: string;
+  titre: string;
+  ville?: string;
+  revenue: number;
+  nights: number;
+}
+
+export function MobileStatsPerformanceCard({
+  bookings,
+  topListings,
+  activeListings,
+  limit = 3,
+}: PerformanceCardProps) {
+  const router = useRouter();
+  let ranked: RankedProperty[] = [];
+
+  if (topListings && topListings.length > 0) {
+    ranked = topListings.map((t, idx) => ({
+      key: t.id || `top-${idx}`,
+      titre: t.titre,
+      ville: t.ville,
+      revenue: Number(t.revenue || 0),
+      nights: Number(t.nights || 0),
+    }));
+  } else {
+    const list = bookings ?? [];
+    const map = new Map<string, RankedProperty>();
+
+    for (const b of list) {
+      const st = String(b.statut || b.status || '').toUpperCase();
+      if (!COUNTED.has(st)) continue;
+
+      const titre = b.logement?.titre || b.title || 'Logement';
+      const key = b.logement?.id || titre;
+      const ville = b.logement?.ville;
+      const rev = Number(b.netProprietaire ?? b.totalLocataire ?? 0);
+
+      const cur = map.get(key) ?? {
+        key,
+        titre,
+        ville,
+        revenue: 0,
+        nights: 0,
+      };
+      cur.revenue += rev;
+      cur.nights += 1;
+      map.set(key, cur);
+    }
+    ranked = [...map.values()].sort((a, b) => b.revenue - a.revenue);
+  }
+  const top = ranked.slice(0, limit);
+  const maxRevenue = top[0]?.revenue ?? 0;
+
+  const earningCount = ranked.length;
+
+  const handleSeeAllListings = () => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {});
+    router.push('/(owner)/listings' as any);
+  };
+
+  const handleCreateListing = () => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {});
+    router.push('/(owner)/listings' as any);
+  };
 
   return (
-    <View style={styles.container}>
+    <View style={styles.cardShell}>
+      {/* ── En-tête Premium ───────────────────────────────────────────── */}
       <View style={styles.headerRow}>
-        <PieChart size={16} color={colors.forest[600]} strokeWidth={2.4} />
-        <Text style={styles.cardTitle}>QUALITÉ & PERFORMANCE LOGEMENTS</Text>
-      </View>
-
-      <View style={styles.contentStack}>
-        {/* ── 1. Note Moyenne & Qualité ───────────────────────────────────── */}
-        <View style={styles.scoreRow}>
-          <View style={styles.ratingBadge}>
-            <Star size={20} color={colors.gold[400]} fill={colors.gold[400]} />
-            <Text style={styles.ratingNumber}>{rating.toFixed(1)}</Text>
-            <Text style={styles.ratingMax}>/ 5.0</Text>
+        <View style={styles.headerLeft}>
+          <View style={styles.headerIconSquircle}>
+            <Trophy size={18} color={colors.forest[700]} strokeWidth={2.2} />
           </View>
-
-          <View style={styles.scoreInfoText}>
-            <Text style={styles.scoreTitle}>Satisfaction Voyageurs</Text>
-            <Text style={styles.scoreDesc}>
-              98% d’avis positifs sur vos séjours récents
-            </Text>
+          <View style={styles.headerTextGroup}>
+            <Text style={styles.headerTitle}>Vos biens les plus rentables</Text>
+            <Text style={styles.headerSubtitle}>Classement de vos performances</Text>
           </View>
         </View>
 
-        {/* ── 2. Gauge Répartition des Annonces ────────────────────────────── */}
-        <View style={styles.listingsProgressBox}>
-          <View style={styles.listingsProgressHeader}>
-            <Text style={styles.progressLabel}>Parc Logements Actifs</Text>
-            <Text style={styles.progressValue}>
-              {activeCount} sur {totalCount} en ligne ({activePercent}%)
+        {activeListings > 0 && earningCount > 0 && (
+          <View style={styles.earningBadge}>
+            <Text style={styles.earningBadgeText}>
+              <Text style={styles.earningBold}>{earningCount}</Text>/{activeListings} ont rapporté
             </Text>
           </View>
+        )}
+      </View>
 
-          <View style={styles.trackBar}>
-            <View
-              style={[
-                styles.fillBarActive,
-                { width: `${activePercent}%` },
-              ]}
-            />
+      {/* ── Liste du Classement ────────────────────────────────────────── */}
+      {top.length === 0 ? (
+        <View style={styles.emptyContainer}>
+          <View style={styles.emptyIconCircle}>
+            <Sparkles size={24} color={colors.forest[600]} strokeWidth={2} />
           </View>
+          <Text style={styles.emptyTitle}>
+            {activeListings === 0 ? 'Aucun bien publié' : 'Pas encore de revenu enregistré'}
+          </Text>
+          <Text style={styles.emptySubtitle}>
+            {activeListings === 0
+              ? 'Publiez votre premier logement pour commencer à générer des revenus locatifs.'
+              : 'Le classement de vos biens apparaîtra dès la première réservation validée.'}
+          </Text>
 
-          <View style={styles.statusLegendRow}>
-            <View style={styles.legendItem}>
-              <View style={[styles.legendDot, { backgroundColor: colors.success[500] }]} />
-              <Text style={styles.legendText}>{activeCount} Actifs</Text>
-            </View>
+          <TouchableOpacity
+            activeOpacity={0.82}
+            onPress={handleCreateListing}
+            style={styles.emptyActionBtn}
+          >
+            <Text style={styles.emptyActionBtnText}>
+              {activeListings === 0 ? 'Publier un bien' : 'Gérer mes annonces'}
+            </Text>
+            <ArrowRight size={14} color={colors.forest[800]} strokeWidth={2.2} />
+          </TouchableOpacity>
+        </View>
+      ) : (
+        <View style={styles.rankList}>
+          {top.map((item, index) => {
+            const isFirst = index === 0;
+            const pct = maxRevenue > 0 ? Math.round((item.revenue / maxRevenue) * 100) : 0;
 
-            {draftCount > 0 && (
-              <View style={styles.legendItem}>
-                <View style={[styles.legendDot, { backgroundColor: colors.warning[500] }]} />
-                <Text style={styles.legendText}>{draftCount} Brouillon</Text>
+            return (
+              <View
+                key={item.key}
+                style={[styles.rankItemCard, isFirst && styles.rankItemCardFirst]}
+              >
+                <View style={styles.rankItemMainRow}>
+                  {/* Badge de Rang (1, 2, 3) */}
+                  <View style={[styles.rankBadge, isFirst && styles.rankBadgeFirst]}>
+                    <Text style={[styles.rankBadgeText, isFirst && styles.rankBadgeTextFirst]}>
+                      {index + 1}
+                    </Text>
+                  </View>
+
+                  {/* Titre & Ville */}
+                  <View style={styles.rankItemInfo}>
+                    <Text style={styles.rankItemTitle} numberOfLines={1}>
+                      {item.titre}
+                    </Text>
+                    {item.ville ? (
+                      <Text style={styles.rankItemSubtitle} numberOfLines={1}>
+                        {item.ville}
+                      </Text>
+                    ) : null}
+                  </View>
+
+                  {/* Chiffre d'affaires & Séjours */}
+                  <View style={styles.rankItemRight}>
+                    <Text style={styles.rankItemRevenue}>{formatFCFA(item.revenue)}</Text>
+                    <Text style={styles.rankItemNights}>
+                      {item.nights} séjour{item.nights > 1 ? 's' : ''}
+                    </Text>
+                  </View>
+                </View>
+
+                {/* Barre de progression proportionnelle */}
+                <View style={styles.progressTrack}>
+                  <View
+                    style={[
+                      styles.progressFill,
+                      {
+                        width: `${Math.max(pct, 5)}%`,
+                        backgroundColor: isFirst ? colors.lime[500] : colors.forest[600],
+                      },
+                    ]}
+                  />
+                </View>
               </View>
-            )}
+            );
+          })}
 
-            <View style={styles.legendItem}>
-              <View style={[styles.legendDot, { backgroundColor: colors.neutral[400] }]} />
-              <Text style={styles.legendText}>{stats.listings.paused} En pause</Text>
-            </View>
-          </View>
+          {ranked.length > limit && (
+            <Text style={styles.otherPropertiesText}>
+              +{ranked.length - limit} autre{ranked.length - limit > 1 ? 's' : ''} bien
+              {ranked.length - limit > 1 ? 's' : ''} avec des revenus
+            </Text>
+          )}
         </View>
+      )}
 
-        {/* ── 3. Réactivité & Délais ────────────────────────────────────────── */}
-        <View style={styles.kpiRowGrid}>
-          <View style={styles.subKpiItem}>
-            <View style={styles.subKpiIcon}>
-              <Clock size={16} color={colors.forest[700]} />
-            </View>
-            <View style={styles.subKpiText}>
-              <Text style={styles.subKpiVal}>{'< 15 min'}</Text>
-              <Text style={styles.subKpiLabel}>Temps de réponse</Text>
-            </View>
-          </View>
-
-          <View style={styles.subKpiItem}>
-            <View style={styles.subKpiIcon}>
-              <Zap size={16} color={colors.gold[600]} />
-            </View>
-            <View style={styles.subKpiText}>
-              <Text style={styles.subKpiVal}>Instantanée</Text>
-              <Text style={styles.subKpiLabel}>Réservation directe</Text>
-            </View>
-          </View>
-        </View>
-      </View>
+      {/* ── Bouton d'Action Inférieur ─────────────────────────────────── */}
+      <TouchableOpacity
+        activeOpacity={0.82}
+        onPress={handleSeeAllListings}
+        style={styles.seeAllBtn}
+      >
+        <Text style={styles.seeAllBtnText}>Voir toutes mes annonces</Text>
+        <ArrowRight size={15} color={colors.forest[900]} strokeWidth={2.2} />
+      </TouchableOpacity>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
-    backgroundColor: colors.neutral[0],
+  cardShell: {
+    backgroundColor: '#FFFFFF', // Fond blanc pur
     borderRadius: radius.card,
-    padding: 16,
-    gap: 14,
+    padding: 20,
+    gap: 20,
     borderWidth: 1,
     borderColor: colors.neutral[200],
     ...shadows.sm,
   },
 
+  // Header
   headerRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 8,
+    justifyContent: 'space-between',
+    paddingBottom: 14,
+    borderBottomWidth: 1,
+    borderBottomColor: colors.neutral[100],
   },
-  cardTitle: {
-    fontFamily: typography.fontBodyBold,
-    fontSize: 11,
-    color: colors.neutral[500],
-    letterSpacing: 0.8,
-  },
-
-  contentStack: {
-    gap: 14,
-  },
-
-  scoreRow: {
+  headerLeft: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 12,
+    flex: 1,
+  },
+  headerIconSquircle: {
+    width: 38,
+    height: 38,
+    borderRadius: radius.inner,
     backgroundColor: colors.forest[50],
-    borderRadius: radius.inner,
-    padding: 12,
-    borderWidth: 1,
-    borderColor: colors.forest[100],
-  },
-  ratingBadge: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 4,
-    backgroundColor: colors.neutral[0],
-    paddingHorizontal: 10,
-    paddingVertical: 6,
-    borderRadius: radius.pill,
-    borderWidth: 1,
-    borderColor: colors.gold[200],
-    ...shadows.xs,
-  },
-  ratingNumber: {
-    fontFamily: typography.fontDisplaySemiBold,
-    fontSize: 16,
-    color: colors.forest[950],
-  },
-  ratingMax: {
-    fontFamily: typography.fontBodyMedium,
-    fontSize: 11,
-    color: colors.neutral[500],
-  },
-
-  scoreInfoText: {
-    flex: 1,
-    gap: 2,
-  },
-  scoreTitle: {
-    fontFamily: typography.fontBodyBold,
-    fontSize: 13,
-    color: colors.forest[950],
-  },
-  scoreDesc: {
-    fontFamily: typography.fontBody,
-    fontSize: 11,
-    color: colors.neutral[600],
-  },
-
-  listingsProgressBox: {
-    gap: 8,
-  },
-  listingsProgressHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-  },
-  progressLabel: {
-    fontFamily: typography.fontBodyBold,
-    fontSize: 12,
-    color: colors.forest[950],
-  },
-  progressValue: {
-    fontFamily: typography.fontBodyMedium,
-    fontSize: 11,
-    color: colors.neutral[500],
-  },
-
-  trackBar: {
-    height: 8,
-    backgroundColor: colors.neutral[100],
-    borderRadius: radius.pill,
-    overflow: 'hidden',
-  },
-  fillBarActive: {
-    height: '100%',
-    backgroundColor: colors.success[500],
-    borderRadius: radius.pill,
-  },
-
-  statusLegendRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 14,
-    paddingTop: 2,
-  },
-  legendItem: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 5,
-  },
-  legendDot: {
-    width: 7,
-    height: 7,
-    borderRadius: 4,
-  },
-  legendText: {
-    fontFamily: typography.fontBodyMedium,
-    fontSize: 11,
-    color: colors.neutral[600],
-  },
-
-  kpiRowGrid: {
-    flexDirection: 'row',
-    gap: 10,
-  },
-  subKpiItem: {
-    flex: 1,
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 10,
-    backgroundColor: colors.neutral[50],
-    padding: 10,
-    borderRadius: radius.inner,
-    borderWidth: 1,
-    borderColor: colors.neutral[200],
-  },
-  subKpiIcon: {
-    width: 32,
-    height: 32,
-    borderRadius: radius.pill,
-    backgroundColor: colors.neutral[0],
     alignItems: 'center',
     justifyContent: 'center',
     borderWidth: 1,
-    borderColor: colors.neutral[200],
+    borderColor: colors.forest[100],
   },
-  subKpiText: {
+  headerTextGroup: {
+    gap: 2,
     flex: 1,
-    gap: 1,
   },
-  subKpiVal: {
-    fontFamily: typography.fontBodyBold,
+  headerTitle: {
+    fontFamily: typography.fontDisplaySemiBold,
+    fontSize: 16,
+    color: colors.forest[950],
+    letterSpacing: -0.2,
+  },
+  headerSubtitle: {
+    fontFamily: typography.fontBody,
     fontSize: 12,
+    color: colors.neutral[600],
+  },
+  earningBadge: {
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    borderRadius: radius.pill,
+    backgroundColor: colors.forest[50],
+    borderWidth: 1,
+    borderColor: colors.forest[100],
+  },
+  earningBadgeText: {
+    fontFamily: typography.fontBody,
+    fontSize: 11,
+    color: colors.forest[900],
+  },
+  earningBold: {
+    fontFamily: typography.fontBodyBold,
     color: colors.forest[950],
   },
-  subKpiLabel: {
+
+  // Ranking List
+  rankList: {
+    gap: 12,
+  },
+  rankItemCard: {
+    backgroundColor: colors.neutral[50],
+    borderRadius: radius.inner,
+    padding: 12,
+    gap: 10,
+    borderWidth: 1,
+    borderColor: colors.neutral[200],
+  },
+  rankItemCardFirst: {
+    backgroundColor: colors.lime[50] + '80',
+    borderColor: colors.lime[300],
+  },
+  rankItemMainRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    gap: 10,
+  },
+  rankBadge: {
+    width: 26,
+    height: 26,
+    borderRadius: radius.pill,
+    backgroundColor: colors.neutral[200],
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  rankBadgeFirst: {
+    backgroundColor: colors.forest[950],
+  },
+  rankBadgeText: {
+    fontFamily: typography.fontBodyBold,
+    fontSize: 12,
+    color: colors.neutral[700],
+  },
+  rankBadgeTextFirst: {
+    color: colors.lime[400],
+  },
+  rankItemInfo: {
+    flex: 1,
+    gap: 2,
+  },
+  rankItemTitle: {
+    fontFamily: typography.fontBodyBold,
+    fontSize: 13.5,
+    color: colors.forest[950],
+  },
+  rankItemSubtitle: {
     fontFamily: typography.fontBody,
-    fontSize: 10,
+    fontSize: 11.5,
+    color: colors.neutral[600],
+  },
+  rankItemRight: {
+    alignItems: 'flex-end',
+    gap: 2,
+  },
+  rankItemRevenue: {
+    fontFamily: typography.fontBodyBold,
+    fontSize: 13.5,
+    color: colors.forest[950],
+  },
+  rankItemNights: {
+    fontFamily: typography.fontBody,
+    fontSize: 11,
+    color: colors.neutral[600],
+  },
+  progressTrack: {
+    height: 5,
+    borderRadius: radius.pill,
+    backgroundColor: colors.neutral[200],
+    overflow: 'hidden',
+  },
+  progressFill: {
+    height: '100%',
+    borderRadius: radius.pill,
+  },
+  otherPropertiesText: {
+    fontFamily: typography.fontBody,
+    fontSize: 11.5,
     color: colors.neutral[500],
+    textAlign: 'center',
+    marginTop: 2,
+  },
+
+  // Actions
+  seeAllBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 8,
+    paddingVertical: 12,
+    borderRadius: radius.pill,
+    backgroundColor: '#FFFFFF',
+    borderWidth: 1.5,
+    borderColor: colors.neutral[200],
+    ...shadows.xs,
+  },
+  seeAllBtnText: {
+    fontFamily: typography.fontBodyBold,
+    fontSize: 13,
+    color: colors.forest[900],
+  },
+
+  // Empty state
+  emptyContainer: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 24,
+    gap: 10,
+  },
+  emptyIconCircle: {
+    width: 52,
+    height: 52,
+    borderRadius: radius.inner,
+    backgroundColor: colors.forest[50],
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderWidth: 1,
+    borderColor: colors.forest[100],
+  },
+  emptyTitle: {
+    fontFamily: typography.fontBodyBold,
+    fontSize: 15,
+    color: colors.forest[950],
+  },
+  emptySubtitle: {
+    fontFamily: typography.fontBody,
+    fontSize: 12.5,
+    color: colors.neutral[600],
+    textAlign: 'center',
+    maxWidth: 250,
+    lineHeight: 18,
+  },
+  emptyActionBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    marginTop: 8,
+    paddingVertical: 10,
+    paddingHorizontal: 18,
+    borderRadius: radius.pill,
+    backgroundColor: '#FFFFFF',
+    borderWidth: 1.5,
+    borderColor: colors.neutral[200],
+    ...shadows.xs,
+  },
+  emptyActionBtnText: {
+    fontFamily: typography.fontBodyBold,
+    fontSize: 12.5,
+    color: colors.forest[900],
   },
 });

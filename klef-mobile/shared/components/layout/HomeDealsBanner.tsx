@@ -1,10 +1,13 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useMemo } from 'react';
 import {
   StyleSheet,
   View,
   Text,
   ScrollView,
+  Image,
 } from 'react-native';
+import { useQuery } from '@tanstack/react-query';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { colors, radius, typography } from '../../theme/tokens';
 import { apiClient } from '../../api/api-client';
 import { TenantListingCard, ListingItem } from '../ui/TenantListingCard';
@@ -12,6 +15,8 @@ import { TenantListingCard, ListingItem } from '../ui/TenantListingCard';
 interface HomeDealsBannerProps {
   onSelectListing: (listing: ListingItem) => void;
 }
+
+const DEALS_CACHE_KEY = 'klef_tenant_deals_cache_v1';
 
 // ── Smart date helpers ────────────────────────────────────────────────
 function getNextWeekendDates(): { start: string; end: string; label: string; sublabel: string } {
@@ -71,39 +76,67 @@ function getNextWeekendDates(): { start: string; end: string; label: string; sub
 
 // ── Main Weekend Deals Section ─────────────────────────────────────────
 export function HomeDealsBanner({ onSelectListing }: HomeDealsBannerProps) {
-  const [listings, setListings] = useState<ListingItem[]>([]);
-  const [weekendInfo, setWeekendInfo] = useState(getNextWeekendDates());
-  const [loaded, setLoaded] = useState(false);
+  const weekendInfo = useMemo(() => getNextWeekendDates(), []);
+  const [cachedDeals, setCachedDeals] = useState<ListingItem[] | null>(null);
 
+  // 1. Hydratation Persistante Instantanée (0ms sur démarrage à froid)
   useEffect(() => {
-    const info = getNextWeekendDates();
-    setWeekendInfo(info);
+    AsyncStorage.getItem(DEALS_CACHE_KEY)
+      .then((raw) => {
+        if (raw) {
+          try {
+            const parsed = JSON.parse(raw);
+            if (Array.isArray(parsed) && parsed.length > 0) {
+              setCachedDeals(parsed);
+            }
+          } catch (e) {
+            console.warn('[HomeDealsBanner] Erreur de lecture du cache disque:', e);
+          }
+        }
+      })
+      .catch((err) => console.warn('[HomeDealsBanner] Erreur AsyncStorage:', err));
+  }, []);
 
-    const fetchDeals = async () => {
+  // 2. Query avec SWR et Cache Persistant sur disque
+  const { data: dealsData = [] } = useQuery<ListingItem[]>({
+    queryKey: ['tenant', 'deals', weekendInfo.start, weekendInfo.end],
+    queryFn: async () => {
       try {
         const response = await apiClient.get<any>('/listings/search', {
           params: {
-            dateDebut: info.start,
-            dateFin: info.end,
+            dateDebut: weekendInfo.start,
+            dateFin: weekendInfo.end,
             limit: 8,
           },
         });
         const data = response.data?.data || response.data?.items || response.data || [];
-        if (Array.isArray(data) && data.length > 0) {
-          setListings(data);
+        const list = Array.isArray(data) ? data : [];
+        if (list.length > 0) {
+          AsyncStorage.setItem(DEALS_CACHE_KEY, JSON.stringify(list)).catch(() => {});
+          // Prefetch top images for smooth display
+          list.slice(0, 4).forEach((item: any) => {
+            const coverUrl = item.photos?.[0] || item.coverUrl || item.imageUrl;
+            if (coverUrl && typeof coverUrl === 'string' && coverUrl.startsWith('http')) {
+              Image.prefetch(coverUrl).catch(() => {});
+            }
+          });
         }
+        return list;
       } catch (err) {
-        console.warn('[HomeDealsBanner] Error fetching weekend deals:', err);
-      } finally {
-        setLoaded(true);
+        if (cachedDeals && cachedDeals.length > 0) {
+          return cachedDeals;
+        }
+        throw err;
       }
-    };
+    },
+    staleTime: 10 * 60 * 1000,
+    gcTime: 24 * 60 * 60 * 1000,
+    initialData: cachedDeals || undefined,
+  });
 
-    fetchDeals();
-  }, []);
+  const listings = dealsData.length > 0 ? dealsData : (cachedDeals || []);
 
-  // Don't render anything if no deals or still loading
-  if (!loaded || listings.length === 0) return null;
+  if (listings.length === 0) return null;
 
   return (
     <View style={styles.container}>

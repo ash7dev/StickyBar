@@ -132,7 +132,7 @@ export default function AddListingScreen() {
           style: 'destructive',
           onPress: () => {
             reset();
-            router.back();
+            router.push('/(owner)/listings' as any);
           },
         },
       ]
@@ -241,6 +241,7 @@ export default function AddListingScreen() {
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => {});
       queryClient.invalidateQueries({ queryKey: ['listing-owner', id] });
       queryClient.invalidateQueries({ queryKey: ['listings', 'mine'] });
+      queryClient.invalidateQueries({ queryKey: ['owner', 'dashboard-full'] });
 
       Alert.alert(
         'Modifications enregistrées',
@@ -287,7 +288,7 @@ export default function AddListingScreen() {
               </TouchableOpacity>
               <TouchableOpacity
                 activeOpacity={0.8}
-                onPress={() => router.back()}
+                onPress={() => router.push('/(owner)/listings' as any)}
                 style={styles.backErrBtn}
               >
                 <ArrowLeft size={14} color={colors.forest[950]} />
@@ -402,7 +403,7 @@ export default function AddListingScreen() {
             activeOpacity={0.7}
             onPress={() => {
               Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {});
-              router.back();
+              handleQuit();
             }}
             style={styles.prevBtn}
           >
