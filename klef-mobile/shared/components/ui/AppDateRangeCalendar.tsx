@@ -74,6 +74,25 @@ function buildMonthGrid(month: Date): Date[] {
   return Array.from({ length: 42 }, (_, i) => addDays(start, i));
 }
 
+function parseToLocalDay(val: Date | string | number | null | undefined): Date | null {
+  if (!val) return null;
+  if (val instanceof Date) {
+    return new Date(val.getFullYear(), val.getMonth(), val.getDate());
+  }
+  const str = String(val).trim();
+  if (!str) return null;
+  const match = /^(\d{4})-(\d{2})-(\d{2})/.exec(str);
+  if (match) {
+    const y = parseInt(match[1], 10);
+    const m = parseInt(match[2], 10) - 1;
+    const d = parseInt(match[3], 10);
+    return new Date(y, m, d);
+  }
+  const date = new Date(str);
+  if (isNaN(date.getTime())) return null;
+  return new Date(date.getFullYear(), date.getMonth(), date.getDate());
+}
+
 export function AppDateRangeCalendar({
   value = { from: null, to: null },
   onChange,
@@ -91,24 +110,39 @@ export function AppDateRangeCalendar({
 
   const [warningMessage, setWarningMessage] = useState<string | null>(null);
 
-  // Normalisation des dates handicapées (bloquées/réservées)
+  // Normalisation robuste des dates handicapées (bloquées/réservées)
   const isBlockedDate = (d: Date): boolean => {
     if (!disabledDates || disabledDates.length === 0) return false;
 
-    const targetTime = startOfDay(d).getTime();
+    const targetDay = startOfDay(d);
+    const targetTime = targetDay.getTime();
 
     for (const item of disabledDates) {
       if (!item) continue;
       if (item instanceof Date) {
         if (isSameDay(d, item)) return true;
       } else if (typeof item === 'string') {
-        const parsed = startOfDay(new Date(item));
-        if (!isNaN(parsed.getTime()) && isSameDay(d, parsed)) return true;
-      } else if (typeof item === 'object' && 'start' in item && 'end' in item) {
-        const start = startOfDay(new Date(item.start)).getTime();
-        const end = startOfDay(new Date(item.end)).getTime();
-        if (!isNaN(start) && !isNaN(end) && targetTime >= start && targetTime < end) {
-          return true;
+        const parsed = parseToLocalDay(item);
+        if (parsed && isSameDay(d, parsed)) return true;
+      } else if (typeof item === 'object' && item !== null) {
+        const rawStart = (item as any).start || (item as any).dateDebut || (item as any).debut;
+        const rawEnd = (item as any).end || (item as any).dateFin || (item as any).fin;
+
+        if (rawStart && rawEnd) {
+          const startObj = parseToLocalDay(rawStart);
+          const endObj = parseToLocalDay(rawEnd);
+          if (startObj && endObj) {
+            const startTime = startObj.getTime();
+            const endTime = endObj.getTime();
+            if (startTime === endTime) {
+              if (targetTime === startTime) return true;
+            } else if (targetTime >= startTime && targetTime < endTime) {
+              return true;
+            }
+          }
+        } else if (rawStart) {
+          const startObj = parseToLocalDay(rawStart);
+          if (startObj && isSameDay(d, startObj)) return true;
         }
       }
     }

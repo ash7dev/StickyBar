@@ -41,9 +41,30 @@ export default function ListingDetailScreen() {
         setLoading(true);
       }
       setError(null);
-      const res = await apiClient.get<any>(`/listings/${id}`);
-      if (res) {
-        const payload = res.data?.data ? res.data.data : res.data;
+
+      const [resListing, resCal] = await Promise.all([
+        apiClient.get<any>(`/listings/${id}`),
+        apiClient.get<any>(`/calendrier/${id}`).catch(() => null),
+      ]);
+
+      if (resListing) {
+        const payload = resListing.data?.data ? resListing.data.data : resListing.data;
+        const calData = resCal?.data?.data ? resCal.data.data : resCal?.data;
+
+        if (calData) {
+          const calIndispos = Array.isArray(calData.indisponibilites) ? calData.indisponibilites : [];
+          const calResas = Array.isArray(calData.reservations) ? calData.reservations : [];
+
+          payload.indisponibilites = [
+            ...(Array.isArray(payload.indisponibilites) ? payload.indisponibilites : []),
+            ...calIndispos,
+          ];
+          payload.reservations = [
+            ...(Array.isArray(payload.reservations) ? payload.reservations : []),
+            ...calResas,
+          ];
+        }
+
         setListing(payload);
         setDetail(id, payload, false);
       }
@@ -226,26 +247,10 @@ export default function ListingDetailScreen() {
         tarifsNuits={listing.tarifsNuits}
         disabledDates={[
           ...(Array.isArray(listing.disabledDates) ? listing.disabledDates : []),
-          ...(Array.isArray(listing.datesBloquees)
-            ? listing.datesBloquees.map((item: any) =>
-                typeof item === 'object' && item !== null && (item.dateDebut || item.start)
-                  ? { start: item.dateDebut || item.start, end: item.dateFin || item.end }
-                  : item
-              )
-            : []),
-          ...(Array.isArray(listing.indisponibilities)
-            ? listing.indisponibilities.map((item: any) =>
-                typeof item === 'object' && item !== null && (item.dateDebut || item.start)
-                  ? { start: item.dateDebut || item.start, end: item.dateFin || item.end }
-                  : item
-              )
-            : []),
-          ...(Array.isArray(listing.reservations)
-            ? listing.reservations.map((r: any) => ({
-                start: r.dateDebut || r.debut || r.start,
-                end: r.dateFin || r.fin || r.end,
-              }))
-            : []),
+          ...(Array.isArray(listing.datesBloquees) ? listing.datesBloquees : []),
+          ...(Array.isArray(listing.indisponibilites) ? listing.indisponibilites : []),
+          ...(Array.isArray(listing.indisponibilities) ? listing.indisponibilities : []),
+          ...(Array.isArray(listing.reservations) ? listing.reservations : []),
         ]}
         onClose={() => setIsModalOpen(false)}
       />
