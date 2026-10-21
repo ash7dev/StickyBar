@@ -62,11 +62,11 @@ export function TenantReservationHeaderBar({
         <Text style={styles.headerTitle}>Mes Séjours & Voyages</Text>
 
         <Text style={styles.headerSubtitle}>
-          Gérez vos réservations, vos contrats et bénéficiez de la protection du séquestre Klef.
+          Gérez vos réservations, vos contrats et bénéficiez de la protection du séquestre Paixi.
         </Text>
       </View>
 
-      {/* ── 2. Badge Garantie Séquestre Klef ────────────────────────────── */}
+      {/* ── 2. Badge Garantie Séquestre Paixi ────────────────────────────── */}
       <View style={styles.sequestreBadgeCard}>
         <View style={styles.shieldCircle}>
           <ShieldCheck size={20} color={colors.forest[700]} />
@@ -74,7 +74,7 @@ export function TenantReservationHeaderBar({
 
         <View style={styles.sequestreTextContainer}>
           <View style={styles.sequestreHeaderRow}>
-            <Text style={styles.sequestreTitle}>Garantie Séquestre Klef</Text>
+            <Text style={styles.sequestreTitle}>Garantie Séquestre Paixi</Text>
             <View style={styles.pulseDot} />
           </View>
           <Text style={styles.sequestreSub}>

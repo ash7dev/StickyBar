@@ -211,6 +211,12 @@ type Indispo = { id: string; dateDebut: string; dateFin: string; motif?: string 
 const isoDay = (d: Date) =>
   `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
 
+/** Jour suivant d'une clé `YYYY-MM-DD` (calcul local, sans décalage de fuseau). */
+const dayAfter = (key: string) => {
+  const [y, m, d] = key.split('-').map(Number);
+  return isoDay(new Date(y, m - 1, d + 1));
+};
+
 function ListingCalendar({ listingId, reservations }: { listingId: string; reservations: Reservation[] }) {
   const qc = useQueryClient();
   const today = new Date();
@@ -437,7 +443,8 @@ function ListingCalendar({ listingId, reservations }: { listingId: string; reser
                 onClick={() => {
                   const end = selectEnd ?? selectStart;
                   const [a, b] = selectStart <= end ? [selectStart, end] : [end, selectStart];
-                  createMutation.mutate({ dateDebut: a, dateFin: b, motif: motif.trim() || undefined });
+                  // L'API exclut dateFin (comme un départ) : on envoie le lendemain du dernier jour choisi
+                  createMutation.mutate({ dateDebut: a, dateFin: dayAfter(b), motif: motif.trim() || undefined });
                 }}
                 disabled={createMutation.isPending}
                 className="flex w-full items-center justify-center gap-2 rounded-pill bg-forest-600 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-forest-700 disabled:opacity-50"

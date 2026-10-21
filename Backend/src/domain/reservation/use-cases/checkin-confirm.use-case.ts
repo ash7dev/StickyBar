@@ -87,7 +87,7 @@ export class CheckInConfirmUseCase {
       '/reservations'
     ).catch((err) => this.logger.error(`Erreur Push checkin: ${err.message}`));
 
-    // 4. Calculer et retourner le montant de Klef Coins estimés gagnés
+    // 4. Calculer et retourner le montant de Paixi Coins estimés gagnés
     const twelveMonthsAgo = new Date();
     twelveMonthsAgo.setFullYear(twelveMonthsAgo.getFullYear() - 1);
 
@@ -108,7 +108,7 @@ export class CheckInConfirmUseCase {
     const montantTotal = Number(reservation.totalLocataire || 0);
     const coinsGagnes = Math.round((montantTotal * tierInfo.cashbackPct) / 100);
 
-    this.logger.log(`Klef Coins estimés pour résa ${reservationId}: ${coinsGagnes} Coins (${tierInfo.cashbackPct}%)`);
+    this.logger.log(`Paixi Coins estimés pour résa ${reservationId}: ${coinsGagnes} Coins (${tierInfo.cashbackPct}%)`);
 
     // 5. Bonus Parrainage — si c'est le 1er séjour du locataire et qu'il a un parrain
     if (nbSejours === 1) {
@@ -124,7 +124,7 @@ export class CheckInConfirmUseCase {
           this.notifications.sendReservationPush(
             locataire.parrainId!,
             'Parrainage validé ! 🤝',
-            `Votre filleul ${locataire.prenom} a effectué son 1er séjour. +2 500 Klef Coins !`,
+            `Votre filleul ${locataire.prenom} a effectué son 1er séjour. +2 500 Paixi Coins !`,
             '/teranga-club'
           ).catch((err) => this.logger.error(`Erreur Push parrainage: ${err.message}`));
         }).catch((err) => {

@@ -41,12 +41,12 @@ export function TerangaPerksGrid({ data, isAuthenticated }: Props) {
       value: (
         <>
           {pct(cashbackPct)}{' '}
-          <span className="text-sm font-semibold text-foreground-muted">en Klef Coins</span>
+          <span className="text-sm font-semibold text-foreground-muted">en Paixi Coins</span>
         </>
       ),
       description: isAuthenticated
-        ? 'Chaque séjour validé crédite automatiquement vos Klef Coins.'
-        : 'Chaque séjour validé crédite des Klef Coins, dès votre premier voyage.',
+        ? 'Chaque séjour validé crédite automatiquement vos Paixi Coins.'
+        : 'Chaque séjour validé crédite des Paixi Coins, dès votre premier voyage.',
       highlight: true,
     },
     {

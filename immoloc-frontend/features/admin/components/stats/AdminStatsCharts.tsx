@@ -99,11 +99,11 @@ function Infobulle({ point }: { point: TimeSeriesPoint }) {
       <p className="border-b border-border-inverse pb-1 font-semibold text-neutral-50">
         {point.date}
       </p>
-      {/* « Part Net Klef (7%) » : le taux n'est pas connu de ce composant, il
+      {/* « Part Net Paixi (7%) » : le taux n'est pas connu de ce composant, il
          varie, et le ×1,07 du prix public est une majoration — pas la
          commission. */}
       <p>
-        Net Klef :{' '}
+        Net Paixi :{' '}
         <strong className="font-semibold tabular-nums text-neutral-50">{fmt(point.netKlef)}</strong>
       </p>
       <p className="tabular-nums">GMV : {fmt(point.gmv)}</p>
@@ -176,7 +176,7 @@ export function AdminStatsCharts({
           <div>
             <h3 className="flex items-center gap-2 font-display text-base font-semibold text-foreground">
               <TrendingUp className="h-5 w-5 text-forest-600" aria-hidden />
-              Revenu net Klef
+              Revenu net Paixi
             </h3>
             <p className="mt-0.5 text-xs text-foreground-muted">
               Commissions et pénalités perçues sur la période.

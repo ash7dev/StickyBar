@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import {
   StyleSheet,
   View,
@@ -12,6 +12,7 @@ import {
   Alert,
   ActionSheetIOS,
   Platform,
+  Animated,
 } from 'react-native';
 import { X, Camera, ImagePlus, Trash2, CheckCircle2, ShieldCheck, Tag } from 'lucide-react-native';
 import * as ImagePicker from 'expo-image-picker';
@@ -169,17 +170,34 @@ export function MobileEtatLieuxCameraModal({
     }
   };
 
+  const animVal = useRef(new Animated.Value(0)).current;
+
+  useEffect(() => {
+    if (visible) {
+      animVal.setValue(0);
+      Animated.spring(animVal, {
+        toValue: 1,
+        speed: 16,
+        bounciness: 6,
+        useNativeDriver: true,
+      }).start();
+    }
+  }, [visible, animVal]);
+
   if (!visible) return null;
+
+  const backdropOpacity = animVal.interpolate({ inputRange: [0, 1], outputRange: [0, 1] });
+  const sheetTranslateY = animVal.interpolate({ inputRange: [0, 1], outputRange: [250, 0] });
 
   const isCheckin = type === 'CHECKIN';
 
   return (
     <>
-      <Modal visible={visible} animationType="slide" transparent onRequestClose={handleRequestClose}>
+      <Modal visible={visible} animationType="none" transparent onRequestClose={handleRequestClose}>
         <TouchableWithoutFeedback onPress={handleRequestClose}>
-          <View style={styles.overlay}>
+          <Animated.View style={[styles.overlay, { opacity: backdropOpacity }]}>
             <TouchableWithoutFeedback>
-              <View style={styles.sheetContainer}>
+              <Animated.View style={[styles.sheetContainer, { transform: [{ translateY: sheetTranslateY }] }]}>
                 <View style={styles.dragHandle} />
 
                 <View style={styles.header}>
@@ -282,7 +300,7 @@ export function MobileEtatLieuxCameraModal({
                   <View style={styles.infoBanner}>
                     <ShieldCheck size={16} color={colors.forest[700]} style={{ marginTop: 2 }} />
                     <Text style={styles.infoText}>
-                      Les photos sont horodatées et certifiées sur les serveurs sécurisés Klef. Elles
+                      Les photos sont horodatées et certifiées sur les serveurs sécurisés Paixi. Elles
                       servent de preuve irréfutable en cas de litige.
                     </Text>
                   </View>
@@ -317,9 +335,9 @@ export function MobileEtatLieuxCameraModal({
                     )}
                   </TouchableOpacity>
                 </View>
-              </View>
+              </Animated.View>
             </TouchableWithoutFeedback>
-          </View>
+          </Animated.View>
         </TouchableWithoutFeedback>
       </Modal>
 

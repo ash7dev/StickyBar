@@ -50,7 +50,47 @@ export class RequestWithdrawalUseCase {
         );
       }
 
-      if (solde < montant) {
+      // Calcul du solde gelé à titre conservatoire pour les litiges en cours
+      const litigesEnAttente = await tx.litige.findMany({
+        where: {
+          statut: 'EN_ATTENTE',
+          reservation: { proprietaireId: userId },
+        },
+        include: {
+          reservation: {
+            select: {
+              netProprietaire: true,
+              typePaiement: true,
+              montantAcompte: true,
+              montantCommission: true,
+            },
+          },
+        },
+      });
+
+      let soldeGeleLitige = 0;
+      for (const litige of litigesEnAttente) {
+        const r = litige.reservation;
+        const isDeposit = r.typePaiement?.toUpperCase() === 'DEPOSIT';
+        const commNum = Number(r.montantCommission || 0);
+        const montantImpacte = isDeposit
+          ? Math.max(0, Number(r.montantAcompte || 0) - commNum)
+          : Number(r.netProprietaire || 0);
+
+        soldeGeleLitige += montantImpacte;
+      }
+
+      const soldeRetirable = Math.max(0, solde - soldeGeleLitige);
+
+      if (montant > soldeRetirable) {
+        if (soldeGeleLitige > 0) {
+          throw new BadRequestException(
+            `Impossible d'effectuer ce retrait de ${montant.toLocaleString('fr-FR')} FCFA. ` +
+            `Votre solde disponible est de ${solde.toLocaleString('fr-FR')} FCFA, ` +
+            `mais ${soldeGeleLitige.toLocaleString('fr-FR')} FCFA sont gelés en raison de litige(s) en cours d'arbitrage. ` +
+            `Solde maximum retirable actuellement : ${soldeRetirable.toLocaleString('fr-FR')} FCFA.`
+          );
+        }
         throw new BadRequestException(
           `Solde insuffisant. Disponible : ${solde.toLocaleString('fr-FR')} FCFA`,
         );

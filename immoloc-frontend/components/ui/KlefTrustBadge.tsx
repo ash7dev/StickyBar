@@ -18,7 +18,7 @@ export function KlefTrustBadge({ variant = 'card', className }: KlefTrustBadgePr
           </span>
           <div className="min-w-0 flex-1 space-y-1">
             <div className="flex items-center gap-1.5 font-display text-xs font-bold text-foreground">
-              <span> Garantie Séquestre Klef 100%</span>
+              <span> Garantie Séquestre Paixi 100%</span>
             </div>
             <p className="text-[11px] leading-relaxed text-foreground-muted">
               Logement non conforme ou hôte absent ? Votre argent reste bloqué. Relogement immédiat ou remboursement 100% sous 2 heures.
@@ -40,7 +40,7 @@ export function KlefTrustBadge({ variant = 'card', className }: KlefTrustBadgePr
             <div className="space-y-1">
               <div className="flex flex-wrap items-center gap-2">
                 <h3 className="font-display text-sm font-bold text-on-inverse-display">
-                  🛡️ Garantie Séquestre Klef 100%
+                  🛡️ Garantie Séquestre Paixi 100%
                 </h3>
                 <span className="rounded-pill border border-forest-200/30 bg-forest-800/60 px-2.5 py-0.5 text-[10px] font-semibold text-on-inverse-marker">
                   Réservation Protégée
@@ -64,7 +64,7 @@ export function KlefTrustBadge({ variant = 'card', className }: KlefTrustBadgePr
         </span>
         <div>
           <h4 className="font-display text-xs font-bold uppercase tracking-wider text-foreground">
-            🛡️ Garantie Séquestre Klef 100%
+            🛡️ Garantie Séquestre Paixi 100%
           </h4>
           <p className="mt-0.5 text-[11px] font-medium text-foreground-muted">
             Paiement 100% sécurisé & protection voyageur

@@ -282,7 +282,7 @@ export function ExtraFeesCard({
               <div className="flex items-start gap-2.5 rounded-inner border border-forest-200/70 bg-forest-50/70 p-3 text-xs text-forest-900">
                 <Gavel className="h-4 w-4 shrink-0 text-forest-700 mt-0.5" aria-hidden="true" />
                 <div className="space-y-0.5">
-                  <p className="font-semibold text-forest-900">Décision d&apos;arbitrage Klef Support</p>
+                  <p className="font-semibold text-forest-900">Décision d&apos;arbitrage Paixi Support</p>
                   <p className="text-[0.75rem] leading-relaxed text-forest-800">{item.description}</p>
                 </div>
               </div>
@@ -454,7 +454,7 @@ export function ExtraFeesCard({
             <div className="space-y-2 rounded-inner border border-error-200 bg-error-50 p-4">
               <div className="flex items-center gap-2 text-xs font-semibold text-error-800">
                 <ShieldAlert className="h-4 w-4" aria-hidden="true" />
-                <span>Signalement au Support Klef</span>
+                <span>Signalement au Support Paixi</span>
               </div>
               <p className="text-xs leading-relaxed text-error-700">
                 Vous vous apprêtez à signaler le refus de paiement du supplément{' '}
@@ -462,7 +462,7 @@ export function ExtraFeesCard({
                 <strong>{formatMontant(feeToRefuse.montant)}</strong> par le voyageur.
               </p>
               <p className="text-xs leading-relaxed text-error-700">
-                Cette action ouvrira immédiatement un dossier de litige pour non-paiement transmis à l&apos;équipe d&apos;arbitrage Klef.
+                Cette action ouvrira immédiatement un dossier de litige pour non-paiement transmis à l&apos;équipe d&apos;arbitrage Paixi.
               </p>
             </div>
 

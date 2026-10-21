@@ -55,7 +55,7 @@ export function MobileOwnerFinancialBreakdownCard({ reservation }: MobileOwnerFi
       kind: 'total',
     },
     {
-      label: `Commission Klef (${commissionPct} %)`,
+      label: `Commission Paixi (${commissionPct} %)`,
       value: `−${formatPrice(montantCommission)}`,
       kind: 'deduction',
     },
@@ -126,11 +126,11 @@ export function MobileOwnerFinancialBreakdownCard({ reservation }: MobileOwnerFi
         })}
       </View>
 
-      {/* Barre de répartition des pourcentages (Votre part vs Klef) */}
+      {/* Barre de répartition des pourcentages (Votre part vs Paixi) */}
       <View style={styles.barSection}>
         <View style={styles.barLabelsRow}>
           <Text style={styles.barLabelOwner}>VOTRE PART — {ownPct} %</Text>
-          <Text style={styles.barLabelPlatform}>COMMISSION KLEF — {commissionPct} %</Text>
+          <Text style={styles.barLabelPlatform}>COMMISSION PAIXI — {commissionPct} %</Text>
         </View>
         <View style={styles.barTrack}>
           <View style={[styles.barFillOwner, { width: `${ownPct}%` }]} />

@@ -296,7 +296,7 @@ export function MobileStepAnnonce() {
                 </View>
                 <View style={styles.perkRow}>
                   <TrendingUp size={13} color={colors.lime[400]} />
-                  <Text style={styles.perkText}>Priorité de mise en avant dans les résultats de recherche Klef</Text>
+                  <Text style={styles.perkText}>Priorité de mise en avant dans les résultats de recherche Paixi</Text>
                 </View>
               </View>
             )}

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import {
   Modal,
   View,
@@ -11,6 +11,7 @@ import {
   Platform,
   TouchableWithoutFeedback,
   Keyboard,
+  Animated,
 } from 'react-native';
 import { X, AlertTriangle, CheckCircle2 } from 'lucide-react-native';
 import { colors, typography } from '../../../../shared/theme/tokens';
@@ -39,6 +40,20 @@ export function MobileOwnerRefusalModal({
   const [customReason, setCustomReason] = useState<string>('');
   const [submitting, setSubmitting] = useState(false);
 
+  const animVal = useRef(new Animated.Value(0)).current;
+
+  useEffect(() => {
+    if (visible) {
+      animVal.setValue(0);
+      Animated.spring(animVal, {
+        toValue: 1,
+        speed: 16,
+        bounciness: 6,
+        useNativeDriver: true,
+      }).start();
+    }
+  }, [visible, animVal]);
+
   const isCustom = selectedReason === 'Autre raison personnelle';
   const finalReason = isCustom ? customReason.trim() : selectedReason;
 
@@ -54,20 +69,30 @@ export function MobileOwnerRefusalModal({
     }
   };
 
+  if (!visible) return null;
+
+  const backdropOpacity = animVal.interpolate({ inputRange: [0, 1], outputRange: [0, 1] });
+  const sheetTranslateY = animVal.interpolate({ inputRange: [0, 1], outputRange: [250, 0] });
+
   return (
     <Modal
       visible={visible}
       transparent
-      animationType="slide"
+      animationType="none"
       onRequestClose={onClose}
     >
       <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
-        <View style={styles.overlay}>
+        <Animated.View style={[styles.overlay, { opacity: backdropOpacity }]}>
           <KeyboardAvoidingView
             behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
             style={styles.sheetWrapper}
           >
-            <View style={styles.sheetCard}>
+            <Animated.View
+              style={[
+                styles.sheetCard,
+                { transform: [{ translateY: sheetTranslateY }] },
+              ]}
+            >
               {/* Top Bar */}
               <View style={styles.header}>
                 <View style={styles.warningIconBadge}>
@@ -164,9 +189,9 @@ export function MobileOwnerRefusalModal({
                   )}
                 </TouchableOpacity>
               </View>
-            </View>
+            </Animated.View>
           </KeyboardAvoidingView>
-        </View>
+        </Animated.View>
       </TouchableWithoutFeedback>
     </Modal>
   );

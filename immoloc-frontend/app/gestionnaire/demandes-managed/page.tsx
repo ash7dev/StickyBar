@@ -98,7 +98,7 @@ export default function GestionnaireDemandesManagedPage() {
           <div className="flex items-center gap-2">
             <h1 className="font-display text-2xl sm:text-3xl font-semibold tracking-tight text-foreground flex items-center gap-3">
               <UserPlus className="h-7 w-7 text-forest-600" aria-hidden="true" />
-              <span>Demandes Klef Managed</span>
+              <span>Demandes Paixi Managed</span>
             </h1>
             <span className="badge-brand">Offre Sérénité</span>
           </div>
@@ -115,7 +115,7 @@ export default function GestionnaireDemandesManagedPage() {
           className="flex items-center gap-3 rounded-card border border-error-500/20 bg-error-50 p-4 text-xs text-error-700 font-medium"
         >
           <AlertCircle className="h-5 w-5 shrink-0 text-error-600" aria-hidden="true" />
-          <span>Impossible de charger les demandes Klef Managed. Vérifiez votre connexion.</span>
+          <span>Impossible de charger les demandes Paixi Managed. Vérifiez votre connexion.</span>
         </div>
       )}
 

@@ -168,7 +168,7 @@ export class CreateReservationUseCase {
       const montantBrutAEncaisser = isDeposit ? Math.round(totalLocataireNum * (acomptePct / 100)) : totalLocataireNum;
       const montantSoldeRestant = isDeposit ? totalLocataireNum - montantBrutAEncaisser : 0;
 
-      // Calcul Déduction Klef Coins Teranga
+      // Calcul Déduction Paixi Coins Teranga
       let coinsDeduites = 0;
       if (input.useCoins) {
         const terangaAccount = await tx.terangaAccount.findUnique({
@@ -212,13 +212,13 @@ export class CreateReservationUseCase {
         },
       });
 
-      // Débit effectif des Klef Coins si utilisés
+      // Débit effectif des Paixi Coins si utilisés
       if (coinsDeduites > 0) {
         const redeemUseCase = new RedeemCoinsUseCase(tx as any);
         await redeemUseCase.execute(user.id, coinsDeduites, reservation.id);
       }
 
-      // Enregistrement au Grand Livre Système Klef (Séquestre + Subvention)
+      // Enregistrement au Grand Livre Système Paixi (Séquestre + Subvention)
       await this.systemLedger.recordEncaissementSequestre(
         tx,
         reservation.id,

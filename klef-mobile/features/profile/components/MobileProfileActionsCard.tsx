@@ -40,7 +40,7 @@ export function MobileProfileActionsCard() {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {});
     Alert.alert(
       'Déconnexion',
-      'Êtes-vous sûr de vouloir vous déconnecter de Klef ?',
+      'Êtes-vous sûr de vouloir vous déconnecter de Paixi ?',
       [
         { text: 'Annuler', style: 'cancel' },
         {
@@ -126,11 +126,11 @@ export function MobileProfileActionsCard() {
             onPress={handleOpenDeleteModal}
             style={styles.dangerCardBtn}
             accessibilityRole="button"
-            accessibilityLabel="Supprimer mon compte Klef"
+            accessibilityLabel="Supprimer mon compte Paixi"
           >
             <Trash2 size={15} color={colors.error[700]} />
             <Text style={styles.dangerCardBtnText} numberOfLines={1}>
-              Supprimer mon compte Klef
+              Supprimer mon compte Paixi
             </Text>
           </TouchableOpacity>
         </View>

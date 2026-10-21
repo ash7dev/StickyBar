@@ -25,7 +25,11 @@ export function MobileStatsHeader({
 
   const handleBackToHome = () => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {});
-    router.push('/(owner)/dashboard' as any);
+    if (router.canGoBack()) {
+      router.back();
+    } else {
+      router.navigate('/(owner)/dashboard' as any);
+    }
   };
 
   const handleRefresh = () => {

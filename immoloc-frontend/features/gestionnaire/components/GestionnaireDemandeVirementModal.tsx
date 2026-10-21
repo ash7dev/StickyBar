@@ -14,6 +14,8 @@ interface OwnerItem {
   telephone: string;
   email: string | null;
   soldeDisponible: number;
+  soldeGeleLitige?: number;
+  soldeRetirable?: number;
 }
 
 interface Props {
@@ -23,7 +25,8 @@ interface Props {
 }
 
 export function GestionnaireDemandeVirementModal({ owner, isOpen, onClose }: Props) {
-  const [montant, setMontant] = useState<string>(owner ? String(owner.soldeDisponible) : '');
+  const soldeMaxRetirable = owner ? (owner.soldeRetirable !== undefined ? owner.soldeRetirable : Math.max(0, owner.soldeDisponible - (owner.soldeGeleLitige || 0))) : 0;
+  const [montant, setMontant] = useState<string>(owner ? String(soldeMaxRetirable) : '');
   const [methode, setMethode] = useState<'WAVE' | 'ORANGE_MONEY' | 'VIREMENT_BANCAIRE'>('WAVE');
   const [telephoneBeneficiaire, setTelephoneBeneficiaire] = useState(owner?.telephone || '');
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
@@ -54,8 +57,9 @@ export function GestionnaireDemandeVirementModal({ owner, isOpen, onClose }: Pro
       setErrorMsg('Veuillez entrer un montant valide supérieur à 0 FCFA.');
       return;
     }
-    if (val > owner.soldeDisponible) {
-      setErrorMsg(`Le montant du virement ne peut pas dépasser le solde disponible (${fcfa(owner.soldeDisponible)} FCFA).`);
+    if (val > soldeMaxRetirable) {
+      const litigeText = (owner.soldeGeleLitige || 0) > 0 ? ` (${fcfa(owner.soldeGeleLitige || 0)} FCFA gelés conservatoirement en litige)` : '';
+      setErrorMsg(`Le montant du virement ne peut pas dépasser le solde retirable autorisé (${fcfa(soldeMaxRetirable)} FCFA)${litigeText}.`);
       return;
     }
     if (!telephoneBeneficiaire.trim()) {
@@ -69,6 +73,8 @@ export function GestionnaireDemandeVirementModal({ owner, isOpen, onClose }: Pro
       telephone: telephoneBeneficiaire,
     });
   };
+
+  const hasLitige = (owner.soldeGeleLitige || 0) > 0;
 
   return (
     <div
@@ -112,17 +118,34 @@ export function GestionnaireDemandeVirementModal({ owner, isOpen, onClose }: Pro
           </div>
         )}
 
+        {/* Alerte Litige s'il existe */}
+        {hasLitige && (
+          <div className="flex items-center gap-2.5 rounded-card border border-amber-300 bg-amber-50 p-3.5 text-xs text-amber-800 font-semibold">
+            <AlertCircle className="w-4 h-4 shrink-0 text-amber-600" aria-hidden="true" />
+            <span>
+              ⚠️ Ce bailleur fait l'objet d'un litige en cours ({fcfa(owner.soldeGeleLitige || 0)} FCFA gelés conservatoirement).
+            </span>
+          </div>
+        )}
+
         {/* Carte Information Solde */}
         <div className="p-4 rounded-inner bg-forest-50 border border-forest-200/80 flex items-center justify-between shadow-2xs">
           <div>
-            <span className="text-[0.6875rem] font-bold text-forest-700 uppercase tracking-wider">Solde Wallet Disponible</span>
+            <span className="text-[0.6875rem] font-bold text-forest-700 uppercase tracking-wider">
+              {hasLitige ? 'Solde Reversement Autorisé' : 'Solde Wallet Disponible'}
+            </span>
             <p className="font-display text-xl font-extrabold text-forest-900 tabular-nums mt-0.5">
-              {fcfa(owner.soldeDisponible)} FCFA
+              {fcfa(soldeMaxRetirable)} FCFA
             </p>
+            {hasLitige && (
+              <span className="text-[11px] text-amber-800 font-medium block mt-0.5">
+                (Total Wallet: {fcfa(owner.soldeDisponible)} FCFA)
+              </span>
+            )}
           </div>
           <button
             type="button"
-            onClick={() => setMontant(String(owner.soldeDisponible))}
+            onClick={() => setMontant(String(soldeMaxRetirable))}
             className="px-3.5 py-1.5 rounded-pill bg-white border border-forest-200/80 text-xs font-bold text-forest-800 hover:bg-forest-100 transition-colors cursor-pointer shadow-2xs"
           >
             Tout verser

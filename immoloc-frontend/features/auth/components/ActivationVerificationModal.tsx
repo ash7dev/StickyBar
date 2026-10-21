@@ -198,7 +198,7 @@ export function ActivationVerificationModal({
                 Où souhaitez-vous recevoir votre code ?
               </h2>
               <p className="mt-1.5 text-sm text-foreground-muted">
-                Validez votre compte Klef en un clic pour accéder immédiatement à toutes les offres de logements.
+                Validez votre compte Paixi en un clic pour accéder immédiatement à toutes les offres de logements.
               </p>
             </div>
 

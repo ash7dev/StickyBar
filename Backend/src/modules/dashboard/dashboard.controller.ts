@@ -5,6 +5,9 @@ import {
   UseGuards 
 } from '@nestjs/common';
 import { DashboardService } from './dashboard.service';
+import { OwnerOverviewService } from './overview/owner-overview.service';
+import { Roles } from '@shared/decorators/roles.decorator';
+import { Role } from '@shared/types/jwt-payload.type';
 import { JwtAuthGuard } from '@shared/guards/jwt-auth.guard';
 import { CurrentUser } from '@shared/decorators/current-user.decorator';
 import { AuthUser } from '@shared/types/jwt-payload.type';
@@ -12,7 +15,20 @@ import { AuthUser } from '@shared/types/jwt-payload.type';
 @Controller('dashboard')
 @UseGuards(JwtAuthGuard)
 export class DashboardController {
-  constructor(private readonly dashboardService: DashboardService) {}
+  constructor(
+    private readonly dashboardService: DashboardService,
+    private readonly overviewService: OwnerOverviewService,
+  ) {}
+
+  /**
+   * Accueil hôte : revenus 6 mois, occupation, performance par bien,
+   * versements à venir, réputation et conseils — en un seul appel.
+   */
+  @Get('owner/overview')
+  @Roles(Role.PROPRIETAIRE, Role.GESTIONNAIRE)
+  getOverview(@CurrentUser() user: AuthUser) {
+    return this.overviewService.getOverview(user.id);
+  }
 
   /**
    * Stats globales du dashboard propriétaire avec filtre temporel optionnel

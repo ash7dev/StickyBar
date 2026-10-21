@@ -55,15 +55,15 @@ const TYPE_LABEL: Record<string, string> = {
 };
 
 const ANNULATION_LOCATAIRE = [
-  { titre: 'Plus de 7 jours avant', desc: 'Remboursement intégral du locataire, sans pénalité.' },
-  { titre: 'Entre 3 et 7 jours avant', desc: 'Remboursement intégral du locataire + pénalité de 20% à la charge du propriétaire.' },
-  { titre: 'Moins de 3 jours avant', desc: 'Remboursement intégral du locataire + pénalité de 40% à la charge du propriétaire.' },
+  { titre: 'Plus de 3 jours avant', desc: 'Remboursement à 100% de la nuitée (hors commission Paixi de 7%).' },
+  { titre: 'Entre 24h et 3 jours avant', desc: 'Remboursement partiel à 75% du montant total.' },
+  { titre: 'Moins de 24h avant', desc: 'Remboursement partiel à 50% du montant total.' },
 ];
 
 const ANNULATION_PROPRIO = [
-  { titre: 'Plus de 7 jours avant', desc: 'Remboursement intégral au locataire, sans pénalité.' },
-  { titre: 'Entre 3 et 7 jours avant', desc: 'Remboursement intégral + pénalité de 20% à la charge du propriétaire.' },
-  { titre: 'Moins de 3 jours avant', desc: 'Remboursement intégral + pénalité de 40% à la charge du propriétaire.' },
+  { titre: 'Plus de 3 jours avant', desc: 'Remboursement intégral au locataire, sans pénalité sur le propriétaire.' },
+  { titre: 'Entre 24h et 3 jours avant', desc: 'Remboursement intégral au locataire + pénalité de 2 500 FCFA à la charge du propriétaire.' },
+  { titre: 'Moins de 24h avant', desc: 'Remboursement intégral au locataire + pénalité de 10 000 FCFA à la charge du propriétaire.' },
 ];
 
 const ARTICLES = [
@@ -91,7 +91,7 @@ const ARTICLES = [
   },
   {
     num: '9', titre: 'Dommages et responsabilité',
-    desc: 'En cas de dommages, le locataire en informe immédiatement Klef et le propriétaire. Tout litige est soumis à la médiation Klef, régi par le droit sénégalais.',
+    desc: 'En cas de dommages, le locataire en informe immédiatement Paixi et le propriétaire. Tout litige est soumis à la médiation Paixi, régi par le droit sénégalais.',
   },
   {
     num: '10', titre: 'Communication et coordination',
@@ -99,7 +99,7 @@ const ARTICLES = [
   },
   {
     num: '11', titre: 'Frais de service',
-    desc: 'Les tarifs affichés sur Klef incluent les frais de service destinés à couvrir le fonctionnement de la plateforme, la sécurisation des transactions via le système de séquestre et la protection des deux parties.',
+    desc: 'Les tarifs affichés sur Paixi incluent les frais de service destinés à couvrir le fonctionnement de la plateforme, la sécurisation des transactions via le système de séquestre et la protection des deux parties.',
   },
 ];
 
@@ -176,7 +176,7 @@ export default function ContratPage({ params }: { params: Promise<{ id: string }
               <FileText className="w-5 h-5 text-white" />
             </div>
             <div>
-              <p className="text-[10px] font-black uppercase tracking-[0.2em] text-neutral-400">Klef</p>
+              <p className="text-[10px] font-black uppercase tracking-[0.2em] text-neutral-400">Paixi</p>
               <p className="text-xs font-bold text-neutral-600">Plateforme de location entre particuliers</p>
             </div>
           </div>
@@ -269,11 +269,11 @@ export default function ContratPage({ params }: { params: Promise<{ id: string }
             </table>
           </div>
 
-          {/* ── Séquestre (Klef-specific) ── */}
+          {/* ── Séquestre (Paixi-specific) ── */}
           <div className="rounded-xl border border-emerald-100 bg-emerald-50/40 overflow-hidden">
             <div className="flex items-center gap-2 px-4 py-3 bg-emerald-50 border-b border-emerald-100">
               <Shield className="w-4 h-4 text-emerald-600" />
-              <p className="text-[10px] font-black uppercase tracking-[0.2em] text-emerald-700">Séquestre Klef</p>
+              <p className="text-[10px] font-black uppercase tracking-[0.2em] text-emerald-700">Séquestre Paixi</p>
             </div>
             <table className="w-full text-sm">
               <tbody>
@@ -281,7 +281,7 @@ export default function ContratPage({ params }: { params: Promise<{ id: string }
                   ['Montant bloqué en séquestre', `${fcfa(res.totalLocataire)} FCFA`],
                   ['Libéré au propriétaire', 'Après validation du check-in par le locataire'],
                   ['Délai de libération', '48h après entrée dans les lieux'],
-                  ["En cas de litige", "Fonds bloqués jusqu'à résolution par Klef"],
+                  ["En cas de litige", "Fonds bloqués jusqu'à résolution par Paixi"],
                   ['Référence séquestre', `SEQ-${ref}`],
                 ].map(([label, value]) => (
                   <tr key={label} className="border-b border-emerald-100/60 last:border-0">
@@ -307,7 +307,7 @@ export default function ContratPage({ params }: { params: Promise<{ id: string }
               </thead>
               <tbody>
                 <tr>
-                  <td className="p-3 border border-neutral-100 text-xs text-neutral-700">Commission plateforme Klef</td>
+                  <td className="p-3 border border-neutral-100 text-xs text-neutral-700">Commission plateforme Paixi</td>
                   <td className="p-3 border border-neutral-100 text-right text-xs font-semibold">{commissionPct}%</td>
                   <td className="p-3 border border-neutral-100 text-right text-xs font-bold text-neutral-900">
                     {fcfa(res.montantCommission)} FCFA
@@ -419,7 +419,7 @@ export default function ContratPage({ params }: { params: Promise<{ id: string }
           {/* ── Footer ── */}
           <div className="border-t border-neutral-100 pt-5 text-center">
             <p className="text-[10px] text-neutral-400">
-              Klef — Plateforme de location de logements entre particuliers au Sénégal
+              Paixi — Plateforme de location de logements entre particuliers au Sénégal
               {' · '}Réf. {ref}
               {' · '}{dateLong(res.creeLe)}
             </p>

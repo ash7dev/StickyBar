@@ -1,222 +1,182 @@
 import React, { useEffect } from 'react';
-import {
-  View,
-  Text,
-  StyleSheet,
-  StatusBar,
-  TouchableOpacity,
-  Dimensions,
-  Platform,
-} from 'react-native';
+import { View, Text, StyleSheet, StatusBar, Pressable, TouchableOpacity } from 'react-native';
 import { useRouter } from 'expo-router';
 import { Image } from 'expo-image';
+import { LinearGradient } from 'expo-linear-gradient';
+import * as Haptics from 'expo-haptics';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Animated, {
   useSharedValue,
   useAnimatedStyle,
+  useReducedMotion,
   withTiming,
   withDelay,
   withSpring,
-  interpolate,
   Easing,
 } from 'react-native-reanimated';
-import {
-  ShieldCheck,
-  Sparkles,
-  ArrowRight,
-  Star,
-  Lock,
-  BadgeCheck,
-} from 'lucide-react-native';
+import { ArrowRight, KeyRound, Lock, MapPin, Wallet } from 'lucide-react-native';
 import { useAuthStore } from '../../features/auth/stores/auth.store';
-import { colors, radius, shadows, typography } from '../../shared/theme/tokens';
-import { AppButton } from '../../shared/components/ui/AppButton';
+import { PaixiLogo } from '../../shared/components/brand/PaixiLogo';
+import { colors, typography } from '../../shared/theme/tokens';
 
 // =============================================================================
-// Onboarding Hero Screen — Premium Klef Mobile
+// Onboarding — écran unique Paixi
 //
-// Design inspiré du web HeroSection : immersion photo plein écran,
-// dégradé forest-950 progressif, trust badges, typographie Display,
-// animations d'entrée « klef-rise » avec react-native-reanimated.
+// Photo plein écran (embarquée : affichage immédiat, même en 3G), voile en
+// dégradé, puis un seul bloc de lecture : promesse, paiement protégé en trois
+// temps, moyens de paiement locaux, action. Entrée en cascade, désactivée si
+// l'utilisateur a demandé à réduire les animations.
 // =============================================================================
 
-const { width: SCREEN_W, height: SCREEN_H } = Dimensions.get('window');
-const HERO_IMAGE_URI =
-  'https://images.unsplash.com/photo-1600585154340-be6161a56a0c?q=80&w=1200&auto=format&fit=crop';
+const HERO = require('../../assets/images/onboarding-hero.jpg');
+const WAVE = require('../../assets/images/wavelogo.jpeg');
+const ORANGE_MONEY = require('../../assets/images/orangeMoneylogo.png');
 
-const TRUST_ITEMS = [
-  { icon: ShieldCheck, text: 'Paiements sous séquestre' },
-  { icon: BadgeCheck, text: 'Logements vérifiés' },
-  { icon: Lock, text: 'Données chiffrées' },
-];
+const ESCROW_STEPS = [
+  { icon: Wallet, label: 'Vous payez' },
+  { icon: Lock, label: 'Paixi bloque', highlight: true },
+  { icon: KeyRound, label: 'Versé à l’arrivée' },
+] as const;
+
+/** Apparition « rise » : fondu + montée, décalée de `delay` ms. */
+function Rise({ delay, children, style }: { delay: number; children: React.ReactNode; style?: object }) {
+  const reduceMotion = useReducedMotion();
+  const progress = useSharedValue(reduceMotion ? 1 : 0);
+
+  useEffect(() => {
+    if (reduceMotion) return;
+    progress.value = withDelay(delay, withTiming(1, { duration: 650, easing: Easing.out(Easing.cubic) }));
+  }, [delay, reduceMotion, progress]);
+
+  const animated = useAnimatedStyle(() => ({
+    opacity: progress.value,
+    transform: [{ translateY: (1 - progress.value) * 18 }],
+  }));
+
+  return <Animated.View style={[style, animated]}>{children}</Animated.View>;
+}
 
 export default function OnboardingScreen() {
   const router = useRouter();
+  const insets = useSafeAreaInsets();
+  const reduceMotion = useReducedMotion();
   const setHasSeenOnboarding = useAuthStore((s) => s.setHasSeenOnboarding);
 
-  // ── Animations d'entrée ─────────────────────────────────────────────
-  const heroScale = useSharedValue(1.15);
-  const contentOpacity = useSharedValue(0);
-  const contentTranslate = useSharedValue(24);
-  const badgeOpacity = useSharedValue(0);
-  const trustOpacity = useSharedValue(0);
-
+  // ── Ken Burns lent sur la photo ─────────────────────────────────────
+  const heroScale = useSharedValue(reduceMotion ? 1 : 1.12);
   useEffect(() => {
-    // Image zoom-out (Ken Burns léger)
-    heroScale.value = withTiming(1, {
-      duration: 8000,
-      easing: Easing.out(Easing.cubic),
-    });
+    if (reduceMotion) return;
+    heroScale.value = withTiming(1, { duration: 9000, easing: Easing.out(Easing.cubic) });
+  }, [reduceMotion, heroScale]);
+  const heroStyle = useAnimatedStyle(() => ({ transform: [{ scale: heroScale.value }] }));
 
-    // Badge d'entrée
-    badgeOpacity.value = withDelay(
-      200,
-      withTiming(1, { duration: 600, easing: Easing.out(Easing.cubic) }),
-    );
+  // ── Pression du CTA ────────────────────────────────────────────────
+  const ctaScale = useSharedValue(1);
+  const ctaStyle = useAnimatedStyle(() => ({ transform: [{ scale: ctaScale.value }] }));
 
-    // Contenu principal (titre + sous-titre + CTA)
-    contentOpacity.value = withDelay(
-      400,
-      withTiming(1, { duration: 700, easing: Easing.out(Easing.cubic) }),
-    );
-    contentTranslate.value = withDelay(
-      400,
-      withSpring(0, { damping: 20, stiffness: 90 }),
-    );
-
-    // Trust badges
-    trustOpacity.value = withDelay(
-      900,
-      withTiming(1, { duration: 600, easing: Easing.out(Easing.cubic) }),
-    );
-  }, []);
-
-  const heroAnimatedStyle = useAnimatedStyle(() => ({
-    transform: [{ scale: heroScale.value }],
-  }));
-
-  const badgeAnimatedStyle = useAnimatedStyle(() => ({
-    opacity: badgeOpacity.value,
-    transform: [
-      { translateY: interpolate(badgeOpacity.value, [0, 1], [8, 0]) },
-    ],
-  }));
-
-  const contentAnimatedStyle = useAnimatedStyle(() => ({
-    opacity: contentOpacity.value,
-    transform: [{ translateY: contentTranslate.value }],
-  }));
-
-  const trustAnimatedStyle = useAnimatedStyle(() => ({
-    opacity: trustOpacity.value,
-    transform: [
-      { translateY: interpolate(trustOpacity.value, [0, 1], [12, 0]) },
-    ],
-  }));
-
-  // ── Handlers ────────────────────────────────────────────────────────
-  const handleStartExplorer = async () => {
+  const handleStart = async () => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium).catch(() => {});
     await setHasSeenOnboarding(true);
     router.replace('/(tenant)' as any);
   };
 
-  const handleLoginPress = async () => {
+  const handleLogin = async () => {
     await setHasSeenOnboarding(true);
     router.push('/(auth)/login' as any);
   };
-
 
   return (
     <View style={styles.container}>
       <StatusBar barStyle="light-content" translucent backgroundColor="transparent" />
 
-      {/* ── Background Image avec Ken Burns ──────────────────────────── */}
-      <Animated.View style={[styles.heroImageWrapper, heroAnimatedStyle]}>
-        <Image
-          source={{ uri: HERO_IMAGE_URI }}
-          style={styles.heroImage}
-          contentFit="cover"
-          transition={400}
-          cachePolicy="memory-disk"
-        />
+      <Animated.View style={[StyleSheet.absoluteFill, heroStyle]}>
+        <Image source={HERO} style={StyleSheet.absoluteFill} contentFit="cover" transition={300} />
       </Animated.View>
 
-      {/* ── Gradient Overlay (progressive: transparent → forest-950) ── */}
-      <View style={styles.gradientOverlay}>
-        {/* Top: transparent → subtle dark */}
-        <View style={styles.gradientTop} />
+      <LinearGradient
+        style={StyleSheet.absoluteFill}
+        colors={['rgba(4,25,18,0.55)', 'rgba(4,25,18,0)', 'rgba(4,25,18,0.1)', 'rgba(4,25,18,0.88)', colors.forest[950]]}
+        locations={[0, 0.2, 0.38, 0.62, 0.82]}
+      />
 
-        {/* Bottom: heavy dark for text legibility */}
-        <View style={styles.gradientBottom} />
-      </View>
+      <View style={[styles.content, { paddingTop: insets.top + 14, paddingBottom: insets.bottom + 18 }]}>
+        <Rise delay={150}>
+          <PaixiLogo size={26} tone="inverse" />
+        </Rise>
 
-      {/* ── Content Layer ──────────────────────────────────────────── */}
-      <View style={styles.contentLayer}>
-        {/* Header — Brand Badge */}
-        <Animated.View style={[styles.headerSection, badgeAnimatedStyle]}>
-          <View style={styles.brandBadge}>
-            <View style={styles.brandDot} />
-            <Text style={styles.brandBadgeText}>KLEF</Text>
-          </View>
-        </Animated.View>
+        <View style={styles.spacer} />
 
-        {/* Spacer to push content down */}
-        <View style={{ flex: 1 }} />
+        <Rise delay={320} style={styles.eyebrow}>
+          <MapPin size={13} color={colors.lime[400]} strokeWidth={2.4} />
+          <Text style={styles.eyebrowText}>PARTOUT AU SÉNÉGAL</Text>
+        </Rise>
 
-        {/* Main Content */}
-        <Animated.View style={[styles.mainContent, contentAnimatedStyle]}>
-          {/* Category Pill */}
-          <View style={styles.categoryPill}>
-            <Sparkles size={13} color={colors.lime[300]} />
-            <Text style={styles.categoryPillText}>IMMOBILIER HAUT DE GAMME</Text>
-          </View>
-
-          {/* Display Title */}
-          <Text style={styles.heroTitle}>
-            Trouvez votre{'\n'}havre à Dakar
+        <Rise delay={420}>
+          <Text style={styles.title}>
+            Votre chez-vous,{'\n'}
+            <Text style={styles.titleAccent}>en toute confiance.</Text>
           </Text>
+        </Rise>
 
-          {/* Subtitle */}
-          <Text style={styles.heroSubtitle}>
-            Court séjour d'exception, hébergements 100%{'\u00A0'}vérifiés et paiements
-            locaux simplifiés via Wave{'\u00A0'}&{'\u00A0'}Orange Money.
+        <Rise delay={520}>
+          <Text style={styles.subtitle}>
+            Des logements vérifiés et un paiement protégé&nbsp;: l’hôte n’est payé qu’à votre arrivée.
           </Text>
+        </Rise>
 
-          {/* ── Trust Indicators ──────────────────────────────────── */}
-          <Animated.View style={[styles.trustRow, trustAnimatedStyle]}>
-            {TRUST_ITEMS.map((item, i) => {
-              const Icon = item.icon;
-              return (
-                <View key={i} style={styles.trustItem}>
-                  <Icon size={13} color={colors.forest[300]} />
-                  <Text style={styles.trustItemText}>{item.text}</Text>
+        <Rise delay={640} style={styles.escrowCard}>
+          {ESCROW_STEPS.map((step, i) => {
+            const Icon = step.icon;
+            const isHighlight = 'highlight' in step;
+            return (
+              <React.Fragment key={step.label}>
+                {i > 0 && <View style={styles.escrowLink} />}
+                <View style={styles.escrowStep}>
+                  <View style={[styles.escrowIcon, isHighlight && styles.escrowIconHighlight]}>
+                    <Icon
+                      size={17}
+                      strokeWidth={2.2}
+                      color={isHighlight ? colors.forest[950] : colors.lime[400]}
+                    />
+                  </View>
+                  <Text style={styles.escrowLabel} numberOfLines={1}>
+                    {step.label}
+                  </Text>
                 </View>
-              );
-            })}
+              </React.Fragment>
+            );
+          })}
+        </Rise>
+
+        <Rise delay={740} style={styles.payRow}>
+          <Image source={WAVE} style={styles.payLogo} contentFit="cover" />
+          <Image source={ORANGE_MONEY} style={styles.payLogo} contentFit="cover" />
+          <Text style={styles.payText}>Wave, Orange Money ou carte</Text>
+        </Rise>
+
+        <Rise delay={840}>
+          <Animated.View style={ctaStyle}>
+            <Pressable
+              onPress={handleStart}
+              onPressIn={() => (ctaScale.value = withSpring(0.97, { damping: 18, stiffness: 320 }))}
+              onPressOut={() => (ctaScale.value = withSpring(1, { damping: 14, stiffness: 260 }))}
+              accessibilityRole="button"
+              accessibilityLabel="Trouver un logement"
+              style={styles.cta}
+            >
+              <Text style={styles.ctaLabel}>Trouver un logement</Text>
+              <View style={styles.ctaArrow}>
+                <ArrowRight size={18} color={colors.lime[400]} strokeWidth={2.4} />
+              </View>
+            </Pressable>
           </Animated.View>
 
-          {/* ── CTA Section ───────────────────────────────────────── */}
-          <View style={styles.ctaSection}>
-            <AppButton
-              label="Commencer l'expérience"
-              onPress={handleStartExplorer}
-              rightIcon={<ArrowRight size={18} color={colors.forest[800]} />}
-              size="lg"
-              variant="action"
-              fullWidth
-            />
-
-            <TouchableOpacity
-              activeOpacity={0.7}
-              onPress={handleLoginPress}
-              style={styles.loginLink}
-            >
-              <Text style={styles.loginLinkText}>
-                Déjà un compte ?{' '}
-                <Text style={styles.loginLinkBold}>Se connecter</Text>
-              </Text>
-            </TouchableOpacity>
-          </View>
-        </Animated.View>
+          <TouchableOpacity activeOpacity={0.7} onPress={handleLogin} style={styles.login} accessibilityRole="button">
+            <Text style={styles.loginText}>
+              Déjà un compte ? <Text style={styles.loginBold}>Se connecter</Text>
+            </Text>
+          </TouchableOpacity>
+        </Rise>
       </View>
     </View>
   );
@@ -226,154 +186,105 @@ export default function OnboardingScreen() {
 // Styles
 // =============================================================================
 
+const PAPER = colors.neutral[50];
+
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: colors.forest[950],
-  },
+  container: { flex: 1, backgroundColor: colors.forest[950] },
+  content: { flex: 1, paddingHorizontal: 24 },
+  spacer: { flex: 1 },
 
-  // ── Hero Image ──────────────────────────────────────────────────────
-  heroImageWrapper: {
-    position: 'absolute',
-    top: 0,
-    left: 0,
-    right: 0,
-    bottom: 0,
-  },
-  heroImage: {
-    width: '100%',
-    height: '100%',
-  },
-
-  // ── Gradient Overlay ────────────────────────────────────────────────
-  // Deux couches : haut transparent, bas opaque (pour la lisibilité du texte)
-  gradientOverlay: {
-    position: 'absolute',
-    top: 0,
-    left: 0,
-    right: 0,
-    bottom: 0,
-  },
-  gradientTop: {
-    flex: 0.45,
-    backgroundColor: 'rgba(4, 25, 18, 0.25)',
-  },
-  gradientBottom: {
-    flex: 0.55,
-    // Dégradé simulé : du transparent au forest-950 opaque
-    backgroundColor: 'rgba(4, 25, 18, 0.85)',
-  },
-
-  // ── Content Layer ──────────────────────────────────────────────────
-  contentLayer: {
-    position: 'absolute',
-    top: 0,
-    left: 0,
-    right: 0,
-    bottom: 0,
-    paddingHorizontal: 24,
-    paddingTop: Platform.OS === 'ios' ? 60 : 48,
-    paddingBottom: Platform.OS === 'ios' ? 44 : 32,
-  },
-
-  // ── Header ─────────────────────────────────────────────────────────
-  headerSection: {
-    alignItems: 'flex-start',
-  },
-  brandBadge: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-    backgroundColor: 'rgba(255, 255, 255, 0.08)',
-    borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.12)',
-    paddingVertical: 6,
-    paddingHorizontal: 14,
-    borderRadius: radius.pill,
-  },
-  brandDot: {
-    width: 7,
-    height: 7,
-    borderRadius: 4,
-    backgroundColor: colors.lime[400],
-  },
-  brandBadgeText: {
-    color: colors.neutral[0],
-    fontSize: 12,
-    fontWeight: '800',
-    letterSpacing: 2.5,
-  },
-
-  // ── Main Content ──────────────────────────────────────────────────
-  mainContent: {
-    gap: 14,
-  },
-  categoryPill: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 6,
-    alignSelf: 'flex-start',
-    backgroundColor: 'rgba(211, 242, 110, 0.12)',
-    borderColor: 'rgba(211, 242, 110, 0.25)',
-    borderWidth: 1,
-    paddingVertical: 5,
-    paddingHorizontal: 12,
-    borderRadius: radius.pill,
-  },
-  categoryPillText: {
-    color: colors.lime[300],
-    fontSize: 10,
-    fontWeight: '700',
-    letterSpacing: 1,
-  },
-  heroTitle: {
-    fontSize: 34,
-    fontWeight: '700',
-    color: colors.neutral[0],
-    lineHeight: 40,
-    letterSpacing: -0.8,
-  },
-  heroSubtitle: {
-    fontSize: typography.sizes.sm,
-    color: colors.forest[200],
-    lineHeight: 22,
-  },
-
-  // ── Trust Indicators ──────────────────────────────────────────────
-  trustRow: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: 12,
-    marginTop: 4,
-  },
-  trustItem: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 5,
-  },
-  trustItemText: {
+  eyebrow: { flexDirection: 'row', alignItems: 'center', gap: 6, marginBottom: 12 },
+  eyebrowText: {
+    fontFamily: typography.fontBodySemiBold,
     fontSize: 11,
-    color: colors.forest[300],
-    fontWeight: '500',
+    letterSpacing: 1.8,
+    color: colors.lime[400],
   },
 
-  // ── CTA Section ───────────────────────────────────────────────────
-  ctaSection: {
-    width: '100%',
-    gap: 14,
-    marginTop: 10,
+  title: {
+    fontFamily: typography.fontDisplaySemiBold,
+    fontSize: 40,
+    lineHeight: 43,
+    letterSpacing: -1,
+    color: PAPER,
   },
-  loginLink: {
+  titleAccent: { color: colors.lime[400] },
+  subtitle: {
+    marginTop: 12,
+    fontFamily: typography.fontBody,
+    fontSize: 15,
+    lineHeight: 22,
+    color: 'rgba(248,251,244,0.74)',
+  },
+
+  escrowCard: {
+    marginTop: 22,
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    paddingVertical: 14,
+    paddingHorizontal: 10,
+    borderRadius: 22,
+    backgroundColor: 'rgba(248,251,244,0.06)',
+    borderWidth: StyleSheet.hairlineWidth,
+    borderColor: 'rgba(248,251,244,0.22)',
+  },
+  escrowStep: { flex: 1, alignItems: 'center', gap: 8 },
+  escrowIcon: {
+    width: 38,
+    height: 38,
+    borderRadius: 12,
     alignItems: 'center',
-    paddingVertical: 8,
+    justifyContent: 'center',
+    backgroundColor: 'rgba(211,242,110,0.12)',
   },
-  loginLinkText: {
-    fontSize: typography.sizes.sm,
-    color: colors.neutral[0],
+  escrowIconHighlight: { backgroundColor: colors.lime[400] },
+  escrowLink: {
+    width: 18,
+    height: 1,
+    marginTop: 19,
+    backgroundColor: 'rgba(248,251,244,0.25)',
   },
-  loginLinkBold: {
-    fontWeight: '700',
-    color: colors.lime[400],
-    textDecorationLine: 'underline',
+  escrowLabel: {
+    fontFamily: typography.fontBodySemiBold,
+    fontSize: 12,
+    color: PAPER,
   },
+
+  payRow: { marginTop: 14, flexDirection: 'row', alignItems: 'center', gap: 6 },
+  payLogo: { width: 20, height: 20, borderRadius: 6 },
+  payText: {
+    marginLeft: 4,
+    fontFamily: typography.fontBody,
+    fontSize: 12,
+    color: 'rgba(248,251,244,0.6)',
+  },
+
+  cta: {
+    marginTop: 22,
+    height: 60,
+    borderRadius: 999,
+    backgroundColor: colors.lime[400],
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingLeft: 26,
+    paddingRight: 8,
+  },
+  ctaLabel: {
+    flex: 1,
+    fontFamily: typography.fontBodySemiBold,
+    fontSize: 16,
+    color: colors.forest[950],
+  },
+  ctaArrow: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    backgroundColor: colors.forest[950],
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+
+  login: { alignItems: 'center', paddingVertical: 14 },
+  loginText: { fontFamily: typography.fontBody, fontSize: 14, color: 'rgba(248,251,244,0.72)' },
+  loginBold: { fontFamily: typography.fontBodySemiBold, color: PAPER },
 });

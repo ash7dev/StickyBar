@@ -63,7 +63,8 @@ export class ReservationsService {
       },
       orderBy: { creeLe: 'desc' },
       include: {
-        locataire: { select: { id: true, prenom: true, nom: true, avatarUrl: true, telephone: true } },
+        // statutKyc : le propriétaire voit si l'identité du voyageur est vérifiée avant de décider
+        locataire: { select: { id: true, prenom: true, nom: true, avatarUrl: true, telephone: true, statutKyc: true } },
         proprietaire: { select: { id: true, prenom: true, nom: true, avatarUrl: true, telephone: true } },
         logement: {
           select: {
@@ -110,15 +111,67 @@ export class ReservationsService {
   }
 
   async create(user: AuthUser, dto: CreateReservationDto, idempotencyKey?: string) {
-    return this.createUseCase.execute(user, dto as CreateReservationInput, idempotencyKey);
+    const res = await this.createUseCase.execute(user, dto as CreateReservationInput, idempotencyKey);
+    if (res && res.reservationId) {
+      const fullRes = await this.prisma.reservation.findUnique({
+        where: { id: res.reservationId },
+        select: { id: true, proprietaireId: true, locataireId: true, logement: { select: { titre: true } } },
+      });
+      if (fullRes) {
+        // 1. Notification Push à l'Hôte
+        this.notifications.sendReservationPush(
+          fullRes.proprietaireId,
+          'Nouvelle réservation reçue 📅',
+          `Un voyageur a réservé "${fullRes.logement?.titre || 'votre logement'}". Cliquez pour consulter les détails.`,
+          `/reservations?id=${fullRes.id}`
+        ).catch(() => {});
+
+        // 2. Notification Push au Voyageur
+        this.notifications.sendReservationPush(
+          fullRes.locataireId,
+          'Réservation enregistrée 🎉',
+          `Votre demande de réservation pour "${fullRes.logement?.titre || 'le logement'}" est enregistrée !`,
+          `/reservations?id=${fullRes.id}`
+        ).catch(() => {});
+      }
+    }
+    return res;
   }
 
   async confirm(id: string, userId: string, heureDebut?: string, heureFin?: string) {
-    return this.confirmUseCase.execute(id, userId, heureDebut, heureFin);
+    const res = await this.confirmUseCase.execute(id, userId, heureDebut, heureFin);
+    if (res && res.locataireId) {
+      this.notifications.sendReservationPush(
+        res.locataireId,
+        'Réservation confirmée par l\'hôte 👍',
+        `Votre hôte a validé les détails de votre arrivée.`,
+        `/reservations?id=${id}`
+      ).catch(() => {});
+    }
+    return res;
   }
 
   async cancel(id: string, userId: string, raison: string) {
-    return this.cancelUseCase.execute(id, userId, raison);
+    const fullResBefore = await this.prisma.reservation.findUnique({
+      where: { id },
+      select: { id: true, proprietaireId: true, locataireId: true },
+    });
+
+    const res = await this.cancelUseCase.execute(id, userId, raison);
+
+    if (fullResBefore) {
+      const isLocataire = fullResBefore.locataireId === userId;
+      const targetUserId = isLocataire ? fullResBefore.proprietaireId : fullResBefore.locataireId;
+      if (targetUserId) {
+        this.notifications.sendReservationPush(
+          targetUserId,
+          'Annulation de réservation ⚠️',
+          `La réservation pour votre séjour a été annulée : ${raison || 'Aucune raison spécifiée.'}`,
+          `/reservations?id=${id}`
+        ).catch(() => {});
+      }
+    }
+    return res;
   }
 
   async uploadCheckInPhotos(id: string, userId: string, photos: string[]) {

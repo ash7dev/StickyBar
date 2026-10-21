@@ -33,7 +33,7 @@ import { useAssistantStore } from '@/stores/assistant.store';
 import { translateApiError } from '@/lib/errors/translate';
 import { toast } from 'sonner';
 
-// Knowledge Base de l'Assistant Klef
+// Knowledge Base de l'Assistant Paixi
 interface FAQItem {
   id: string;
   category: 'VOYAGEUR' | 'HOTE' | 'PAIEMENT' | 'KYC';
@@ -56,14 +56,14 @@ const FAQ_DATA: FAQItem[] = [
     id: 'faq-2',
     category: 'HOTE',
     question: 'Quelle est la commission prélevée sur les hôtes (propriétaires) ?',
-    answer: 'Klef applique 0% de commission sur les hôtes ! Vous percevez 100% du prix de nuitée que vous avez fixé. Seule une commission transparente de 7% est ajoutée côté voyageur.',
+    answer: 'Paixi applique 0% de commission sur les hôtes ! Vous percevez 100% du prix de nuitée que vous avez fixé. Seule une commission transparente de 7% est ajoutée côté voyageur.',
     tags: ['commission', 'hôte', 'frais', 'tarif', 'gratuit', 'propriétaire', 'pourcentage', '0%'],
   },
   {
     id: 'faq-3',
     category: 'PAIEMENT',
     question: 'Comment fonctionnent les retraits de revenus pour les hôtes ?',
-    answer: 'Vos gains débloqués après chaque séjour sont disponibles sur votre portefeuille Klef. Vous pouvez demander un virement directement vers votre compte Wave ou Orange Money (traitement sous 24h à 48h).',
+    answer: 'Vos gains débloqués après chaque séjour sont disponibles sur votre portefeuille Paixi. Vous pouvez demander un virement directement vers votre compte Wave ou Orange Money (traitement sous 24h à 48h).',
     actionUrl: '/dashboard/wallet',
     actionLabel: 'Accéder à mon portefeuille',
     tags: ['retrait', 'virement', 'solde', 'portefeuille', 'récupérer argent', 'wave', 'om'],
@@ -72,7 +72,7 @@ const FAQ_DATA: FAQItem[] = [
     id: 'faq-4',
     category: 'VOYAGEUR',
     question: 'Quelles sont les règles et barèmes d\'annulation ?',
-    answer: '• Plus de 7 jours avant le check-in : Remboursement à 100%\n• Entre 3 et 7 jours : Remboursement à 50%\n• Entre 24h et 3 jours : Remboursement à 25%\n• Moins de 24h : Aucun remboursement.',
+    answer: '• Plus de 3 jours avant le check-in : Remboursement à 100% (hors commission Paixi de 7%)\n• Entre 24h et 3 jours : Remboursement à 75%\n• Moins de 24h : Remboursement à 50%.',
     tags: ['annulation', 'remboursement', 'annuler', 'politique', 'barème', 'délai'],
   },
   {
@@ -88,7 +88,7 @@ const FAQ_DATA: FAQItem[] = [
     id: 'faq-6',
     category: 'VOYAGEUR',
     question: 'Comment fonctionne la caution et l\'état des lieux photo ?',
-    answer: 'Lors de votre arrivée (Check-in) et de votre départ (Check-out), vous téléchargez des photos de l\'état du logement directement depuis l\'application. En cas de dégât avéré, Klef gère la médiation.',
+    answer: 'Lors de votre arrivée (Check-in) et de votre départ (Check-out), vous téléchargez des photos de l\'état du logement directement depuis l\'application. En cas de dégât avéré, Paixi gère la médiation.',
     actionUrl: '/reservations',
     actionLabel: 'Voir mes réservations',
     tags: ['caution', 'état des lieux', 'dégâts', 'check-in', 'check-out', 'photos', 'photos état des lieux'],
@@ -331,7 +331,7 @@ export function KlefAssistantWidget() {
               </div>
               <div>
                 <h3 className="font-display text-sm font-semibold leading-none text-neutral-0">
-                  Assistant Klef
+                  Assistant Paixi
                 </h3>
                 <p className="mt-1 text-[11px] text-on-inverse-marker">
                   {activeRole === 'PROPRIETAIRE' ? 'Hôte Privilégié · Support 24/7' : 'Voyageur · Aide Instantanée'}
@@ -490,7 +490,7 @@ export function KlefAssistantWidget() {
                       </>
                     ) : (
                       <>
-                        <Send className="h-3.5 w-3.5 text-on-inverse-marker" /> Transmettre à l&apos;équipe Klef
+                        <Send className="h-3.5 w-3.5 text-on-inverse-marker" /> Transmettre à l&apos;équipe Paixi
                       </>
                     )}
                   </button>
@@ -651,7 +651,7 @@ export function KlefAssistantWidget() {
                 <div className="flex flex-1 flex-col items-center justify-center text-center space-y-3 p-4">
                   <ShieldAlert className="h-8 w-8 text-forest-600" />
                   <p className="text-xs text-foreground-muted">
-                    Connectez-vous à votre compte Klef pour suivre vos tickets de support et échanger avec l&apos;équipe.
+                    Connectez-vous à votre compte Paixi pour suivre vos tickets de support et échanger avec l&apos;équipe.
                   </p>
                 </div>
               ) : selectedTicket ? (
@@ -692,7 +692,7 @@ export function KlefAssistantWidget() {
                         )}
                       >
                         <span className="text-[10px] font-semibold opacity-75 mb-1">
-                          {msg.estAdmin ? 'Équipe Support Klef' : 'Vous'}
+                          {msg.estAdmin ? 'Équipe Support Paixi' : 'Vous'}
                         </span>
                         <p className="leading-relaxed whitespace-pre-wrap">{msg.message}</p>
                       </div>
@@ -792,7 +792,7 @@ export function KlefAssistantWidget() {
             else store.openAssistant();
           }}
           className="flex h-13 w-13 items-center justify-center rounded-full bg-forest-950 text-neutral-0 shadow-2xl transition-all duration-200 hover:scale-105 active:scale-95 border border-forest-800/60 cursor-pointer"
-          aria-label="Assistant Klef"
+          aria-label="Assistant Paixi"
         >
           <div className="relative">
             <MessageSquare className="h-6 w-6 text-neutral-0 transition-transform group-hover:rotate-6" />

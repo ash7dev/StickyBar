@@ -227,7 +227,7 @@ export function KlefManagedModal({ isOpen, onClose }: ModalProps) {
                   className="font-display text-lg font-bold tracking-tight sm:text-xl"
                   style={{ color: 'var(--neutral-50)' }}
                 >
-                  Prise en charge Klef Managed
+                  Prise en charge Paixi Managed
                 </h2>
                 <p className="text-xs font-medium leading-relaxed" style={{ color: 'var(--forest-200)' }}>
                   Laissez vos coordonnées, notre équipe conciergerie vous recontacte sous 24h.
@@ -577,7 +577,7 @@ export function KlefManagedModal({ isOpen, onClose }: ModalProps) {
                 ) : (
                   <Send className="h-4 w-4 transition-transform duration-200 group-hover:translate-x-0.5" style={{ color: 'var(--forest-900)' }} />
                 )}
-                <span>{loading ? 'Envoi en cours...' : 'Confier mon bien à Klef Managed'}</span>
+                <span>{loading ? 'Envoi en cours...' : 'Confier mon bien à Paixi Managed'}</span>
                 {!loading && (
                   <ArrowRight className="h-4 w-4 transition-transform duration-200 group-hover:translate-x-1" style={{ color: 'var(--forest-800)' }} />
                 )}

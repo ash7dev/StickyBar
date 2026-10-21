@@ -45,6 +45,26 @@ export type {
   SetTarifsPersonnesPayload,
   SetTarifsNuitsPayload,
   PricePreviewResponse,
+  // Revenus propriétaire
+  RevenuePeriod,
+  RevenueMetrics,
+  RevenueTimelineEvent,
+  OwnerRevenueResponse,
+  OwnerStatementResponse,
+  OwnerTransactionsResponse,
+  // Accueil propriétaire
+  StatutLogement,
+  OwnerOccupancy,
+  OwnerOverviewLogement,
+  OwnerUpcomingPayout,
+  OwnerOverviewResponse,
+  // Calendrier propriétaire
+  OwnerCalendarLogement,
+  OwnerCalendarReservationEvent,
+  OwnerCalendarBlockEvent,
+  OwnerCalendarEvent,
+  OwnerCalendarResponse,
+  CreateOwnerBlockPayload,
   // Wallet
   TransactionType,
   TransactionSens,

@@ -83,7 +83,7 @@ export class ReviewsService {
 
       this.logger.log(`Avis créé [${review.id}] par [${auteurId}] pour [${cibleId}]`);
 
-      // Déblocage automatique du badge Teranga Club AVIS_STAR (+500 Klef Coins)
+      // Déblocage automatique du badge Teranga Club AVIS_STAR (+500 Paixi Coins)
       if (isLocataire) {
         try {
           const unlockUseCase = new UnlockBadgeUseCase(this.prisma);

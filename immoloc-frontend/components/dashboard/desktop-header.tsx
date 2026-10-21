@@ -16,13 +16,15 @@ import { cn } from '@/lib/utils/cn';
 
 const PAGE_TITLES: Array<[string, string]> = [
   ['/dashboard/annonces/nouvelle', 'Nouvelle annonce'],
+  ['/dashboard/calendrier', 'Calendrier'],
+  ['/dashboard/stats', 'Revenus'],
   ['/dashboard/reservations', 'Réservations'],
   ['/dashboard/favoris', 'Favoris'],
   ['/dashboard/wallet', 'Wallet'],
   ['/dashboard/profil', 'Mon profil'],
   ['/dashboard/parametres', 'Paramètres'],
-  ['/dashboard/annonces', 'Mes annonces'],
-  ['/dashboard', 'Vue d’ensemble'],
+  ['/dashboard/annonces', 'Mes biens'],
+  ['/dashboard', 'Aujourd’hui'],
 ];
 
 interface DesktopHeaderProps {

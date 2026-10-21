@@ -53,6 +53,49 @@ export class ProcessWithdrawalUseCase {
         const montant = Number(retrait.montant);
         const soldeInitial = Number(retrait.wallet.soldeDisponible);
 
+        // Vérification de sécurité anti-litige
+        const litigesEnAttente = await tx.litige.findMany({
+          where: {
+            statut: 'EN_ATTENTE',
+            reservation: { proprietaireId: retrait.wallet.utilisateurId },
+          },
+          include: {
+            reservation: {
+              select: {
+                id: true,
+                netProprietaire: true,
+                typePaiement: true,
+                montantAcompte: true,
+                montantCommission: true,
+              },
+            },
+          },
+        });
+
+        if (litigesEnAttente.length > 0) {
+          let totalGele = 0;
+          for (const l of litigesEnAttente) {
+            const r = l.reservation;
+            const isDeposit = r.typePaiement?.toUpperCase() === 'DEPOSIT';
+            const commNum = Number(r.montantCommission || 0);
+            totalGele += isDeposit
+              ? Math.max(0, Number(r.montantAcompte || 0) - commNum)
+              : Number(r.netProprietaire || 0);
+          }
+
+          const soldeAvantDemande = soldeInitial + montant;
+          const soldeMaxRetirable = Math.max(0, soldeAvantDemande - totalGele);
+
+          if (montant > soldeMaxRetirable) {
+            throw new BadRequestException(
+              `Impossible de valider ce retrait de ${montant.toLocaleString('fr-FR')} FCFA. ` +
+              `Le propriétaire fait l'objet de ${litigesEnAttente.length} litige(s) en cours d'arbitrage ` +
+              `pour un montant gelé conservatoire de ${totalGele.toLocaleString('fr-FR')} FCFA. ` +
+              `Veuillez trancher le litige avant d'autoriser le versement des fonds.`
+            );
+          }
+        }
+
         const updated = await tx.retrait.update({
           where: { id: retraitId },
           data: {

@@ -42,7 +42,7 @@ interface Props {
    sur une surface sombre. L'ancien PUBLISHED mettait un aplat forest-950 avec
    texte lime sur une carte blanche — l'élément le plus sombre de la page
    servait à dire « tout va bien ». */
-/* ── Statuts avec design tokens officiels Klef ─────────────────────────── */
+/* ── Statuts avec design tokens officiels Paixi ─────────────────────────── */
 const STATUT_CONFIG: Record<string, { label: string; cls: string; dot: string }> = {
   PUBLISHED: {
     label: 'Publiée',

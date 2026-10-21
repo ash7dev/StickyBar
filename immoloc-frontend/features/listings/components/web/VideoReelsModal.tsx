@@ -8,7 +8,7 @@ import { useCurrencyStore } from '@/stores/currency.store';
 
 /**
  * Majoration appliquée au prix de base avant affichage.
- * ⚠️ NE JAMAIS RETIRER — c'est le prix public de Klef. Si ce fichier affiche
+ * ⚠️ NE JAMAIS RETIRER — c'est le prix public de Paixi. Si ce fichier affiche
  * prixBase brut, le montant du reel diffère de celui de la fiche et du
  * checkout, et l'utilisateur constate une hausse au moment de payer.
  *

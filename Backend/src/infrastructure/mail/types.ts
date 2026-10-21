@@ -1,5 +1,5 @@
 /**
- * Types pour le système d'emails Klef
+ * Types pour le système d'emails Paixi
  */
 
 export interface BookingConfirmationContext {

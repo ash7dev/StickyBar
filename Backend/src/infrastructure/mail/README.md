@@ -1,10 +1,10 @@
-# 📧 Système d'Emails Klef
+# 📧 Système d'Emails Paixi
 
-Système complet de gestion des emails pour la plateforme Klef, utilisant les couleurs et le design system de l'application.
+Système complet de gestion des emails pour la plateforme Paixi, utilisant les couleurs et le design system de l'application.
 
 ## 🎨 Design
 
-Toutes les templates utilisent les couleurs officielles du design system Klef :
+Toutes les templates utilisent les couleurs officielles du design system Paixi :
 - **Forest** (#14654C - #041912) : Structure, texte, surfaces sombres
 - **Lime** (#D3F26E) : Actions, CTA
 - **Gold** (#C9A24B) : Statuts, badges vérifiés
@@ -56,7 +56,7 @@ Ajoutez ces variables à votre `.env` :
 ```env
 # Email configuration
 RESEND_API_KEY=your_resend_api_key
-MAIL_FROM=Klef <noreply@klef.com>
+MAIL_FROM=Paixi <noreply@klef.com>
 APP_URL=https://klef.com
 ```
 
@@ -382,11 +382,11 @@ Pour suivre les performances de vos emails :
 
 Pour ajouter ou modifier des templates :
 
-1. Respectez le design system Klef
+1. Respectez le design system Paixi
 2. Testez sur plusieurs clients email
 3. Documentez les nouvelles variables dans `types.ts`
 4. Mettez à jour ce README
 
 ## 📄 Licence
 
-Propriété de Klef SAS - Tous droits réservés
+Propriété de Paixi SAS - Tous droits réservés

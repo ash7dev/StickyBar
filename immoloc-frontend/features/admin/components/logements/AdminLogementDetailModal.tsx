@@ -62,7 +62,7 @@ const TABS: { id: TabId; label: string }[] = [
 ];
 
 /* `warning-200/800`, `error-200/300/900`, `forest-200/300`, `gold-300/900`,
-   `blue-*`, `purple-*`, `amber-*` : aucune n'existe dans la palette Klef.
+   `blue-*`, `purple-*`, `amber-*` : aucune n'existe dans la palette Paixi.
    La majorité des badges de ce composant rendait sans bordure ni couleur. */
 const STATUT: Record<string, { label: string; badge: string; Icon: typeof Clock }> = {
   PUBLISHED: { label: 'En ligne', badge: 'border-forest-100 bg-forest-50 text-forest-700', Icon: CheckCircle2 },

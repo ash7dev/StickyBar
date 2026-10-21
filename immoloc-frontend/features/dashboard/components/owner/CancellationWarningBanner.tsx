@@ -36,7 +36,7 @@ export function CancellationWarningBanner({
       tab: 'tickets',
       category: 'RESERVATION',
       subject: "Demande de réinitialisation du compteur d'annulations",
-      message: `Bonjour l'équipe Support Klef,\n\nJe sollicite une réinitialisation de mon compteur d'annulations/absences (${maxFautes}/${threshold} fautes enregistrées).\n\nVoici les motifs et justificatifs de mes annulations précédentes :\n- Raison : `,
+      message: `Bonjour l'équipe Support Paixi,\n\nJe sollicite une réinitialisation de mon compteur d'annulations/absences (${maxFautes}/${threshold} fautes enregistrées).\n\nVoici les motifs et justificatifs de mes annulations précédentes :\n- Raison : `,
     });
   };
 

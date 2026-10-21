@@ -181,7 +181,7 @@ export async function sendTestPushNotification(title?: string, message?: string,
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         endpoint: sub?.endpoint || undefined,
-        title: title || 'Klef - Test Notification 🚀',
+        title: title || 'Paixi - Test Notification 🚀',
         message: message || 'Vos notifications Push Web PWA fonctionnent parfaitement !',
         url: url || '/explorer',
       }),

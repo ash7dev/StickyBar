@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   View,
   Text,
@@ -7,20 +7,32 @@ import {
   TouchableOpacity,
   TextInput,
   ScrollView,
-  SafeAreaView,
-  Platform,
 } from 'react-native';
 import * as Haptics from 'expo-haptics';
-import { MapPin, Calendar, Search, X, RotateCcw, Check, SlidersHorizontal } from 'lucide-react-native';
+import {
+  MapPin,
+  Calendar,
+  Search,
+  X,
+  RotateCcw,
+  Check,
+  Users,
+  BedDouble,
+  Minus,
+  Plus,
+} from 'lucide-react-native';
 import { colors, radius, shadows, typography } from '../../theme/tokens';
 import { AppButton } from '../ui/AppButton';
 import { AppDateRangeCalendar, DateRange } from '../ui/AppDateRangeCalendar';
+import { useSearchHistoryStore } from '../../stores/search-history.store';
 
 export interface SearchParams {
   ville?: string;
   arrivee?: string;
   depart?: string;
   nbNuits?: number;
+  nbPersonnes?: number;
+  nombreChambres?: number;
 }
 
 export interface TenantSearchModalProps {
@@ -28,6 +40,7 @@ export interface TenantSearchModalProps {
   onClose: () => void;
   onSearch?: (params: SearchParams) => void;
   initialVille?: string;
+  initialParams?: SearchParams;
 }
 
 const DESTINATIONS_POPULAIRES = [
@@ -39,15 +52,44 @@ const DESTINATIONS_POPULAIRES = [
   { name: 'Ngor', desc: 'Île & surf' },
 ];
 
+const CHAMBRES_OPTIONS = [
+  { label: 'Indifférent', value: undefined },
+  { label: '1+ ch.', value: 1 },
+  { label: '2+ ch.', value: 2 },
+  { label: '3+ ch.', value: 3 },
+  { label: '4+ ch.', value: 4 },
+];
+
 export function TenantSearchModal({
   visible,
   onClose,
   onSearch,
   initialVille = '',
+  initialParams,
 }: TenantSearchModalProps) {
-  const [activeTab, setActiveTab] = useState<'where' | 'dates'>('where');
-  const [selectedVille, setSelectedVille] = useState(initialVille);
-  const [dateRange, setDateRange] = useState<DateRange>({ from: null, to: null });
+  const [activeTab, setActiveTab] = useState<'where' | 'dates' | 'guests'>('where');
+  const [selectedVille, setSelectedVille] = useState(initialVille || initialParams?.ville || '');
+  const [dateRange, setDateRange] = useState<DateRange>({
+    from: initialParams?.arrivee ? new Date(initialParams.arrivee) : null,
+    to: initialParams?.depart ? new Date(initialParams.depart) : null,
+  });
+  const [nbPersonnes, setNbPersonnes] = useState<number>(initialParams?.nbPersonnes || 1);
+  const [nombreChambres, setNombreChambres] = useState<number | undefined>(initialParams?.nombreChambres);
+
+  useEffect(() => {
+    if (initialVille) setSelectedVille(initialVille);
+    if (initialParams) {
+      if (initialParams.ville) setSelectedVille(initialParams.ville);
+      if (initialParams.arrivee) {
+        setDateRange({
+          from: new Date(initialParams.arrivee),
+          to: initialParams.depart ? new Date(initialParams.depart) : null,
+        });
+      }
+      if (initialParams.nbPersonnes) setNbPersonnes(initialParams.nbPersonnes);
+      if (initialParams.nombreChambres !== undefined) setNombreChambres(initialParams.nombreChambres);
+    }
+  }, [initialVille, initialParams]);
 
   const handleSelectDestination = (name: string) => {
     Haptics.selectionAsync().catch(() => {});
@@ -59,6 +101,8 @@ export function TenantSearchModal({
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {});
     setSelectedVille('');
     setDateRange({ from: null, to: null });
+    setNbPersonnes(1);
+    setNombreChambres(undefined);
     setActiveTab('where');
   };
 
@@ -77,13 +121,21 @@ export function TenantSearchModal({
 
   const handleApplySearch = () => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium).catch(() => {});
+
+    const searchPayload: SearchParams = {
+      ville: selectedVille.trim() || undefined,
+      arrivee: formatDate(dateRange.from),
+      depart: formatDate(dateRange.to),
+      nbNuits: calculatedNuits || undefined,
+      nbPersonnes: nbPersonnes > 1 ? nbPersonnes : undefined,
+      nombreChambres: nombreChambres,
+    };
+
+    // Sauvegarde dans le store d'historique de recherche persistant
+    useSearchHistoryStore.getState().saveSearch(searchPayload);
+
     if (onSearch) {
-      onSearch({
-        ville: selectedVille.trim(),
-        arrivee: formatDate(dateRange.from),
-        depart: formatDate(dateRange.to),
-        nbNuits: calculatedNuits || undefined,
-      });
+      onSearch(searchPayload);
     }
     onClose();
   };
@@ -295,9 +347,143 @@ export function TenantSearchModal({
                 <View style={styles.cardBody}>
                   <Text style={styles.sectionSubtitle}>CHOIX DE LA PLAGE DE DATES</Text>
                   <AppDateRangeCalendar
-                    onChange={setDateRange}
+                    onChange={(range) => {
+                      setDateRange(range);
+                      if (range.from && range.to) {
+                        setActiveTab('guests');
+                      }
+                    }}
                     value={dateRange}
                   />
+                </View>
+              ) : null}
+            </View>
+
+            {/* ── 3. Bloc Voyageurs & Chambres ── */}
+            <View
+              style={[
+                styles.cardBlock,
+                activeTab === 'guests' && styles.cardBlockActive,
+              ]}
+            >
+              <TouchableOpacity
+                activeOpacity={0.8}
+                onPress={() => setActiveTab('guests')}
+                style={styles.cardHeader}
+              >
+                <View style={styles.cardHeaderLeft}>
+                  <View
+                    style={[
+                      styles.iconBadge,
+                      activeTab === 'guests' && styles.iconBadgeActive,
+                    ]}
+                  >
+                    <Users
+                      size={18}
+                      color={
+                        activeTab === 'guests'
+                          ? colors.forest[950]
+                          : colors.neutral[700]
+                      }
+                    />
+                  </View>
+
+                  <View>
+                    <Text style={styles.blockLabel}>VOYAGEURS & CHAMBRES</Text>
+                    <Text style={styles.blockValue}>
+                      {`${nbPersonnes} voyageur${nbPersonnes > 1 ? 's' : ''}${nombreChambres ? ` • ${nombreChambres}+ ch.` : ''}`}
+                    </Text>
+                  </View>
+                </View>
+
+                {activeTab !== 'guests' ? (
+                  <View style={styles.editPill}>
+                    <Text style={styles.editPillText}>Modifier</Text>
+                  </View>
+                ) : null}
+              </TouchableOpacity>
+
+              {activeTab === 'guests' ? (
+                <View style={styles.cardBody}>
+                  {/* Stepper Voyageurs */}
+                  <View style={styles.stepperRow}>
+                    <View style={styles.stepperLabelBox}>
+                      <Text style={styles.stepperTitle}>Nombre de voyageurs</Text>
+                      <Text style={styles.stepperSub}>Adultes, enfants & bébés</Text>
+                    </View>
+
+                    <View style={styles.stepperControls}>
+                      <TouchableOpacity
+                        activeOpacity={0.7}
+                        disabled={nbPersonnes <= 1}
+                        onPress={() => {
+                          Haptics.selectionAsync().catch(() => {});
+                          setNbPersonnes((prev) => Math.max(1, prev - 1));
+                        }}
+                        style={[
+                          styles.stepperBtn,
+                          nbPersonnes <= 1 && styles.stepperBtnDisabled,
+                        ]}
+                      >
+                        <Minus
+                          size={16}
+                          color={nbPersonnes <= 1 ? colors.neutral[400] : colors.forest[950]}
+                        />
+                      </TouchableOpacity>
+
+                      <Text style={styles.stepperValue}>{nbPersonnes}</Text>
+
+                      <TouchableOpacity
+                        activeOpacity={0.7}
+                        onPress={() => {
+                          Haptics.selectionAsync().catch(() => {});
+                          setNbPersonnes((prev) => Math.min(20, prev + 1));
+                        }}
+                        style={styles.stepperBtn}
+                      >
+                        <Plus size={16} color={colors.forest[950]} />
+                      </TouchableOpacity>
+                    </View>
+                  </View>
+
+                  <View style={styles.separator} />
+
+                  {/* Choix des Chambres */}
+                  <View style={styles.bedroomsContainer}>
+                    <View style={styles.bedroomsHeader}>
+                      <BedDouble size={16} color={colors.forest[800]} />
+                      <Text style={styles.stepperTitle}>Chambres minimum</Text>
+                    </View>
+
+                    <View style={styles.chipsRow}>
+                      {CHAMBRES_OPTIONS.map((opt) => {
+                        const isSelected = nombreChambres === opt.value;
+                        return (
+                          <TouchableOpacity
+                            activeOpacity={0.8}
+                            key={opt.label}
+                            onPress={() => {
+                              Haptics.selectionAsync().catch(() => {});
+                              setNombreChambres(opt.value);
+                            }}
+                            style={[
+                              styles.chipBtn,
+                              isSelected && styles.chipBtnSelected,
+                            ]}
+                          >
+                            <Text
+                              style={[
+                                styles.chipBtnText,
+                                isSelected && styles.chipBtnTextSelected,
+                              ]}
+                            >
+                              {opt.label}
+                            </Text>
+                          </TouchableOpacity>
+                        );
+                      })}
+                    </View>
+                  </View>
                 </View>
               ) : null}
             </View>
@@ -350,8 +536,8 @@ const styles = StyleSheet.create({
     backgroundColor: colors.neutral[50],
     borderTopLeftRadius: 32,
     borderTopRightRadius: 32,
-    maxHeight: '88%',
-    minHeight: '65%',
+    maxHeight: '90%',
+    minHeight: '70%',
     borderTopWidth: 1,
     borderColor: 'rgba(255, 255, 255, 0.4)',
     ...shadows.lg,
@@ -541,30 +727,89 @@ const styles = StyleSheet.create({
     fontWeight: '500',
   },
 
-  // Nights Chips
-  nightsRow: {
+  // Stepper Voyageurs
+  stepperRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+  },
+  stepperLabelBox: {
+    gap: 2,
+  },
+  stepperTitle: {
+    fontSize: typography.sizes.sm,
+    fontWeight: '700',
+    color: colors.forest[950],
+  },
+  stepperSub: {
+    fontSize: 11,
+    color: colors.neutral[500],
+  },
+  stepperControls: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 14,
+  },
+  stepperBtn: {
+    width: 34,
+    height: 34,
+    borderRadius: radius.pill,
+    borderWidth: 1,
+    borderColor: colors.neutral[300],
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: colors.neutral[0],
+  },
+  stepperBtnDisabled: {
+    borderColor: colors.neutral[200],
+    backgroundColor: colors.neutral[100],
+  },
+  stepperValue: {
+    fontSize: typography.sizes.md,
+    fontWeight: '800',
+    color: colors.forest[950],
+    minWidth: 20,
+    textAlign: 'center',
+  },
+
+  separator: {
+    height: 1,
+    backgroundColor: colors.neutral[200],
+    marginVertical: 4,
+  },
+
+  // Bedrooms Chips
+  bedroomsContainer: {
+    gap: 10,
+  },
+  bedroomsHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
+  chipsRow: {
     flexDirection: 'row',
     flexWrap: 'wrap',
     gap: 8,
   },
-  nightChip: {
-    paddingVertical: 10,
-    paddingHorizontal: 16,
+  chipBtn: {
+    paddingVertical: 8,
+    paddingHorizontal: 14,
     borderRadius: radius.pill,
     backgroundColor: colors.neutral[100],
     borderWidth: 1,
     borderColor: colors.neutral[200],
   },
-  nightChipSelected: {
+  chipBtnSelected: {
     backgroundColor: colors.forest[800],
     borderColor: colors.forest[900],
   },
-  nightChipText: {
+  chipBtnText: {
     fontSize: typography.sizes.xs,
     fontWeight: '700',
     color: colors.neutral[800],
   },
-  nightChipTextSelected: {
+  chipBtnTextSelected: {
     color: colors.lime[400],
   },
 

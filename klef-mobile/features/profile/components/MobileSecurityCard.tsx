@@ -18,10 +18,12 @@ import {
   AlertCircle,
   KeyRound,
   Check,
+  Bell,
 } from 'lucide-react-native';
 import * as Haptics from 'expo-haptics';
 import { colors, radius, shadows, typography } from '../../../shared/theme/tokens';
 import { apiClient } from '../../../shared/api/api-client';
+import { PushNotificationsService } from '../../../shared/services/push-notifications.service';
 
 interface MobileSecurityCardProps {
   userEmail?: string | null;
@@ -35,7 +37,31 @@ export function MobileSecurityCard({ userEmail, onUpdated }: MobileSecurityCardP
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [testingPush, setTestingPush] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  const handleTestPush = async () => {
+    try {
+      setTestingPush(true);
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {});
+      const token = await PushNotificationsService.registerForPushNotificationsAsync();
+      if (token) {
+        await PushNotificationsService.subscribeDevicePushToken(token);
+      }
+      const res = await PushNotificationsService.sendTestPushNotification();
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => {});
+      if (res.success) {
+        Alert.alert('Notification transmise 🚀', 'Une notification de test a été envoyée à votre appareil !');
+      } else {
+        Alert.alert('Information', res.message || 'Notification de test traitée par le serveur.');
+      }
+    } catch (err: any) {
+      console.warn('[MobileSecurityCard] Test Push Error:', err);
+      Alert.alert('Erreur', 'Impossible de déclencher la notification de test.');
+    } finally {
+      setTestingPush(false);
+    }
+  };
 
   const hasExistingEmail = !!userEmail && userEmail.includes('@');
 
@@ -336,6 +362,32 @@ export function MobileSecurityCard({ userEmail, onUpdated }: MobileSecurityCardP
           </Text>
         )}
       </TouchableOpacity>
+
+      {/* ── 8. Section de Test Push Notifications ──────────────────────── */}
+      <View style={styles.pushTestBox}>
+        <View style={styles.pushTestHeader}>
+          <Bell size={16} color={colors.forest[700]} />
+          <Text style={styles.pushTestTitle}>Notifications Push Appareil</Text>
+        </View>
+        <Text style={styles.pushTestSub}>
+          Testez la réception des bannières de notifications push en direct sur votre iPhone/Android via Expo.
+        </Text>
+        <TouchableOpacity
+          activeOpacity={0.8}
+          onPress={handleTestPush}
+          disabled={testingPush}
+          style={styles.pushTestBtn}
+        >
+          {testingPush ? (
+            <ActivityIndicator size="small" color={colors.forest[800]} />
+          ) : (
+            <>
+              <Bell size={14} color={colors.forest[950]} />
+              <Text style={styles.pushTestBtnText}>Tester la réception Push 🚀</Text>
+            </>
+          )}
+        </TouchableOpacity>
+      </View>
     </View>
   );
 }
@@ -554,5 +606,50 @@ const styles = StyleSheet.create({
   },
   submitBtnTextDisabled: {
     color: colors.neutral[400],
+  },
+
+  // Push Test Box
+  pushTestBox: {
+    backgroundColor: colors.forest[50],
+    borderWidth: 1,
+    borderColor: colors.forest[100],
+    borderRadius: radius.inner,
+    padding: 12,
+    gap: 8,
+    marginTop: 6,
+  },
+  pushTestHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+  },
+  pushTestTitle: {
+    fontFamily: typography.fontBodyBold,
+    fontSize: 12,
+    color: colors.forest[950],
+  },
+  pushTestSub: {
+    fontFamily: typography.fontBody,
+    fontSize: 11,
+    color: colors.forest[800],
+    lineHeight: 15,
+  },
+  pushTestBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 6,
+    backgroundColor: colors.lime[400],
+    paddingVertical: 9,
+    paddingHorizontal: 14,
+    borderRadius: radius.pill,
+    marginTop: 2,
+    borderWidth: 1,
+    borderColor: colors.action.edge,
+  },
+  pushTestBtnText: {
+    fontFamily: typography.fontBodyBold,
+    fontSize: 11.5,
+    color: colors.forest[950],
   },
 });

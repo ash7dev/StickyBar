@@ -99,7 +99,7 @@ export function ListingDetailSpec({ listing }: ListingDetailSpecProps) {
   const proprietaire = listing.proprietaire;
   const hostName = proprietaire?.prenom && proprietaire?.nom
     ? `${proprietaire.prenom} ${proprietaire.nom}`
-    : 'Hôte Klef';
+    : 'Hôte Paixi';
   const hostInitials = proprietaire?.prenom && proprietaire?.nom
     ? `${proprietaire.prenom[0]}${proprietaire.nom[0]}`.toUpperCase()
     : 'K';
@@ -157,7 +157,7 @@ export function ListingDetailSpec({ listing }: ListingDetailSpecProps) {
           </div>
           <div className="text-xs leading-relaxed text-forest-950">
             <strong className="font-bold text-forest-900 block mb-0.5 text-sm">
-              Garantie Séquestre Klef
+              Garantie Séquestre Paixi
             </strong>
             <span className="text-forest-800">
               Votre paiement est bloqué jusqu’à la remise des clés. Si le logement ne correspond pas, vous êtes <strong className="font-semibold text-forest-900 underline decoration-lime-500 decoration-2 underline-offset-2">remboursé intégralement</strong>.
@@ -307,7 +307,7 @@ export function ListingDetailSpec({ listing }: ListingDetailSpecProps) {
 
         <p className="flex items-center gap-2 border-t border-border pt-4 text-xs text-foreground-muted">
           <ShieldCheck className="h-4 w-4 shrink-0 text-forest-700" aria-hidden="true" />
-          Votre paiement est bloqué par Klef et versé à l'hôte à la remise des clés.
+          Votre paiement est bloqué par Paixi et versé à l'hôte à la remise des clés.
         </p>
       </section>
 

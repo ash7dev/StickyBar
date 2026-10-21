@@ -91,12 +91,12 @@ export function MobileStatsPerformanceCard({
 
   const handleSeeAllListings = () => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {});
-    router.push('/(owner)/listings' as any);
+    router.navigate('/(owner)/listings' as any);
   };
 
   const handleCreateListing = () => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {});
-    router.push('/(owner)/listings' as any);
+    router.navigate('/(owner)/listings' as any);
   };
 
   return (

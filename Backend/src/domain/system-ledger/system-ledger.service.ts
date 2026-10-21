@@ -28,7 +28,7 @@ export class SystemLedgerService {
           soldePoolTeranga: 10000000, // 10 Million FCFA initial allocation for loyalty marketing pool
         },
       });
-      this.logger.log('Initialisé le Grand Livre Système Klef (Singleton)');
+      this.logger.log('Initialisé le Grand Livre Système Paixi (Singleton)');
     }
 
     return ledger;
@@ -78,7 +78,7 @@ export class SystemLedgerService {
           montant: subsidyAmount,
           sens: SensTransaction.CREDIT,
           soldeSequestreApres: soldeApres,
-          description: `Subvention Klef Coins injectée dans le séquestre (${subsidyAmount.toLocaleString('fr-FR')} FCFA) ${descriptionSuffix}`.trim(),
+          description: `Subvention Paixi Coins injectée dans le séquestre (${subsidyAmount.toLocaleString('fr-FR')} FCFA) ${descriptionSuffix}`.trim(),
         },
       });
     }
@@ -88,7 +88,7 @@ export class SystemLedgerService {
 
   /**
    * Libération des fonds au Check-in / Clôture :
-   * Transfert vers le Wallet de l'Hôte + Reconnaissance de la Commission Klef
+   * Transfert vers le Wallet de l'Hôte + Reconnaissance de la Commission Paixi
    */
   async recordCheckinRelease(
     tx: Prisma.TransactionClient,
@@ -130,7 +130,7 @@ export class SystemLedgerService {
           montant: platformCommission,
           sens: SensTransaction.DEBIT,
           soldeSequestreApres: soldeApres,
-          description: `Acquisition de la commission Klef (${platformCommission.toLocaleString('fr-FR')} FCFA)`,
+          description: `Acquisition de la commission Paixi (${platformCommission.toLocaleString('fr-FR')} FCFA)`,
         },
       });
     }
@@ -180,7 +180,7 @@ export class SystemLedgerService {
           montant: coinsRefund,
           sens: SensTransaction.CREDIT,
           soldeSequestreApres: soldeApres,
-          description: `Recrédit de ${coinsRefund.toLocaleString('fr-FR')} Klef Coins au locataire`,
+          description: `Recrédit de ${coinsRefund.toLocaleString('fr-FR')} Paixi Coins au locataire`,
         },
       });
     }
@@ -189,7 +189,7 @@ export class SystemLedgerService {
   }
 
   /**
-   * Obtient l'état courant de la trésorerie plateforme Klef
+   * Obtient l'état courant de la trésorerie plateforme Paixi
    * Calcule dynamiquement le séquestre réel, le cumul des commissions et le pool Teranga
    */
   async getLedgerSummary() {

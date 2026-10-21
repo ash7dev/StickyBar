@@ -487,7 +487,7 @@ function ActionsMenuModal({
             <TouchableOpacity
               onPress={() => {
                 onClose();
-                router.push('/(owner)/reservations' as any);
+                router.navigate('/(owner)/reservations' as any);
               }}
               style={styles.menuItem}
             >

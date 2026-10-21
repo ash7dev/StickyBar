@@ -22,6 +22,7 @@ import {
 import { nestFetch } from '@/lib/nestjs/api-client';
 import { NEST_API } from '@/lib/nestjs/endpoints';
 import { cn } from '@/lib/utils/cn';
+import { PaixiLogo } from '@/components/brand/PaixiLogo';
 
 interface Props {
   ownerId: string;
@@ -70,13 +71,13 @@ export function GestionnaireReleveMensuelModal({ ownerId, ownerName, isOpen, onC
     const phone = releve.proprietaire?.telephone ? releve.proprietaire.telephone.replace(/\s+/g, '') : '';
     const cleanPhone = phone.startsWith('+') ? phone.substring(1) : phone.startsWith('221') ? phone : `221${phone}`;
 
-    const text = `*KLEF MANAGED - RELEVÉ DE GESTION LOCATIVE* 📄
+    const text = `*PAIXI MANAGED - RELEVÉ DE GESTION LOCATIVE* 📄
 *Période :* ${releve.periode?.label}
 *Propriétaire :* ${releve.proprietaire?.nomComplet}
 
 📊 *SYNTHÈSE FINANCIÈRE :*
 • *Total Recettes Brutes :* ${fcfa(releve.syntheseFinanciere?.totalEncaissementsBruts)} FCFA
-• *Commission Klef Conciergerie :* ${fcfa(releve.syntheseFinanciere?.totalCommissionsKlef)} FCFA
+• *Commission Paixi Conciergerie :* ${fcfa(releve.syntheseFinanciere?.totalCommissionsKlef)} FCFA
 • *Revenu Net Bailleur Généré :* ${fcfa(releve.syntheseFinanciere?.totalNetBailleurGenerer)} FCFA
 • *Reversements Mobile Money Effectués :* ${fcfa(releve.syntheseFinanciere?.totalReversementsEffectues)} FCFA
 • *Solde Portefeuille Disponible :* ${fcfa(releve.syntheseFinanciere?.soldeActuelWallet)} FCFA
@@ -84,7 +85,7 @@ export function GestionnaireReleveMensuelModal({ ownerId, ownerName, isOpen, onC
 *Nombre de séjours enregistrés :* ${releve.sejours?.length || 0}
 *Référence Relevé :* ${releve.referenceReleve}
 
-_Document officiel généré par votre Conciergerie Klef Managed._`;
+_Document officiel généré par votre Conciergerie Paixi Managed._`;
 
     const url = `https://wa.me/${cleanPhone}?text=${encodeURIComponent(text)}`;
     window.open(url, '_blank');
@@ -192,9 +193,7 @@ _Document officiel généré par votre Conciergerie Klef Managed._`;
             <div className="border-b-2 border-forest-950 pb-6 mb-6 flex flex-col sm:flex-row sm:items-center justify-between gap-6">
               <div className="space-y-1.5">
                 <div className="flex items-center gap-2">
-                  <span className="font-display text-2xl font-black tracking-tight text-forest-950">
-                    klef<span className="text-lime-600">.</span>
-                  </span>
+                  <PaixiLogo className="text-2xl" />
                   <span className="inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-[0.6rem] font-extrabold uppercase tracking-wider bg-forest-950 text-neutral-0">
                     <Sparkles className="h-2.5 w-2.5 text-lime-400" />
                     Managed Conciergerie
@@ -272,7 +271,7 @@ _Document officiel généré par votre Conciergerie Klef Managed._`;
                   Synthèse des Revenus & Reversements ({releve.periode?.label})
                 </span>
                 <span className="text-[0.65rem] font-bold text-forest-300">
-                  Taux Commission Klef : {releve.syntheseFinanciere?.tauxCommissionMoyen}%
+                  Taux Commission Paixi : {releve.syntheseFinanciere?.tauxCommissionMoyen}%
                 </span>
               </div>
 
@@ -287,7 +286,7 @@ _Document officiel généré par votre Conciergerie Klef Managed._`;
                   </p>
                 </div>
 
-                {/* 2. Commission Klef */}
+                {/* 2. Commission Paixi */}
                 <div className="p-3 rounded-xl bg-white/5 border border-white/10 space-y-1">
                   <span className="text-[0.65rem] text-forest-300 font-bold uppercase tracking-wider block">
                     2. Commission Conciergerie
@@ -339,7 +338,7 @@ _Document officiel généré par votre Conciergerie Klef Managed._`;
                       <th className="p-3">Locataire</th>
                       <th className="p-3">Dates & Nuits</th>
                       <th className="p-3 text-right">Encaissement Brut</th>
-                      <th className="p-3 text-right">Commission Klef</th>
+                      <th className="p-3 text-right">Commission Paixi</th>
                       <th className="p-3 text-right">Net Bailleur</th>
                     </tr>
                   </thead>
@@ -429,7 +428,7 @@ _Document officiel généré par votre Conciergerie Klef Managed._`;
               <div className="space-y-1">
                 <p className="font-bold text-forest-950 flex items-center gap-1.5">
                   <CheckCircle2 className="h-4 w-4 text-lime-600" />
-                  <span>Document certifié conforme par le système d&apos;inspection Klef Managed</span>
+                  <span>Document certifié conforme par le système d&apos;inspection Paixi Managed</span>
                 </p>
                 <p className="text-[0.7rem] text-foreground-muted">
                   Ce relevé vaut justificatif comptable pour le propriétaire partenaire. Pour toute question : concierge@klef.sn
@@ -438,7 +437,7 @@ _Document officiel généré par votre Conciergerie Klef Managed._`;
 
               <div className="text-right font-mono text-[0.65rem] text-foreground-muted">
                 <p>Émis le {new Date().toLocaleDateString('fr-FR')} à Dakar, Sénégal</p>
-                <p className="font-bold text-forest-900">Klef Managed · Real Estate Operating Platform</p>
+                <p className="font-bold text-forest-900">Paixi Managed · Real Estate Operating Platform</p>
               </div>
             </div>
           </div>

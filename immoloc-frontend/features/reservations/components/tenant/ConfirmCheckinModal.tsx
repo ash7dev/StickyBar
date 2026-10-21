@@ -131,7 +131,7 @@ export function ConfirmCheckinModal({
         <div className="mt-4 flex items-start gap-3 rounded-inner border border-lime-400/20 bg-lime-400/10 p-3.5 text-xs text-forest-200">
           <ShieldCheck className="h-5 w-5 shrink-0 mt-0.5 text-lime-400" />
           <div>
-            <p className="font-semibold text-lime-300">Déblocage du séquestre Klef</p>
+            <p className="font-semibold text-lime-300">Déblocage du séquestre Paixi</p>
             <p className="mt-0.5 leading-relaxed">
               En confirmant, vous attestez que le logement est conforme. Les fonds seront transférés sur le portefeuille de l'hôte.
             </p>

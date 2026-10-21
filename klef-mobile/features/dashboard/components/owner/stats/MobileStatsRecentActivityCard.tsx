@@ -24,7 +24,7 @@ export function MobileStatsRecentActivityCard({
 
   const handleSeeAll = () => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {});
-    router.push('/(owner)/reservations' as any);
+    router.navigate('/(owner)/reservations' as any);
   };
 
   return (

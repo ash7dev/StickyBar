@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import {
   StyleSheet,
   View,
@@ -8,6 +8,7 @@ import {
   TextInput,
   ScrollView,
   ActivityIndicator,
+  Animated,
 } from 'react-native';
 import { X, Clock, CheckCircle2, AlertCircle, ChevronUp, ChevronDown } from 'lucide-react-native';
 import * as Haptics from 'expo-haptics';
@@ -156,6 +157,20 @@ export function MobileConfirmTimeModal({
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
+  const animVal = useRef(new Animated.Value(0)).current;
+
+  useEffect(() => {
+    if (visible) {
+      animVal.setValue(0);
+      Animated.spring(animVal, {
+        toValue: 1,
+        speed: 16,
+        bounciness: 5,
+        useNativeDriver: true,
+      }).start();
+    }
+  }, [visible, animVal]);
+
   const busy = loading || isSubmitting;
 
   const handleRequestClose = () => {
@@ -167,7 +182,6 @@ export function MobileConfirmTimeModal({
   const handleSubmit = async () => {
     if (busy) return;
 
-    // Validation horaire UNIQUEMENT s'il y a une rotation/check-out le même jour
     if (hasSameDayCheckout) {
       const parseMin = (t: string) => {
         const [h, m] = (t || '00:00').split(':').map(Number);
@@ -202,15 +216,26 @@ export function MobileConfirmTimeModal({
 
   if (!visible) return null;
 
+  const backdropOpacity = animVal.interpolate({ inputRange: [0, 1], outputRange: [0, 1] });
+  const cardScale = animVal.interpolate({ inputRange: [0, 1], outputRange: [0.9, 1] });
+  const cardTranslateY = animVal.interpolate({ inputRange: [0, 1], outputRange: [40, 0] });
+
   return (
     <Modal
       visible={visible}
       transparent
-      animationType="fade"
+      animationType="none"
       onRequestClose={handleRequestClose}
     >
-      <View style={styles.overlay}>
-        <View style={styles.modalCard}>
+      <Animated.View style={[styles.overlay, { opacity: backdropOpacity }]}>
+        <Animated.View
+          style={[
+            styles.modalCard,
+            {
+              transform: [{ scale: cardScale }, { translateY: cardTranslateY }],
+            },
+          ]}
+        >
           {/* Close button */}
           <TouchableOpacity
             disabled={busy}
@@ -301,8 +326,8 @@ export function MobileConfirmTimeModal({
               )}
             </View>
           </ScrollView>
-        </View>
-      </View>
+        </Animated.View>
+      </Animated.View>
     </Modal>
   );
 }

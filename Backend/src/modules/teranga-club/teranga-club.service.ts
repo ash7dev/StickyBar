@@ -121,7 +121,7 @@ export class TerangaClubService {
       {
         code: CodeBadgeTeranga.FIRST_STAY,
         libelle: 'Premier Voyage',
-        description: 'Effectuez votre 1er séjour réservé et validé sur Klef.',
+        description: 'Effectuez votre 1er séjour réservé et validé sur Paixi.',
         bonusCoins: 1000,
         icone: '🔑',
         requiredTier: 'BRONZE',
@@ -148,7 +148,7 @@ export class TerangaClubService {
       {
         code: CodeBadgeTeranga.SUPER_PARRAIN,
         libelle: 'Super Parrain Teranga',
-        description: 'Invitez un ami qui effectue sa 1ère réservation sur Klef.',
+        description: 'Invitez un ami qui effectue sa 1ère réservation sur Paixi.',
         bonusCoins: 2500,
         icone: '🤝',
         requiredTier: 'SILVER',
@@ -157,7 +157,7 @@ export class TerangaClubService {
       {
         code: CodeBadgeTeranga.GRAND_RESIDENT,
         libelle: 'Grand Résident',
-        description: 'Effectuez un séjour de 7 nuits ou plus sur Klef.',
+        description: 'Effectuez un séjour de 7 nuits ou plus sur Paixi.',
         bonusCoins: 5000,
         icone: '🏕️',
         requiredTier: 'GOLD',
@@ -213,7 +213,7 @@ export class TerangaClubService {
     switch (code) {
       case CodeBadgeTeranga.FIRST_STAY: {
         libelle = 'Premier Voyage';
-        description = 'Félicitations pour votre 1er séjour réservé et validé sur Klef !';
+        description = 'Félicitations pour votre 1er séjour réservé et validé sur Paixi !';
         icone = '🔑';
         bonusCoins = 1000;
         actionRequired = 'RESERVE';
@@ -224,12 +224,12 @@ export class TerangaClubService {
           },
         });
         isEligible = staysCount >= 1;
-        notEligibleReason = 'Effectuez votre 1er séjour validé sur Klef pour débloquer cette quête !';
+        notEligibleReason = 'Effectuez votre 1er séjour validé sur Paixi pour débloquer cette quête !';
         break;
       }
       case CodeBadgeTeranga.AVIS_STAR: {
         libelle = 'Avis Étoilé';
-        description = 'Merci d\'avoir partagé votre expérience avec la communauté Klef !';
+        description = 'Merci d\'avoir partagé votre expérience avec la communauté Paixi !';
         icone = '⭐';
         bonusCoins = 500;
         actionRequired = 'REVIEW';
@@ -279,7 +279,7 @@ export class TerangaClubService {
           },
         });
         isEligible = !!filleulAvecSejour;
-        notEligibleReason = 'Invitez un ami qui effectue sa première réservation validée sur Klef !';
+        notEligibleReason = 'Invitez un ami qui effectue sa première réservation validée sur Paixi !';
         break;
       }
       case CodeBadgeTeranga.GRAND_RESIDENT: {
@@ -301,12 +301,12 @@ export class TerangaClubService {
           );
           isEligible = diffDays >= 7;
         }
-        notEligibleReason = 'Effectuez un séjour de 7 nuits ou plus sur Klef pour débloquer les +5 000 Coins Élite !';
+        notEligibleReason = 'Effectuez un séjour de 7 nuits ou plus sur Paixi pour débloquer les +5 000 Coins Élite !';
         break;
       }
       case CodeBadgeTeranga.LEGENDE_SENEGAL: {
         libelle = 'Légende du Sénégal';
-        description = 'Félicitations ! Vous avez exploré 3 destinations différentes sur Klef.';
+        description = 'Félicitations ! Vous avez exploré 3 destinations différentes sur Paixi.';
         icone = '👑';
         bonusCoins = 5000;
         actionRequired = 'EXPLORE';
@@ -324,7 +324,7 @@ export class TerangaClubService {
       }
       case CodeBadgeTeranga.CERCLE_MILLION: {
         libelle = 'Cercle du Million';
-        description = 'Félicitations ! Vous appartenez à l\'Élite du Cercle du Million Klef.';
+        description = 'Félicitations ! Vous appartenez à l\'Élite du Cercle du Million Paixi.';
         icone = '💎';
         bonusCoins = 10000;
         actionRequired = 'RESERVE';
@@ -372,7 +372,7 @@ export class TerangaClubService {
       libelle,
       icone,
       message: unlocked
-        ? `Bravo ! Vous avez débloqué "${libelle}" et gagné +${bonusCoins} Klef Coins ! 🎉`
+        ? `Bravo ! Vous avez débloqué "${libelle}" et gagné +${bonusCoins} Paixi Coins ! 🎉`
         : 'Badge déjà débloqué.',
     };
   }
@@ -466,7 +466,7 @@ export class TerangaClubService {
         CodeBadgeTeranga.SUPER_PARRAIN,
         0, // pas de bonus supplémentaire, déjà crédité ci-dessus
         'Super Parrain Teranga',
-        'Votre filleul a effectué son 1er séjour sur Klef !',
+        'Votre filleul a effectué son 1er séjour sur Paixi !',
         '🤝',
       );
     }

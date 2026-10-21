@@ -38,7 +38,7 @@ export default function OwnerListingsScreen() {
   const queryClient = useQueryClient();
 
   const goToAddListing = useCallback(() => {
-    router.push('/(owner)/add-listing' as any);
+    router.navigate('/(owner)/add-listing' as any);
   }, [router]);
 
   const {

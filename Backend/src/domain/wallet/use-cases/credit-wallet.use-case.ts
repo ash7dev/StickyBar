@@ -56,8 +56,8 @@ export class CreditWalletUseCase {
         );
       }
 
-      // Pour DEPOSIT : l'acompte encaisse (ex: 70,6K FCFA) contient la commission Klef (ex: 15,4K FCFA).
-      // Le net crédité au portefeuille du propriétaire = acompte - commission Klef.
+      // Pour DEPOSIT : l'acompte encaisse (ex: 70,6K FCFA) contient la commission Paixi (ex: 15,4K FCFA).
+      // Le net crédité au portefeuille du propriétaire = acompte - commission Paixi.
       // Le solde restant du séjour est payé en espèces au propriétaire à l'arrivée.
       const isDeposit = reservation.typePaiement?.toUpperCase() === 'DEPOSIT';
       const commNum = Number(reservation.montantCommission || 0);
@@ -111,7 +111,7 @@ export class CreditWalletUseCase {
         },
       });
 
-      // Libération des fonds depuis le Grand Livre Système Klef
+      // Libération des fonds depuis le Grand Livre Système Paixi
       const hostEscrowPayout = isDeposit
         ? Math.max(0, Number(reservation.montantAcompte || 0) - commNum)
         : Number(reservation.netProprietaire || 0);
@@ -129,12 +129,12 @@ export class CreditWalletUseCase {
         (aDeduire > 0 ? ` | dette déduite : ${aDeduire} FCFA` : ''),
       );
 
-      // Crédit automatique des Klef Coins pour le locataire via Teranga Club
+      // Crédit automatique des Paixi Coins pour le locataire via Teranga Club
       try {
         const awardUseCase = new AwardBookingCashbackUseCase(this.prisma);
         const coinsGagnes = await awardUseCase.execute(reservationId);
         if (coinsGagnes > 0) {
-          this.logger.log(`Klef Coins crédités [locataire: ${reservation.locataireId}] +${coinsGagnes} Coins`);
+          this.logger.log(`Paixi Coins crédités [locataire: ${reservation.locataireId}] +${coinsGagnes} Coins`);
         }
       } catch (terangaErr) {
         this.logger.warn(`Erreur lors du crédit Teranga Coins pour la résa ${reservationId}: ${(terangaErr as Error).message}`);

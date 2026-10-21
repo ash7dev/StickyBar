@@ -57,7 +57,7 @@ interface Props {
 }
 
 /* ⚠️ `warning-100/200/300/800/900`, `error-100/200`, `forest-200/300` :
-   aucune n'existe dans la palette Klef (rampes sémantiques en 50/500/600/700,
+   aucune n'existe dans la palette Paixi (rampes sémantiques en 50/500/600/700,
    forest en 50/100/200… mais 200 seulement côté forest). La majorité des
    badges de statut et des boutons d'action rendait sans bordure ni couleur. */
 const STATUS_CONFIG: Record<string, { label: string; Icon: typeof Clock; badge: string }> = {

@@ -33,7 +33,7 @@ export function KlefManagedPillars() {
   return (
     <section className="space-y-8">
       <div className="mx-auto max-w-2xl space-y-2 text-center">
-        <p className="eyebrow">Pourquoi choisir Klef Managed ?</p>
+        <p className="eyebrow">Pourquoi choisir Paixi Managed ?</p>
         <h2>Une conciergerie moderne pensée pour votre sérénité</h2>
       </div>
 

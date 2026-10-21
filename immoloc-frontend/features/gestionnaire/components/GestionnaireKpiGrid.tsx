@@ -87,7 +87,7 @@ export function GestionnaireKpiGrid({ kpis }: Props) {
           <div className="text-[11px] text-foreground-muted mt-1 space-y-0.5 font-medium">
             <p>Volume voyageurs: <strong className="text-foreground">{fcfa(kpis.caDuMois)} FCFA</strong></p>
             <p className="text-forest-800 flex items-center gap-1">
-              <ShieldCheck className="h-3.5 w-3.5 text-forest-600" aria-hidden="true" /> Commission Klef: {fcfa(kpis.commissionKlefDuMois)} FCFA
+              <ShieldCheck className="h-3.5 w-3.5 text-forest-600" aria-hidden="true" /> Commission Paixi: {fcfa(kpis.commissionKlefDuMois)} FCFA
             </p>
           </div>
         </div>

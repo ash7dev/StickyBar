@@ -37,10 +37,10 @@ export function MobileProfileHero({
   const [isUploading, setIsUploading] = useState(false);
 
   const prenom = user?.prenom || 'Utilisateur';
-  const nom = user?.nom || 'Klef';
+  const nom = user?.nom || 'Paixi';
   const fullName = `${prenom} ${nom}`;
   const initiales = `${prenom[0] || 'K'}${nom[0] || ''}`.toUpperCase();
-  const contactText = user?.email || user?.telephone || 'Membre Klef';
+  const contactText = user?.email || user?.telephone || 'Membre Paixi';
   const isKycVerified = user?.statutKyc === 'VERIFIE';
   const isOwner = activeRole === 'PROPRIETAIRE';
 

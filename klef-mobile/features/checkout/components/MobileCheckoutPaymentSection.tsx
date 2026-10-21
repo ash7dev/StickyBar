@@ -149,7 +149,7 @@ export function MobileCheckoutPaymentSection({
         </View>
       )}
 
-      {/* ── 2. Klef Coins ───────────────────────────────────────────── */}
+      {/* ── 2. Paixi Coins ───────────────────────────────────────────── */}
       {soldeCoins > 0 && coinsMax > 0 && (
         <TouchableOpacity
           activeOpacity={0.85}
@@ -166,7 +166,7 @@ export function MobileCheckoutPaymentSection({
             </View>
 
             <View style={{ flex: 1, gap: 2 }}>
-              <Text style={styles.coinsTitle}>Utiliser mes Klef Coins</Text>
+              <Text style={styles.coinsTitle}>Utiliser mes Paixi Coins</Text>
               <Text style={styles.coinsDesc}>
                 {coinsMax.toLocaleString('fr-FR')} FCFA déduits de ce paiement · solde{' '}
                 {soldeCoins.toLocaleString('fr-FR')} coins
@@ -273,7 +273,7 @@ export function MobileCheckoutPaymentSection({
           </View>
           <Text style={styles.cguText}>
             J'accepte les <Text style={styles.cguLink}>conditions de location</Text> et la
-            politique d'annulation Klef.
+            politique d'annulation Paixi.
           </Text>
         </View>
         {errors?.cgu && (
@@ -378,7 +378,7 @@ const styles = StyleSheet.create({
     lineHeight: 15,
   },
 
-  // Klef Coins
+  // Paixi Coins
   coinsCard: {
     backgroundColor: '#FEF3C7',
     borderColor: '#FDE68A',

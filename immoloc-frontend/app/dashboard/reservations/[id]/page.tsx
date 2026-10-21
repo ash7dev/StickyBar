@@ -65,7 +65,7 @@ function timeOrNull(iso: string) {
 
 /* ─── Statuts ─────────────────────────────────────────────────────────────
    ⚠️ Corrigé : `warning-400`, `error-400`, `neutral-700/800/300/400`
-   n'existent pas dans la palette Klef. PENDING, CANCELLED, DISPUTED,
+   n'existent pas dans la palette Paixi. PENDING, CANCELLED, DISPUTED,
    COMPLETED et EXPIRED rendaient sans couleur de texte ni pastille — cinq
    statuts sur huit. Toutes les classes sont désormais écrites en entier. */
 
@@ -344,7 +344,7 @@ export default function ReservationDetailPage({ params }: { params: Promise<{ id
       },
       { label: 'Total payé par le locataire', value: `${fcfa(res.totalLocataire)} FCFA`, kind: 'total' },
       {
-        label: `Commission Klef (${commissionPct} %)`,
+        label: `Commission Paixi (${commissionPct} %)`,
         value: `−${fcfa(res.montantCommission)} FCFA`,
         kind: 'deduction',
       },
@@ -509,7 +509,7 @@ export default function ReservationDetailPage({ params }: { params: Promise<{ id
                 Contrat de location vérifié
               </p>
               <p className="text-xs text-on-inverse-muted">
-                Généré par Klef, horodaté et signé numériquement
+                Généré par Paixi, horodaté et signé numériquement
               </p>
             </div>
           </div>
@@ -801,11 +801,11 @@ export default function ReservationDetailPage({ params }: { params: Promise<{ id
             <div className="space-y-2 border-t border-border-inverse pt-3">
               <div className="flex justify-between text-xs font-semibold uppercase tracking-wider text-on-inverse-muted">
                 <span>Votre part — {ownPct} %</span>
-                <span>Klef — {commissionPct} %</span>
+                <span>Paixi — {commissionPct} %</span>
               </div>
               <div
                 role="img"
-                aria-label={`Votre part : ${ownPct} %. Commission Klef : ${commissionPct} %.`}
+                aria-label={`Votre part : ${ownPct} %. Commission Paixi : ${commissionPct} %.`}
                 className="h-2 overflow-hidden rounded-pill bg-white/10"
               >
                 <div
@@ -891,7 +891,7 @@ export default function ReservationDetailPage({ params }: { params: Promise<{ id
           </section>
         )}
 
-        {/* ══ ASSISTANCE KLEF ════════════════════════════════════════════ */}
+        {/* ══ ASSISTANCE PAIXI ════════════════════════════════════════════ */}
 
         <section className="rounded-card border border-border bg-background-card p-5 shadow-sm flex flex-wrap items-center justify-between gap-4">
           <div>
@@ -899,7 +899,7 @@ export default function ReservationDetailPage({ params }: { params: Promise<{ id
               Besoin d&apos;aide concernant cette réservation hôte ?
             </h3>
             <p className="text-xs text-foreground-muted">
-              Posez votre question à l&apos;assistant Klef ou ouvrez un ticket prioritaire avec notre support.
+              Posez votre question à l&apos;assistant Paixi ou ouvrez un ticket prioritaire avec notre support.
             </p>
           </div>
           <AskAssistantButton

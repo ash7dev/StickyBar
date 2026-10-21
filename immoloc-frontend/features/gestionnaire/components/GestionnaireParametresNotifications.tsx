@@ -213,7 +213,7 @@ export function GestionnaireParametresNotifications() {
       >
         <div className="flex items-center gap-2" style={{ color: 'var(--foreground-muted)' }}>
           <Sparkles className="w-4 h-4 text-forest-600" />
-          <span>Canaux d'urgence et SMS gérés par l'infrastructure Klef Télécom Sénégal</span>
+          <span>Canaux d'urgence et SMS gérés par l'infrastructure Paixi Télécom Sénégal</span>
         </div>
         <span className="font-bold text-forest-900">Temps de réponse serveur : &lt; 50ms</span>
       </div>

@@ -22,14 +22,14 @@ const KYC_CONFIG_MAP: Record<string, KycCardConfig> = {
     badge: 'border-gold-200 bg-gold-50 text-gold-700',
     label: 'Vérifié',
     icon: ShieldCheck,
-    docLabel: 'Document enregistré et vérifié par Klef',
+    docLabel: 'Document enregistré et vérifié par Paixi',
     cta: null,
   },
   VALIDE: {
     badge: 'border-gold-200 bg-gold-50 text-gold-700',
     label: 'Vérifié',
     icon: ShieldCheck,
-    docLabel: 'Document enregistré et vérifié par Klef',
+    docLabel: 'Document enregistré et vérifié par Paixi',
     cta: null,
   },
   EN_ATTENTE: {
@@ -86,7 +86,7 @@ const KYC_CONFIG_MAP: Record<string, KycCardConfig> = {
     icon: ShieldX,
     docLabel: 'Vérification suspendue',
     cta: 'Contacter le support',
-    note: 'Votre dossier nécessite un examen complémentaire. Contactez le support Klef.',
+    note: 'Votre dossier nécessite un examen complémentaire. Contactez le support Paixi.',
   },
 };
 

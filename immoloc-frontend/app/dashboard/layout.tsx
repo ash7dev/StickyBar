@@ -4,7 +4,7 @@ import { OwnerGuard } from '@/components/guards';
 import DashboardLoading from './loading';
 
 /**
- * Dashboard Layout - Ultra Clean Version avec Squelette Klef v2
+ * Dashboard Layout - Ultra Clean Version avec Squelette Paixi v2
  */
 export default function DashboardLayout({ children }: { children: ReactNode }) {
   return (

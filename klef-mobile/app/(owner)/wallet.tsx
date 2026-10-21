@@ -123,6 +123,7 @@ export default function OwnerWalletScreen() {
           visible={showWithdrawModal}
           onClose={() => setShowWithdrawModal(false)}
           soldeDisponible={wallet.soldeProprietaire ?? wallet.soldeDisponible ?? 0}
+          soldeRetirable={wallet.soldeRetirable}
           onSuccess={handleWithdrawSuccess}
         />
       )}

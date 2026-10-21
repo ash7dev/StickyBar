@@ -27,7 +27,7 @@ const CONTACT = {
 };
 
 const LEGAL_ENTITY = {
-  name: 'Klef SARL',
+  name: 'Paixi SARL',
   address: 'Dakar, Sénégal',
   ninea: '—',
   rccm: '—',

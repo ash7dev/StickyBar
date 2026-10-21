@@ -15,6 +15,10 @@ interface Props {
   onClose: () => void;
 }
 
+function toDayKey(d: Date) {
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+}
+
 function fmtShort(d: Date) {
   return d.toLocaleDateString('fr-FR', { day: 'numeric', month: 'short', year: 'numeric' });
 }
@@ -59,14 +63,16 @@ export function GestionnaireBlockDatesModal({ logements, isOpen, onClose }: Prop
       return;
     }
     setErrorMsg(null);
-    const dateDebut = range.from.toISOString().split('T')[0];
-    const dateFin = range.to.toISOString().split('T')[0];
+    // Jours en heure locale (toISOString décalait d'un jour à l'est de l'UTC),
+    // et dateFin exclue côté API : on envoie le lendemain du dernier jour choisi.
+    const dateDebut = toDayKey(range.from);
+    const dateFin = toDayKey(new Date(range.to.getFullYear(), range.to.getMonth(), range.to.getDate() + 1));
     blockMutation.mutate({ logementId, dateDebut, dateFin, motif });
   };
 
   const nights =
     range?.from && range?.to
-      ? Math.round((range.to.getTime() - range.from.getTime()) / (1000 * 60 * 60 * 24))
+      ? Math.round((range.to.getTime() - range.from.getTime()) / (1000 * 60 * 60 * 24)) + 1
       : 0;
 
   return (

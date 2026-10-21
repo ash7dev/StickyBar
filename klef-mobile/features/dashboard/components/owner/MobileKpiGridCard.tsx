@@ -25,7 +25,7 @@ export function MobileKpiGridCard({ stats, pending }: Props) {
 
   const handleKpiPress = (href: string) => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {});
-    router.push(href as any);
+    router.navigate(href as any);
   };
 
   const pendingConfirmations = pending.pendingConfirmations ?? 0;
@@ -49,7 +49,7 @@ export function MobileKpiGridCard({ stats, pending }: Props) {
       unit: stats.listings.active > 1 ? 'publiés' : 'publié',
       icon: Building2,
       alert: null,
-      subtext: 'En ligne sur Klef',
+      subtext: 'En ligne sur Paixi',
     },
     {
       id: 'revenue',

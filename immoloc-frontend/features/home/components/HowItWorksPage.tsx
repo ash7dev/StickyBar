@@ -30,7 +30,7 @@ const STEPS_LOCATAIRE = [
   {
     icon: CreditCard,
     title: 'Réservez et payez',
-    description: 'Par Wave ou Orange Money. Le montant quitte votre compte mais reste bloqué par Klef.',
+    description: 'Par Wave ou Orange Money. Le montant quitte votre compte mais reste bloqué par Paixi.',
   },
   {
     icon: Key,
@@ -66,7 +66,7 @@ const GARANTIES = [
   {
     icon: ShieldCheck,
     title: 'Paiement sous séquestre',
-    description: 'Les fonds sont conservés par Klef et versés à l’hôte après la remise des clés. Si le logement ne correspond pas, le voyageur est remboursé.',
+    description: 'Les fonds sont conservés par Paixi et versés à l’hôte après la remise des clés. Si le logement ne correspond pas, le voyageur est remboursé.',
   },
   {
     icon: BadgeCheck,
@@ -76,12 +76,12 @@ const GARANTIES = [
   {
     icon: Search,
     title: 'Annonces visitées',
-    description: 'Un agent Klef se déplace, photographie le logement et vérifie l’adresse avant la mise en ligne.',
+    description: 'Un agent Paixi se déplace, photographie le logement et vérifie l’adresse avant la mise en ligne.',
   },
   {
     icon: Users,
     title: 'Une équipe joignable',
-    // « Support client Klef 7j/7 » retire : engagement de disponibilite
+    // « Support client Paixi 7j/7 » retire : engagement de disponibilite
     // sans equipe dimensionnee pour le tenir au lancement.
     description: 'Un interlocuteur pour vous accompagner avant, pendant et après le séjour, par WhatsApp ou téléphone.',
   },
@@ -120,7 +120,7 @@ export function HowItWorksPage() {
           </h1>
 
           <p className="mx-auto mt-4 max-w-2xl text-base leading-relaxed text-forest-200 sm:text-lg">
-            Comment Klef sécurise la location de logements au Sénégal, que vous
+            Comment Paixi sécurise la location de logements au Sénégal, que vous
             soyez locataire ou propriétaire.
           </p>
         </div>
@@ -252,7 +252,7 @@ export function HowItWorksPage() {
         <section className="space-y-8">
           <header className="space-y-3 text-center">
             <h2 className="font-display text-[clamp(1.5rem,3.5vw,2.25rem)] font-semibold tracking-[-0.02em] text-forest-900">
-              Ce que Klef garantit
+              Ce que Paixi garantit
             </h2>
             <p className="mx-auto max-w-lg text-sm text-foreground-muted">
               Quatre engagements, vérifiables à chaque réservation.

@@ -354,7 +354,7 @@ export class ProcessRefundUseCase {
     // TODO: Appeler Wave/Orange Money API ici
     // const transaction = await this.paymentService.refund(...)
 
-    // Calcul de la répartition Remboursement Cash vs Recrédit Klef Coins
+    // Calcul de la répartition Remboursement Cash vs Recrédit Paixi Coins
     const montantTotalRefund = Number(refund.montantLocataire);
     const cashPaye = Number(refund.reservation.montantPayeCash || 0);
     const coinsDeduites = Number(refund.reservation.coinsDeduites || 0);
@@ -374,7 +374,7 @@ export class ProcessRefundUseCase {
         },
       });
 
-      // Recréditer les Klef Coins au locataire si des coins avaient été déduites
+      // Recréditer les Paixi Coins au locataire si des coins avaient été déduites
       if (coinsRefund > 0) {
         const terangaAccount = await tx.terangaAccount.findUnique({
           where: { utilisateurId: refund.reservation.locataireId },
@@ -392,7 +392,7 @@ export class ProcessRefundUseCase {
               terangaAccountId: terangaAccount.id,
               montantCoins: coinsRefund,
               type: TypeTransactionTeranga.CREDIT_ANNULATION,
-              description: `Recrédit Klef Coins suite à l'annulation de la réservation #${refund.reservationId.slice(0, 8).toUpperCase()}`,
+              description: `Recrédit Paixi Coins suite à l'annulation de la réservation #${refund.reservationId.slice(0, 8).toUpperCase()}`,
               reservationId: refund.reservationId,
               soldeApres,
             },
@@ -400,7 +400,7 @@ export class ProcessRefundUseCase {
         }
       }
 
-      // Enregistrement au Grand Livre Système Klef
+      // Enregistrement au Grand Livre Système Paixi
       await this.systemLedger.recordRefund(
         tx,
         refund.reservationId,

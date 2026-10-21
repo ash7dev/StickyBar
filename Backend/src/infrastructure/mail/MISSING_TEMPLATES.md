@@ -1,4 +1,4 @@
-# 📧 Templates Email Manquantes - Klef
+# 📧 Templates Email Manquantes - Paixi
 
 Suite à l'analyse complète du backend, voici la liste des **22 templates manquantes** à créer.
 
@@ -492,7 +492,7 @@ Suite à l'analyse complète du backend, voici la liste des **22 templates manqu
 
 1. **Créer le fichier** dans `templates/nom-template.html`
 2. **Utiliser le contenu uniquement** (pas le wrapper base)
-3. **Respecter les couleurs Klef** (Forest, Lime, Gold, Neutral)
+3. **Respecter les couleurs Paixi** (Forest, Lime, Gold, Neutral)
 4. **Ajouter les variables** avec `{{variableName}}`
 5. **Tester les conditions** avec `{{#if}}...{{/if}}`
 6. **Ajouter la méthode** dans `mail.service.ts`
@@ -537,7 +537,7 @@ Suite à l'analyse complète du backend, voici la liste des **22 templates manqu
 
 <p class="text" style="margin-top: 24px;">
   Cordialement,<br>
-  <strong style="color: #14654C;">L'équipe Klef</strong>
+  <strong style="color: #14654C;">L'équipe Paixi</strong>
 </p>
 ```
 

@@ -18,7 +18,7 @@ export class AdminFinanceController {
   constructor(private readonly service: AdminFinanceService) {}
 
   @Get('stats')
-  @ApiOperation({ summary: 'Statistiques avancées des gains et revenus nets Klef (commissions, pénalités)' })
+  @ApiOperation({ summary: 'Statistiques avancées des gains et revenus nets Paixi (commissions, pénalités)' })
   getFinancialStats(@Query() dto: AdminFinanceStatsQueryDto) {
     return this.service.getFinancialStats(dto);
   }

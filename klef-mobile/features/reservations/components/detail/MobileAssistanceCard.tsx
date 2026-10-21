@@ -1,6 +1,7 @@
 import React from 'react';
-import { StyleSheet, View, Text, TouchableOpacity, Linking, Alert } from 'react-native';
-import { HelpCircle, PhoneCall, MessageSquare } from 'lucide-react-native';
+import { StyleSheet, View, Text, TouchableOpacity } from 'react-native';
+import { useRouter } from 'expo-router';
+import { HelpCircle, MessageSquare, ChevronRight } from 'lucide-react-native';
 import * as Haptics from 'expo-haptics';
 import { colors, radius, shadows, typography } from '../../../../shared/theme/tokens';
 
@@ -9,10 +10,13 @@ interface MobileAssistanceCardProps {
 }
 
 export function MobileAssistanceCard({ reservationId }: MobileAssistanceCardProps) {
-  const handleCallSupport = () => {
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {});
-    Linking.openURL('tel:+221338000000').catch(() => {
-      Alert.alert('Support Klef', 'Le numéro du support est le +221 33 800 00 00');
+  const router = useRouter();
+
+  const handleOpenAssistance = () => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium).catch(() => {});
+    router.push({
+      pathname: '/assistance',
+      params: { reservationId, tab: 'new' },
     });
   };
 
@@ -25,21 +29,20 @@ export function MobileAssistanceCard({ reservationId }: MobileAssistanceCardProp
         <View style={{ flex: 1, gap: 2 }}>
           <Text style={styles.title}>Une question ou besoin d'aide ?</Text>
           <Text style={styles.subtitle}>
-            L'équipe Klef vous accompagne 24h/24 et 7j/7 pour assurer votre sérénité.
+            L'équipe Paixi vous accompagne 24h/24 et 7j/7 pour assurer votre sérénité.
           </Text>
         </View>
       </View>
 
-      <View style={styles.buttonRow}>
-        <TouchableOpacity
-          activeOpacity={0.8}
-          onPress={handleCallSupport}
-          style={styles.supportBtn}
-        >
-          <PhoneCall size={14} color={colors.forest[950]} />
-          <Text style={styles.supportBtnText}>Appeler le support</Text>
-        </TouchableOpacity>
-      </View>
+      <TouchableOpacity
+        activeOpacity={0.85}
+        onPress={handleOpenAssistance}
+        style={styles.mainBtn}
+      >
+        <MessageSquare size={15} color={colors.forest[950]} />
+        <Text style={styles.mainBtnText}>Contacter l'assistance</Text>
+        <ChevronRight size={15} color={colors.forest[950]} />
+      </TouchableOpacity>
     </View>
   );
 }
@@ -49,7 +52,7 @@ const styles = StyleSheet.create({
     backgroundColor: colors.neutral[0],
     borderRadius: radius.card,
     padding: 16,
-    gap: 12,
+    gap: 14,
     borderWidth: 1,
     borderColor: colors.forest[100],
     ...shadows.sm,
@@ -81,27 +84,21 @@ const styles = StyleSheet.create({
     color: colors.neutral[600],
     lineHeight: 16,
   },
-  buttonRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 10,
-    paddingTop: 4,
-  },
-  supportBtn: {
+  mainBtn: {
+    width: '100%',
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
     gap: 8,
     backgroundColor: colors.lime[400],
-    paddingVertical: 10,
+    paddingVertical: 12,
     paddingHorizontal: 16,
     borderRadius: radius.pill,
-    flex: 1,
     ...shadows.action,
   },
-  supportBtnText: {
+  mainBtnText: {
     fontFamily: typography.fontBodyBold,
-    fontSize: 12,
+    fontSize: 13,
     color: colors.forest[950],
   },
 });

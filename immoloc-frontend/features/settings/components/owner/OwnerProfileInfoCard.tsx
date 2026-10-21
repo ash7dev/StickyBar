@@ -207,7 +207,7 @@ export function OwnerProfileInfoCard({
             <p id={`${emailId}-hint`} className="mt-1.5 text-xs text-foreground-muted">
               {isShadowEmail
                 ? 'Adresse email générée par la conciergerie. Saisissez votre véritable adresse email pour recevoir vos notifications.'
-                : 'Votre adresse email associée à votre compte Klef.'}
+                : 'Votre adresse email associée à votre compte Paixi.'}
             </p>
           </div>
         </div>

@@ -154,7 +154,7 @@ export function MobileCheckinGalleryModal({
           <View style={{ flex: 1 }}>
             <Text style={styles.legalBannerTitle}>Preuves juridiquement valides</Text>
             <Text style={styles.legalBannerText}>
-              Ces clichés font foi auprès du support Klef en cas de réclamation ou litige.
+              Ces clichés font foi auprès du support Paixi en cas de réclamation ou litige.
             </Text>
           </View>
         </View>

@@ -1,7 +1,7 @@
 'use client';
 
 /* ═══════════════════════════════════════════════════════════════════════════
-   Klef — Primitives partagées des panneaux de réservation
+   Paixi — Primitives partagées des panneaux de réservation
    ───────────────────────────────────────────────────────────────────────────
    Ces briques existaient en double dans ReservationActionPanel (propriétaire)
    et TenantReservationActionPanel (locataire), avec des divergences déjà
@@ -49,19 +49,17 @@ export interface RefundTier {
 }
 
 export const REFUND_TIERS: RefundTier[] = [
-    { id: 'full', percentage: 100, short: '100 %', window: 'Plus de 7 jours', label: 'Remboursement intégral' },
-    { id: 'half', percentage: 50, short: '50 %', window: '3 à 7 jours', label: 'Remboursement partiel' },
-    { id: 'quarter', percentage: 25, short: '25 %', window: '24 h à 3 jours', label: 'Remboursement minimal' },
-    { id: 'none', percentage: 0, short: '0 %', window: 'Moins de 24 h', label: 'Aucun remboursement' },
+    { id: 'full', percentage: 100, short: '100 %', window: 'Plus de 3 jours', label: 'Remboursement du prix de base' },
+    { id: 'half', percentage: 75, short: '75 %', window: '24 h à 3 jours', label: 'Remboursement partiel (75 %)' },
+    { id: 'quarter', percentage: 50, short: '50 %', window: 'Moins de 24 h', label: 'Remboursement partiel (50 %)' },
 ];
 
 /** Palier applicable, en heures restantes avant le check-in. */
 export function resolveRefundTier(hoursToCheckin: number): RefundTier {
     const days = hoursToCheckin / 24;
-    if (days > 7) return REFUND_TIERS[0];
-    if (days >= 3) return REFUND_TIERS[1];
-    if (hoursToCheckin >= 24) return REFUND_TIERS[2];
-    return REFUND_TIERS[3];
+    if (days > 3) return REFUND_TIERS[0];
+    if (hoursToCheckin >= 24) return REFUND_TIERS[1];
+    return REFUND_TIERS[2];
 }
 
 /* ─── Tonalités — classes complètes, jamais interpolées ──────────────────── */

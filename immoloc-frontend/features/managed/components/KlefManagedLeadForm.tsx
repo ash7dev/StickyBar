@@ -91,7 +91,7 @@ export function KlefManagedLeadForm() {
         <div className="icon-tile mx-auto h-10 w-10 shadow-xs">
           <Building2 className="h-5 w-5" aria-hidden="true" />
         </div>
-        <h2 className="text-base sm:text-lg">Demander une prise en charge Klef Managed</h2>
+        <h2 className="text-base sm:text-lg">Demander une prise en charge Paixi Managed</h2>
         <p className="text-xs text-foreground-muted">
           Laissez vos coordonnées et notre équipe vous recontactera sous 24h.
         </p>
@@ -206,7 +206,7 @@ export function KlefManagedLeadForm() {
 
           <button type="submit" disabled={loading} className="btn-action w-full">
             <Send className="h-4 w-4" aria-hidden="true" />
-            {loading ? 'Envoi…' : 'Confier mon bien à Klef Managed'}
+            {loading ? 'Envoi…' : 'Confier mon bien à Paixi Managed'}
           </button>
         </form>
       )}

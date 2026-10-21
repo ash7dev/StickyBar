@@ -36,7 +36,7 @@ export function MobileCheckoutHeader({
         </Text>
         <View style={styles.secureBadge}>
           <ShieldCheck size={11} color={colors.forest[700]} />
-          <Text style={styles.secureBadgeText}>Paiement 100% sécurisé par Klef</Text>
+          <Text style={styles.secureBadgeText}>Paiement 100% sécurisé par Paixi</Text>
         </View>
       </View>
     </View>

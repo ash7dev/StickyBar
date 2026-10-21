@@ -169,7 +169,7 @@ export default function AdminNotificationsPage() {
           </h1>
           {/* « la communauté ImmoLoc » : ancien nom du produit. */}
           <p className="mt-1 text-sm text-foreground-muted">
-            Messages d’information, alertes de maintenance ou annonces à la communauté Klef.
+            Messages d’information, alertes de maintenance ou annonces à la communauté Paixi.
           </p>
         </header>
 

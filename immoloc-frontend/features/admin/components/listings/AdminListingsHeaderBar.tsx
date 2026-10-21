@@ -51,7 +51,7 @@ export function AdminListingsHeaderBar({
               Modération du Catalogue d&apos;Annonces
             </h1>
             <p className="text-xs text-foreground-muted">
-              Validation, suspension et mise en vedette des logements publiés sur Klef
+              Validation, suspension et mise en vedette des logements publiés sur Paixi
             </p>
           </div>
         </div>

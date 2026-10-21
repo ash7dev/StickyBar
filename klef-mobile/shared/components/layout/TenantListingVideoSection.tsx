@@ -67,8 +67,6 @@ export function TenantListingVideoSection({
         <VideoView
           player={player}
           style={styles.videoPlayer}
-          allowsFullscreen
-          allowsPictureInPicture
           contentFit="cover"
         />
 

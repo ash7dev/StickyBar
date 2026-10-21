@@ -27,6 +27,8 @@ export interface OwnerWithListings {
   email: string | null;
   logementsCount: number;
   soldeDisponible: number;
+  soldeGeleLitige?: number;
+  soldeRetirable?: number;
   logements?: OwnerListingDetail[];
 }
 
@@ -47,6 +49,9 @@ export function GestionnaireOwnerCardWithListings({ owner, onOpenWithdrawal, onO
   const [expanded, setExpanded] = useState(true);
   const listings = owner.logements ?? [];
 
+  const hasLitige = (owner.soldeGeleLitige || 0) > 0;
+  const retirable = owner.soldeRetirable !== undefined ? owner.soldeRetirable : Math.max(0, owner.soldeDisponible - (owner.soldeGeleLitige || 0));
+
   return (
     <div className="rounded-card border border-border bg-background-card p-6 sm:p-7 shadow-2xs space-y-5 transition-all hover:border-forest-600/30">
       {/* ── En-tête du Propriétaire ────────────────────────────────────────── */}
@@ -64,6 +69,12 @@ export function GestionnaireOwnerCardWithListings({ owner, onOpenWithdrawal, onO
               <span className="inline-flex items-center px-3 py-1 rounded-pill text-xs font-semibold bg-forest-50 text-forest-700 border border-forest-200">
                 Mandat Conciergerie Actif
               </span>
+
+              {hasLitige && (
+                <span className="inline-flex items-center px-3 py-1 rounded-pill text-xs font-semibold bg-amber-50 text-amber-700 border border-amber-300">
+                  ⚠️ Gel Litige : {fcfa(owner.soldeGeleLitige || 0)} FCFA
+                </span>
+              )}
             </div>
 
             <div className="flex flex-wrap items-center gap-4 text-xs font-medium text-foreground-muted pt-0.5">
@@ -92,11 +103,16 @@ export function GestionnaireOwnerCardWithListings({ owner, onOpenWithdrawal, onO
         <div className="flex flex-wrap items-center gap-3 justify-between md:justify-end border-t md:border-t-0 border-border pt-3 md:pt-0">
           <div className="text-left md:text-right mr-2">
             <span className="text-[0.6875rem] uppercase font-bold text-foreground-muted tracking-wider block">
-              Solde Portefeuille Disponible
+              {hasLitige ? 'Solde Reversement Autorisé' : 'Solde Portefeuille Disponible'}
             </span>
             <span className="font-display text-xl font-semibold text-forest-950 tabular-nums">
-              {fcfa(owner.soldeDisponible)} <span className="text-xs font-normal text-foreground-muted">FCFA</span>
+              {fcfa(retirable)} <span className="text-xs font-normal text-foreground-muted">FCFA</span>
             </span>
+            {hasLitige && (
+              <span className="text-[10px] text-amber-700 block font-medium">
+                (Total: {fcfa(owner.soldeDisponible)} FCFA · Gelé: {fcfa(owner.soldeGeleLitige || 0)} FCFA)
+              </span>
+            )}
           </div>
 
           <button

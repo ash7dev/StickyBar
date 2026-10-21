@@ -39,7 +39,7 @@ const DEFAULT_QUESTS: TerangaQuest[] = [
   },
   {
     code: 'FIRST_RESERVATION',
-    titre: 'Premier séjour Klef',
+    titre: 'Premier séjour Paixi',
     description: 'Réservez votre premier logement sur l’application.',
     recompenseCoins: 2000,
     statut: 'A_FAIRE',

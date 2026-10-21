@@ -379,7 +379,7 @@ export function CGUPage() {
             <div className="space-y-3 my-5">
               {[
                 { step: '1', label: 'Sélection', desc: 'Le Locataire choisit le logement, les dates et le nombre de voyageurs.' },
-                { step: '2', label: 'Paiement', desc: 'Le montant total est débité et placé en séquestre par Klef.' },
+                { step: '2', label: 'Paiement', desc: 'Le montant total est débité et placé en séquestre par Paixi.' },
                 { step: '3', label: 'Confirmation', desc: 'Le Propriétaire dispose de 24h pour confirmer la réservation.' },
                 { step: '4', label: 'Check-in', desc: 'Les deux parties valident l\'arrivée via la Plateforme. Le séquestre est libéré après 48h.' },
               ].map(({ step, label, desc }) => (
@@ -476,7 +476,7 @@ export function CGUPage() {
             </div>
 
             <InfoBox type="info">
-              <strong>Zéro frais caché pour le propriétaire :</strong> Lorsque vous fixez une nuitée à 50 000 FCFA, vous recevez exactement <strong>50 000 FCFA</strong> sur votre portefeuille Klef dès la confirmation du check-in.
+              <strong>Zéro frais caché pour le propriétaire :</strong> Lorsque vous fixez une nuitée à 50 000 FCFA, vous recevez exactement <strong>50 000 FCFA</strong> sur votre portefeuille Paixi dès la confirmation du check-in.
             </InfoBox>
 
             <Para>
@@ -496,10 +496,9 @@ export function CGUPage() {
             <p className="font-bold text-sm text-foreground mt-4 mb-2">1. Annulation par le Locataire :</p>
             <div className="space-y-3 my-3">
               {[
-                { name: 'Plus de 7 jours avant le séjour', color: 'bg-forest-50/80 border-forest-200/80', dot: 'bg-forest-500', rule: 'Remboursement à 100 % du montant total.' },
-                { name: 'Entre 3 et 7 jours avant le séjour', color: 'bg-warning-50/80 border-warning-500/30', dot: 'bg-warning-500', rule: 'Remboursement à 50 % du montant total.' },
-                { name: 'Entre 24h et 3 jours avant le séjour', color: 'bg-warning-50/80 border-warning-500/30', dot: 'bg-warning-600', rule: 'Remboursement à 25 % du montant total.' },
-                { name: 'Moins de 24h avant le séjour', color: 'bg-error-50/80 border-error-500/30', dot: 'bg-error-500', rule: 'Aucun remboursement (0 %). Le montant reste acquis au propriétaire.' },
+                { name: 'Plus de 3 jours avant le séjour', color: 'bg-forest-50/80 border-forest-200/80', dot: 'bg-forest-500', rule: 'Remboursement à 100 % du prix de base. La commission de service Paixi (7 %) est retenue.' },
+                { name: 'Entre 24h et 3 jours avant le séjour', color: 'bg-warning-50/80 border-warning-500/30', dot: 'bg-warning-500', rule: 'Remboursement partiel à 75 % du montant total.' },
+                { name: 'Moins de 24h avant le séjour', color: 'bg-warning-50/80 border-warning-500/30', dot: 'bg-warning-600', rule: 'Remboursement partiel à 50 % du montant total.' },
               ].map(({ name, color, dot, rule }) => (
                 <div key={name} className={cn('flex gap-3 p-3.5 rounded-xl border shadow-xs', color)}>
                   <div className={cn('w-2 h-2 rounded-full shrink-0 mt-2', dot)} />
@@ -516,10 +515,10 @@ export function CGUPage() {
               En cas d&apos;annulation par le Propriétaire d&apos;une réservation déjà confirmée, le Locataire est <strong>intégralement remboursé à 100 %</strong>. Des pénalités financières et administratives s&apos;appliquent à l&apos;hôte :
             </Para>
             <Ul items={[
-              'Annulation à plus de 7 jours avant le séjour : Pénalité de 5 000 FCFA déduite du portefeuille de l\'hôte.',
-              'Annulation entre 2 et 7 jours avant le séjour : Pénalité de 10 000 FCFA.',
-              'Annulation à moins de 48h avant le séjour : Pénalité de 20 000 FCFA.',
-              'Suspension automatique : À compter de 3 annulations confirmées, l\'ensemble des annonces du propriétaire est suspendu de la plateforme.',
+              'Annulation à plus de 3 jours avant le séjour : Aucune pénalité (0 FCFA).',
+              'Annulation entre 24h et 3 jours avant le séjour : Pénalité de 2 500 FCFA déduite du portefeuille de l\'hôte.',
+              'Annulation à moins de 24h avant le séjour : Pénalité de 10 000 FCFA déduite du portefeuille de l\'hôte.',
+              'Suspension automatique : À compter de 7 annulations confirmées, l\'ensemble des annonces du propriétaire est suspendu de la plateforme.',
             ]} />
 
             <InfoBox type="warning">
@@ -536,7 +535,7 @@ export function CGUPage() {
               l&apos;état du logement à l&apos;arrivée (check-in) et au départ (check-out).
             </Para>
             <Ul items={[
-              'Les photos d\'état des lieux sont stockées et horodatées par Klef',
+              'Les photos d\'état des lieux sont stockées et horodatées par Paixi',
               'Elles constituent une preuve en cas de litige sur l\'état du logement',
               'Le Propriétaire dispose de 48h après le check-out pour déclarer tout dommage',
               'Passé ce délai, aucune réclamation relative à l\'état du logement ne sera recevable',

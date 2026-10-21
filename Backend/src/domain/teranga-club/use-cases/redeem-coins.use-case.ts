@@ -10,7 +10,7 @@ export class RedeemCoinsUseCase {
     reservationId?: string,
   ): Promise<{ soldeApres: number }> {
     if (montantCoins <= 0) {
-      throw new UnprocessableEntityException('Le montant de Klef Coins à déduire doit être supérieur à 0');
+      throw new UnprocessableEntityException('Le montant de Paixi Coins à déduire doit être supérieur à 0');
     }
 
     const account = await this.prisma.terangaAccount.findUnique({
@@ -19,7 +19,7 @@ export class RedeemCoinsUseCase {
 
     if (!account || account.soldeCoins < montantCoins) {
       throw new UnprocessableEntityException(
-        `Solde de Klef Coins insuffisant (solde actuel : ${account?.soldeCoins ?? 0} Coins, demandé : ${montantCoins} Coins)`,
+        `Solde de Paixi Coins insuffisant (solde actuel : ${account?.soldeCoins ?? 0} Coins, demandé : ${montantCoins} Coins)`,
       );
     }
 

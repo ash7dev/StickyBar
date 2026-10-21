@@ -305,7 +305,7 @@ export default function OwnerReservationsScreen() {
             {/* Action buttons */}
             {reservations.length === 0 ? (
               <TouchableOpacity
-                onPress={() => router.push('/(owner)/listings' as any)}
+                onPress={() => router.navigate('/(owner)/listings' as any)}
                 style={styles.emptyCtaBtn}
                 activeOpacity={0.85}
               >

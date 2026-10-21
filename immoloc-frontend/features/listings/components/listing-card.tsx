@@ -73,7 +73,7 @@ export function ListingCardSkeleton() {
 }
 
 /* ═══════════════════════════════════════════════════════════════════════════
-   Premium Listing Card — Klef
+   Premium Listing Card — Paixi
    ═══════════════════════════════════════════════════════════════════════════ */
 
 export function ListingCardItem({ listing }: { listing: ListingCard }) {

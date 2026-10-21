@@ -48,7 +48,7 @@ export function WebHome() {
       {/* How It Works Section */}
       <HowItWorksSection />
 
-      {/* Klef Managed Concierge Banner Section */}
+      {/* Paixi Managed Concierge Banner Section */}
       <KlefManagedHomeBanner />
 
       {/* Owner CTA Section */}

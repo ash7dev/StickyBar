@@ -22,7 +22,7 @@ export function OwnerTopHeader() {
   const { user } = useAuthStore();
 
   const goToAddListing = React.useCallback(() => {
-    router.push('/(owner)/add-listing' as any);
+    router.navigate('/(owner)/add-listing' as any);
   }, [router]);
 
   const {
@@ -84,7 +84,7 @@ export function OwnerTopHeader() {
 
   const handleProfilePress = () => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {});
-    router.push('/(owner)/profile' as any);
+    router.navigate('/(owner)/profile' as any);
   };
 
   return (

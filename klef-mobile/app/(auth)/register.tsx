@@ -12,7 +12,7 @@ import {
   StatusBar,
 } from 'react-native';
 import { useRouter } from 'expo-router';
-import { ArrowLeft, User, Mail, Lock, AlertCircle, CheckCircle2, Eye, EyeOff, ShieldCheck } from 'lucide-react-native';
+import { ArrowLeft, User, Mail, Lock, AlertCircle, CheckCircle2, Eye, EyeOff, ShieldCheck, CheckSquare, Square } from 'lucide-react-native';
 import { useAuth } from '../../features/auth/hooks/useAuth';
 import { PhoneInputWithCountry } from '../../shared/components/ui/PhoneInputWithCountry';
 import { AppButton } from '../../shared/components/ui/AppButton';
@@ -31,6 +31,7 @@ export default function RegisterScreen() {
   const [focusedInput, setFocusedInput] = useState<string | null>(null);
   const [localError, setLocalError] = useState<string | null>(null);
   const [isSuccess, setIsSuccess] = useState(false);
+  const [cguAccepted, setCguAccepted] = useState(true);
 
   const handleRegister = async () => {
     setLocalError(null);
@@ -41,6 +42,11 @@ export default function RegisterScreen() {
 
     if (password.length < 6) {
       setLocalError('Le mot de passe doit contenir au moins 6 caractères');
+      return;
+    }
+
+    if (!cguAccepted) {
+      setLocalError('Vous devez accepter les CGU et la Politique de Confidentialité pour vous inscrire.');
       return;
     }
 
@@ -76,7 +82,7 @@ export default function RegisterScreen() {
             </View>
             <Text style={styles.successTitle}>Compte Créé avec Succès !</Text>
             <Text style={styles.successSubtitle}>
-              Un code de confirmation vous a été transmis. Vous êtes prêt à explorer le catalogue Klef.
+              Un code de confirmation vous a été transmis. Vous êtes prêt à explorer le catalogue Paixi.
             </Text>
             <AppButton
               fullWidth
@@ -117,9 +123,9 @@ export default function RegisterScreen() {
 
           {/* Header Title */}
           <View style={styles.header}>
-            <Text style={styles.title}>Créer un compte Klef ✨</Text>
+            <Text style={styles.title}>Créer un compte Paixi ✨</Text>
             <Text style={styles.subtitle}>
-              Rejoignez la communauté Klef et accédez aux meilleures offres de logements à Dakar.
+              Rejoignez la communauté Paixi et accédez aux meilleures offres de logements à Dakar.
             </Text>
           </View>
 
@@ -256,10 +262,43 @@ export default function RegisterScreen() {
                 </View>
               </View>
 
+              {/* CGU & Privacy Checkbox */}
+              <View style={styles.cguRow}>
+                <TouchableOpacity
+                  activeOpacity={0.7}
+                  hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+                  onPress={() => setCguAccepted(!cguAccepted)}
+                  style={styles.cguCheckboxTouch}
+                >
+                  {cguAccepted ? (
+                    <CheckSquare size={20} color={colors.forest[700]} />
+                  ) : (
+                    <Square size={20} color={colors.neutral[400]} />
+                  )}
+                </TouchableOpacity>
+                <Text style={styles.cguText}>
+                  J'accepte les{' '}
+                  <Text
+                    onPress={() => router.push('/cgu' as any)}
+                    style={styles.cguLinkText}
+                  >
+                    Conditions Générales d'Utilisation (CGU)
+                  </Text>
+                  {' '}et la{' '}
+                  <Text
+                    onPress={() => router.push('/politique-confidentialite' as any)}
+                    style={styles.cguLinkText}
+                  >
+                    Politique de Confidentialité
+                  </Text>
+                  {' '}de Paixi.
+                </Text>
+              </View>
+
               {/* Submit CTA */}
               <AppButton
                 fullWidth
-                label="Créer mon compte Klef"
+                label="Créer mon compte Paixi"
                 loading={loading}
                 onPress={handleRegister}
                 size="lg"
@@ -594,6 +633,29 @@ const styles = StyleSheet.create({
     color: colors.neutral[500],
     fontWeight: '500',
     textAlign: 'center',
+  },
+
+  // CGU Checkbox & Links
+  cguRow: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    gap: 10,
+    marginVertical: 4,
+  },
+  cguCheckboxTouch: {
+    paddingTop: 2,
+  },
+  cguText: {
+    flex: 1,
+    fontSize: 12,
+    color: colors.neutral[700],
+    lineHeight: 18,
+    fontFamily: typography.fontBody,
+  },
+  cguLinkText: {
+    color: colors.forest[800],
+    fontFamily: typography.fontBodyBold,
+    textDecorationLine: 'underline',
   },
 });
 

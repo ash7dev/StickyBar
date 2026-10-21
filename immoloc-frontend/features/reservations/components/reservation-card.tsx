@@ -36,7 +36,7 @@ const STATUT_CONFIG: Record<string, { label: string; theme: 'neutral' | 'emerald
   EXPIRED:    { label: 'Expirée',    theme: 'neutral'  },
 };
 
-/* Thèmes basés uniquement sur les tokens Klef.
+/* Thèmes basés uniquement sur les tokens Paixi.
    success / warning / error n'exposent que 500 & 600 → fonds doux via opacité. */
 const THEMES = {
   neutral: {

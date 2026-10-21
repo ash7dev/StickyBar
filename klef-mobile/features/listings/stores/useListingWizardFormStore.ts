@@ -117,7 +117,7 @@ const DEFAULT_ANNONCE: AnnonceData = {
 
 const DEFAULT_CONDITIONS: ConditionsData = {
   reglesMaison: 'Fêtes non autorisées. Respect du calme après 22h.',
-  instructionsAcces: 'Accueil physique par l’hôte ou l’agent Klef.',
+  instructionsAcces: 'Accueil physique par l’hôte ou l’agent Paixi.',
   nomReseauWifi: '',
   codeWifi: '',
   instructionsDigicode: '',

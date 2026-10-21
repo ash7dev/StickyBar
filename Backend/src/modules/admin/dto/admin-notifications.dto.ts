@@ -14,7 +14,7 @@ export class BroadcastNotificationDto {
   @IsString()
   titre!: string;
 
-  @ApiProperty({ example: 'Découvrez la nouvelle fonctionnalité sur Klef !' })
+  @ApiProperty({ example: 'Découvrez la nouvelle fonctionnalité sur Paixi !' })
   @IsString()
   message!: string;
 

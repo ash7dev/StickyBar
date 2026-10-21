@@ -40,7 +40,7 @@ export function TerangaQuestClaimModal({ isOpen, onClose, result, userReferralCo
 
   const handleWhatsAppShare = () => {
     const text = encodeURIComponent(
-      `Rejoins-moi sur Klef et profite de logements d'exception au Sénégal avec cashback Teranga ! 🏠✨ ${shareUrl}`
+      `Rejoins-moi sur Paixi et profite de logements d'exception au Sénégal avec cashback Teranga ! 🏠✨ ${shareUrl}`
     );
     window.open(`https://api.whatsapp.com/send?text=${text}`, '_blank');
   };
@@ -100,7 +100,7 @@ export function TerangaQuestClaimModal({ isOpen, onClose, result, userReferralCo
                 onClick={onClose}
                 className="w-full py-3.5 px-5 rounded-pill bg-forest-900 hover:bg-forest-950 text-white font-bold text-sm shadow-md transition-all active:scale-98 flex items-center justify-center gap-2"
               >
-                <span>Profiter de mes Klef Coins</span>
+                <span>Profiter de mes Paixi Coins</span>
                 <ChevronRight className="w-4 h-4 text-lime-300" />
               </button>
             </div>

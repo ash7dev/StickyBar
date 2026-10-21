@@ -143,7 +143,7 @@ export function AdminReservationDetailModal({
                     <p className="font-bold text-warning-900 text-sm mt-0.5">{formatPrice((data.totalLocataire ?? 0) * 0.7)}</p>
                   </div>
                   <div className="p-3 rounded-inner border border-forest-200 bg-forest-50/50">
-                    <p className="text-forest-800 text-[0.6875rem] font-semibold">Commission Klef (Revenu) :</p>
+                    <p className="text-forest-800 text-[0.6875rem] font-semibold">Commission Paixi (Revenu) :</p>
                     <p className="font-bold text-forest-900 text-sm mt-0.5">{formatPrice(data.montantCommission)}</p>
                   </div>
                 </div>
@@ -154,7 +154,7 @@ export function AdminReservationDetailModal({
                     <p className="font-bold text-foreground text-sm mt-0.5">{formatPrice(data.totalLocataire)}</p>
                   </div>
                   <div className="p-3 rounded-inner border border-forest-200 bg-forest-50/50">
-                    <p className="text-forest-800 text-[0.6875rem] font-semibold">Commission Klef (Revenu) :</p>
+                    <p className="text-forest-800 text-[0.6875rem] font-semibold">Commission Paixi (Revenu) :</p>
                     <p className="font-bold text-forest-900 text-sm mt-0.5">{formatPrice(data.montantCommission)}</p>
                   </div>
                   <div className="p-3 rounded-inner border border-border bg-background-alt/30">

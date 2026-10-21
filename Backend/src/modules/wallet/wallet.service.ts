@@ -4,6 +4,7 @@ import { CreditWalletUseCase } from '../../domain/wallet/use-cases/credit-wallet
 import { RequestWithdrawalUseCase } from '../../domain/wallet/use-cases/request-withdrawal.use-case';
 import { ProcessWithdrawalUseCase, ProcessWithdrawalInput } from '../../domain/wallet/use-cases/process-withdrawal.use-case';
 import { RequestWithdrawalDto } from './dto/withdrawal.dto';
+import { NotificationsService } from '../notifications/notifications.service';
 
 @Injectable()
 export class WalletService {
@@ -12,6 +13,7 @@ export class WalletService {
     private readonly creditUseCase: CreditWalletUseCase,
     private readonly requestWithdrawalUseCase: RequestWithdrawalUseCase,
     private readonly processWithdrawalUseCase: ProcessWithdrawalUseCase,
+    private readonly notifications: NotificationsService,
   ) {}
 
   async getMyWallet(userId: string) {
@@ -41,7 +43,35 @@ export class WalletService {
 
     // Wallet non encore créé (propriétaire sans réservation)
     if (!wallet) {
-      return { soldeDisponible: 0, dettePenalites: 0, transactions: [] };
+      return { soldeDisponible: 0, soldeGeleLitige: 0, soldeRetirable: 0, dettePenalites: 0, transactions: [] };
+    }
+
+    // Calcul du solde gelé à titre conservatoire pour litiges en cours
+    const litigesEnAttente = await this.prisma.litige.findMany({
+      where: {
+        statut: 'EN_ATTENTE',
+        reservation: { proprietaireId: userId },
+      },
+      include: {
+        reservation: {
+          select: {
+            netProprietaire: true,
+            typePaiement: true,
+            montantAcompte: true,
+            montantCommission: true,
+          },
+        },
+      },
+    });
+
+    let soldeGeleLitige = 0;
+    for (const litige of litigesEnAttente) {
+      const r = litige.reservation;
+      const isDeposit = r.typePaiement?.toUpperCase() === 'DEPOSIT';
+      const commNum = Number(r.montantCommission || 0);
+      soldeGeleLitige += isDeposit
+        ? Math.max(0, Number(r.montantAcompte || 0) - commNum)
+        : Number(r.netProprietaire || 0);
     }
 
     const reservationIds = wallet.transactions
@@ -105,18 +135,31 @@ export class WalletService {
     soldeProprietaire = Math.max(0, soldeProprietaire);
     soldeLocataire = Math.max(0, soldeLocataire);
 
+    const soldeDisponibleNum = Number(wallet.soldeDisponible || 0);
+    const dettePenalitesNum = Number(wallet.dettePenalites || 0);
+    const soldeRetirable = Math.max(0, soldeDisponibleNum - soldeGeleLitige - dettePenalitesNum);
+
     return {
       ...wallet,
-      soldeDisponible: Number(wallet.soldeDisponible || 0),
+      soldeDisponible: soldeDisponibleNum,
+      soldeGeleLitige,
+      soldeRetirable,
       soldeProprietaire,
       soldeLocataire,
-      dettePenalites: Number(wallet.dettePenalites || 0),
+      dettePenalites: dettePenalitesNum,
       transactions: transactionsEnriched,
     };
   }
 
   async requestWithdrawal(userId: string, dto: RequestWithdrawalDto) {
-    return this.requestWithdrawalUseCase.execute(userId, dto);
+    const res = await this.requestWithdrawalUseCase.execute(userId, dto);
+    this.notifications.sendWalletPush(
+      userId,
+      dto.montant,
+      false,
+      `Demande de retrait via ${dto.methode}`
+    ).catch(() => {});
+    return res;
   }
 
   async processWithdrawal(retraitId: string, adminId: string, input: ProcessWithdrawalInput) {
@@ -198,12 +241,52 @@ export class WalletService {
       },
     });
 
+    // Récupérer les litiges en cours pour tous ces propriétaires
+    const activeDisputes = await this.prisma.litige.findMany({
+      where: {
+        statut: 'EN_ATTENTE',
+        reservation: { proprietaireId: { in: ownerIds } },
+      },
+      select: {
+        reservation: {
+          select: {
+            proprietaireId: true,
+            netProprietaire: true,
+            typePaiement: true,
+            montantAcompte: true,
+            montantCommission: true,
+          },
+        },
+      },
+    });
+
+    const geleMap = new Map<string, number>();
+    for (const d of activeDisputes) {
+      const r = d.reservation;
+      const ownerId = r.proprietaireId;
+      const isDeposit = r.typePaiement?.toUpperCase() === 'DEPOSIT';
+      const commNum = Number(r.montantCommission || 0);
+      const montantImpacte = isDeposit
+        ? Math.max(0, Number(r.montantAcompte || 0) - commNum)
+        : Number(r.netProprietaire || 0);
+
+      const currentGele = geleMap.get(ownerId) || 0;
+      geleMap.set(ownerId, currentGele + montantImpacte);
+    }
+
     return owners.map((owner) => {
       const listings = managedListings.filter((l) => l.proprietaireId === owner.id);
+      const soldeDispoNum = Number(owner.wallet?.soldeDisponible || 0);
+      const dettePenalitesNum = Number(owner.wallet?.dettePenalites || 0);
+      const soldeGeleLitige = geleMap.get(owner.id) || 0;
+      const soldeRetirable = Math.max(0, soldeDispoNum - soldeGeleLitige - dettePenalitesNum);
+
       return {
         ...owner,
-        soldeDisponible: Number(owner.wallet?.soldeDisponible || 0),
-        dettePenalites: Number(owner.wallet?.dettePenalites || 0),
+        soldeDisponible: soldeDispoNum,
+        soldeGeleLitige,
+        soldeRetirable,
+        dettePenalites: dettePenalitesNum,
         logementsCount: listings.length,
         logements: listings,
       };

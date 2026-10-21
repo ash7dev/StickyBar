@@ -42,7 +42,7 @@ export function MobileOwnerEtatLieuxPreviewCard({ photos }: MobileOwnerEtatLieux
               <Text style={styles.titleText}>Photos État des Lieux ({count})</Text>
               <CheckCircle2 size={13} color={colors.lime[400]} />
             </View>
-            <Text style={styles.subtitleText}>Photos certifiées & horodatées sur les serveurs Klef</Text>
+            <Text style={styles.subtitleText}>Photos certifiées & horodatées sur les serveurs Paixi</Text>
           </View>
 
           <View style={styles.viewBadge}>

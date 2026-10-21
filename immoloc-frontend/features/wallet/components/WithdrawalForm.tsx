@@ -27,10 +27,13 @@ type FormValues = z.infer<ReturnType<typeof schema>>;
 
 interface Props {
   soldeDisponible: number;
+  soldeRetirable?: number;
 }
 
-export function WithdrawalForm({ soldeDisponible }: Props) {
+export function WithdrawalForm({ soldeDisponible, soldeRetirable }: Props) {
   const { mutate, isPending } = useWithdrawal();
+
+  const soldeMaxRetirable = soldeRetirable !== undefined ? soldeRetirable : soldeDisponible;
 
   const {
     register,
@@ -39,7 +42,7 @@ export function WithdrawalForm({ soldeDisponible }: Props) {
     setValue,
     formState: { errors },
   } = useForm<FormValues>({
-    resolver: zodResolver(schema(soldeDisponible)),
+    resolver: zodResolver(schema(soldeMaxRetirable)),
     defaultValues: { methode: 'WAVE' },
   });
 
@@ -51,8 +54,8 @@ export function WithdrawalForm({ soldeDisponible }: Props) {
     { label: '20 000 F', val: 20000 },
     { label: '50 000 F', val: 50000 },
     { label: '100 000 F', val: 100000 },
-    { label: 'Tout le solde', val: soldeDisponible },
-  ].filter(p => p.val <= soldeDisponible);
+    { label: 'Tout le solde retirable', val: soldeMaxRetirable },
+  ].filter(p => p.val <= soldeMaxRetirable && p.val >= 20000);
 
   return (
     <form onSubmit={handleSubmit(onSubmit)} className="space-y-5">
@@ -63,7 +66,7 @@ export function WithdrawalForm({ soldeDisponible }: Props) {
             Montant (FCFA)
           </label>
           <span className="text-xs text-foreground-muted">
-            Solde : <strong className="tabular-nums text-foreground">{formatFCFA(soldeDisponible)}</strong>
+            Solde retirable : <strong className="tabular-nums text-foreground">{formatFCFA(soldeMaxRetirable)}</strong>
           </span>
         </div>
 
@@ -71,14 +74,14 @@ export function WithdrawalForm({ soldeDisponible }: Props) {
           type="number"
           step="1000"
           min={20000}
-          max={soldeDisponible}
+          max={soldeMaxRetirable}
           placeholder="ex: 50 000"
           {...register('montant', { valueAsNumber: true })}
           className="w-full px-4 py-3 rounded-field bg-background-alt border border-border text-sm font-semibold text-foreground placeholder:text-foreground-faint focus:outline-none focus:border-forest-600 focus:ring-2 focus:ring-forest-500/20 transition-all tabular-nums"
         />
 
         {/* Raccourcis de montants */}
-        {soldeDisponible >= 20000 && (
+        {soldeMaxRetirable >= 20000 && (
           <div className="flex flex-wrap gap-1.5 mt-2.5">
             {presets.map((p, idx) => (
               <button
@@ -134,7 +137,7 @@ export function WithdrawalForm({ soldeDisponible }: Props) {
 
       <button
         type="submit"
-        disabled={isPending || soldeDisponible < 20_000}
+        disabled={isPending || soldeMaxRetirable < 20_000}
         className="btn-action w-full justify-center disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer"
       >
         {isPending ? (

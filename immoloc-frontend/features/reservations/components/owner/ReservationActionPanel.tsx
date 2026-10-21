@@ -534,7 +534,7 @@ export function ReservationActionPanel({ id, res, onRefetch }: Props) {
 
   const daysToCheckin = (debutMs - now) / 86_400_000;
   const penaliteOwner =
-    daysToCheckin > 5 ? PENALITES.early : daysToCheckin >= 1 ? PENALITES.mid : PENALITES.late;
+    daysToCheckin > 3 ? PENALITES.early : daysToCheckin >= 1 ? PENALITES.mid : PENALITES.late;
 
   const ownerCheckinDone = !!res.checkinProprioLe;
   const ownerCheckoutDone = !!res.checkoutProprioLe;
@@ -810,7 +810,7 @@ export function ReservationActionPanel({ id, res, onRefetch }: Props) {
                   }
                 >
                   {res.locataire.statutKyc === 'EN_ATTENTE'
-                    ? 'Les documents sont en cours de vérification par l’équipe Klef.'
+                    ? 'Les documents sont en cours de vérification par l’équipe Paixi.'
                     : 'Le locataire n’a pas encore soumis ses documents d’identité.'}
                 </Notice>
               )}
@@ -1360,7 +1360,7 @@ export function ReservationActionPanel({ id, res, onRefetch }: Props) {
                   wallet.
                 </Notice>
                 <Notice tone="warning" icon={AlertTriangle} title="Suspension automatique">
-                  Trois annulations après confirmation entraînent la suspension de toutes vos
+                  Sept annulations après confirmation entraînent la suspension de toutes vos
                   annonces.
                 </Notice>
               </>
@@ -1519,7 +1519,7 @@ export function ReservationActionPanel({ id, res, onRefetch }: Props) {
                 <Shield className="h-4 w-4" aria-hidden="true" />
               </span>
               <p className="text-xs leading-relaxed text-foreground-muted">
-                <strong className="font-semibold text-foreground">Procédure Klef : </strong>
+                <strong className="font-semibold text-foreground">Procédure Paixi : </strong>
                 Une notification d’urgence sera transmise au locataire. S’il ne valide pas son entrée sous 3 h, la réservation sera annulée et la politique de compensation d’absence s’appliquera.
               </p>
             </div>
@@ -1552,7 +1552,7 @@ export function ReservationActionPanel({ id, res, onRefetch }: Props) {
         <Modal title="Règles de séjour et séquestre" onClose={() => setShowRulesModal(false)}>
           <div className="space-y-4 p-6">
             <p className="text-xs leading-relaxed text-foreground-muted">
-              Klef applique une double validation et un séquestre sécurisé pour protéger les deux
+              Paixi applique une double validation et un séquestre sécurisé pour protéger les deux
               parties.
             </p>
 
@@ -1571,7 +1571,7 @@ export function ReservationActionPanel({ id, res, onRefetch }: Props) {
               },
               {
                 icon: AlertTriangle, tone: 'error' as Tone, title: '4. Pénalités d’annulation',
-                body: `Après confirmation : Gratuit (0 FCFA) au-delà de 5 jours, ${PENALITES.mid.toLocaleString('fr-FR')} FCFA entre 24 h et 5 jours, ${PENALITES.late.toLocaleString('fr-FR')} FCFA à moins de 24 h (dernière minute).`,
+                body: `Après confirmation : Gratuit (0 FCFA) au-delà de 3 jours, ${PENALITES.mid.toLocaleString('fr-FR')} FCFA entre 24 h et 3 jours, ${PENALITES.late.toLocaleString('fr-FR')} FCFA à moins de 24 h (dernière minute).`,
               },
             ].map(({ icon, tone, title, body }) => (
               <Notice key={title} tone={tone} icon={icon} title={title}>

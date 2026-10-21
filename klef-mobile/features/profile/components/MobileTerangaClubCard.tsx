@@ -135,7 +135,7 @@ export function MobileTerangaClubCard({
         <View style={styles.headerTitleBlock}>
           <View style={styles.titleBadgeRow}>
             <Text style={styles.headerTitle} numberOfLines={1}>
-              Klef Teranga Club
+              Paixi Teranga Club
             </Text>
             <View style={styles.rateChip}>
               <Text style={styles.rateChipText} numberOfLines={1}>
@@ -179,7 +179,7 @@ export function MobileTerangaClubCard({
 
             <Text style={styles.soldeDesc} numberOfLines={2}>
               Rang <Text style={styles.soldeDescBold}>{currentStepInfo.label}</Text> · Profitez de{' '}
-              <Text style={styles.soldeDescGold}>{currentStepInfo.cashback} de cashback</Text> sur tous vos séjours Klef.
+              <Text style={styles.soldeDescGold}>{currentStepInfo.cashback} de cashback</Text> sur tous vos séjours Paixi.
             </Text>
           </>
         )}

@@ -1,5 +1,5 @@
 // ─────────────────────────────────────────────────────────────────────────────
-// Klef — Design Tokens : Couleurs  ·  v2.1
+// Paixi — Design Tokens : Couleurs  ·  v2.1
 // ─────────────────────────────────────────────────────────────────────────────
 //
 // ⚠️  SOURCE DE VÉRITÉ : globals.css
@@ -76,7 +76,7 @@ export const colors = {
     100: '#F4E9CB',
     200: '#E9D398',
     300: '#DABB68',   // ★ badge en mode sombre — 8.29:1 sur forest-900
-    400: '#C9A24B',   // ★ Badge Vérifié Klef — blanc dessus : 2.40:1, interdit
+    400: '#C9A24B',   // ★ Badge Vérifié Paixi — blanc dessus : 2.40:1, interdit
     500: '#A88336',
     600: '#856527',
     700: '#63491B',   // ★ texte sur gold-50 — 7.79:1
@@ -337,7 +337,7 @@ export function assertReadable(
   const ok = ratio >= min;
   if (!ok && process.env.NODE_ENV !== 'production') {
     console.warn(
-      `[Klef·contraste] ${label} — ${fg} sur ${bg} = ${ratio.toFixed(2)}:1 ` +
+      `[Paixi·contraste] ${label} — ${fg} sur ${bg} = ${ratio.toFixed(2)}:1 ` +
       `(seuil ${min}). Voir la règle : l'accent ne porte jamais de texte.`,
     );
   }

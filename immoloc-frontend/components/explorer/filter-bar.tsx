@@ -32,7 +32,7 @@ const PRIX_PRESETS = [
 ];
 
 /**
- * Barre de filtres ultra-soignée (Design System Klef)
+ * Barre de filtres ultra-soignée (Design System Paixi)
  * - Translucide sticky sous la navbar (`backdrop-blur-xl bg-background/85`)
  * - Masquage ABSOLU de la barre de défilement horizontale (`scrollbarWidth: none`)
  * - Popovers flottants positionnés en `fixed` sans tronquage

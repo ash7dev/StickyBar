@@ -14,7 +14,7 @@ import type { ReservationDetail } from '@/lib/nestjs/types';
 
 type Photo = ReservationDetail['photosEtatLieu'][number];
 
-/* ─── Config (Klef Design System v2) ──────────────────────────────────── */
+/* ─── Config (Paixi Design System v2) ──────────────────────────────────── */
 
 const CATEGORIE_LABEL: Record<string, string> = {
   SALON: 'Salon', CHAMBRE: 'Chambre', CUISINE: 'Cuisine',

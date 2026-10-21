@@ -26,7 +26,7 @@ const TIERS = [
     condition: 'Dès votre inscription',
     perks: [
       'Cashback sur tous vos séjours',
-      'Klef Coins sans date d’expiration',
+      'Paixi Coins sans date d’expiration',
       'Accès aux quêtes de démarrage',
     ],
   },

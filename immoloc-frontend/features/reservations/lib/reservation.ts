@@ -1,5 +1,5 @@
 // ─────────────────────────────────────────────────────────────────────────────
-// Klef — Réservation · utilitaires purs
+// Paixi — Réservation · utilitaires purs
 // Aucune dépendance React. Testable unitairement.
 // ─────────────────────────────────────────────────────────────────────────────
 

@@ -251,7 +251,7 @@ export class NotificationsService implements OnModuleInit {
   }
 
   async sendTestNotification(dto: SendTestPushDto, currentUserId?: string) {
-    const title = dto.title || 'Klef - Test Notification Push 🚀';
+    const title = dto.title || 'Paixi - Test Notification Push 🚀';
     const message = dto.message || 'Félicitations ! Vos notifications Push Web PWA sont fonctionnelles !';
     const url = dto.url || '/explorer';
 
@@ -340,7 +340,7 @@ export class NotificationsService implements OnModuleInit {
   async sendKycPush(userId: string, isVerified: boolean, reason?: string) {
     const title = isVerified ? 'Identité vérifiée avec succès ! 🛡️' : 'Mise à jour dossier d\'identité KYC ⚠️';
     const body = isVerified
-      ? 'Votre dossier KYC a été validé par l\'équipe Klef. Vous pouvez publier et réserver sans restriction !'
+      ? 'Votre dossier KYC a été validé par l\'équipe Paixi. Vous pouvez publier et réserver sans restriction !'
       : `Votre dossier KYC requiert une attention : ${reason || 'Veuillez vérifier vos documents.'}`;
     return this.sendNotificationToUser(userId, title, body, '/parametres');
   }
@@ -388,7 +388,7 @@ export class NotificationsService implements OnModuleInit {
     const twilioAuthToken = this.configService.get<string>('TWILIO_AUTH_TOKEN');
     if (twilioAccountSid && twilioAuthToken) {
       // Configuration d'envoi SMS / WhatsApp actif :
-      // await twilioClient.messages.create({ body: message, from: 'Klef Conciergerie', to: ownerPhone });
+      // await twilioClient.messages.create({ body: message, from: 'Paixi Conciergerie', to: ownerPhone });
       this.logger.log(`[SMS/WhatsApp Conciergerie] Message transmis avec succès à ${ownerPhone}`);
     }
     */

@@ -60,11 +60,11 @@ export function TerangaHeroCard({ data, isAuthenticated, expiringAt }: Props) {
           </span>
 
           <h1 className="font-display text-3xl font-semibold leading-tight tracking-tight text-on-inverse-display sm:text-5xl">
-            Klef Teranga Club
+            Paixi Teranga Club
           </h1>
 
           <p className="text-base leading-relaxed text-on-inverse-muted sm:text-lg">
-            Cumulez des Klef Coins à chaque séjour et déduisez-les de vos prochaines
+            Cumulez des Paixi Coins à chaque séjour et déduisez-les de vos prochaines
             réservations. <span className="font-semibold text-on-inverse">1 coin = 1 FCFA.</span>
           </p>
 
@@ -121,7 +121,7 @@ export function TerangaHeroCard({ data, isAuthenticated, expiringAt }: Props) {
               <span className="font-display text-5xl font-semibold leading-none tracking-tight tabular-nums text-gold-300 sm:text-6xl">
                 {nombre(solde)}
               </span>
-              <span className="text-base font-semibold text-on-inverse-muted">Klef Coins</span>
+              <span className="text-base font-semibold text-on-inverse-muted">Paixi Coins</span>
             </p>
             <p className="mt-1.5 text-sm tabular-nums text-on-inverse-muted">
               Soit <span className="font-semibold text-on-inverse">{nombre(solde)} FCFA</span> de

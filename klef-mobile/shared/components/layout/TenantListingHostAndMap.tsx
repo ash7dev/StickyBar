@@ -96,7 +96,7 @@ export function TenantListingHostAndMap({
   const hostName =
     proprietaire?.prenom && proprietaire?.nom
       ? `${proprietaire.prenom} ${proprietaire.nom}`
-      : 'Hôte Klef';
+      : 'Hôte Paixi';
 
   const hostInitials =
     proprietaire?.prenom && proprietaire?.nom
@@ -134,7 +134,7 @@ export function TenantListingHostAndMap({
           </TouchableOpacity>
         </View>
 
-        {/* ── Carte Visuelle Style Airbnb (Cercle de quartier + Pin Klef) ── */}
+        {/* ── Carte Visuelle Style Airbnb (Cercle de quartier + Pin Paixi) ── */}
         <View style={styles.mapCardContainer}>
           {/* Faux fond de tuiles de carte élégant */}
           <Image
@@ -150,7 +150,7 @@ export function TenantListingHostAndMap({
 
           {/* Cercle Translucide de Zone de Quartier (Airbnb Style) */}
           <View style={styles.neighborhoodRadiusCircle}>
-            {/* Badge Pin Central Klef Premium */}
+            {/* Badge Pin Central Paixi Premium */}
             <View style={styles.pinBadgeWrapper}>
               <View style={styles.pinOuterPulse} />
               <View style={styles.pinInnerCircle}>
@@ -168,7 +168,7 @@ export function TenantListingHostAndMap({
           </View>
         </View>
 
-        {/* Note de confidentialité & sécurité (Style Airbnb / Klef Web) */}
+        {/* Note de confidentialité & sécurité (Style Airbnb / Paixi Web) */}
         <View style={styles.privacyBanner}>
           <ShieldCheck size={16} color={colors.forest[600]} style={{ marginTop: 2 }} />
           <Text style={styles.privacyBannerText}>
@@ -203,7 +203,7 @@ export function TenantListingHostAndMap({
               {hostYear ? (
                 <Text style={styles.hostYearText}>Hôte depuis {hostYear}</Text>
               ) : (
-                <Text style={styles.hostYearText}>Hôte vérifié sur Klef</Text>
+                <Text style={styles.hostYearText}>Hôte vérifié sur Paixi</Text>
               )}
 
               {isKycVerified && (

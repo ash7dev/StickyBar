@@ -1,11 +1,13 @@
-import React from 'react';
+import React, { useRef, useEffect } from 'react';
 import {
   StyleSheet,
   View,
   Text,
   Modal,
   TouchableOpacity,
+  TouchableWithoutFeedback,
   ScrollView,
+  Animated,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import {
@@ -44,7 +46,7 @@ interface MobileOwnerActionSheetModalProps {
   onOpenOwnerCancel?: () => void;
   onCallGuest: () => void;
   onDownloadContract: () => void;
-  /** Ouvre l'assistance prioritaire Klef. Optionnel : si absent, la ligne
+  /** Ouvre l'assistance prioritaire Paixi. Optionnel : si absent, la ligne
    * "Assistance Prioritaire" ferme simplement la modale (comportement
    * précédent conservé le temps de brancher le vrai flux côté parent). */
   onOpenSupport?: () => void;
@@ -180,8 +182,24 @@ export function MobileOwnerActionSheetModal({
   onOpenSupport,
 }: MobileOwnerActionSheetModalProps) {
   const insets = useSafeAreaInsets();
+  const animVal = useRef(new Animated.Value(0)).current;
+
+  useEffect(() => {
+    if (visible) {
+      animVal.setValue(0);
+      Animated.spring(animVal, {
+        toValue: 1,
+        speed: 16,
+        bounciness: 6,
+        useNativeDriver: true,
+      }).start();
+    }
+  }, [visible, animVal]);
 
   if (!visible) return null;
+
+  const backdropOpacity = animVal.interpolate({ inputRange: [0, 1], outputRange: [0, 1] });
+  const sheetTranslateY = animVal.interpolate({ inputRange: [0, 1], outputRange: [300, 0] });
 
   const statut = reservation?.statut || 'PENDING';
   const statusBadge = STATUT_CONFIG[statut] || STATUT_CONFIG.PENDING;
@@ -219,22 +237,22 @@ export function MobileOwnerActionSheetModal({
   return (
     <Modal
       visible={visible}
-      animationType="slide"
+      animationType="none"
       transparent
       onRequestClose={onClose}
     >
-      <View style={styles.overlay}>
-        <TouchableOpacity
-          style={styles.backdrop}
-          activeOpacity={1}
-          onPress={onClose}
-        />
-        <View
-          style={[
-            styles.sheetContainer,
-            { paddingBottom: Math.max(insets.bottom + 12, 20) },
-          ]}
-        >
+      <TouchableWithoutFeedback onPress={onClose}>
+        <Animated.View style={[styles.overlay, { opacity: backdropOpacity }]}>
+          <TouchableWithoutFeedback>
+            <Animated.View
+              style={[
+                styles.sheetContainer,
+                {
+                  paddingBottom: Math.max(insets.bottom + 12, 20),
+                  transform: [{ translateY: sheetTranslateY }],
+                },
+              ]}
+            >
           {/* Header Drag Handle & Title Bar */}
           <View style={styles.sheetHeaderGroup}>
             <View style={styles.dragHandle} />
@@ -242,7 +260,7 @@ export function MobileOwnerActionSheetModal({
             <View style={styles.headerRow}>
               <View style={styles.headerTextGroup}>
                 <Text style={styles.title}>Actions disponibles</Text>
-                <Text style={styles.subtitle}>Gérer ce séjour & contacter les services Klef</Text>
+                <Text style={styles.subtitle}>Gérer ce séjour & contacter les services Paixi</Text>
               </View>
 
               <View style={styles.headerRightGroup}>
@@ -290,7 +308,7 @@ export function MobileOwnerActionSheetModal({
                   title="Confirmer la réservation"
                   subtitle={
                     !isKycVerified
-                      ? "Attente validation KYC du locataire par Klef"
+                      ? "Attente validation KYC du locataire par Paixi"
                       : "Valider et fixer les horaires d’arrivée / départ"
                   }
                   onPress={() => handleAction(onOpenConfirmTime)}
@@ -353,7 +371,7 @@ export function MobileOwnerActionSheetModal({
                   icon={Scale}
                   tone="amber"
                   title="Ouvrir un litige"
-                  subtitle="Saisir l’arbitrage Klef et bloquer les fonds"
+                  subtitle="Saisir l’arbitrage Paixi et bloquer les fonds"
                   onPress={() => handleAction(onOpenDispute)}
                   accessibilityLabel="Ouvrir un litige"
                 />
@@ -400,7 +418,7 @@ export function MobileOwnerActionSheetModal({
                   icon={ShieldAlert}
                   tone="amber"
                   title="Déclarer un dégât ou ouvrir un litige"
-                  subtitle="Bloquer la caution et contacter l’arbitrage Klef"
+                  subtitle="Bloquer la caution et contacter l’arbitrage Paixi"
                   onPress={() => handleAction(onOpenDispute)}
                   accessibilityLabel="Déclarer un dégât ou ouvrir un litige"
                 />
@@ -471,7 +489,7 @@ export function MobileOwnerActionSheetModal({
               />
             </View>
 
-            {/* ── 6. Banner Support Prioritaire Klef ────────────────────────── */}
+            {/* ── 6. Banner Support Prioritaire Paixi ────────────────────────── */}
             <TouchableOpacity
               activeOpacity={0.9}
               style={styles.supportBanner}
@@ -481,7 +499,7 @@ export function MobileOwnerActionSheetModal({
                 <Headphones size={22} color={colors.lime[400]} strokeWidth={2.2} />
               </View>
               <View style={styles.supportBannerTextCol}>
-                <Text style={styles.supportBannerTitle}>Assistance Prioritaire Klef</Text>
+                <Text style={styles.supportBannerTitle}>Assistance Prioritaire Paixi</Text>
                 <Text style={styles.supportBannerSub}>Support conciergerie & aide 7j/7</Text>
               </View>
               <View style={styles.supportBannerBtn}>
@@ -490,8 +508,10 @@ export function MobileOwnerActionSheetModal({
               </View>
             </TouchableOpacity>
           </ScrollView>
-        </View>
-      </View>
+            </Animated.View>
+          </TouchableWithoutFeedback>
+        </Animated.View>
+      </TouchableWithoutFeedback>
     </Modal>
   );
 }

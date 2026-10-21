@@ -82,7 +82,7 @@ export function MobileOwnerEscrowNoticeCard({
         };
       case 'PAID':
         return {
-          title: 'Fonds consignés sous séquestre Klef',
+          title: 'Fonds consignés sous séquestre Paixi',
           sub: `Le paiement du locataire (${formatPrice(netProprietaire)}) est sécurisé. Acceptez le séjour pour débloquer le processus d'accueil.`,
           icon: Lock,
           tone: 'success',
@@ -112,20 +112,20 @@ export function MobileOwnerEscrowNoticeCard({
       case 'COMPLETED':
         return {
           title: 'Fonds débloqués & Versés avec succès ✓',
-          sub: `Le versement de ${formatPrice(netProprietaire)} a été effectué avec succès vers votre portefeuille hôte Klef.`,
+          sub: `Le versement de ${formatPrice(netProprietaire)} a été effectué avec succès vers votre portefeuille hôte Paixi.`,
           icon: CheckCircle2,
           tone: 'forest',
         };
       case 'DISPUTED':
         return {
           title: 'Litige ouvert — Traitement en cours',
-          sub: 'Les fonds restent gelés sous séquestre pendant l’instruction du dossier par l’équipe d’arbitrage Klef.',
+          sub: 'Les fonds restent gelés sous séquestre pendant l’instruction du dossier par l’équipe d’arbitrage Paixi.',
           icon: AlertTriangle,
           tone: 'error',
         };
       default:
         return {
-          title: 'Sécurité des transactions Klef',
+          title: 'Sécurité des transactions Paixi',
           sub: 'Toutes les transactions et versements hôtes sont protégés par notre système de séquestre certifié.',
           icon: Lock,
           tone: 'neutral',

@@ -26,7 +26,7 @@ const COMMON_SUSPENSION_REASONS = [
   "Logement ne correspondant pas aux photos après visite d'un agent",
   "Problème de sécurité ou de salubrité constaté",
   "Fraude ou usurpation d'identité du propriétaire",
-  "Non-respect des conditions d'utilisation de Klef",
+  "Non-respect des conditions d'utilisation de Paixi",
 ];
 
 export function AdminListingRejectModal({

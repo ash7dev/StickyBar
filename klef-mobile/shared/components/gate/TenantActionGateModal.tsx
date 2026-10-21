@@ -124,7 +124,7 @@ export function TenantActionGateModal({
                 </View>
                 <Text style={styles.blockTitle}>Compte suspendu</Text>
                 <Text style={styles.blockText}>
-                  Votre compte a été temporairement suspendu. Veuillez contacter le support Klef pour régulariser votre situation.
+                  Votre compte a été temporairement suspendu. Veuillez contacter le support Paixi pour régulariser votre situation.
                 </Text>
               </View>
             ) : meta && StepIcon ? (
@@ -220,7 +220,7 @@ export function TenantActionGateModal({
             <View style={styles.securityFooter}>
               <Lock size={11} color={colors.neutral[500]} />
               <Text style={styles.securityFooterText}>
-                Vos données sont chiffrées et sécurisées par Klef
+                Vos données sont chiffrées et sécurisées par Paixi
               </Text>
             </View>
           </ScrollView>

@@ -42,7 +42,7 @@ export function AdminDashboardHeaderBar({
           </h2>
         </div>
         <p className="text-xs text-foreground-muted">
-          Supervision en temps réel des transactions, modérations et infrastructures de la plateforme Klef.
+          Supervision en temps réel des transactions, modérations et infrastructures de la plateforme Paixi.
         </p>
       </div>
 

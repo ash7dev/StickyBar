@@ -1,6 +1,6 @@
-# 📬 Système d'Emails Klef - Index Complet
+# 📬 Système d'Emails Paixi - Index Complet
 
-Bienvenue dans le système d'emails de Klef ! Ce fichier vous guide à travers toute la documentation.
+Bienvenue dans le système d'emails de Paixi ! Ce fichier vous guide à travers toute la documentation.
 
 ## 🚀 Démarrage Rapide
 
@@ -60,7 +60,7 @@ infrastructure/mail/
 
 ## 🎨 Design System
 
-Toutes les templates utilisent les couleurs officielles de Klef définies dans `globals.css` :
+Toutes les templates utilisent les couleurs officielles de Paixi définies dans `globals.css` :
 
 | Couleur | Hex | Usage |
 |---------|-----|-------|
@@ -137,7 +137,7 @@ Toutes les templates utilisent les couleurs officielles de Klef définies dans `
 - [ ] Variables d'environnement configurées
   ```env
   RESEND_API_KEY=re_xxxxx
-  MAIL_FROM=Klef <noreply@klef.com>
+  MAIL_FROM=Paixi <noreply@klef.com>
   APP_URL=https://klef.com
   ```
 
@@ -246,7 +246,7 @@ await this.mailService.sendMail({
 2. **Configurer `.env`**
    ```env
    RESEND_API_KEY=re_your_key
-   MAIL_FROM=Klef <noreply@klef.com>
+   MAIL_FROM=Paixi <noreply@klef.com>
    APP_URL=http://localhost:3000
    ```
 
@@ -322,7 +322,7 @@ Pour ajouter d'autres langues :
 ## 🤝 Contribution
 
 Pour ajouter ou modifier :
-1. Respecter le design system Klef
+1. Respecter le design system Paixi
 2. Tester sur multiples clients email
 3. Documenter dans TEMPLATES.md
 4. Ajouter un exemple dans examples.ts
@@ -332,7 +332,7 @@ Pour ajouter ou modifier :
 
 **v1.0** - Janvier 2024
 - ✅ 11 templates complètes
-- ✅ Design system Klef intégré
+- ✅ Design system Paixi intégré
 - ✅ Service TypeScript complet
 - ✅ Documentation exhaustive
 - ✅ Exemples d'utilisation
@@ -341,7 +341,7 @@ Pour ajouter ou modifier :
 
 ## 📄 Licence
 
-© 2024 Klef SAS - Tous droits réservés
+© 2024 Paixi SAS - Tous droits réservés
 
 ---
 

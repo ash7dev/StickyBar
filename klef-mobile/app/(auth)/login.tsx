@@ -266,7 +266,7 @@ export default function LoginScreen() {
 
           {/* Footer Register Link */}
           <View style={styles.footer}>
-            <Text style={styles.footerText}>Nouveau sur Klef ?</Text>
+            <Text style={styles.footerText}>Nouveau sur Paixi ?</Text>
             <TouchableOpacity
               activeOpacity={0.7}
               onPress={() => router.push('/(auth)/register' as any)}

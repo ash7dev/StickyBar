@@ -88,7 +88,11 @@ export function MobileOwnerDetailHeader({
           activeOpacity={0.7}
           onPress={() => {
             Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {});
-            router.push('/(owner)/listings' as any);
+            if (router.canGoBack()) {
+              router.back();
+            } else {
+              router.navigate('/(owner)/listings' as any);
+            }
           }}
           style={styles.backBtn}
         >

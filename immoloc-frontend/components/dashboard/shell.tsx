@@ -1,22 +1,22 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useSyncExternalStore } from 'react';
 import { createPortal } from 'react-dom';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
-import { Building2, CalendarDays, LayoutDashboard, Plus, Wallet } from 'lucide-react';
+import { CalendarDays, CalendarRange, LayoutDashboard, Menu, Plus } from 'lucide-react';
 import { DashboardSidebar } from './sidebar';
 import { DashboardHeader } from './header';
 import { useRoleStore } from '@/stores/role.store';
+import { usePendingDecisions } from '@/features/calendar/hooks/use-pending-decisions';
 import { cn } from '@/lib/utils/cn';
 import DashboardLoading from '@/app/dashboard/loading';
 
-/* -- Barre de navigation basse (mobile) -----------------------------------
-   Elle reste sombre : c'est du chrome flottant au-dessus d'un contenu de
-   couleur imprevisible (photos, cartes blanches, graphiques). Une barre
-   claire exigerait bordure epaisse et ombre lourde pour se detacher.
-   Pas de .glass-dark ici pour la meme raison : un flou translucide sur un
-   fond imprevisible perd en lisibilite, l'opacite forte reste plus sure.
+/* -- Barre de navigation basse (< 1024 px) ---------------------------------
+   Pilule sombre flottante, assortie à la navbar desktop : elle se détache de
+   n'importe quel contenu (photos, cartes blanches) sans bordure lourde.
+   « Menu » ouvre le tiroir (Biens, Revenus, Wallet, Paramètres…) : c'est le
+   seul accès à ces pages sur mobile, l'en-tête n'existant que sur l'accueil.
    -------------------------------------------------------------------- */
 
 type BottomNavItem = {
@@ -24,157 +24,138 @@ type BottomNavItem = {
   label: string;
   icon: React.ComponentType<{ className?: string; strokeWidth?: number }>;
   exact?: boolean;
-  isAction?: boolean;
+  badge?: 'decisions';
 };
 
-const BOTTOM_NAV: BottomNavItem[] = [
-  { href: '/dashboard', label: 'Accueil', icon: LayoutDashboard, exact: true },
-  { href: '/dashboard/annonces', label: 'Biens', icon: Building2 },
-  { href: '/dashboard/annonces/nouvelle', label: 'Ajouter', icon: Plus, isAction: true },
-  { href: '/dashboard/reservations', label: 'Séjours', icon: CalendarDays },
-  { href: '/dashboard/wallet', label: 'Wallet', icon: Wallet },
+const LEFT_ITEMS: BottomNavItem[] = [
+  { href: '/dashboard', label: 'Aujourd’hui', icon: LayoutDashboard, exact: true },
+  { href: '/dashboard/calendrier', label: 'Calendrier', icon: CalendarRange },
 ];
+const RIGHT_ITEMS: BottomNavItem[] = [
+  { href: '/dashboard/reservations', label: 'Réservations', icon: CalendarDays, badge: 'decisions' },
+];
+/** Pages rangées dans le tiroir : l'onglet « Menu » s'allume quand on y est. */
+const MENU_PATHS = ['/dashboard/annonces', '/dashboard/stats', '/dashboard/wallet', '/dashboard/parametres', '/dashboard/profil'];
 
-// Path de la barre avec encoche : viewBox fixe (400x64), etire horizontalement
-// via preserveAspectRatio="none" (hauteur rendue = 64px = hauteur viewBox,
-// donc aucune distorsion verticale ; la distorsion horizontale residuelle
-// est negligeable, la barre variant peu entre ~336 et 406px de large).
-// L'encoche est un creux symetrique (deux courbes de Bezier) centre a 50%
-// de la largeur — la ou vit le FAB, positionne en CSS avec left-1/2.
-const NAV_BAR_PATH =
-  'M32 0 H154 C174 0 180 30 200 30 C220 30 226 0 246 0 H368 A32 32 0 0 1 368 64 H32 A32 32 0 0 1 32 0 Z';
+const noopSubscribe = () => () => {};
 
-function BottomNav() {
+function isActive(pathname: string, item: BottomNavItem) {
+  return item.exact ? pathname === item.href : pathname === item.href || pathname.startsWith(`${item.href}/`);
+}
+
+function BottomNav({ onMenu }: { onMenu: () => void }) {
   const pathname = usePathname();
-  const [mounted, setMounted] = useState(false);
-  // Retire will-change une fois l'animation d'entree terminee, pour ne pas
-  // laisser un layer composite actif en permanence.
-  const [entered, setEntered] = useState(false);
+  // Rendu client uniquement (portail vers <body>), sans setState dans un effet
+  const isClient = useSyncExternalStore(noopSubscribe, () => true, () => false);
+  const { data: decisions = [] } = usePendingDecisions();
 
-  useEffect(() => {
-    setMounted(true);
-  }, []);
+  // Position de la pastille active : 5 colonnes égales (2 onglets, +, 1 onglet, Menu)
+  const menuActive = MENU_PATHS.some((p) => pathname === p || pathname.startsWith(`${p}/`));
+  const slot = (() => {
+    const left = LEFT_ITEMS.findIndex((i) => isActive(pathname, i));
+    if (left >= 0) return left;
+    const right = RIGHT_ITEMS.findIndex((i) => isActive(pathname, i));
+    if (right >= 0) return 3 + right;
+    return menuActive ? 4 : -1;
+  })();
 
-  if (!mounted) return null;
+  if (!isClient) return null;
+
+  const renderItem = (item: BottomNavItem) => {
+    const active = isActive(pathname, item);
+    const count = item.badge ? decisions.length : 0;
+    return (
+      <li key={item.href} className="flex">
+        <Link
+          href={item.href}
+          aria-current={active ? 'page' : undefined}
+          aria-label={count > 0 ? `${item.label}, ${count} à décider` : undefined}
+          className={cn(
+            'relative flex flex-1 flex-col items-center justify-center gap-1 rounded-[22px] transition-colors duration-200',
+            'focus:outline-none focus-visible:ring-2 focus-visible:ring-lime-400/60',
+            active ? 'text-lime-300' : 'text-forest-200 hover:text-neutral-50',
+          )}
+        >
+          <span className="relative">
+            <item.icon className="h-[22px] w-[22px]" strokeWidth={active ? 2.2 : 1.8} aria-hidden="true" />
+            {count > 0 && (
+              <span
+                aria-hidden="true"
+                className="absolute -right-2.5 -top-1.5 grid h-[18px] min-w-[18px] place-items-center rounded-pill bg-gold-400 px-1 text-[10px] font-bold text-gold-800 ring-2 ring-forest-950"
+              >
+                {count > 9 ? '9+' : count}
+              </span>
+            )}
+          </span>
+          <span className="text-[10px] font-semibold leading-none">{item.label}</span>
+        </Link>
+      </li>
+    );
+  };
 
   return createPortal(
     <nav
-      aria-label="Navigation principale Hôte"
-      className={cn(
-        'fixed inset-x-0 z-[9999] mx-auto w-[calc(100%-1.5rem)] max-w-md lg:hidden',
-        !entered && 'klef-rise',
-      )}
-      style={{
-        bottom: 'calc(0.75rem + env(safe-area-inset-bottom, 0px))',
-        willChange: entered ? 'auto' : 'transform, opacity',
-      }}
-      onAnimationEnd={() => setEntered(true)}
-      data-done={entered || undefined}
+      aria-label="Navigation de l’espace hôte"
+      className="klef-rise fixed inset-x-0 z-[9999] mx-auto w-[calc(100%-1.5rem)] max-w-md lg:hidden"
+      style={{ bottom: 'calc(0.75rem + env(safe-area-inset-bottom, 0px))' }}
     >
-      {/* Conteneur relatif : le SVG dessine le chrome (avec encoche), le
-          FAB est pose par-dessus en absolu, la liste flotte au niveau z-10. */}
-      <div className="relative h-16">
-        <svg
-          viewBox="0 0 400 64"
-          preserveAspectRatio="none"
-          className="absolute inset-0 h-16 w-full drop-shadow-[0_16px_40px_-6px_rgba(4,25,18,0.55)] pointer-events-none"
+      <div className="relative h-[68px] rounded-[28px] border border-white/10 bg-forest-950/95 shadow-[0_18px_40px_-8px_rgba(4,25,18,0.55)] backdrop-blur-xl">
+        {/* Pastille de l'onglet actif : glisse d'une colonne à l'autre */}
+        <span
           aria-hidden="true"
-        >
-          <path
-            d={NAV_BAR_PATH}
-            className="fill-forest-950/95 stroke-white/15"
-            strokeWidth={1}
-            vectorEffect="non-scaling-stroke"
-          />
-          {/* Liseré clair sur le rebord superieur, pour le relief du chrome
-              sans toucher au fond opaque (pas de .glass-dark ici). */}
-          <path
-            d="M32 0.75 H154 C174 0.75 180 30.75 200 30.75 C220 30.75 226 0.75 246 0.75 H368"
-            fill="none"
-            className="stroke-white/10"
-            strokeWidth={1}
-            strokeLinecap="round"
-            vectorEffect="non-scaling-stroke"
-          />
-        </svg>
-
-        <ul className="relative z-10 flex h-16 items-stretch justify-between px-2">
-          {BOTTOM_NAV.map(({ href, label, icon: Icon, exact, isAction }) => {
-            // L'emplacement du FAB reste un slot vide dans le flux (largeur
-            // reservee sous l'encoche) : le bouton lui-meme est rendu a part,
-            // en absolu, pour pouvoir deborder au-dessus du chrome.
-            if (isAction) {
-              return <li key={href} aria-hidden="true" className="flex-1" />;
-            }
-
-            const active = exact ? pathname === href : pathname.startsWith(href);
-
-            return (
-              <li key={href} className="flex-1">
-                <Link
-                  href={href}
-                  aria-current={active ? 'page' : undefined}
-                  className={cn(
-                    'flex h-full flex-col items-center justify-center gap-1.5 rounded-pill px-1',
-                    'transition-colors duration-150',
-                    // Etat actif hors-lime : la navigation n'est pas l'action
-                    // unique de l'ecran, seul le FAB porte le lime.
-                    active ? 'text-on-inverse-marker' : 'text-forest-200 hover:text-neutral-50',
-                    'focus:outline-none focus-visible:ring-2 focus-visible:ring-white/40 focus-visible:ring-offset-2 focus-visible:ring-offset-forest-950',
-                  )}
-                >
-                  <span
-                    className={cn(
-                      'grid h-7 w-12 place-items-center rounded-pill transition-all duration-200 ease-out',
-                      active ? 'bg-marker-bg scale-100' : 'scale-90',
-                    )}
-                  >
-                    <Icon className="h-6 w-6" strokeWidth={active ? 2.15 : 1.8} />
-                  </span>
-
-                  <span className="text-[0.625rem] font-semibold uppercase leading-none tracking-wide">
-                    {label}
-                  </span>
-                </Link>
-              </li>
-            );
-          })}
-        </ul>
-
-        {/* FAB : niche dans l'encoche, deborde au-dessus du chrome — seule
-            action lime de l'ecran ("ONE per screen"). */}
-        <Link
-          href="/dashboard/annonces/nouvelle"
-          aria-label="Ajouter un bien"
           className={cn(
-            'group absolute left-1/2 -top-5 z-20 flex h-14 w-14 -translate-x-1/2 items-center justify-center rounded-full',
-            'bg-gradient-to-b from-forest-600 via-forest-800 to-forest-950 text-lime-400',
-            'border-[1.5px] border-[var(--action-edge)]',
-            'shadow-[var(--shadow-action)]',
-            'active:scale-90 transition-transform duration-150',
-            'focus:outline-none focus-visible:ring-2 focus-visible:ring-lime-400/70 focus-visible:ring-offset-2 focus-visible:ring-offset-forest-950',
+            'absolute top-1.5 bottom-1.5 rounded-[22px] bg-white/[0.08] transition-[left,opacity] duration-300 ease-[cubic-bezier(0.22,1,0.36,1)]',
+            slot < 0 && 'opacity-0',
           )}
-        >
-          {/* Halo externe */}
-          <div className="absolute inset-0 rounded-full bg-lime-400/20 blur-md opacity-70 group-hover:opacity-100 transition-opacity pointer-events-none" />
-          {/* Anneau interne : profondeur, sans lime supplementaire visible */}
-          <div className="absolute inset-1 rounded-full border border-lime-400/20 pointer-events-none" />
-          <Plus className="relative z-10 h-6 w-6 stroke-[2.5]" aria-hidden="true" />
-        </Link>
+          style={{ left: `calc(${Math.max(slot, 0) * 20}% + 6px)`, width: 'calc(20% - 12px)' }}
+        />
+
+        <ul className="relative grid h-full grid-cols-5">
+          {LEFT_ITEMS.map(renderItem)}
+
+          {/* Action principale : seule touche lime de l'écran */}
+          <li className="flex items-start justify-center">
+            <Link
+              href="/dashboard/annonces/nouvelle"
+              aria-label="Publier un bien"
+              className={cn(
+                '-mt-6 grid h-[58px] w-[58px] place-items-center rounded-full bg-lime-400 text-forest-950',
+                'shadow-[0_10px_24px_-4px_rgba(155,194,44,0.6)] ring-[5px] ring-background',
+                'transition-transform duration-150 active:scale-90',
+                'focus:outline-none focus-visible:ring-lime-200',
+              )}
+            >
+              <Plus className="h-6 w-6" strokeWidth={2.6} aria-hidden="true" />
+            </Link>
+          </li>
+
+          {RIGHT_ITEMS.map(renderItem)}
+
+          <li className="flex">
+            <button
+              type="button"
+              onClick={onMenu}
+              aria-haspopup="dialog"
+              className={cn(
+                'flex flex-1 flex-col items-center justify-center gap-1 rounded-[22px] transition-colors duration-200',
+                'focus:outline-none focus-visible:ring-2 focus-visible:ring-lime-400/60',
+                menuActive ? 'text-lime-300' : 'text-forest-200 hover:text-neutral-50',
+              )}
+            >
+              <Menu className="h-[22px] w-[22px]" strokeWidth={menuActive ? 2.2 : 1.8} aria-hidden="true" />
+              <span className="text-[10px] font-semibold leading-none">Menu</span>
+            </button>
+          </li>
+        </ul>
       </div>
     </nav>,
-    document.body
+    document.body,
   );
 }
 
 /* -- Shell ---------------------------------------------------------------- */
 
 const DETAIL_PAGE_RE = /^\/dashboard\/(annonces|reservations)\/[^/]+(\/.*)?$/;
-
-// Hauteur de la barre + son decalage bas. L'ancien pb-20 (80px) etait juste
-// en dessous : barre a 12px du bas + 52px de haut + safe area = jusqu'a 100px
-// sur un appareil a indicateur d'accueil. Le dernier element etait masque.
-const CONTENT_PAD_BOTTOM = 'pb-[calc(6rem+env(safe-area-inset-bottom,0px))] lg:pb-8';
 
 export function DashboardShell({ children }: { children: React.ReactNode }) {
   const [sidebarOpen, setSidebarOpen] = useState(false);
@@ -220,9 +201,10 @@ export function DashboardShell({ children }: { children: React.ReactNode }) {
       />
 
       <div className="flex min-w-0 flex-1 flex-col overflow-hidden">
-        {!hideHeader && (
-          <DashboardHeader onMenuToggle={ready ? () => setSidebarOpen((v) => !v) : () => { }} />
-        )}
+        <DashboardHeader
+          desktopOnly={hideHeader}
+          onMenuToggle={ready ? () => setSidebarOpen((v) => !v) : () => { }}
+        />
 
         <main id="contenu" className={cn('flex-1 overflow-y-auto', contentPadBottom, !isDashboardHome && 'pt-[env(safe-area-inset-top,0px)] sm:pt-0')}>
           <div className="mx-auto max-w-[1440px] px-4 py-6 sm:px-6">
@@ -231,7 +213,7 @@ export function DashboardShell({ children }: { children: React.ReactNode }) {
         </main>
       </div>
 
-      {ready && !isDetailPage && <BottomNav />}
+      {ready && !isDetailPage && <BottomNav onMenu={() => setSidebarOpen(true)} />}
     </div>
   );
 }

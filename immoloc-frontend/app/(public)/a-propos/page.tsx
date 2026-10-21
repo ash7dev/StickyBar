@@ -39,7 +39,7 @@ const FOUNDER = {
   /** Le déclencheur, en une ou deux phrases factuelles. */
   trigger: '[En 2025, une personne de mon entourage a versé une avance pour un appartement à Dakar. Le logement n’existait pas, et le démarcheur avait disparu. Elle n’a eu aucun recours.]',
   /** Ce que tu as décidé de faire, concrètement. */
-  decision: '[J’ai commencé à écrire Klef le mois suivant, avec une seule idée : que l’argent ne quitte jamais les mains de la plateforme avant que le locataire ait les clés.]',
+  decision: '[J’ai commencé à écrire Paixi le mois suivant, avec une seule idée : que l’argent ne quitte jamais les mains de la plateforme avant que le locataire ait les clés.]',
 };
 
 const LAUNCH = {
@@ -60,7 +60,7 @@ const VALUES = [
   {
     icon: Eye,
     title: 'On ne publie pas un bien qu’on n’a pas vu',
-    body: 'Un agent Klef se déplace, photographie chaque pièce et vérifie l’adresse avant la mise en ligne. Aucune annonce n’est publiée sur la seule base de photos envoyées par le propriétaire.',
+    body: 'Un agent Paixi se déplace, photographie chaque pièce et vérifie l’adresse avant la mise en ligne. Aucune annonce n’est publiée sur la seule base de photos envoyées par le propriétaire.',
     check: 'Vérifiable : chaque annonce publiée porte la mention de sa visite.',
   },
   {
@@ -91,7 +91,7 @@ export default function AProposPage() {
       <section className="-mt-20 bg-[radial-gradient(70%_60%_at_50%_0%,var(--forest-700)_0%,rgba(15,80,61,0)_70%),linear-gradient(180deg,var(--forest-900)_0%,var(--forest-950)_100%)] pb-16 pt-32 text-white sm:pt-36">
         <div className="mx-auto max-w-[1120px] px-6 text-center">
           <h1 className="mx-auto max-w-3xl font-display text-[clamp(2rem,5vw,3.25rem)] font-semibold leading-[1.06] tracking-[-0.03em] text-neutral-50">
-            À propos de Klef<span className="text-on-inverse-marker">.</span>
+            À propos de Paixi<span className="text-on-inverse-marker">.</span>
           </h1>
           <p className="mx-auto mt-4 max-w-2xl text-base leading-relaxed text-forest-200 sm:text-lg">
             Une plateforme de location de logements au Sénégal, construite autour
@@ -103,17 +103,17 @@ export default function AProposPage() {
 
       <div className="mx-auto max-w-[1120px] space-y-16 px-6 py-12 lg:py-20">
 
-        {/* ── Ce que fait Klef ─────────────────────────────────────────── */}
+        {/* ── Ce que fait Paixi ─────────────────────────────────────────── */}
         <section className="mx-auto max-w-2xl">
           <h2 className="font-display text-[clamp(1.5rem,3.5vw,2rem)] font-semibold tracking-[-0.02em] text-forest-900">
-            Ce que fait Klef
+            Ce que fait Paixi
           </h2>
           <div className="mt-5 space-y-4 text-base leading-relaxed text-foreground-muted">
             <p>
-              Klef met en relation des propriétaires et des voyageurs pour des
+              Paixi met en relation des propriétaires et des voyageurs pour des
               séjours de courte durée à {LAUNCH.cities}. Chaque logement est
               visité par un agent avant publication, et chaque paiement passe par
-              un séquestre&nbsp;: les fonds sont conservés par Klef et versés au
+              un séquestre&nbsp;: les fonds sont conservés par Paixi et versés au
               propriétaire seulement après la remise des clés.
             </p>
             <p>
@@ -155,7 +155,7 @@ export default function AProposPage() {
             <p>{FOUNDER.trigger}</p>
             <p>{FOUNDER.decision}</p>
             <p>
-              Aujourd’hui, Klef est en ligne depuis {LAUNCH.year}, avec{' '}
+              Aujourd’hui, Paixi est en ligne depuis {LAUNCH.year}, avec{' '}
               {LAUNCH.listings} logements vérifiés à {LAUNCH.cities}. C’est peu,
               et c’est volontaire&nbsp;: chaque bien passe par une visite, et une
               visite prend du temps.

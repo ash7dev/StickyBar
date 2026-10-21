@@ -66,7 +66,7 @@ export class AwardBookingCashbackUseCase {
     // 3. Calculer le tier et le % cashback
     const { tier, cashbackPct } = CalculateTierUseCase.execute(gmv12Mois, nbSejours);
 
-    // 4. Calculer le montant de Klef Coins gagnés (1 Coin = 1 FCFA)
+    // 4. Calculer le montant de Paixi Coins gagnés (1 Coin = 1 FCFA)
     const coinsGagnes = Math.round((montantTotal * cashbackPct) / 100);
 
     if (coinsGagnes <= 0) {
@@ -116,7 +116,7 @@ export class AwardBookingCashbackUseCase {
           terangaAccountId: account.id,
           codeBadge: CodeBadgeTeranga.FIRST_STAY,
           libelle: 'Premier Voyage',
-          description: 'Félicitations pour votre premier séjour réservé sur Klef !',
+          description: 'Félicitations pour votre premier séjour réservé sur Paixi !',
           icone: '🔑',
         },
         update: {},

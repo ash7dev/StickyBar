@@ -18,7 +18,8 @@ export class CalendrierService {
           logementId,
           statut: { in: ['PENDING', 'PAID', 'CONFIRMED', 'CHECKED_IN'] },
         },
-        select: { id: true, dateDebut: true, dateFin: true, statut: true },
+        // Endpoint public : uniquement les dates occupées, jamais l'id ni le statut d'une réservation
+        select: { dateDebut: true, dateFin: true },
       }),
     ]);
 

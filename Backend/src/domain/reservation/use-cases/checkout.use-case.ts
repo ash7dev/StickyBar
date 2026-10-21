@@ -77,7 +77,7 @@ export class CheckoutUseCase {
     this.notifications.sendReservationPush(
       reservation.locataireId,
       'Séjour terminé ! 🏁',
-      'Merci d\'avoir séjourné avec Klef ! Laissez un avis sur votre expérience.',
+      'Merci d\'avoir séjourné avec Paixi ! Laissez un avis sur votre expérience.',
       '/reservations'
     ).catch((err) => this.logger.error(`Erreur Push checkout locataire: ${err.message}`));
 

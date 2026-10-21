@@ -114,7 +114,7 @@ export function InstallAppModal() {
               </div>
               <div>
                 <h3 id="pwa-install-title" className="font-display text-base font-semibold text-foreground leading-snug">
-                  Installer l'application Klef
+                  Installer l'application Paixi
                 </h3>
                 <p className="text-[11px] font-medium text-foreground-muted flex items-center gap-1">
                   <Sparkles className="w-3 h-3 text-gold-500" />
@@ -135,7 +135,7 @@ export function InstallAppModal() {
           {/* Explications Android vs iOS */}
           <div className="my-4 space-y-3">
             <p className="text-xs text-foreground-muted leading-relaxed">
-              Ajoutez Klef à votre écran d'accueil pour réserver en 1-clic, recevoir vos contrats de location et naviguer sans aucun téléchargement sur les stores.
+              Ajoutez Paixi à votre écran d'accueil pour réserver en 1-clic, recevoir vos contrats de location et naviguer sans aucun téléchargement sur les stores.
             </p>
 
             {/* Guide pas-à-pas pour iPhone / Safari */}
@@ -170,7 +170,7 @@ export function InstallAppModal() {
                   </li>
                   <li className="flex items-center gap-2">
                     <span className="w-4 h-4 rounded-full bg-forest-100 dark:bg-forest-900 text-forest-800 dark:text-on-inverse-marker text-[10px] font-bold flex items-center justify-center shrink-0">2</span>
-                    <span>Sélectionnez <strong>« Ajouter au Dock »</strong> pour ouvrir Klef comme une App Mac !</span>
+                    <span>Sélectionnez <strong>« Ajouter au Dock »</strong> pour ouvrir Paixi comme une App Mac !</span>
                   </li>
                 </ol>
               </div>

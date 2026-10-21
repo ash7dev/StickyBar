@@ -68,14 +68,14 @@ export function MobileOwnerLitigeCard({ litige }: MobileOwnerLitigeCardProps) {
         <View style={styles.bannerTextCol}>
           <Text style={styles.bannerTitle}>
             {isEnAttente
-              ? "Dossier de Litige & Arbitrage Klef"
+              ? "Dossier de Litige & Arbitrage Paixi"
               : isFonde
               ? "Litige Fondé — Décision Validée"
               : "Litige Non Fondé — Clôturé"}
           </Text>
           <Text style={styles.bannerSub}>
             {isEnAttente
-              ? "Les fonds restent gelés le temps de l'examen par les juristes Klef."
+              ? "Les fonds restent gelés le temps de l'examen par les juristes Paixi."
               : isFonde
               ? "Les pénalités ou indemnités ont été appliquées au dossier."
               : "Aucun manquement retenu. Les fonds ont été débloqués."}

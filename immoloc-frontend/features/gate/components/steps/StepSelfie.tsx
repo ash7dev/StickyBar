@@ -35,7 +35,7 @@ export function StepSelfie({ onDone }: Props) {
         method: 'POST',
         token,
         body: JSON.stringify({
-          kycSelfieUrl: 'https://via.placeholder.com/800x1200/041912/D3F26E?text=Selfie+Verification+Klef',
+          kycSelfieUrl: 'https://via.placeholder.com/800x1200/041912/D3F26E?text=Selfie+Verification+Paixi',
           kycSelfiePublicId: 'demo_selfie_' + Date.now(),
           selfieFaceDetected: true,
           selfieMatchScore: 0.95,
@@ -44,7 +44,7 @@ export function StepSelfie({ onDone }: Props) {
 
       // Mettre à jour le store
       setGateStatus({ selfieFaceDetected: true });
-      showSuccess('Selfie validé !', 'Votre photo a été vérifiée avec succès par Klef');
+      showSuccess('Selfie validé !', 'Votre photo a été vérifiée avec succès par Paixi');
       onDone();
     } catch (e: unknown) {
       showError(e);
@@ -61,7 +61,7 @@ export function StepSelfie({ onDone }: Props) {
         <div className="flex items-center gap-2.5 justify-center">
           <Sparkles className="w-4 h-4 text-on-inverse-marker" />
           <p className="eyebrow text-on-inverse-marker">
-            Biométrie Visage Klef
+            Biométrie Visage Paixi
           </p>
         </div>
 
@@ -112,7 +112,7 @@ export function StepSelfie({ onDone }: Props) {
       <div className="flex items-start gap-3 p-3.5 rounded-inner bg-gold-50 border border-gold-200 dark:bg-gold-500/10 text-gold-800 dark:text-gold-300 text-xs font-medium">
         <AlertCircle className="w-4 h-4 text-gold-600 dark:text-gold-400 shrink-0 mt-0.5" />
         <p className="leading-relaxed text-[11px]">
-          La détection faciale est simulée pour l&apos;environnement de test Klef.
+          La détection faciale est simulée pour l&apos;environnement de test Paixi.
         </p>
       </div>
 

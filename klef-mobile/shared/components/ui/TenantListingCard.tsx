@@ -17,6 +17,8 @@ import {
 } from 'lucide-react-native';
 import { colors, radius, shadows, typography } from '../../theme/tokens';
 import { TenantPriceDisplay } from './TenantPriceDisplay';
+import { useListingCacheStore } from '../../stores/listing-cache.store';
+import { useSearchHistoryStore } from '../../stores/search-history.store';
 import { router } from 'expo-router';
 
 export interface ListingPhoto {
@@ -79,6 +81,7 @@ export function TenantListingCard({
   const categoryText = listing.sousType || listing.type;
 
   const handleCardPress = () => {
+    useSearchHistoryStore.getState().addRecentListing(listing);
     if (onPress) {
       onPress();
     } else {
@@ -131,7 +134,7 @@ export function TenantListingCard({
           </TouchableOpacity>
         )}
 
-        {/* Badges sur l'image (Design System Klef Premium) */}
+        {/* Badges sur l'image (Design System Paixi Premium) */}
         <View style={styles.topBadgesLeft} pointerEvents="none">
           {listing.isInstantBooking && (
             <View style={styles.instantBadge}>
@@ -223,7 +226,7 @@ export function TenantListingCard({
             .join(' · ')}
         </Text>
 
-        {/* Composant Partagé d'Affichage du Prix (Klef Design System) */}
+        {/* Composant Partagé d'Affichage du Prix (Paixi Design System) */}
         <View style={styles.priceRowContainer}>
           <TenantPriceDisplay
             prixBase={listing.prixBase}

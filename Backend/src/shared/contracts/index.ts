@@ -1,5 +1,5 @@
 // =============================================================================
-// Klef — Contrats de Données Partagés (Web & Mobile API Contracts)
+// Paixi — Contrats de Données Partagés (Web & Mobile API Contracts)
 // Source de vérité unique pour NestJS, Next.js Web App et Expo Mobile App
 // =============================================================================
 
@@ -526,7 +526,7 @@ export function formatFCFA(n: number | string | null | undefined): string {
   return `${Math.round(num).toLocaleString('fr-FR')} FCFA`;
 }
 
-/** Calcule la commission Klef (7% par défaut) et le net propriétaire */
+/** Calcule la commission Paixi (7% par défaut) et le net propriétaire */
 export function calculCommissionKlef(prixBase: number, tauxPct: number = 7) {
   const montantCommission = Math.round(prixBase * (tauxPct / 100));
   const netProprietaire = Math.max(0, Math.round(prixBase - montantCommission));

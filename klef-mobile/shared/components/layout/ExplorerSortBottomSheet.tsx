@@ -20,7 +20,7 @@ export interface SortOption {
 }
 
 export const SORT_OPTIONS: SortOption[] = [
-  { value: 'pertinence', label: 'Pertinence', sublabel: 'Recommandation intelligente Klef' },
+  { value: 'pertinence', label: 'Pertinence', sublabel: 'Recommandation intelligente Paixi' },
   { value: 'prix_asc', label: 'Prix croissant', sublabel: 'Du moins cher au plus cher' },
   { value: 'prix_desc', label: 'Prix décroissant', sublabel: 'Du plus cher au moins cher' },
   { value: 'note_desc', label: 'Les mieux notés', sublabel: 'Meilleures évaluations voyageurs' },

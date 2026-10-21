@@ -103,14 +103,14 @@ export default function AdminStatistiquesPage() {
     loadStats();
   }, [loadStats]);
 
-  // Exportation CSV des gains Klef
+  // Exportation CSV des gains Paixi
   const handleExportCsv = () => {
     if (statsData.recentKlefLedger.length === 0) {
       showToast("Aucune donnée financière à exporter");
       return;
     }
 
-    const headers = ["ID Réservation", "Date", "Logement", "Ville", "Voyageur", "Montant Brut (XOF)", "Part Hôte (93%)", "Commission Net Klef (7%)"];
+    const headers = ["ID Réservation", "Date", "Logement", "Ville", "Voyageur", "Montant Brut (XOF)", "Part Hôte (93%)", "Commission Net Paixi (7%)"];
     const rows = statsData.recentKlefLedger.map((item) => [
       item.id,
       item.date ? new Date(item.date).toLocaleDateString("fr-FR") : "",
@@ -186,7 +186,7 @@ export default function AdminStatistiquesPage() {
           isLoading={isLoading}
         />
 
-        {/* Detailed Klef Revenue Ledger Table avec Recherche et Filtres */}
+        {/* Detailed Paixi Revenue Ledger Table avec Recherche et Filtres */}
         <AdminStatsKlefLedgerTable
           entries={statsData.recentKlefLedger}
           isLoading={isLoading}

@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import {
   StyleSheet,
   View,
@@ -11,6 +11,7 @@ import {
   KeyboardAvoidingView,
   Platform,
   ScrollView,
+  Animated,
 } from 'react-native';
 import { X, UserX, AlertTriangle, ShieldAlert, CheckCircle2 } from 'lucide-react-native';
 import * as Haptics from 'expo-haptics';
@@ -31,11 +32,20 @@ export function MobileSignalNoshowModal({
 }: MobileSignalNoshowModalProps) {
   const [comment, setComment] = useState<string>('');
 
+  const animVal = useRef(new Animated.Value(0)).current;
+
   useEffect(() => {
     if (visible) {
       setComment('');
+      animVal.setValue(0);
+      Animated.spring(animVal, {
+        toValue: 1,
+        speed: 16,
+        bounciness: 6,
+        useNativeDriver: true,
+      }).start();
     }
-  }, [visible]);
+  }, [visible, animVal]);
 
   const handleSubmit = async () => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium).catch(() => {});
@@ -44,16 +54,24 @@ export function MobileSignalNoshowModal({
 
   if (!visible) return null;
 
+  const backdropOpacity = animVal.interpolate({ inputRange: [0, 1], outputRange: [0, 1] });
+  const sheetTranslateY = animVal.interpolate({ inputRange: [0, 1], outputRange: [220, 0] });
+
   return (
-    <Modal visible={visible} animationType="slide" transparent onRequestClose={onClose}>
+    <Modal visible={visible} animationType="none" transparent onRequestClose={onClose}>
       <KeyboardAvoidingView
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
         style={styles.keyboardView}
       >
         <TouchableWithoutFeedback onPress={onClose}>
-          <View style={styles.overlay}>
+          <Animated.View style={[styles.overlay, { opacity: backdropOpacity }]}>
             <TouchableWithoutFeedback>
-              <View style={styles.sheetContainer}>
+              <Animated.View
+                style={[
+                  styles.sheetContainer,
+                  { transform: [{ translateY: sheetTranslateY }] },
+                ]}
+              >
                 <View style={styles.dragHandle} />
 
                 {/* Header */}
@@ -112,7 +130,7 @@ export function MobileSignalNoshowModal({
                   <View style={styles.infoBox}>
                     <ShieldAlert size={16} color={colors.forest[700]} style={{ marginTop: 2 }} />
                     <Text style={styles.infoText}>
-                      <Text style={styles.infoBold}>Procédure Klef : </Text>
+                      <Text style={styles.infoBold}>Procédure Paixi : </Text>
                       Le locataire sera notifié en urgence. S'il ne valide pas sa présence sous 3h, le séjour sera annulé et la politique de compensation d'absence sera appliquée.
                     </Text>
                   </View>
@@ -145,9 +163,9 @@ export function MobileSignalNoshowModal({
                     <Text style={styles.cancelButtonText}>Annuler</Text>
                   </TouchableOpacity>
                 </View>
-              </View>
+              </Animated.View>
             </TouchableWithoutFeedback>
-          </View>
+          </Animated.View>
         </TouchableWithoutFeedback>
       </KeyboardAvoidingView>
     </Modal>

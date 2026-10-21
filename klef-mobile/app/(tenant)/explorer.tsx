@@ -137,6 +137,8 @@ export default function ExplorerScreen() {
     arrivee?: string;
     depart?: string;
     nbNuits?: string;
+    nbPersonnes?: string;
+    nombreChambres?: string;
     openSearch?: string;
   }>();
 
@@ -162,13 +164,15 @@ export default function ExplorerScreen() {
       setSelectedSousType(routeParams.filterSousType || '');
       setFilterDerniereMinute(routeParams.filterDerniereMinute === 'true');
     }
-    if (routeParams.ville || routeParams.arrivee || routeParams.depart) {
+    if (routeParams.ville || routeParams.arrivee || routeParams.depart || routeParams.nbPersonnes || routeParams.nombreChambres) {
       setSearchParams((prev) => ({
         ...prev,
         ...(routeParams.ville && { ville: routeParams.ville }),
         ...(routeParams.arrivee && { arrivee: routeParams.arrivee }),
         ...(routeParams.depart && { depart: routeParams.depart }),
         ...(routeParams.nbNuits && { nbNuits: Number(routeParams.nbNuits) }),
+        ...(routeParams.nbPersonnes && { nbPersonnes: Number(routeParams.nbPersonnes) }),
+        ...(routeParams.nombreChambres && { nombreChambres: Number(routeParams.nombreChambres) }),
       }));
     }
   }, [
@@ -181,6 +185,8 @@ export default function ExplorerScreen() {
     routeParams.arrivee,
     routeParams.depart,
     routeParams.nbNuits,
+    routeParams.nbPersonnes,
+    routeParams.nombreChambres,
     routeParams.openSearch,
   ]);
 
@@ -249,6 +255,8 @@ export default function ExplorerScreen() {
         ...(searchParams.ville?.trim() && { ville: searchParams.ville.trim() }),
         ...(searchParams.arrivee && { dateDebut: searchParams.arrivee }),
         ...(searchParams.depart && { dateFin: searchParams.depart }),
+        ...(searchParams.nbPersonnes && { nbPersonnes: Number(searchParams.nbPersonnes) }),
+        ...(searchParams.nombreChambres !== undefined && { nombreChambres: Number(searchParams.nombreChambres) }),
         ...(selectedSousType && { sousType: selectedSousType }),
         ...(selectedType && { type: selectedType }),
         ...(filterDerniereMinute && { derniereMinute: true }),
@@ -308,7 +316,17 @@ export default function ExplorerScreen() {
 
   useEffect(() => {
     fetchListings(1, false);
-  }, [selectedType, selectedSousType, searchParams.ville, searchParams.arrivee, searchParams.depart, currentSort, filterDerniereMinute]);
+  }, [
+    selectedType,
+    selectedSousType,
+    searchParams.ville,
+    searchParams.arrivee,
+    searchParams.depart,
+    searchParams.nbPersonnes,
+    searchParams.nombreChambres,
+    currentSort,
+    filterDerniereMinute,
+  ]);
 
   const handleCategorySelect = useCallback((cat: CategoryItem) => {
     setActiveCategory(cat.key);
@@ -351,6 +369,14 @@ export default function ExplorerScreen() {
     setCurrentSort('pertinence');
   }, []);
 
+  const handleClearGuests = useCallback(() => {
+    setSearchParams((prev) => ({ ...prev, nbPersonnes: undefined }));
+  }, []);
+
+  const handleClearBedrooms = useCallback(() => {
+    setSearchParams((prev) => ({ ...prev, nombreChambres: undefined }));
+  }, []);
+
   const formatDate = (d?: string) => {
     if (!d) return null;
     try {
@@ -386,10 +412,14 @@ export default function ExplorerScreen() {
         dateArrivee={searchParams.arrivee}
         dateDepart={searchParams.depart}
         sortLabel={sortLabel}
+        nbPersonnes={searchParams.nbPersonnes}
+        nombreChambres={searchParams.nombreChambres}
         total={total}
         onClearVille={handleClearVille}
         onClearDates={handleClearDates}
         onClearSort={handleClearSort}
+        onClearGuests={handleClearGuests}
+        onClearBedrooms={handleClearBedrooms}
       />
     </View>
   );
@@ -508,6 +538,7 @@ export default function ExplorerScreen() {
 
       <TenantSearchModal
         initialVille={searchParams.ville || ''}
+        initialParams={searchParams}
         onClose={() => setSearchModalVisible(false)}
         onSearch={(p) => setSearchParams(p)}
         visible={searchModalVisible}

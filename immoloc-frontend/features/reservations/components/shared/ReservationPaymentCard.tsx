@@ -174,7 +174,7 @@ export function ReservationPaymentCard({ paiement: directPaiement, reservation, 
           <Amount value={montantRegleEnLigne} />
           <p className="flex items-center gap-1 text-xs font-semibold text-success-700">
             <ShieldCheck className="h-3 w-3" aria-hidden="true" />
-            Séquestre Klef Actif
+            Séquestre Paixi Actif
           </p>
         </Tile>
 

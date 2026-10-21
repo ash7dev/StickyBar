@@ -16,6 +16,7 @@ import {
 } from './auth-form-primitives';
 
 import { ActivationVerificationModal } from './ActivationVerificationModal';
+import { PaixiLogo } from '@/components/brand/PaixiLogo';
 
 interface Props {
   next?: string;
@@ -113,7 +114,7 @@ export function RegisterForm({ next, referralCode }: Props) {
           <p className="mt-2 text-sm leading-relaxed text-foreground-muted">
             Nous avons envoyé un lien de confirmation à{' '}
             <strong className="font-semibold text-foreground">{sentTo}</strong>.
-            Ouvrez-le pour activer votre compte Klef.
+            Ouvrez-le pour activer votre compte Paixi.
           </p>
         </div>
 
@@ -167,9 +168,8 @@ export function RegisterForm({ next, referralCode }: Props) {
   return (
     <div className="space-y-6">
       <header>
-        <Link href="/" className="mb-8 inline-flex items-baseline lg:hidden">
-          <span className="font-display text-2xl font-semibold tracking-tight text-forest-800">klef</span>
-          <span className="font-display text-2xl font-semibold text-lime-600" aria-hidden="true">.</span>
+        <Link href="/" className="mb-8 inline-flex lg:hidden">
+          <PaixiLogo className="text-2xl" />
         </Link>
         <h1 className="font-display text-[1.75rem] font-semibold tracking-[-0.02em] text-forest-900">
           Créer un compte
@@ -182,7 +182,7 @@ export function RegisterForm({ next, referralCode }: Props) {
             🤝
           </span>
           <div>
-            <p className="font-semibold text-gold-900 dark:text-gold-100">Invitation Klef Teranga Club</p>
+            <p className="font-semibold text-gold-900 dark:text-gold-100">Invitation Paixi Teranga Club</p>
             <p className="text-foreground-muted">
               Code parrain <strong className="font-mono text-foreground font-bold">{referralCode.toUpperCase()}</strong> détecté. Votre parrain recevra son bonus lors de votre 1er séjour !
             </p>

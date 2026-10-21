@@ -9,6 +9,9 @@
 
 generator client {
   provider = "prisma-client-js"
+  // Relations chargées par jointure SQL (1 requête) au lieu d'une requête par relation :
+  // chaque aller-retour vers Supabase coûte plusieurs centaines de ms.
+  previewFeatures = ["relationJoins"]
 }
 
 datasource db {
@@ -620,7 +623,7 @@ model Retrait {
 }
 
 // =============================================================================
-// GRAND LIVRE SYSTÈME & TRÉSORERIE PLATFORME KLEF (SYSTEM LEDGER & ESCROW)
+// GRAND LIVRE SYSTÈME & TRÉSORERIE PLATFORME PAIXI (SYSTEM LEDGER & ESCROW)
 // =============================================================================
 
 model SystemLedger {
@@ -1020,6 +1023,7 @@ enum MethodeRetrait {
 
 enum StatutRetrait {
   EN_ATTENTE
+  SUSPENDU_POUR_LITIGE
   VALIDE
   EFFECTUE
   REJETE
@@ -1073,7 +1077,7 @@ enum StatutNotification {
 }
 
 // =============================================================================
-// SUPPORT & TICKETS (Assistant Virtuel Klef & Admin)
+// SUPPORT & TICKETS (Assistant Virtuel Paixi & Admin)
 // =============================================================================
 
 model TicketSupport {
@@ -1169,7 +1173,7 @@ enum CodeBadgeTeranga {
 }
 
 // =============================================================================
-// DEMANDES KLEF MANAGED (Gestion Déléguée & Offre Sérénité)
+// DEMANDES PAIXI MANAGED (Gestion Déléguée & Offre Sérénité)
 // =============================================================================
 
 enum StatutDemandeManaged {

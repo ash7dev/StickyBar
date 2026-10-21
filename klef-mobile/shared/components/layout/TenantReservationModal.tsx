@@ -383,7 +383,7 @@ export function TenantReservationModal({
                 )}
               </View>
               <Text style={styles.cguText}>
-                J'accepte les conditions de réservation et la politique d'annulation Klef.
+                J'accepte les conditions de réservation et la politique d'annulation Paixi.
               </Text>
             </TouchableOpacity>
 

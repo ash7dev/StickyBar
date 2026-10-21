@@ -1,4 +1,4 @@
-# 📦 Installation du système d'emails Klef
+# 📦 Installation du système d'emails Paixi
 
 ## Dépendances à installer
 
@@ -39,7 +39,7 @@ Ajoutez ces variables à votre fichier `.env` :
 RESEND_API_KEY=re_your_api_key_here
 
 # Adresse d'expéditeur par défaut
-MAIL_FROM=Klef <noreply@klef.com>
+MAIL_FROM=Paixi <noreply@klef.com>
 
 # URL de l'application (pour les liens dans les emails)
 APP_URL=https://klef.com
@@ -184,7 +184,7 @@ async sendBookingConfirmation(to: string, data: any) {
     subject: '...',
     template: 'booking-confirmation',
     context: data,
-    from: 'Réservations Klef <reservations@klef.com>',
+    from: 'Réservations Paixi <reservations@klef.com>',
     replyTo: 'support@klef.com',
   });
 }
@@ -281,7 +281,7 @@ En cas de problème :
 1. Consultez la [documentation Resend](https://resend.com/docs)
 2. Vérifiez les logs de votre application
 3. Testez avec un email de développement d'abord
-4. Contactez l'équipe technique Klef
+4. Contactez l'équipe technique Paixi
 
 ## Checklist avant la production
 
@@ -302,4 +302,4 @@ En cas de problème :
 
 ---
 
-**Klef SAS** - Tous droits réservés
+**Paixi SAS** - Tous droits réservés

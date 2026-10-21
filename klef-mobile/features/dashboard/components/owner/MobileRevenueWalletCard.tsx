@@ -25,7 +25,7 @@ export function MobileRevenueWalletCard({ stats }: Props) {
 
   const handleWithdrawPress = () => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium).catch(() => {});
-    router.push('/(owner)/wallet' as any);
+    router.navigate('/(owner)/wallet' as any);
   };
 
   const revenueAmount = Number(stats.bookings.revenue ?? 0);

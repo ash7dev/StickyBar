@@ -1,5 +1,5 @@
 // ─────────────────────────────────────────────────────────────────────────────
-// Klef — Polices (Next.js 16, next/font)
+// Paixi — Polices (Next.js 16, next/font)
 // Fraunces : titres (display). Inter : interface, corps, prix.
 // ─────────────────────────────────────────────────────────────────────────────
 
@@ -17,7 +17,7 @@ import { Fraunces, Inter } from 'next/font/google';
 //   SOFT  adoucit les angles. À 0 la fonte est sèche ; monter un peu la rend
 //         moins austère à côté du lime.
 //   WONK  active les formes asymétriques (le « g », le « y »). C'est la
-//         signature de Fraunces — et ce qui empêche Klef de ressembler
+//         signature de Fraunces — et ce qui empêche Paixi de ressembler
 //         à n'importe quel produit en serif générique.
 //
 // En omettant `weight`, on récupère la plage variable complète en un seul

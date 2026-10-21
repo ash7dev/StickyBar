@@ -32,7 +32,7 @@ const TAB_EMPTY_CONFIG: Record<
 > = {
   ALL: {
     title: 'Prêt pour votre prochain séjour ?',
-    subtitle: 'Explorez des appartements et villas d’exception avec garantie de séquestre Klef et contrat numérique certifié.',
+    subtitle: 'Explorez des appartements et villas d’exception avec garantie de séquestre Paixi et contrat numérique certifié.',
     icon: Compass,
   },
   CONFIRMED: {
@@ -96,7 +96,7 @@ export function MobileEmptyReservationCard({
           <Text style={styles.subtitle}>{cfg.subtitle}</Text>
         </View>
 
-        {/* 3 Garanties Klef en badges horizontaux */}
+        {/* 3 Garanties Paixi en badges horizontaux */}
         {!isFiltered && (
           <View style={styles.featuresRow}>
             <View style={styles.featureBadge}>

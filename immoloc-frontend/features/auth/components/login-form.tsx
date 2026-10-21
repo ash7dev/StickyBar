@@ -13,6 +13,7 @@ import { loginSchema, type LoginInput } from '@/schemas/auth.schema';
 import { useAuth, mapSupabaseError } from '@/features/auth/hooks/use-auth';
 import { ApiError } from '@/lib/nestjs/api-client';
 import { PhoneInputWithCountry } from '@/components/ui/PhoneInputWithCountry';
+import { PaixiLogo } from '@/components/brand/PaixiLogo';
 
 // ─────────────────────────────────────────────────────────────────────────────
 // AuthShell — mise en page desktop
@@ -38,7 +39,7 @@ export function AuthShell({ children }: { children: React.ReactNode }) {
         </span>
 
         <p className="text-[0.6875rem] font-semibold uppercase tracking-[0.16em] text-forest-200">
-          Séquestre Klef
+          Séquestre Paixi
         </p>
 
         <h2 className="mt-3 font-display text-[1.875rem] font-semibold leading-[1.1] tracking-[-0.02em] text-neutral-50">
@@ -121,15 +122,14 @@ export function LoginForm({ next }: Props) {
     <div className="space-y-7">
 
       <header>
-        <Link href="/" className="mb-8 inline-flex items-baseline lg:hidden">
-          <span className="font-display text-2xl font-semibold tracking-tight text-forest-800">klef</span>
-          <span className="font-display text-2xl font-semibold text-lime-600" aria-hidden="true">.</span>
+        <Link href="/" className="mb-8 inline-flex lg:hidden">
+          <PaixiLogo className="text-2xl" />
         </Link>
         <h1 className="font-display text-[1.75rem] font-semibold tracking-[-0.02em] text-forest-900">
           Connexion
         </h1>
         <p className="mt-1.5 text-sm text-foreground-muted">
-          Accédez à votre espace Klef.
+          Accédez à votre espace Paixi.
         </p>
       </header>
 

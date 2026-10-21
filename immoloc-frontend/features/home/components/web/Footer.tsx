@@ -54,7 +54,7 @@ export function Footer() {
           <div className="col-span-2 md:col-span-3 lg:col-span-1">
             <Link href="/" className="inline-block mb-4">
               <h5 className="font-display font-bold text-3xl text-white">
-                Klef<span className="text-forest-400">.</span>
+                Paixi<span className="text-forest-400">.</span>
               </h5>
             </Link>
             <p className="text-sm text-neutral-400 leading-relaxed mb-6">
@@ -191,7 +191,7 @@ export function Footer() {
         <div className="pt-8 border-t border-forest-800">
           <div className="flex flex-col md:flex-row items-center justify-between gap-4">
             <div className="text-sm text-neutral-500">
-              © {currentYear} Klef. Tous droits réservés.
+              © {currentYear} Paixi. Tous droits réservés.
             </div>
 
             <div className="flex flex-wrap items-center justify-center gap-6">

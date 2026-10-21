@@ -1,6 +1,6 @@
 {
   "expo": {
-    "name": "klef-mobile",
+    "name": "Paixi",
     "slug": "klef-mobile",
     "version": "1.0.0",
     "orientation": "portrait",
@@ -8,11 +8,19 @@
     "scheme": "klefmobile",
     "userInterfaceStyle": "automatic",
     "ios": {
-      "icon": "./assets/expo.icon"
+      "icon": "./assets/expo.icon",
+      "bundleIdentifier": "com.skyyti.klefmobile",
+      "supportsTablet": false,
+      "infoPlist": {
+        "NSCameraUsageDescription": "Permet de prendre des photos de vos logements, de vos pièces d'identité (CNI/Passeport) et des états des lieux.",
+        "NSPhotoLibraryUsageDescription": "Permet de choisir des photos depuis votre galerie pour vos annonces, profil et états des lieux.",
+        "NSPhotoLibraryAddUsageDescription": "Permet d'enregistrer vos reçus de réservation et vos baux de location dans votre galerie photos.",
+        "NSLocationWhenInUseUsageDescription": "Permet de vous géolocaliser pour afficher les logements et séjours disponibles à proximité au Sénégal."
+      }
     },
     "android": {
       "adaptiveIcon": {
-        "backgroundColor": "#E6F4FE",
+        "backgroundColor": "#14654C",
         "foregroundImage": "./assets/images/android-icon-foreground.png",
         "backgroundImage": "./assets/images/android-icon-background.png",
         "monochromeImage": "./assets/images/android-icon-monochrome.png"
@@ -28,9 +36,13 @@
       [
         "expo-splash-screen",
         {
-          "backgroundColor": "#208AEF",
+          "backgroundColor": "#F8FBF4",
           "image": "./assets/images/splash-icon.png",
-          "imageWidth": 76
+          "imageWidth": 120,
+          "dark": {
+            "backgroundColor": "#041912",
+            "image": "./assets/images/splash-icon-dark.png"
+          }
         }
       ],
       "expo-secure-store",
@@ -38,7 +50,8 @@
       "expo-image",
       "expo-status-bar",
       "expo-asset",
-      "expo-video"
+      "expo-video",
+      "expo-web-browser"
     ],
     "experiments": {
       "typedRoutes": true,

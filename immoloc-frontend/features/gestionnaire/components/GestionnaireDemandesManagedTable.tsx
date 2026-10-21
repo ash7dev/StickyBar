@@ -62,7 +62,7 @@ export function GestionnaireDemandesManagedTable({
                       <Inbox className="w-6 h-6" style={{ color: 'var(--neutral-400)' }} />
                     </div>
                     <p className="text-sm font-semibold" style={{ color: 'var(--foreground-muted)' }}>
-                      Aucune demande Klef Managed trouvée pour ce filtre
+                      Aucune demande Paixi Managed trouvée pour ce filtre
                     </p>
                     <p className="text-xs font-medium" style={{ color: 'var(--foreground-faint)' }}>
                       Les demandes d'accompagnement soumises par les propriétaires s'afficheront ici.
@@ -74,7 +74,7 @@ export function GestionnaireDemandesManagedTable({
               leads.map((l) => {
                 const formattedPhone = l.telephone.replace(/\s+/g, '');
                 const whatsappUrl = `https://wa.me/${formattedPhone.replace('+', '')}?text=${encodeURIComponent(
-                  `Bonjour ${l.prenom}, je suis le responsable Conciergerie Klef. J'ai bien reçu votre demande de gestion pour votre bien à ${
+                  `Bonjour ${l.prenom}, je suis le responsable Conciergerie Paixi. J'ai bien reçu votre demande de gestion pour votre bien à ${
                     l.ville || 'Dakar'
                   }. Quand êtes-vous disponible pour échanger ?`,
                 )}`;

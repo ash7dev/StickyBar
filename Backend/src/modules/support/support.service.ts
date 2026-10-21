@@ -2,10 +2,14 @@ import { Injectable, NotFoundException, ForbiddenException, BadRequestException 
 import { PrismaService } from '../../infrastructure/prisma/prisma.service';
 import { CreateTicketDto, AddTicketMessageDto, UpdateTicketStatusDto } from './dto/support.dto';
 import { StatutTicket, RoleLitige } from '@prisma/client';
+import { NotificationsService } from '../notifications/notifications.service';
 
 @Injectable()
 export class SupportService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly notifications: NotificationsService,
+  ) {}
 
   /**
    * Créer un nouveau ticket de support utilisateur
@@ -143,6 +147,15 @@ export class SupportService {
         misAJourLe: new Date(),
       },
     });
+
+    if (isAdmin && ticket.utilisateurId) {
+      this.notifications.sendNotificationToUser(
+        ticket.utilisateurId,
+        `Réponse du support Paixi 🎧 (${ticket.code})`,
+        dto.message.length > 80 ? `${dto.message.slice(0, 80)}…` : dto.message,
+        `/support?id=${ticket.id}`
+      ).catch(() => {});
+    }
 
     return newMessage;
   }

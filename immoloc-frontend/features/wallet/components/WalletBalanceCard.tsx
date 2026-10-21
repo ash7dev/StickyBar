@@ -1,10 +1,12 @@
 'use client';
 
-import { Wallet, AlertTriangle, TrendingUp, Info } from 'lucide-react';
+import { Wallet, AlertTriangle, TrendingUp, Info, ShieldAlert } from 'lucide-react';
 import { formatFCFA } from '../lib/transaction-labels';
 
 interface Props {
   soldeDisponible: number;
+  soldeGeleLitige?: number;
+  soldeRetirable?: number;
   soldeProprietaire?: number;
   soldeLocataire?: number;
   dettePenalites: number;
@@ -12,17 +14,21 @@ interface Props {
 
 export function WalletBalanceCard({
   soldeDisponible,
+  soldeGeleLitige = 0,
+  soldeRetirable,
   soldeProprietaire,
   soldeLocataire = 0,
   dettePenalites,
 }: Props) {
   const hasDebt = dettePenalites > 0;
+  const hasLitigeGele = soldeGeleLitige > 0;
   const displaySolde = soldeProprietaire !== undefined ? soldeProprietaire : soldeDisponible;
+  const retirableEffectif = soldeRetirable !== undefined ? soldeRetirable : Math.max(0, displaySolde - soldeGeleLitige - dettePenalites);
 
   return (
     <div className="space-y-3">
       <div className="section-inverse relative overflow-hidden p-6 sm:p-8 shadow-xl transition-all duration-300">
-        {/* Halo radial de fond (Signature visuelle Klef) */}
+        {/* Halo radial de fond (Signature visuelle Paixi) */}
         <div className="absolute -top-16 -right-16 w-56 h-56 bg-forest-700/30 rounded-full blur-[70px] pointer-events-none" />
         <div className="absolute -bottom-10 -left-10 w-40 h-40 bg-marker-bg rounded-full blur-[60px] pointer-events-none" />
 
@@ -33,7 +39,7 @@ export function WalletBalanceCard({
                 <Wallet className="w-5 h-5 text-on-inverse-marker" />
               </div>
               <span className="eyebrow text-on-inverse-muted">
-                Solde Revenus Hôte (Retirable)
+                Solde Revenus Hôte
               </span>
             </div>
 
@@ -41,14 +47,29 @@ export function WalletBalanceCard({
               {formatFCFA(displaySolde)}
             </p>
 
-            {hasDebt && (
-              <div className="flex items-center gap-2 mt-4 px-3.5 py-1.5 rounded-pill bg-error-500/20 border border-error-500/30 w-fit">
-                <AlertTriangle className="w-4 h-4 text-error-500" />
-                <span className="text-xs font-semibold text-on-inverse">
-                  Dette en cours : {formatFCFA(dettePenalites)}
-                </span>
-              </div>
-            )}
+            <div className="flex flex-wrap items-center gap-2 mt-3">
+              <p className="text-xs text-on-inverse-muted font-medium bg-forest-800/60 px-3 py-1 rounded-pill border border-border-inverse/40 w-fit">
+                Solde retirable immédiat : <strong className="text-on-inverse-display font-bold">{formatFCFA(retirableEffectif)}</strong>
+              </p>
+
+              {hasLitigeGele && (
+                <div className="flex items-center gap-2 px-3.5 py-1 rounded-pill bg-amber-500/20 border border-amber-500/40 text-amber-300">
+                  <ShieldAlert className="w-4 h-4 text-amber-400 shrink-0" />
+                  <span className="text-xs font-semibold">
+                    Gel conservatoire litige : {formatFCFA(soldeGeleLitige)}
+                  </span>
+                </div>
+              )}
+
+              {hasDebt && (
+                <div className="flex items-center gap-2 px-3.5 py-1 rounded-pill bg-error-500/20 border border-error-500/40 text-error-400">
+                  <AlertTriangle className="w-4 h-4 text-error-400 shrink-0" />
+                  <span className="text-xs font-semibold">
+                    Dette en cours : {formatFCFA(dettePenalites)}
+                  </span>
+                </div>
+              )}
+            </div>
           </div>
 
           <div className="flex items-center gap-2 self-start sm:self-center">

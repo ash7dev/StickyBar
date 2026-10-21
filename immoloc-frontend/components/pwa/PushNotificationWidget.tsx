@@ -11,7 +11,7 @@ import {
 } from '@/lib/pwa/push-manager';
 import { playNotificationChime } from '@/lib/pwa/sound-effects';
 
-const TEST_TITLE = 'Klef — notification de test';
+const TEST_TITLE = 'Paixi — notification de test';
 const TEST_BODY = 'Vos notifications fonctionnent sur cet appareil.';
 const TEST_URL = '/explorer';
 

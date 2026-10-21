@@ -16,7 +16,7 @@ const FIELDS: { key: keyof Preferences; label: string; description: string }[] =
     key: 'instantBooking',
     label: 'Réservation instantanée',
     description:
-      'Les voyageurs dont l’identité est vérifiée par Klef réservent sans attendre votre validation. Vous gardez la main sur les autres demandes.',
+      'Les voyageurs dont l’identité est vérifiée par Paixi réservent sans attendre votre validation. Vous gardez la main sur les autres demandes.',
   },
   {
     key: 'whatsappAlerts',

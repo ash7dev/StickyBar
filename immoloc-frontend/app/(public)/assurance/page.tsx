@@ -18,7 +18,7 @@ import { cn } from '@/lib/utils/cn';
    responsabilite civile, souscrite aupres d'assureurs tiers, est nommee
    « assurance ». Deux produits, deux noms, deux regimes.
 
-   Ce que decrit cette page est une GARANTIE COMMERCIALE financee par Klef.
+   Ce que decrit cette page est une GARANTIE COMMERCIALE financee par Paixi.
    Elle est tenable des le lancement, sans assureur, parce que le sequestre
    permet de rembourser : les fonds sont deja entre nos mains.
 
@@ -72,7 +72,7 @@ const EXCLUDED = [
   'Annulation de votre part pour raison personnelle, hors délai gratuit',
   'Désagréments subjectifs : bruit du quartier, goût de la décoration, météo',
   'Dommages que vous causez au logement, qui restent à votre charge',
-  'Paiement effectué en dehors de Klef, en espèces ou par transfert direct',
+  'Paiement effectué en dehors de Paixi, en espèces ou par transfert direct',
 ] as const;
 
 const CLAIM_STEPS = [
@@ -89,7 +89,7 @@ const CLAIM_STEPS = [
   {
     icon: FileText,
     title: 'Nous examinons',
-    body: 'Vos éléments, ceux de l’hôte, et le rapport de visite de l’agent Klef. Décision motivée par écrit.',
+    body: 'Vos éléments, ceux de l’hôte, et le rapport de visite de l’agent Paixi. Décision motivée par écrit.',
   },
   {
     icon: ShieldCheck,
@@ -101,15 +101,15 @@ const CLAIM_STEPS = [
 const FAQ = [
   {
     q: 'La Protection Voyageur est-elle une assurance ?',
-    a: 'Non. C’est une garantie commerciale accordée par Klef, financée par Klef, et régie par nos conditions générales. Elle n’est pas souscrite auprès d’un assureur et ne remplace pas une assurance voyage. Pour vos effets personnels, votre santé ou votre responsabilité civile, souscrivez un contrat auprès d’un assureur.',
+    a: 'Non. C’est une garantie commerciale accordée par Paixi, financée par Paixi, et régie par nos conditions générales. Elle n’est pas souscrite auprès d’un assureur et ne remplace pas une assurance voyage. Pour vos effets personnels, votre santé ou votre responsabilité civile, souscrivez un contrat auprès d’un assureur.',
   },
   {
     q: 'Faut-il payer un supplément ?',
-    a: 'Non. La protection s’applique automatiquement à toute réservation payée via Klef, sans option à cocher ni frais additionnel. Elle cesse en revanche de s’appliquer si vous payez l’hôte directement.',
+    a: 'Non. La protection s’applique automatiquement à toute réservation payée via Paixi, sans option à cocher ni frais additionnel. Elle cesse en revanche de s’appliquer si vous payez l’hôte directement.',
   },
   {
     q: 'Et si l’hôte conteste ma demande ?',
-    a: 'Les deux versions sont examinées. Le rapport de visite de l’agent Klef, réalisé avant la mise en ligne, sert de référence sur l’état et la conformité du logement. En l’absence d’accord, les voies de recours de droit commun sénégalais restent ouvertes.',
+    a: 'Les deux versions sont examinées. Le rapport de visite de l’agent Paixi, réalisé avant la mise en ligne, sert de référence sur l’état et la conformité du logement. En l’absence d’accord, les voies de recours de droit commun sénégalais restent ouvertes.',
   },
   {
     q: 'Que se passe-t-il si je signale trop tard ?',
@@ -256,7 +256,7 @@ export default function ProtectionVoyageurPage() {
           Bloc obligatoire, et non negociable.
 
           « Assurance » est un terme reglemente. Cette page decrit une garantie
-          commerciale financee par Klef. Le dire explicitement protege
+          commerciale financee par Paixi. Le dire explicitement protege
           l'entreprise ET informe correctement l'utilisateur, qui doit savoir
           qu'il n'est couvert ni pour ses effets personnels ni pour sa sante.
         */}
@@ -270,11 +270,11 @@ export default function ProtectionVoyageurPage() {
                 La Protection Voyageur n’est pas une assurance
               </h2>
               <p className="mt-3 text-sm leading-relaxed text-foreground-muted">
-                Il s’agit d’une garantie commerciale accordée par Klef, financée
-                par Klef, et régie par nos{' '}
+                Il s’agit d’une garantie commerciale accordée par Paixi, financée
+                par Paixi, et régie par nos{' '}
                 <Link href="/legal/cgu" className="font-medium text-forest-700 underline underline-offset-2 hover:text-forest-600">
                   conditions générales
-                </Link>. Elle n’est souscrite auprès d’aucun assureur et Klef
+                </Link>. Elle n’est souscrite auprès d’aucun assureur et Paixi
                 n’est ni assureur ni intermédiaire d’assurance.
               </p>
               <p className="mt-3 text-sm leading-relaxed text-foreground-muted">

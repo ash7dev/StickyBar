@@ -129,7 +129,7 @@ export function MobileConfirmCheckinModal({
             <View style={styles.escrowNoticeCard}>
               <ShieldCheck size={18} color={colors.lime[400]} style={{ marginTop: 1 }} />
               <View style={{ flex: 1, gap: 2 }}>
-                <Text style={styles.escrowNoticeTitle}>Déblocage du séquestre Klef</Text>
+                <Text style={styles.escrowNoticeTitle}>Déblocage du séquestre Paixi</Text>
                 <Text style={styles.escrowNoticeDesc}>
                   En confirmant, vous attestez que le logement est conforme. Les fonds seront transférés sur le portefeuille de l'hôte.
                 </Text>

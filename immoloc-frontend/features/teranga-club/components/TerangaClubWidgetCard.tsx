@@ -51,7 +51,7 @@ export function TerangaClubWidgetCard() {
               {/* L'emoji 🪙 doublonnait l'icône Coins juste à gauche, et les
                  lecteurs d'écran l'annonçaient littéralement. */}
               <h2 className="font-display text-base font-semibold text-foreground">
-                Klef Teranga Club
+                Paixi Teranga Club
               </h2>
               <span className="inline-flex items-center rounded-pill border border-border bg-background-alt px-2.5 py-0.5 text-xs font-semibold text-foreground-muted">
                 1 coin = 1 FCFA

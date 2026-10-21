@@ -35,12 +35,24 @@ const MONTHS_FR = [
 const PRESET_MOTIFS = [
   { id: 'travaux', label: '🛠️ Travaux' },
   { id: 'perso', label: '🏠 Usage personnel' },
-  { id: 'hors_klef', label: '🔒 Réservé hors-Klef' },
+  { id: 'hors_klef', label: '🔒 Réservé hors-Paixi' },
   { id: 'entretien', label: '🧹 Entretien' },
 ];
 
 const isoDay = (d: Date) =>
   `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+
+/** Jour suivant d'une clé `YYYY-MM-DD` (calcul local). */
+const dayAfter = (key: string) => {
+  const [y, m, d] = key.split('-').map(Number);
+  return isoDay(new Date(y, m - 1, d + 1));
+};
+
+/** Dernier jour réellement bloqué : la veille de dateFin (exclue). */
+const lastBlockedDay = (dateFin: string) => {
+  const [y, m, d] = dateFin.slice(0, 10).split('-').map(Number);
+  return isoDay(new Date(y, m - 1, d - 1));
+};
 
 const formatDateFr = (iso: string) => {
   const parts = iso.split('-');
@@ -116,7 +128,8 @@ export function MobileOwnerDetailCalendar({ listingId }: MobileOwnerDetailCalend
       cur.setHours(0, 0, 0, 0);
       const end = new Date(ind.dateFin);
       end.setHours(0, 0, 0, 0);
-      while (cur <= end) {
+      // dateFin est exclue côté API (comme un départ)
+      while (cur < end) {
         m.set(isoDay(cur), ind);
         cur.setDate(cur.getDate() + 1);
       }
@@ -142,7 +155,7 @@ export function MobileOwnerDetailCalendar({ listingId }: MobileOwnerDetailCalend
       const indispo = blockedMap.get(key)!;
       Alert.alert(
         'Débloquer cette date ?',
-        `La période du ${indispo.dateDebut} au ${indispo.dateFin} est actuellement bloquée${indispo.motif ? ` pour : "${indispo.motif}"` : ''}.`,
+        `La période du ${formatDateFr(indispo.dateDebut)} au ${formatDateFr(lastBlockedDay(indispo.dateFin))} est actuellement bloquée${indispo.motif ? ` pour : "${indispo.motif}"` : ''}.`,
         [
           { text: 'Annuler', style: 'cancel' },
           {
@@ -369,7 +382,8 @@ export function MobileOwnerDetailCalendar({ listingId }: MobileOwnerDetailCalend
                 const [a, b] = selectStart <= end ? [selectStart, end] : [end, selectStart];
                 createMutation.mutate({
                   dateDebut: a,
-                  dateFin: b,
+                  // L'API exclut dateFin : on envoie le lendemain du dernier jour choisi
+                  dateFin: dayAfter(b),
                   motif: motif.trim() || undefined,
                 });
               }}
@@ -401,7 +415,7 @@ export function MobileOwnerDetailCalendar({ listingId }: MobileOwnerDetailCalend
               <View key={ind.id} style={styles.blockedRow}>
                 <View style={styles.blockedInfo}>
                   <Text style={styles.blockedDates}>
-                    {formatDateFr(ind.dateDebut)} → {formatDateFr(ind.dateFin)}
+                    {formatDateFr(ind.dateDebut)} → {formatDateFr(lastBlockedDay(ind.dateFin))}
                   </Text>
                   {ind.motif ? (
                     <Text style={styles.blockedMotif} numberOfLines={1}>

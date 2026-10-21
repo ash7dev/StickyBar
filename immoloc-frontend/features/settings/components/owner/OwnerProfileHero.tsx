@@ -60,7 +60,7 @@ export function OwnerProfileHero({
 
   const initials =
     (prenom?.[0] ?? email?.[0] ?? '?').toUpperCase() + (nom?.[0]?.toUpperCase() ?? '');
-  const fullName = [prenom, nom].filter(Boolean).join(' ') || 'Propriétaire Klef';
+  const fullName = [prenom, nom].filter(Boolean).join(' ') || 'Propriétaire Paixi';
 
   const memberLabel = memberSince
     ? `Membre depuis ${new Date(memberSince).toLocaleDateString('fr-FR', { month: 'long', year: 'numeric' })}`

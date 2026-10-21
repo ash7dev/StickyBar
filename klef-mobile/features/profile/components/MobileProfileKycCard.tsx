@@ -270,7 +270,7 @@ export function MobileProfileKycCard({
         <View style={styles.confirmedPill}>
           <ShieldCheck size={16} color={colors.gold[700]} />
           <Text style={styles.confirmedText} numberOfLines={1}>
-            Identité confirmée par Klef
+            Identité confirmée par Paixi
           </Text>
         </View>
       ) : currentKey === 'EN_ATTENTE' ? (

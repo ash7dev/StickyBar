@@ -23,7 +23,7 @@ const FEATURES = [
   {
     icon: Camera,
     title: 'Photos Professionnelles',
-    desc: 'Séance photo HD par un agent Klef. Mise en valeur optimale de chaque pièce.',
+    desc: 'Séance photo HD par un agent Paixi. Mise en valeur optimale de chaque pièce.',
   },
   {
     icon: Building2,
@@ -103,7 +103,7 @@ export function KlefManagedHomeBanner() {
               }}
             >
               <Sparkles className="h-3.5 w-3.5" style={{ color: 'var(--lime-600)' }} />
-              Nouveau · Klef Managed
+              Nouveau · Paixi Managed
             </span>
           </div>
 
@@ -143,7 +143,7 @@ export function KlefManagedHomeBanner() {
                 >
                   Déléguez 100% de la gestion locative de vos biens avec{' '}
                   <strong className="font-semibold" style={{ color: 'var(--forest-800)' }}>
-                    Klef Managed
+                    Paixi Managed
                   </strong>
                   . Nos agents locaux s&apos;occupent de tout sur le terrain.
                 </p>

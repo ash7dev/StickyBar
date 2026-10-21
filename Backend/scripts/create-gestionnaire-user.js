@@ -34,7 +34,7 @@ const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, {
 });
 
 async function main() {
-  console.log('🚀 Création du compte Gestionnaire Klef...\n');
+  console.log('🚀 Création du compte Gestionnaire Paixi...\n');
   console.log('⚠️  Ce script ne modifie AUCUNE donnée existante. INSERT uniquement.\n');
 
   // ── 1. Supabase Auth ──────────────────────────────────────────────────────

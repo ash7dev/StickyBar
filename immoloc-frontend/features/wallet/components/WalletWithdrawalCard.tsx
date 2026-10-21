@@ -3,10 +3,11 @@ import { WithdrawalForm } from './WithdrawalForm';
 
 interface Props {
   soldeDisponible: number;
+  soldeRetirable?: number;
   isLoading: boolean;
 }
 
-export function WalletWithdrawalCard({ soldeDisponible, isLoading }: Props) {
+export function WalletWithdrawalCard({ soldeDisponible, soldeRetirable, isLoading }: Props) {
   return (
     <div className="card p-5 sm:p-7 lg:sticky lg:top-24 relative overflow-hidden transition-all w-full">
       <div className="flex items-center gap-3 mb-6 min-w-0">
@@ -27,7 +28,7 @@ export function WalletWithdrawalCard({ soldeDisponible, isLoading }: Props) {
             <div className="h-12 bg-background-alt rounded-pill w-full" />
           </div>
         ) : (
-          <WithdrawalForm soldeDisponible={soldeDisponible} />
+          <WithdrawalForm soldeDisponible={soldeDisponible} soldeRetirable={soldeRetirable} />
         )}
       </div>
     </div>

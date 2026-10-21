@@ -66,7 +66,7 @@ export function LitigePanel({
   return (
     <div className="space-y-3">
       <Notice tone="error" icon={Gavel} title="Litige ouvert">
-        Les fonds restent gelés jusqu’à résolution par l’équipe support de Klef.
+        Les fonds restent gelés jusqu’à résolution par l’équipe support de Paixi.
       </Notice>
 
       <div className="space-y-4 rounded-card border border-border bg-background-card p-4">

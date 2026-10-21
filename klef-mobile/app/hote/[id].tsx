@@ -165,7 +165,7 @@ export default function HostPublicProfileScreen() {
     try {
       const name = `${data.owner.prenom} ${data.owner.nom}`.trim();
       await Share.share({
-        message: `Découvrez le profil hôte de ${name} sur Klef !`,
+        message: `Découvrez le profil hôte de ${name} sur Paixi !`,
       });
     } catch {
       // Ignorer
@@ -280,7 +280,7 @@ export default function HostPublicProfileScreen() {
                 </View>
 
                 <Text style={styles.hostSubText}>
-                  Hôte sur Klef depuis {formatYear(owner.creeLe)}
+                  Hôte sur Paixi depuis {formatYear(owner.creeLe)}
                 </Text>
 
                 {/* Status Badges Stack */}
@@ -288,7 +288,7 @@ export default function HostPublicProfileScreen() {
                   {owner.isSuperhost && (
                     <View style={styles.superhostPill}>
                       <Award size={13} color={colors.forest[950]} />
-                      <Text style={styles.superhostPillText}>Superhôte Klef</Text>
+                      <Text style={styles.superhostPillText}>Superhôte Paixi</Text>
                     </View>
                   )}
 
@@ -564,7 +564,7 @@ export default function HostPublicProfileScreen() {
                   {avis.map((rev) => {
                     const reviewerName = rev.auteur
                       ? `${rev.auteur.prenom} ${rev.auteur.nom}`.trim()
-                      : 'Voyageur Klef';
+                      : 'Voyageur Paixi';
                     const reviewerInitials = rev.auteur?.prenom
                       ? `${rev.auteur.prenom[0]}${rev.auteur.nom ? rev.auteur.nom[0] : ''}`.toUpperCase()
                       : 'V';

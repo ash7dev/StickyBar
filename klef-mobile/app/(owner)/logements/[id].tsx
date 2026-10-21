@@ -23,6 +23,7 @@ import { MobileOwnerDetailAmenitiesCard } from '../../../features/listings/compo
 import { MobileOwnerDetailCalendar } from '../../../features/listings/components/owner/detail/MobileOwnerDetailCalendar';
 import { MobileOwnerDetailReservations } from '../../../features/listings/components/owner/detail/MobileOwnerDetailReservations';
 import { MobileListingEditSkeleton } from '../../../features/listings/components/owner/MobileListingEditSkeleton';
+import { AnimatedScreenWrapper } from '../../../shared/components/animation/AnimatedScreenWrapper';
 
 export default function MobileOwnerListingDetailScreen() {
   const router = useRouter();
@@ -104,7 +105,13 @@ export default function MobileOwnerListingDetailScreen() {
 
               <TouchableOpacity
                 activeOpacity={0.8}
-                onPress={() => router.back()}
+                onPress={() => {
+                  if (router.canGoBack()) {
+                    router.back();
+                  } else {
+                    router.navigate('/(owner)/listings' as any);
+                  }
+                }}
                 style={styles.backBtn}
               >
                 <ArrowLeft size={14} color={colors.forest[950]} />
@@ -119,7 +126,8 @@ export default function MobileOwnerListingDetailScreen() {
 
   return (
     <SafeAreaView style={styles.safeArea}>
-      {/* ── Top Header ────────────────────────────────────────────── */}
+      <AnimatedScreenWrapper preset="slideUp" distance={18}>
+        {/* ── Top Header ────────────────────────────────────────────── */}
       <MobileOwnerDetailHeader
         listingId={id!}
         titre={listing.titre}
@@ -195,6 +203,7 @@ export default function MobileOwnerListingDetailScreen() {
           <MobileOwnerDetailReservations listingId={id!} reservations={listingReservations} />
         </View>
       </ScrollView>
+      </AnimatedScreenWrapper>
     </SafeAreaView>
   );
 }

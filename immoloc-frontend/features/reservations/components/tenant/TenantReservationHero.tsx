@@ -12,7 +12,7 @@ import type { ReservationDetail } from '@/lib/nestjs/types';
    Statuts — classes complètes, jamais interpolées.
 
    ⚠️ Corrigé : `warning-400`, `error-400` et `neutral-700/800` n'existent pas
-   dans la palette Klef (warning et error s'arrêtent à 50/500/600/700, et les
+   dans la palette Paixi (warning et error s'arrêtent à 50/500/600/700, et les
    neutres du système sont verts, pas ceux de Tailwind). Les badges PENDING,
    CANCELLED, DISPUTED, COMPLETED et EXPIRED rendaient donc sans couleur de
    texte ni de pastille — c'est-à-dire cinq statuts sur huit.

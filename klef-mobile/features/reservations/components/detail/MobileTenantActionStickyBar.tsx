@@ -254,7 +254,7 @@ export function MobileTenantActionStickyBar({ id, res, onRefetch }: MobileTenant
       });
       setShowDisputeModal(false);
       setDisputeDescription('');
-      Alert.alert('Litige ouvert 🚨', "Votre dossier a été transmis à l'équipe support Klef. Les fonds sous séquestre restent gelés pendant l'examen.");
+      Alert.alert('Litige ouvert 🚨', "Votre dossier a été transmis à l'équipe support Paixi. Les fonds sous séquestre restent gelés pendant l'examen.");
       onRefetch();
     } catch (err: any) {
       const rawMsg = err.response?.data?.message;
@@ -280,7 +280,7 @@ export function MobileTenantActionStickyBar({ id, res, onRefetch }: MobileTenant
           <View style={styles.disputeBar}>
             <AlertTriangle size={16} color="#991B1B" />
             <View style={{ flex: 1 }}>
-              <Text style={styles.disputeBarText}>Dossier de litige en cours par le support Klef</Text>
+              <Text style={styles.disputeBarText}>Dossier de litige en cours par le support Paixi</Text>
               <Text style={styles.disputeBarSub}>Les fonds sous séquestre restent gelés pendant l’examen.</Text>
             </View>
           </View>
@@ -627,7 +627,7 @@ export function MobileTenantActionStickyBar({ id, res, onRefetch }: MobileTenant
               <View style={styles.warningNoticeBox}>
                 <AlertTriangle size={18} color="#991B1B" />
                 <Text style={[styles.warningNoticeText, { color: '#7F1D1D' }]}>
-                  En ouvrant un litige, les fonds sous séquestre restent gelés jusqu’à arbitrage par l'équipe support Klef (48-72h).
+                  En ouvrant un litige, les fonds sous séquestre restent gelés jusqu’à arbitrage par l'équipe support Paixi (48-72h).
                 </Text>
               </View>
 

@@ -54,7 +54,7 @@ function BlockScreen({ block }: { block: GateBlock }) {
       <div>
         <h3 className="font-display text-lg font-bold text-foreground">Compte suspendu</h3>
         <p className="text-xs text-foreground-muted mt-1.5 max-w-xs leading-relaxed">
-          Votre compte a été temporairement suspendu. Contactez le support Klef pour plus d&apos;informations.
+          Votre compte a été temporairement suspendu. Contactez le support Paixi pour plus d&apos;informations.
         </p>
       </div>
       <a

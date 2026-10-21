@@ -1,5 +1,5 @@
 // =============================================================================
-// Klef Mobile — Design Tokens & Thème Visuel Officiel v2.1
+// Paixi Mobile — Design Tokens & Thème Visuel Officiel v2.1
 // SOURCE DE VÉRITÉ : 100% Miroir exact de immoloc-frontend/app/globals.css
 // =============================================================================
 
@@ -12,7 +12,7 @@ export const colors = {
     300: '#77BB9E', // texte secondaire sur fond sombre
     400: '#479C79',
     500: '#22805D',
-    600: '#14654C', // ★ Couleur de marque Klef — contrast 7.01:1 avec blanc
+    600: '#14654C', // ★ Couleur de marque Paixi — contrast 7.01:1 avec blanc
     700: '#0F503D',
     800: '#0B3D2E', // ★ Texte sur Lime (9.70:1)
     900: '#072A20', // ★ Surface sombre
@@ -62,7 +62,7 @@ export const colors = {
     950: '#141812',
   },
 
-  // ── Sémantiques Retonalisés Klef ──────────────────────────────────────────
+  // ── Sémantiques Retonalisés Paixi ──────────────────────────────────────────
   success: {
     50: '#E9F6EC',
     100: '#D1FAE5',

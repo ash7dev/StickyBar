@@ -10,7 +10,7 @@ export interface DashboardStatsResponse {
     reservationsDuMois: number;
     caDuMois: number; // Volume total payé par les voyageurs
     netProprietairesDuMois: number; // Montant net revenant aux propriétaires
-    commissionKlefDuMois: number; // Commission / Frais plateforme Klef
+    commissionKlefDuMois: number; // Commission / Frais plateforme Paixi
     tauxOccupation: number;
     healthScore: number; // Score de santé du parc conciergerie (0-100)
   };
@@ -448,18 +448,18 @@ export class GestionnaireService {
         });
       }
 
-      // 3. Commission Klef (montantCommission direct depuis DB)
+      // 3. Commission Paixi (montantCommission direct depuis DB)
       if (comm > 0) {
         items.push({
           id: `${r.id}-com`,
           reference: ref,
           type: 'COMMISSION',
-          libelle: `Commission Klef (7%)`,
+          libelle: `Commission Paixi (7%)`,
           logementTitre,
           ownerName,
           montant: comm,
           date,
-          methode: 'Prélèvement Klef',
+          methode: 'Prélèvement Paixi',
           statut: statusStr,
         });
       }
@@ -718,7 +718,7 @@ export class GestionnaireService {
         email: owner.email,
       },
       gestionnaire: {
-        societe: 'Klef Managed Conciergerie',
+        societe: 'Paixi Managed Conciergerie',
         contact: '+221 77 123 45 67',
         email: 'concierge@klef.sn',
       },

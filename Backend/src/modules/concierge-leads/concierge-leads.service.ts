@@ -22,7 +22,7 @@ export class ConciergeLeadsService {
   constructor(private readonly prisma: PrismaService) {}
 
   /**
-   * Créer une demande de gestion Klef Managed (public)
+   * Créer une demande de gestion Paixi Managed (public)
    */
   async createLead(dto: CreateLeadDto) {
     if (!dto.prenom || !dto.nom || !dto.telephone) {

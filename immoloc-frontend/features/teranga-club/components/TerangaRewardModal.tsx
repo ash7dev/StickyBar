@@ -159,7 +159,7 @@ export function TerangaRewardModal({ isOpen, onClose, earnedCoins }: Props) {
               <p className="font-display text-3xl font-semibold tracking-tight tabular-nums text-gold-700">
                 +{nombre(coins)}
               </p>
-              <p className="text-sm font-semibold text-foreground">Klef Coins</p>
+              <p className="text-sm font-semibold text-foreground">Paixi Coins</p>
 
               <p className="text-xs leading-relaxed text-foreground-muted">
                 Vos coins sont disponibles immédiatement et utilisables sur vos prochaines

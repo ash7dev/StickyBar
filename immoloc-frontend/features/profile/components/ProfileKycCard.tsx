@@ -227,7 +227,7 @@ export function ProfileKycCard({ user, onKycClick }: Props) {
       ) : user.statutKyc === 'VERIFIE' ? (
         <p className="flex items-center justify-center gap-2 rounded-pill border border-gold-200 bg-gold-50 py-3 text-xs font-semibold text-gold-700">
           <ShieldCheck className="h-4 w-4" aria-hidden="true" />
-          Identité confirmée par Klef
+          Identité confirmée par Paixi
         </p>
       ) : user.statutKyc === 'EN_ATTENTE' ? (
         <p className="flex items-center justify-center gap-2 rounded-pill border border-warning-500/25 bg-warning-50 py-3 text-xs font-semibold text-warning-700">

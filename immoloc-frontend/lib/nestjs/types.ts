@@ -1,4 +1,4 @@
-// ── Klef — Types API centralisés ──────────────────────────────────────────
+// ── Paixi — Types API centralisés ──────────────────────────────────────────
 // Une seule source de vérité pour toutes les interfaces request/response NestJS.
 
 // ── Primitives partagées ──────────────────────────────────────────────────────
@@ -609,10 +609,192 @@ export interface ReservationCreatedResponse {
   alreadyProcessed?: boolean;
 }
 
+/** Statut d'un logement tel que l'API le renvoie (enum Prisma StatutLogement). */
+export type StatutLogement = 'DRAFT' | 'PENDING_REVIEW' | 'PUBLISHED' | 'PAUSED' | 'REJECTED' | 'SUSPENDED';
+
+// ── Calendrier propriétaire (multi-logements) ────────────────────────────────
+// Jours au format `YYYY-MM-DD`. Les plages sont semi-ouvertes : `end` est exclu
+// (pour une réservation, c'est le jour du départ).
+
+export interface OwnerCalendarLogement {
+  id: string;
+  titre: string;
+  ville: string;
+  statut: StatutLogement;
+  prixBase: number;
+  photoUrl: string | null;
+}
+
+export interface OwnerCalendarReservationEvent {
+  kind: 'RESERVATION';
+  id: string;
+  logementId: string;
+  start: string;
+  end: string;
+  statut: StatutReservation;
+  nbNuits: number;
+  nbPersonnes: number;
+  netProprietaire: number;
+  locataire: { prenom: string; nomInitiale: string; avatarUrl: string | null };
+}
+
+export interface OwnerCalendarBlockEvent {
+  kind: 'BLOCK';
+  id: string;
+  logementId: string;
+  start: string;
+  end: string;
+  motif: string | null;
+}
+
+export type OwnerCalendarEvent = OwnerCalendarReservationEvent | OwnerCalendarBlockEvent;
+
+export interface OwnerCalendarResponse {
+  range: { start: string; end: string };
+  logements: OwnerCalendarLogement[];
+  events: OwnerCalendarEvent[];
+}
+
+export interface CreateOwnerBlockPayload {
+  logementIds: string[];
+  dateDebut: string;
+  /** Jour de fin exclu */
+  dateFin: string;
+  motif?: string;
+}
+
+// ── Accueil propriétaire (GET /dashboard/owner/overview) ─────────────────────
+
+export interface OwnerOccupancy {
+  bookedNights: number;
+  availableNights: number;
+  /** 0 à 1 */
+  rate: number;
+}
+
+export interface OwnerOverviewLogement {
+  id: string;
+  titre: string;
+  ville: string;
+  statut: StatutLogement;
+  photoUrl: string | null;
+  /** Mois en cours */
+  occupancy: OwnerOccupancy;
+  revenueNet: number;
+  netPerNight: number | null;
+}
+
+export interface OwnerUpcomingPayout {
+  reservationId: string;
+  /** Jour du check-in, quand le séquestre est libéré */
+  date: string;
+  amount: number;
+  locatairePrenom: string;
+  logementTitre: string;
+}
+
+export interface OwnerOverviewResponse {
+  today: string;
+  revenue: {
+    currentMonth: number;
+    previousMonth: number;
+    changePct: number | null;
+    /** `month` au format `YYYY-MM`, du plus ancien au mois en cours */
+    monthly: Array<{ month: string; revenue: number; stays: number }>;
+  };
+  occupancy: OwnerOccupancy & { windowDays: number };
+  logements: OwnerOverviewLogement[];
+  wallet: { available: number; upcomingTotal: number; upcomingPayouts: OwnerUpcomingPayout[] };
+  reputation: {
+    averageRating: number | null;
+    totalReviews: number;
+    lastReview: {
+      note: number;
+      commentaire: string | null;
+      auteurPrenom: string;
+      logementTitre: string | null;
+      creeLe: string;
+    } | null;
+  };
+  tips: Array<{
+    kind: 'LOW_OCCUPANCY';
+    logementId: string;
+    logementTitre: string;
+    freeNights: number;
+    horizonDays: number;
+  }>;
+}
+
+// ── Revenus propriétaire (GET /dashboard/owner/revenue…) ─────────────────────
+
+export type RevenuePeriod = 'month' | 'quarter' | 'year';
+
+export interface RevenueMetrics {
+  revenueNet: number;
+  nightsSold: number;
+  occupancy: OwnerOccupancy;
+  netPerNight: number | null;
+  stays: number;
+}
+
+export type RevenueTimelineEvent =
+  | { kind: 'UPCOMING'; date: string; amount: number; reservationId: string; locatairePrenom: string; logementTitre: string }
+  | { kind: 'CREDITED'; date: string; amount: number; reservationId: string | null; locatairePrenom: string | null; logementTitre: string | null }
+  | { kind: 'WITHDRAWAL'; date: string; amount: number; methode: string; statut: string };
+
+export interface OwnerRevenueResponse {
+  period: RevenuePeriod;
+  /** `end` exclu */
+  range: { start: string; end: string };
+  current: RevenueMetrics;
+  previous: RevenueMetrics;
+  /** 12 derniers mois, du plus ancien au mois en cours ; `month` = `YYYY-MM` */
+  history: Array<RevenueMetrics & { month: string }>;
+  historyPreviousYear: Array<{ month: string; revenueNet: number }>;
+  logements: Array<{ id: string; titre: string; ville: string; metrics: RevenueMetrics }>;
+  wallet: { available: number; escrow: number; withdrawnThisMonth: number };
+  timeline: RevenueTimelineEvent[];
+}
+
+export interface OwnerStatementResponse {
+  month: string;
+  range: { start: string; end: string };
+  owner: { prenom: string; nom: string };
+  stays: Array<{
+    reservationId: string;
+    arrivee: string;
+    nbNuits: number;
+    locataire: string;
+    logementTitre: string;
+    paye: number;
+    commission: number;
+    net: number;
+  }>;
+  totals: { paye: number; commission: number; net: number };
+  wallet: { opening: number; credits: number; deductions: number; withdrawals: number; refunds: number; closing: number };
+}
+
+export interface OwnerTransactionsResponse {
+  items: Array<{
+    id: string;
+    type: TransactionType;
+    sens: 'CREDIT' | 'DEBIT';
+    montant: number;
+    soldeApres: number;
+    description: string | null;
+    reservationId: string | null;
+    creeLe: string;
+    /** Trace de validation d'un retrait : aucun mouvement de solde */
+    isTrace: boolean;
+  }>;
+  nextCursor: string | null;
+}
+
 // ── Wallet ────────────────────────────────────────────────────────────────────
 
 export type TransactionType =
   | 'CREDIT_LOCATION'
+  | 'REMBOURSEMENT'
   | 'DEBIT_PENALITE'
   | 'DEBIT_RETRAIT'
   | 'DEBIT_DETTE';
@@ -621,7 +803,7 @@ export type TransactionSens = 'CREDIT' | 'DEBIT';
 
 export type MethodeRetrait = 'WAVE' | 'ORANGE_MONEY' | 'VIREMENT';
 
-export type StatutRetrait = 'EN_ATTENTE' | 'VALIDE' | 'EFFECTUE' | 'REJETE';
+export type StatutRetrait = 'EN_ATTENTE' | 'SUSPENDU_POUR_LITIGE' | 'VALIDE' | 'EFFECTUE' | 'REJETE';
 
 export interface WalletTransaction {
   id: string;
@@ -643,6 +825,8 @@ export interface WalletTransaction {
 export interface WalletData {
   id?: string;
   soldeDisponible: number;
+  soldeGeleLitige?: number;
+  soldeRetirable?: number;
   soldeProprietaire?: number;
   soldeLocataire?: number;
   dettePenalites: number;

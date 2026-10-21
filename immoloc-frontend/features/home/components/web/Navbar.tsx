@@ -24,6 +24,7 @@ import { ActionGateModal } from '@/features/gate/components/ActionGateModal';
 import { createClient } from '@/lib/supabase/client';
 import { MobileBottomNav } from '@/components/layout/mobile-bottom-nav';
 import { CurrencySelector } from '@/components/layout/currency-selector';
+import { PaixiLogo } from '@/components/brand/PaixiLogo';
 
 const LINKS = [
   { href: '/',                 label: 'Accueil'           },
@@ -53,7 +54,8 @@ export function Navbar() {
   // ── Chargement des données de l'utilisateur Supabase ──────────────────────
   useEffect(() => {
     const supabase = createClient();
-    supabase.auth.getUser().then(({ data }) => setUser(data.user ?? null));
+    // getSession lit le cookie local (0 réseau) ; getUser fait un aller-retour Supabase
+    supabase.auth.getSession().then(({ data }) => setUser(data.session?.user ?? null));
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_, session) => {
       setUser(session?.user ?? null);
     });
@@ -190,15 +192,10 @@ export function Navbar() {
           <div className="flex justify-start shrink-0">
             <Link
               href="/"
-              aria-label="Klef — accueil"
-              className="flex items-baseline rounded-pill focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-ring"
+              aria-label="Paixi — accueil"
+              className="flex items-center rounded-pill focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-ring"
             >
-              <span className="font-display text-[1.375rem] sm:text-2xl md:text-[1.75rem] font-semibold tracking-tight text-forest-800">
-                klef
-              </span>
-              <span className="font-display text-[1.375rem] sm:text-2xl md:text-[1.75rem] font-semibold text-lime-600" aria-hidden="true">
-                .
-              </span>
+              <PaixiLogo className="text-[1.375rem] sm:text-2xl md:text-[1.75rem]" />
             </Link>
           </div>
 
@@ -343,7 +340,7 @@ export function Navbar() {
                         <span>Mes Réservations</span>
                       </Link>
 
-                      {/* 3. Klef Teranga Club */}
+                      {/* 3. Paixi Teranga Club */}
                       <Link
                         role="menuitem"
                         href="/teranga-club"
@@ -353,7 +350,7 @@ export function Navbar() {
                         <div className="w-7 h-7 rounded-lg bg-forest-50 flex items-center justify-center text-forest-700 shrink-0">
                           <Coins className="w-4 h-4" />
                         </div>
-                        <span>Klef Teranga Club 🪙</span>
+                        <span>Paixi Teranga Club 🪙</span>
                       </Link>
 
                       {/* 4. Paramètres */}

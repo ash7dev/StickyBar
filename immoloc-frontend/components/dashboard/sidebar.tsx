@@ -4,27 +4,43 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useEffect, useRef, useState } from 'react';
 import {
-  ArrowLeftRight, Building2, CalendarDays, LayoutDashboard,
-  LogOut, Settings, Wallet, X,
+  ArrowLeftRight, BarChart3, Building2, CalendarDays, CalendarRange, LayoutDashboard,
+  LogOut, Plus, Settings, Wallet, X,
 } from 'lucide-react';
 import { cn } from '@/lib/utils/cn';
 import { useSwitchRole } from '@/features/auth/hooks/use-switch-role';
 import { useAuth } from '@/features/auth/hooks/use-auth';
 import { useRoleStore } from '@/stores/role.store';
 import { useCurrentUser } from '@/hooks/use-current-user';
+import { usePendingDecisions } from '@/features/calendar/hooks/use-pending-decisions';
+import { PaixiLogo } from '@/components/brand/PaixiLogo';
 
 type NavItem = {
   href: string;
   label: string;
   icon: React.ComponentType<{ className?: string }>;
   exact?: boolean;
+  /** Clé du compteur affiché en pastille */
+  badge?: 'decisions';
 };
 
-const MAIN_NAV: NavItem[] = [
-  { href: '/dashboard', label: 'Vue d’ensemble', icon: LayoutDashboard, exact: true },
-  { href: '/dashboard/annonces', label: 'Mes annonces', icon: Building2 },
-  { href: '/dashboard/reservations', label: 'Réservations', icon: CalendarDays },
-  { href: '/dashboard/wallet', label: 'Wallet', icon: Wallet },
+const NAV_GROUPS: Array<{ title: string; items: NavItem[] }> = [
+  {
+    title: 'Gestion',
+    items: [
+      { href: '/dashboard', label: 'Aujourd’hui', icon: LayoutDashboard, exact: true },
+      { href: '/dashboard/calendrier', label: 'Calendrier', icon: CalendarRange },
+      { href: '/dashboard/reservations', label: 'Réservations', icon: CalendarDays, badge: 'decisions' },
+      { href: '/dashboard/annonces', label: 'Mes biens', icon: Building2 },
+    ],
+  },
+  {
+    title: 'Finances',
+    items: [
+      { href: '/dashboard/stats', label: 'Revenus', icon: BarChart3 },
+      { href: '/dashboard/wallet', label: 'Wallet', icon: Wallet },
+    ],
+  },
 ];
 
 const BOTTOM_NAV: NavItem[] = [
@@ -36,31 +52,26 @@ interface SidebarProps {
   onClose: () => void;
 }
 
-function NavLink({ item, onClose }: { item: NavItem; onClose: () => void }) {
+function NavLink({ item, onClose, count = 0 }: { item: NavItem; onClose: () => void; count?: number }) {
   const pathname = usePathname();
   const active = item.exact ? pathname === item.href : pathname.startsWith(item.href);
+  const countLabel = count > 99 ? '99+' : String(count);
 
   return (
     <Link
       href={item.href}
       onClick={onClose}
-      // aria-current manquait : l'etat actif n'etait signale que par la
-      // couleur, donc invisible pour un lecteur d'ecran.
+      // aria-current : l'état actif est annoncé aux lecteurs d'écran, pas seulement coloré.
       aria-current={active ? 'page' : undefined}
       className={cn(
         'group relative flex items-center gap-3 rounded-inner px-4 py-3 text-sm transition-colors duration-150',
+        // Actif en lime-100 : même teinte que la pastille active de la navbar publique.
         active
-          /* L'etat actif etait un aplat bg-action plein. Comme un element
-             est toujours actif, la barre laterale affichait en permanence un
-             gros bloc lime, en plus du badge « Hote » et du bouton de
-             bascule, tous deux en forest-950 a texte lime.
-             lime-100 est la meme teinte que la pastille active de la navbar
-             publique : l'etat actif se lit pareil partout. */
           ? 'bg-lime-100 font-semibold text-forest-800'
           : 'text-foreground-muted hover:bg-background-alt hover:text-forest-800',
       )}
     >
-      {/* Repere lateral : second signal, en plus de la couleur. */}
+      {/* Repère latéral : second signal, en plus de la couleur. */}
       <span
         aria-hidden="true"
         className={cn(
@@ -69,8 +80,13 @@ function NavLink({ item, onClose }: { item: NavItem; onClose: () => void }) {
         )}
       />
       <item.icon className="h-[1.125rem] w-[1.125rem] shrink-0" aria-hidden="true" />
-      <span className="truncate">{item.label}</span>
-      {/* Le point actif clignotait en animate-pulse, en permanence. */}
+      <span className="flex-1 truncate">{item.label}</span>
+      {count > 0 && (
+        <span className="rounded-pill bg-gold-400 px-2 py-0.5 text-[0.6875rem] font-bold tabular-nums text-gold-800">
+          {countLabel}
+          <span className="sr-only"> à traiter</span>
+        </span>
+      )}
     </Link>
   );
 }
@@ -82,6 +98,8 @@ export function DashboardSidebar({ isOpen, onClose }: SidebarProps) {
   const [switchError, setSwitchError] = useState(false);
   const onboardingDraft = useRoleStore((s) => s.onboardingDraft);
   const { data: user, isLoading } = useCurrentUser();
+  const { data: decisions = [] } = usePendingDecisions();
+  const counts = { decisions: decisions.length };
 
   const panelRef = useRef<HTMLElement>(null);
   const closeRef = useRef<HTMLButtonElement>(null);
@@ -122,7 +140,7 @@ export function DashboardSidebar({ isOpen, onClose }: SidebarProps) {
   }, [isOpen, onClose]);
 
   /* Le repli du nom etait BRAND.name : un utilisateur dont le profil n'avait
-     pas encore charge voyait « Klef » comme son propre nom, avec « KL » en
+     pas encore charge voyait « Paixi » comme son propre nom, avec « KL » en
      initiales. */
   const prenom = user?.prenom ?? onboardingDraft?.prenom ?? '';
   const nom = user?.nom ?? onboardingDraft?.nom ?? '';
@@ -162,11 +180,11 @@ export function DashboardSidebar({ isOpen, onClose }: SidebarProps) {
         ref={panelRef}
         aria-label="Navigation du tableau de bord"
         className={cn(
-          'fixed inset-y-0 left-0 z-50 flex w-64 shrink-0 flex-col',
+          // Tiroir sous 1024 px ; sur desktop, la navigation horizontale (OwnerTopNav) prend le relais
+          'fixed inset-y-0 left-0 z-50 flex w-64 shrink-0 flex-col lg:hidden',
           'border-r border-border bg-background-card shadow-lg',
           'transition-transform duration-200 ease-[cubic-bezier(0.22,1,0.36,1)]',
           isOpen ? 'translate-x-0' : '-translate-x-full',
-          'lg:relative lg:inset-auto lg:z-auto lg:translate-x-0 lg:shadow-none',
         )}
       >
         <div className="shrink-0 space-y-4 border-b border-border p-5">
@@ -178,9 +196,8 @@ export function DashboardSidebar({ isOpen, onClose }: SidebarProps) {
             Badge et bouton sont maintenant groupes.
           */}
           <div className="flex items-center justify-between gap-2">
-            <Link href="/" className="flex items-baseline">
-              <span className="font-display text-2xl font-semibold tracking-tight text-forest-800">klef</span>
-              <span className="font-display text-2xl font-semibold text-lime-600" aria-hidden="true">.</span>
+            <Link href="/" className="flex items-center">
+              <PaixiLogo className="text-2xl" />
             </Link>
 
             <div className="flex items-center gap-2">
@@ -222,10 +239,37 @@ export function DashboardSidebar({ isOpen, onClose }: SidebarProps) {
           </div>
         </div>
 
-        <nav className="flex-1 space-y-1 overflow-y-auto p-3">
-          {MAIN_NAV.map((item) => <NavLink key={item.href} item={item} onClose={onClose} />)}
-          <div className="my-3 border-t border-border" />
-          {BOTTOM_NAV.map((item) => <NavLink key={item.href} item={item} onClose={onClose} />)}
+        <nav className="flex-1 space-y-5 overflow-y-auto p-3">
+          <Link
+            href="/dashboard/annonces/nouvelle"
+            onClick={onClose}
+            className="btn-primary w-full gap-2 px-4 py-3 text-sm"
+          >
+            <Plus className="h-4 w-4 shrink-0" aria-hidden="true" />
+            Publier un bien
+          </Link>
+
+          {NAV_GROUPS.map((group) => (
+            <div key={group.title} className="space-y-1">
+              <p className="px-4 pb-1 text-[0.6875rem] font-semibold uppercase tracking-wider text-foreground-muted">
+                {group.title}
+              </p>
+              {group.items.map((item) => (
+                <NavLink
+                  key={item.href}
+                  item={item}
+                  onClose={onClose}
+                  count={item.badge ? counts[item.badge] : 0}
+                />
+              ))}
+            </div>
+          ))}
+
+          <div className="space-y-1 border-t border-border pt-3">
+            {BOTTOM_NAV.map((item) => (
+              <NavLink key={item.href} item={item} onClose={onClose} />
+            ))}
+          </div>
         </nav>
 
         <div className="shrink-0 space-y-2 border-t border-border p-3">

@@ -146,7 +146,7 @@ export function AdminKycTable({
 
           <tbody className="divide-y divide-border">
             {users.map((item) => {
-              const nomComplet = `${item.prenom ?? ''} ${item.nom ?? ''}`.trim() || 'Utilisateur Klef';
+              const nomComplet = `${item.prenom ?? ''} ${item.nom ?? ''}`.trim() || 'Utilisateur Paixi';
               const initiales =
                 `${item.prenom?.[0] ?? ''}${item.nom?.[0] ?? ''}`.toUpperCase() ||
                 (item.email?.[0] ?? 'U').toUpperCase();

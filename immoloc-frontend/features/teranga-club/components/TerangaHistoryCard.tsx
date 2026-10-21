@@ -42,7 +42,7 @@ export function TerangaHistoryCard({ transactions }: Props) {
         </span>
         <p className="text-sm font-semibold text-foreground">Aucune transaction</p>
         <p className="text-xs text-foreground-muted">
-          Vos gains de Klef Coins apparaîtront ici.
+          Vos gains de Paixi Coins apparaîtront ici.
         </p>
       </section>
     );
@@ -54,7 +54,7 @@ export function TerangaHistoryCard({ transactions }: Props) {
       <header className="space-y-4 border-b border-border pb-4">
         <div>
           <h2 className="font-display text-lg font-semibold text-foreground">
-            Historique des Klef Coins
+            Historique des Paixi Coins
           </h2>
           <p className="mt-0.5 text-xs text-foreground-muted">
             Crédits et déductions enregistrés sur votre compte.

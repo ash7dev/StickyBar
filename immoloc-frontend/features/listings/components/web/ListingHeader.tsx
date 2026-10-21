@@ -131,7 +131,7 @@ export function ListingHeader({ listing }: ListingHeaderProps) {
 
   const share = (platform: 'whatsapp' | 'facebook' | 'x') => {
     const url = encodeURIComponent(window.location.href);
-    const text = encodeURIComponent(`Découvrez ${listing.titre} sur Klef`);
+    const text = encodeURIComponent(`Découvrez ${listing.titre} sur Paixi`);
     const map = {
       whatsapp: `https://api.whatsapp.com/send?text=${text}%20${url}`,
       facebook: `https://www.facebook.com/sharer/sharer.php?u=${url}`,

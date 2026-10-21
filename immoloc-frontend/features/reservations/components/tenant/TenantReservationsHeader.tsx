@@ -60,7 +60,7 @@ export function TenantReservationsHeader({
           </h1>
 
           <p className="text-sm text-foreground-muted leading-relaxed font-sans">
-            Gérez vos réservations, accédez à vos instructions d'arrivée et bénéficiez de la protection complète du séquestre Klef.
+            Gérez vos réservations, accédez à vos instructions d'arrivée et bénéficiez de la protection complète du séquestre Paixi.
           </p>
         </div>
 
@@ -72,7 +72,7 @@ export function TenantReservationsHeader({
           <div>
             <div className="flex items-center gap-1.5">
               <span className="text-xs font-extrabold text-forest-900 uppercase tracking-wider">
-                Garantie Séquestre Klef
+                Garantie Séquestre Paixi
               </span>
               <span className="w-2 h-2 rounded-full bg-lime-500 animate-pulse" />
             </div>

@@ -42,7 +42,7 @@ const fmtDate = (d?: string | null) => {
     : date.toLocaleDateString('fr-FR', { day: '2-digit', month: 'short', year: 'numeric' });
 };
 
-/** Écart toléré sur l'égalité brut = hôte + Klef, en francs. */
+/** Écart toléré sur l'égalité brut = hôte + Paixi, en francs. */
 const TOLERANCE = 1;
 
 export function AdminStatsKlefLedgerTable({ entries, isLoading }: AdminStatsKlefLedgerTableProps) {
@@ -73,7 +73,7 @@ export function AdminStatsKlefLedgerTable({ entries, isLoading }: AdminStatsKlef
   }, [lignes]);
 
   function exporterCsv() {
-    const enTetes = ['Date', 'Reference', 'Logement', 'Ville', 'Locataire', 'Type', 'Brut', 'Part hote', 'Part Klef'];
+    const enTetes = ['Date', 'Reference', 'Logement', 'Ville', 'Locataire', 'Type', 'Brut', 'Part hote', 'Part Paixi'];
     const echapper = (v: unknown) => `"${String(v ?? '').replace(/"/g, '""')}"`;
     const corps = lignes.map((e) =>
       [e.date, e.id, e.title, e.ville, e.locataire, e.typeGain, e.totalBrut, e.partHote, e.partKlef]
@@ -169,7 +169,7 @@ export function AdminStatsKlefLedgerTable({ entries, isLoading }: AdminStatsKlef
         <div className="overflow-x-auto">
           <table className="w-full text-left text-xs">
             <caption className="sr-only">
-              Journal des commissions Klef, {lignes.length} écritures
+              Journal des commissions Paixi, {lignes.length} écritures
             </caption>
 
             <thead className="border-b border-border bg-background-alt text-[0.6875rem] font-semibold uppercase tracking-wider text-foreground-muted">
@@ -181,7 +181,7 @@ export function AdminStatsKlefLedgerTable({ entries, isLoading }: AdminStatsKlef
                     comparer des ordres de grandeur en balayant la colonne. */}
                 <th scope="col" className={cn('px-4 py-3', chiffre)}>Brut</th>
                 <th scope="col" className={cn('px-4 py-3', chiffre)}>Part hôte</th>
-                <th scope="col" className={cn('px-4 py-3', chiffre)}>Part Klef</th>
+                <th scope="col" className={cn('px-4 py-3', chiffre)}>Part Paixi</th>
               </tr>
             </thead>
 
@@ -233,7 +233,7 @@ export function AdminStatsKlefLedgerTable({ entries, isLoading }: AdminStatsKlef
                       {fmtMontant(item.totalBrut)}
                       {desequilibre && (
                         <span
-                          title="Brut ≠ part hôte + part Klef"
+                          title="Brut ≠ part hôte + part Paixi"
                           className="ml-1.5 inline-flex align-middle text-error-600"
                         >
                           <AlertTriangle className="h-3.5 w-3.5" aria-hidden />

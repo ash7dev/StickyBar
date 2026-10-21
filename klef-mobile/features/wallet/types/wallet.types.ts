@@ -18,6 +18,8 @@ export interface WalletTransaction {
 export interface WalletData {
   id?: string;
   soldeDisponible: number;
+  soldeGeleLitige?: number;
+  soldeRetirable?: number;
   soldeProprietaire?: number;
   soldeLocataire?: number;
   dettePenalites: number;

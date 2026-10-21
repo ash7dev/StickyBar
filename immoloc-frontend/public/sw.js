@@ -1,5 +1,5 @@
-// Service Worker pour ImmoLoc PWA
-const CACHE_NAME = 'immoloc-v1';
+// Service Worker pour Paixi PWA
+const CACHE_NAME = 'paixi-v2';
 const RUNTIME_CACHE = 'immoloc-runtime';
 
 // Ressources essentielles à mettre en cache immédiatement
@@ -66,8 +66,8 @@ self.addEventListener('push', (event) => {
   console.log('[SW] Push event received!', event);
 
   let data = {
-    title: 'Klef - Notification',
-    body: 'Vous avez reçu une nouvelle mise à jour sur Klef.',
+    title: 'Paixi - Notification',
+    body: 'Vous avez reçu une nouvelle mise à jour sur Paixi.',
     icon: '/icon.svg',
     badge: '/icon.svg',
     data: { url: '/' },
@@ -103,7 +103,7 @@ self.addEventListener('push', (event) => {
     tag: data.tag || `klef-${Date.now()}` // Tag unique pour chaque notification
   };
 
-  console.log('[SW] Showing notification with title:', data.title || 'Klef');
+  console.log('[SW] Showing notification with title:', data.title || 'Paixi');
   console.log('[SW] Notification options:', options);
 
   // Envoyer un message aux fenêtres ouvertes pour déclencher le carillon sonore Web Audio API
@@ -114,7 +114,7 @@ self.addEventListener('push', (event) => {
   });
 
   event.waitUntil(
-    self.registration.showNotification(data.title || 'Klef', options)
+    self.registration.showNotification(data.title || 'Paixi', options)
       .then(() => console.log('[SW] Notification shown successfully!'))
       .catch(err => console.error('[SW] Error showing notification:', err))
   );

@@ -21,9 +21,11 @@ import { MobileProfileHero } from '../../features/profile/components/MobileProfi
 import { MobileActiveRoleCard } from '../../features/profile/components/MobileActiveRoleCard';
 import { MobileProfileInfoCard } from '../../features/profile/components/MobileProfileInfoCard';
 import { MobileProfileKycCard } from '../../features/profile/components/MobileProfileKycCard';
+import { MobileKlefAssistanceCard } from '../../features/profile/components/MobileKlefAssistanceCard';
 import { MobileSecurityCard } from '../../features/profile/components/MobileSecurityCard';
 import { MobileTerangaClubCard } from '../../features/profile/components/MobileTerangaClubCard';
 import { MobileProfileActionsCard } from '../../features/profile/components/MobileProfileActionsCard';
+import { MobileProfileLegalCard } from '../../features/profile/components/MobileProfileLegalCard';
 import { TenantActionGateModal } from '../../shared/components/gate/TenantActionGateModal';
 
 const PAYOUT_CACHE_KEY = 'klef_tenant_payout_cache_v1';
@@ -163,7 +165,7 @@ export default function ProfileScreen() {
           <Text style={styles.screenTitle}>Mon Profil & Compte</Text>
 
           <Text style={styles.screenSubtitle}>
-            Gérez vos informations personnelles, votre sécurité et la vérification de votre identité Klef.
+            Gérez vos informations personnelles, votre sécurité et la vérification de votre identité Paixi.
           </Text>
         </View>
 
@@ -171,7 +173,7 @@ export default function ProfileScreen() {
           <View style={styles.guardedStack}>
             <AuthRequiredCard
               title="Connectez-vous pour accéder à vos paramètres"
-              subtitle="Gérez vos informations personnelles, votre sécurité et la vérification de votre identité Klef."
+              subtitle="Gérez vos informations personnelles, votre sécurité et la vérification de votre identité Paixi."
             />
           </View>
         ) : (
@@ -212,6 +214,11 @@ export default function ProfileScreen() {
               gmv12Mois={terangaAccount?.gmv12Mois ?? (authUser as any)?.gmv12Mois ?? 0}
             />
 
+            <SectionDivider label="Assistance & Support" />
+
+            {/* 5. Carte Paixi Assistance 24/7 (Fond Blanc + CTA) */}
+            <MobileKlefAssistanceCard />
+
             <SectionDivider label="Sécurité & Compte" />
 
             {/* 6. Sécurité & Mot de Passe */}
@@ -219,6 +226,9 @@ export default function ProfileScreen() {
               userEmail={authUser?.email}
               onUpdated={handleRefresh}
             />
+
+            {/* 6b. Confidentialité & Mentions Légales (CGU 1:1 & Privacy) */}
+            <MobileProfileLegalCard />
 
             {/* 7. Actions de Compte (Bascule Rôle, Déconnexion, Suppression) */}
             <MobileProfileActionsCard />

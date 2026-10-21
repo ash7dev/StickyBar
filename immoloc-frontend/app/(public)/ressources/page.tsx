@@ -61,7 +61,7 @@ const PHOTO_TIPS = [
 const PRICING_STEPS = [
   {
     title: 'Comparez trois biens équivalents',
-    body: 'Même quartier, même type, même capacité. Filtrez sur Klef par ville et par nombre de personnes : vous verrez la fourchette réelle du marché, pas une estimation.',
+    body: 'Même quartier, même type, même capacité. Filtrez sur Paixi par ville et par nombre de personnes : vous verrez la fourchette réelle du marché, pas une estimation.',
   },
   {
     title: 'Démarrez 10 à 15 % sous la fourchette',
@@ -256,7 +256,7 @@ export default function RessourcesPage() {
                 volume de votre activité.
               </p>
               <p className="mt-3 text-sm leading-relaxed text-foreground-muted">
-                Klef ne se substitue pas à vos obligations déclaratives et ne
+                Paixi ne se substitue pas à vos obligations déclaratives et ne
                 prélève aucun impôt à votre place. Nous vous fournissons le
                 relevé de vos encaissements, exportable depuis votre tableau de
                 bord, pour que vous ou votre comptable puissiez l’utiliser.

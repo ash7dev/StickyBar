@@ -101,7 +101,7 @@ export default function TerangaClubScreen() {
         </TouchableOpacity>
 
         <View style={styles.headerTitleBox}>
-          <Text style={styles.headerTitle}>Klef Teranga Club</Text>
+          <Text style={styles.headerTitle}>Paixi Teranga Club</Text>
           <Text style={styles.headerSubtitle}>Programme de fidélité & cashback</Text>
         </View>
 

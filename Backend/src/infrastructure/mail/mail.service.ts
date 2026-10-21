@@ -31,7 +31,7 @@ export class MailService {
   constructor() {
     this.templatesPath = join(__dirname, 'templates');
     this.compiledTemplates = new Map();
-    this.defaultFrom = process.env.MAIL_FROM || 'Klef <noreply@klef.com>';
+    this.defaultFrom = process.env.MAIL_FROM || 'Paixi <noreply@klef.com>';
     this.appUrl = process.env.APP_URL || 'https://klef.com';
 
     // Charger et compiler la template de base
@@ -174,7 +174,7 @@ export class MailService {
   async sendWelcomeEmail(to: string, userName: string): Promise<void> {
     await this.sendMail({
       to,
-      subject: `Bienvenue sur Klef, ${userName} !`,
+      subject: `Bienvenue sur Paixi, ${userName} !`,
       template: 'welcome',
       context: { userName },
     });
@@ -190,7 +190,7 @@ export class MailService {
   ): Promise<void> {
     await this.sendMail({
       to,
-      subject: 'Vérifiez votre adresse email - Klef',
+      subject: 'Vérifiez votre adresse email - Paixi',
       template: 'verify-email',
       context: { userName, verificationUrl },
     });
@@ -206,7 +206,7 @@ export class MailService {
   ): Promise<void> {
     await this.sendMail({
       to,
-      subject: 'Réinitialisation de votre mot de passe - Klef',
+      subject: 'Réinitialisation de votre mot de passe - Paixi',
       template: 'reset-password',
       context: { userName, resetUrl },
     });

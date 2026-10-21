@@ -8,6 +8,8 @@ import { TenantSearchBarPill } from '../../shared/components/layout/TenantSearch
 import { TenantSearchModal, SearchParams } from '../../shared/components/layout/TenantSearchModal';
 import { ExplorerCategoryRail, CategoryItem } from '../../shared/components/layout/ExplorerCategoryRail';
 import { HomeDealsBanner } from '../../shared/components/layout/HomeDealsBanner';
+import { HomeManagedConciergeBanner } from '../../shared/components/layout/HomeManagedConciergeBanner';
+import { HomeResumeSearchBanner } from '../../shared/components/layout/HomeResumeSearchBanner';
 import { TenantFeedSections } from '../../shared/components/layout/TenantFeedSections';
 
 export default function HomeScreen() {
@@ -34,7 +36,6 @@ export default function HomeScreen() {
   const handleSearch = (params: SearchParams) => {
     setSearchParams(params);
     setSearchModalVisible(false);
-    // Redirige directement vers la page Explorer avec les critères de recherche
     router.push({
       pathname: '/(tenant)/explorer',
       params: {
@@ -42,13 +43,33 @@ export default function HomeScreen() {
         ...(params.arrivee && { arrivee: params.arrivee }),
         ...(params.depart && { depart: params.depart }),
         ...(params.nbNuits && { nbNuits: params.nbNuits.toString() }),
+        ...(params.nbPersonnes && { nbPersonnes: params.nbPersonnes.toString() }),
+        ...(params.nombreChambres !== undefined && { nombreChambres: params.nombreChambres.toString() }),
       },
     });
   };
 
+  const handleResumeSearch = (params: SearchParams) => {
+    router.push({
+      pathname: '/(tenant)/explorer',
+      params: {
+        ...(params.ville && { ville: params.ville }),
+        ...(params.arrivee && { arrivee: params.arrivee }),
+        ...(params.depart && { depart: params.depart }),
+        ...(params.nbNuits && { nbNuits: params.nbNuits.toString() }),
+        ...(params.nbPersonnes && { nbPersonnes: params.nbPersonnes.toString() }),
+        ...(params.nombreChambres !== undefined && { nombreChambres: params.nombreChambres.toString() }),
+      },
+    });
+  };
+
+  const handleEditSearch = (params: SearchParams) => {
+    setSearchParams(params);
+    setSearchModalVisible(true);
+  };
+
   const handleCategorySelect = useCallback((cat: CategoryItem) => {
     Haptics.selectionAsync().catch(() => {});
-    // Redirige directement vers la page Explorer avec la catégorie sélectionnée
     router.push({
       pathname: '/(tenant)/explorer',
       params: {
@@ -108,10 +129,19 @@ export default function HomeScreen() {
           />
         }
       >
+        {/* 🔄 Carte de Reprise de Recherche */}
+        <HomeResumeSearchBanner
+          onResumeSearch={handleResumeSearch}
+          onEditSearch={handleEditSearch}
+        />
+
         {/* 🔥 Smart Weekend Deals Banner */}
         <HomeDealsBanner
           onSelectListing={(listing) => router.push(`/listing/${listing.id}` as any)}
         />
+
+        {/* 🏢 Bannière Prise en Charge Conciergerie Paixi Managed */}
+        <HomeManagedConciergeBanner />
 
         {/* Feed Sections */}
         <TenantFeedSections

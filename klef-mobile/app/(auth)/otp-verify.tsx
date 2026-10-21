@@ -247,7 +247,7 @@ export default function OtpVerifyScreen() {
           <View style={styles.securityBadge}>
             <ShieldCheck size={14} color={colors.neutral[400]} />
             <Text style={styles.securityBadgeText}>
-              Protection renforcée SSL • Code éphémère sécurisé Klef
+              Protection renforcée SSL • Code éphémère sécurisé Paixi
             </Text>
           </View>
         </ScrollView>

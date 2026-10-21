@@ -1,146 +1,98 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
 'use client';
 
-import { useMemo } from 'react';
-import { useQuery } from '@tanstack/react-query';
-import { dashboardApi } from '@/lib/nestjs';
-import { buildMonthlyRevenue } from '@/lib/dashboard/owner-tokens';
-import { nestFetch } from '@/lib/nestjs/api-client';
-import { NEST_API } from '@/lib/nestjs/endpoints';
-import { HostWelcomeBanner } from '@/features/dashboard/components/owner/HostWelcomeBanner';
+import { AlertCircle } from 'lucide-react';
+import { useCurrentUser } from '@/hooks/use-current-user';
 import { CancellationWarningBanner } from '@/features/dashboard/components/owner/CancellationWarningBanner';
-import { KpiSection } from '@/features/dashboard/components/owner/KpiSection';
-import { RevenueChart } from '@/features/dashboard/components/owner/RevenueChart';
-import { WalletSnapshot } from '@/features/dashboard/components/owner/WalletSnapshot';
-import { PendingActions } from '@/features/dashboard/components/owner/PendingActions';
-import { RecentBookings } from '@/features/dashboard/components/owner/RecentBookings';
-import { ActivitySidebar } from '@/features/dashboard/components/owner/ActivitySidebar';
-import { DashboardCalendar } from '@/features/dashboard/components/owner/DashboardCalendar';
-import { MobileKpiGrid } from '@/features/dashboard/components/owner/MobileKpiGrid';
 import { MobileQuickActionsMenu } from '@/features/dashboard/components/owner/MobileQuickActionsMenu';
-import DashboardLoading from './loading';
+import { useOwnerOverview } from '@/features/owner-home/hooks/use-owner-overview';
+import { RevenueTile } from '@/features/owner-home/components/RevenueTile';
+import { OccupancyTile } from '@/features/owner-home/components/OccupancyTile';
+import { DecisionTile } from '@/features/owner-home/components/DecisionTile';
+import { PlanningTile, TodayTile } from '@/features/owner-home/components/UpcomingTiles';
+import {
+  PerformanceTile,
+  ReputationTile,
+  TipTile,
+  WalletTile,
+} from '@/features/owner-home/components/MoneyTiles';
+import { formatLong } from '@/features/calendar/lib/days';
+import { HomeSkeleton } from '@/features/owner-home/components/HomeSkeleton';
+import { usePendingDecisions } from '@/features/calendar/hooks/use-pending-decisions';
 
-// ── Page ─────────────────────────────────────────────────────────────────────
-
+/**
+ * Aujourd'hui — accueil hôte en mosaïque (direction « Bento »).
+ * Ce qui demande une action (demandes, mouvements du jour) est placé au plus haut,
+ * entouré des chiffres qui comptent : revenus, occupation, solde.
+ */
 export default function DashboardPage() {
-  const { data, isLoading, isPending } = useQuery({
-    queryKey: ['dashboard', 'full-data'],
-    queryFn: async () => {
-      const [stats, pending, recent, upcoming, allReservations] = await Promise.all([
-        dashboardApi.getOwnerStats(),
-        dashboardApi.getPendingActions(),
-        dashboardApi.getRecentActivity(),
-        dashboardApi.getUpcomingEvents(),
-        nestFetch<any[]>(NEST_API.RESERVATIONS.MINE()).catch(() => []),
-      ]);
-      return { stats, pending, recent, upcoming, allReservations };
-    },
-    staleTime: 5 * 60 * 1000, // Caches data for 5 minutes
-    gcTime: 15 * 60 * 1000,
-    refetchOnWindowFocus: false,
-    placeholderData: (previousData) => previousData,
-  });
+  const { data: overview, isLoading, isError, error, refetch } = useOwnerOverview();
+  const { data: user } = useCurrentUser();
+  const { data: decisions = [] } = usePendingDecisions();
+  const hasDecisions = decisions.length > 0;
 
-  // Récupère les points mensuels calculés par le backend ou calcule en fallback
-  const monthlyPoints = useMemo(
-    () => data?.stats?.monthlyRevenue?.length ? data.stats.monthlyRevenue : buildMonthlyRevenue(data?.allReservations || [], 6),
-    [data]
-  );
+  if (isLoading) return <HomeSkeleton />;
 
-  if ((isLoading || isPending) && !data) return <DashboardLoading />;
-  if (!data) return <DashboardLoading />;
-
-  const { stats, pending, recent, upcoming } = data;
+  const activeListings = overview?.logements.filter((l) => l.statut === 'PUBLISHED').length ?? 0;
 
   return (
-    <div className="space-y-6 sm:space-y-8 pb-12">
+    <div className="space-y-6 pb-12">
+      <CancellationWarningBanner />
 
-      {/* ── Vue Mobile : Synthèse KPIs 2x2 & Actions Rapides Menu ── */}
-      <div className="block sm:hidden space-y-6">
-        <CancellationWarningBanner />
-        <MobileKpiGrid
-          stats={{
-            revenue: Number(stats.bookings.revenue ?? 0),
-            totalBookings: stats.bookings.total ?? 0,
-            activeListings: stats.listings.active ?? 0,
-            pendingConfirmations: pending.pendingConfirmations ?? 0,
-            activeDisputes: pending.activeDisputes ?? 0,
-            noteMoyenne: stats.bookings.averageRating ?? 4.9,
-          }}
-        />
+      <header className="hidden flex-wrap items-end justify-between gap-3 sm:flex">
+        <h1 className="font-display text-3xl font-semibold tracking-tight text-foreground sm:text-[2.5rem]">
+          Bonjour{user?.prenom ? ` ${user.prenom}` : ''},{' '}
+          <span className="text-foreground-muted">voici votre journée.</span>
+        </h1>
+        {overview && (
+          <p className="text-sm text-foreground-muted first-letter:uppercase">
+            {formatLong(overview.today)} · {activeListings} bien{activeListings > 1 ? 's' : ''} en ligne
+          </p>
+        )}
+      </header>
 
+      {isError || !overview ? (
+        <div role="alert" className="flex flex-col items-center gap-3 rounded-[28px] border border-border bg-background-card p-10 text-center">
+          <AlertCircle className="h-8 w-8 text-error-500" aria-hidden="true" />
+          <p className="text-sm text-foreground">
+            {error instanceof Error ? error.message : 'Impossible de charger votre tableau de bord.'}
+          </p>
+          <button type="button" onClick={() => refetch()} className="btn-ghost px-5 py-2.5 text-sm">
+            Réessayer
+          </button>
+        </div>
+      ) : (
+        // Lignes explicites : chaque ligne associe des tuiles de hauteur comparable
+        // (sinon flex-wrap pouvait aligner une petite tuile à côté d'un grand tableau).
+        <div className="space-y-5">
+          <div className="flex flex-wrap gap-5">
+            <RevenueTile revenue={overview.revenue} />
+            <OccupancyTile occupancy={overview.occupancy} />
+            <TodayTile />
+          </div>
+
+          {hasDecisions && (
+            <div className="flex flex-wrap gap-5">
+              <DecisionTile />
+              <WalletTile wallet={overview.wallet} />
+            </div>
+          )}
+
+          <div className="flex flex-wrap gap-5">
+            <PlanningTile />
+            <PerformanceTile logements={overview.logements} month={overview.revenue.monthly.at(-1)!.month} />
+          </div>
+
+          <div className="flex flex-wrap gap-5">
+            {!hasDecisions && <WalletTile wallet={overview.wallet} />}
+            <TipTile tips={overview.tips} />
+            <ReputationTile reputation={overview.reputation} />
+          </div>
+        </div>
+      )}
+
+      <div className="sm:hidden">
         <MobileQuickActionsMenu />
       </div>
-
-      {/* ── Vue Desktop ──────────────────────────────────────────── */}
-      <div className="hidden sm:block space-y-8">
-        <CancellationWarningBanner />
-
-        {/* ── Section 0 : Bandeau de bienvenue & Synthèse Hôte ─────── */}
-        <HostWelcomeBanner
-          pendingConfirmations={pending.pendingConfirmations ?? 0}
-          activeListings={stats.listings.active ?? 0}
-          availableBalance={Number(stats.wallet?.balance ?? 0)}
-        />
-
-        {/* ── Section 1 : KPIs de Synthèse ──────────────────────────── */}
-        <section className="space-y-3">
-          <KpiSection
-            stats={{
-              revenue: Number(stats.bookings.revenue ?? 0),
-              totalBookings: stats.bookings.total ?? 0,
-              activeDisputes: pending.activeDisputes ?? 0,
-              activeListings: stats.listings.active ?? 0,
-            }}
-            pendingConfirmations={pending.pendingConfirmations ?? 0}
-          />
-        </section>
-
-        {/* ── Section 2 : Financement & Performance ─────────────────── */}
-        <section className="space-y-3">
-          <div className="grid lg:grid-cols-[1fr_380px] gap-6 items-stretch">
-            <RevenueChart
-              points={monthlyPoints}
-              revenue={Number(stats.bookings.revenue ?? 0)}
-              totalBookings={stats.bookings.total ?? 0}
-            />
-            <WalletSnapshot
-              available={Number(stats.wallet?.balance ?? 0)}
-              pending={Number(stats.wallet?.pending ?? 0)}
-              processing={Number(stats.wallet?.processing ?? 0)}
-            />
-          </div>
-        </section>
-
-        {/* ── Section 3 : Opérations & Hub d'Activité ──────────────── */}
-        <section className="space-y-3">
-          <div className="grid lg:grid-cols-[1fr_380px] gap-6 items-stretch">
-            <div className="flex flex-col gap-6">
-              <PendingActions
-                confirmations={pending.pendingConfirmations ?? 0}
-                disputes={pending.activeDisputes ?? 0}
-                recentBookings={recent}
-              />
-              <RecentBookings bookings={recent} />
-            </div>
-
-            <ActivitySidebar
-              bookings={recent}
-              conversionRate={stats.bookings.conversionRate ?? 0}
-              activeListings={stats.listings.active ?? 0}
-            />
-          </div>
-        </section>
-
-        {/* ── Section 4 : Agenda Logistique ─────────────────────────── */}
-        <section className="space-y-3">
-          <DashboardCalendar
-            checkins={upcoming.checkins}
-            checkouts={upcoming.checkouts}
-          />
-        </section>
-      </div>
-
     </div>
   );
 }

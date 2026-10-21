@@ -27,6 +27,7 @@ import {
 import { cn } from '@/lib/utils/cn';
 import { useCurrentUser } from '@/hooks/use-current-user';
 import { useAuth } from '@/features/auth/hooks/use-auth';
+import { PaixiLogo } from '@/components/brand/PaixiLogo';
 
 type NavItem = {
   href: string;
@@ -46,7 +47,7 @@ const ADMIN_NAV_GROUPS: NavGroup[] = [
     title: 'Vue d’ensemble',
     items: [
       { href: '/admin/dashboard', label: 'Tableau de bord', icon: LayoutDashboard, exact: true },
-      { href: '/admin/statistiques', label: 'Revenus & Stats Klef', icon: TrendingUp },
+      { href: '/admin/statistiques', label: 'Revenus & Stats Paixi', icon: TrendingUp },
     ],
   },
   {
@@ -197,9 +198,8 @@ export function AdminSidebar({ isOpen, onClose }: AdminSidebarProps) {
         {/* Entête de la Sidebar */}
         <div className="shrink-0 space-y-4 border-b border-border p-5 pt-[calc(1.25rem+env(safe-area-inset-top,0px))]">
           <div className="flex items-center justify-between gap-2">
-            <Link href="/admin/dashboard" className="flex items-baseline">
-              <span className="font-display text-2xl font-semibold tracking-tight text-forest-800">klef</span>
-              <span className="font-display text-2xl font-semibold text-lime-600" aria-hidden="true">.</span>
+            <Link href="/admin/dashboard" className="flex items-center">
+              <PaixiLogo className="text-2xl" />
             </Link>
 
             <div className="flex items-center gap-2">

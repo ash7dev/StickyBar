@@ -49,6 +49,11 @@ export function useSwitchRole() {
 
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => {});
 
+      // Purger l'historique du Stack root pour éviter le swipe-back vers l'autre rôle
+      if (router.canDismiss()) {
+        router.dismissAll();
+      }
+
       // Redirection selon le rôle cible
       if (targetRole === 'PROPRIETAIRE') {
         router.replace('/(owner)/dashboard' as any);

@@ -132,7 +132,7 @@ export function ListingReviewsSection({ listing, className }: ListingReviewsSect
 
                 <p className="flex items-center gap-1.5 border-t border-border pt-3 text-xs text-foreground-muted">
                   <ShieldCheck className="h-3 w-3 shrink-0 text-forest-600" aria-hidden="true" />
-                  Séjour vérifié par Klef
+                  Séjour vérifié par Paixi
                 </p>
               </li>
             );

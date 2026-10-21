@@ -1,5 +1,5 @@
 // ---------------------------------------------------------------------------
-// Klef — Tokens et helpers du tableau de bord hôte
+// Paixi — Tokens et helpers du tableau de bord hôte
 //
 // Ce fichier existe parce que les mêmes valeurs étaient réécrites à la main
 // dans chaque composant : la commission (0.85) apparaissait trois fois, les
@@ -8,9 +8,9 @@
 // ---------------------------------------------------------------------------
 
 /**
- * Commission Klef : 7% ajoutée au prix de base du propriétaire.
+ * Commission Paixi : 7% ajoutée au prix de base du propriétaire.
  * Ex: Si le propriétaire demande 75 000 FCFA, le locataire paie 75 000 + 7% = 80 250 FCFA.
- * Le propriétaire reçoit 75 000 FCFA (netProprietaire), Klef garde 5 250 FCFA.
+ * Le propriétaire reçoit 75 000 FCFA (netProprietaire), Paixi garde 5 250 FCFA.
  */
 export const COMMISSION_RATE = 0.07;
 

@@ -60,7 +60,7 @@ export function AdminFinancialFlowWidget({ stats, isLoading = false }: Props) {
     },
     {
       key: 'commissions',
-      title: 'Commissions Klef',
+      title: 'Commissions Paixi',
       amount: commissions,
       subtext: 'Revenus de la plateforme, cumulé',
       icon: PiggyBank,

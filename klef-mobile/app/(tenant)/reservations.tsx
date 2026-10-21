@@ -190,7 +190,7 @@ export default function ReservationsScreen() {
             <View style={styles.guardedContainer}>
               <Text style={styles.screenTitle}>Mes Réservations</Text>
               <AuthRequiredCard
-                subtitle="Accédez à l’historique complet de vos séjours, vos contrats de réservation et vos reçus sécurisés par le séquestre Klef."
+                subtitle="Accédez à l’historique complet de vos séjours, vos contrats de réservation et vos reçus sécurisés par le séquestre Paixi."
                 title="Connectez-vous pour voir vos réservations"
               />
             </View>

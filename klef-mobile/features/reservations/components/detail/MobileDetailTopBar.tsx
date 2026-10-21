@@ -56,6 +56,8 @@ export function MobileDetailTopBar({ id, statut = 'PENDING', onBack }: MobileDet
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {});
     if (onBack) {
       onBack();
+    } else if (router.canGoBack()) {
+      router.back();
     } else {
       router.navigate('/(tenant)/reservations');
     }

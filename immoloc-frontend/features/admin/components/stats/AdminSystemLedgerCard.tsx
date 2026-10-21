@@ -79,7 +79,7 @@ export function AdminSystemLedgerCard({ data, isLoading }: AdminSystemLedgerCard
       titre: 'Pool Teranga Club',
       etiquette: 'Budget fidélité',
       montant: data?.soldePoolTeranga,
-      note: 'Provision Klef finançant les Klef Coins émis.',
+      note: 'Provision Paixi finançant les Paixi Coins émis.',
     },
   ];
 

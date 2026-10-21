@@ -523,7 +523,7 @@ export function MobileStepConditions() {
             <View style={styles.degressifInfoBanner}>
               <Sparkles size={16} color={colors.forest[900]} strokeWidth={2.2} />
               <Text style={styles.degressifInfoText}>
-                <Text style={styles.boldText}>Conseil Klef :</Text> Offrir 10% à 20% de réduction à partir de 7 nuits augmente vos réservations confirmées de 35%.
+                <Text style={styles.boldText}>Conseil Paixi :</Text> Offrir 10% à 20% de réduction à partir de 7 nuits augmente vos réservations confirmées de 35%.
               </Text>
             </View>
 

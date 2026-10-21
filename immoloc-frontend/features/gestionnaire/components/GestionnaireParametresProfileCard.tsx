@@ -22,7 +22,7 @@ export function GestionnaireParametresProfileCard({ user, onProfileUpdated }: Pr
   const [prenom, setPrenom] = useState(user?.prenom || '');
   const [nom, setNom] = useState(user?.nom || '');
   const [telephone, setTelephone] = useState(user?.telephone || '');
-  const [nomAgence, setNomAgence] = useState('Klef Conciergerie - Dakar Prestige');
+  const [nomAgence, setNomAgence] = useState('Paixi Conciergerie - Dakar Prestige');
   const [emailPro, setEmailPro] = useState(user?.email || '');
 
   const [isSaving, setIsSaving] = useState(false);
@@ -134,7 +134,7 @@ export function GestionnaireParametresProfileCard({ user, onProfileUpdated }: Pr
               {prenom || 'Gestionnaire'} {nom || 'Conciergerie'}
             </p>
             <p className="text-xs font-medium" style={{ color: 'var(--foreground-muted)' }}>
-              Gestionnaire agréé Klef Conciergerie
+              Gestionnaire agréé Paixi Conciergerie
             </p>
           </div>
         </div>

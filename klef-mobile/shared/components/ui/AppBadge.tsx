@@ -3,7 +3,7 @@ import { View, Text, StyleSheet, ViewProps } from 'react-native';
 import { colors, radius, typography } from '../../theme/tokens';
 
 // =============================================================================
-// AppBadge — Système de badges Klef Mobile
+// AppBadge — Système de badges Paixi Mobile
 // SOURCE DE VÉRITÉ : Miroir exact de globals.css .badge-verified, .eyebrow,
 //                     et les pills utilisés dans HostWelcomeBanner, KPI cards
 // =============================================================================
@@ -11,7 +11,7 @@ import { colors, radius, typography } from '../../theme/tokens';
 export interface AppBadgeProps extends ViewProps {
   label: string;
   variant?:
-    | 'brand'     // forest-950 + lime text (logo Klef)
+    | 'brand'     // forest-950 + lime text (logo Paixi)
     | 'soft'      // forest clair
     | 'verified'  // gold (badge vérifié / étoiles)
     | 'success'   // vert sémantique

@@ -82,7 +82,7 @@ function TenantReservationDetailContent({ id }: { id: string }) {
       {/* Actions locataire */}
       <TenantReservationActionPanel id={id} res={res} onRefetch={onRefetch} />
 
-      {/* Contrat de Location Klef */}
+      {/* Contrat de Location Paixi */}
       <div className="bg-forest-950 text-white rounded-card p-5 border border-forest-800/80 shadow-xs flex flex-wrap items-center justify-between gap-4">
         <div className="flex items-center gap-3.5">
           <div className="w-11 h-11 rounded-inner bg-forest-900 border border-forest-800 flex items-center justify-center text-on-inverse-marker shrink-0">
@@ -90,7 +90,7 @@ function TenantReservationDetailContent({ id }: { id: string }) {
           </div>
           <div>
             <p className="font-display text-base font-bold text-white">Contrat de location vérifié</p>
-            <p className="text-xs text-forest-300">Généré automatiquement par Klef · Horodaté & Signé numériquement</p>
+            <p className="text-xs text-forest-300">Généré automatiquement par Paixi · Horodaté & Signé numériquement</p>
           </div>
         </div>
 
@@ -127,11 +127,11 @@ function TenantReservationDetailContent({ id }: { id: string }) {
       {/* Litige */}
       <ReservationLitige litige={res.litige} />
 
-      {/* Assistance Klef */}
+      {/* Assistance Paixi */}
       <div className="rounded-card border border-forest-800/20 bg-background-card p-5 shadow-xs flex flex-wrap items-center justify-between gap-4">
         <div>
           <h4 className="font-display text-sm font-bold text-foreground">Une question ou besoin d&apos;assistance sur ce séjour ?</h4>
-          <p className="text-xs text-foreground-muted">L&apos;assistant Klef et nos équipes vous accompagnent en direct 24h/24 et 7j/7.</p>
+          <p className="text-xs text-foreground-muted">L&apos;assistant Paixi et nos équipes vous accompagnent en direct 24h/24 et 7j/7.</p>
         </div>
         <AskAssistantButton
           label="Demander à l'assistant"

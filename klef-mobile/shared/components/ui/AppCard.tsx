@@ -3,7 +3,7 @@ import { View, TouchableOpacity, StyleSheet, ViewProps, TouchableOpacityProps } 
 import { colors, radius, shadows } from '../../theme/tokens';
 
 // =============================================================================
-// AppCard — Système de cartes Klef Mobile
+// AppCard — Système de cartes Paixi Mobile
 // SOURCE DE VÉRITÉ : Miroir exact de globals.css .card, .glass, .glass-dark,
 //                     section-inverse, marker-box, etc.
 // =============================================================================

@@ -132,7 +132,11 @@ export default function AddListingScreen() {
           style: 'destructive',
           onPress: () => {
             reset();
-            router.push('/(owner)/listings' as any);
+            if (router.canGoBack()) {
+              router.back();
+            } else {
+              router.navigate('/(owner)/listings' as any);
+            }
           },
         },
       ]
@@ -288,7 +292,13 @@ export default function AddListingScreen() {
               </TouchableOpacity>
               <TouchableOpacity
                 activeOpacity={0.8}
-                onPress={() => router.push('/(owner)/listings' as any)}
+                onPress={() => {
+                  if (router.canGoBack()) {
+                    router.back();
+                  } else {
+                    router.navigate('/(owner)/listings' as any);
+                  }
+                }}
                 style={styles.backErrBtn}
               >
                 <ArrowLeft size={14} color={colors.forest[950]} />

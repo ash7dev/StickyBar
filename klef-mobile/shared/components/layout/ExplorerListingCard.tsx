@@ -22,6 +22,7 @@ import * as Haptics from 'expo-haptics';
 import { colors, radius, shadows, typography } from '../../theme/tokens';
 import { ListingItem } from '../ui/TenantListingCard';
 import { TenantPriceDisplay } from '../ui/TenantPriceDisplay';
+import { useSearchHistoryStore } from '../../stores/search-history.store';
 
 const SCREEN_WIDTH = Dimensions.get('window').width;
 const PHOTO_ASPECT = 4 / 3; // Taller than 16/10 — more immersive
@@ -95,6 +96,11 @@ export function ExplorerListingCard({ listing, onPress }: ExplorerListingCardPro
     setIsFavorite((prev) => !prev);
   }, []);
 
+  const handleCardPress = useCallback(() => {
+    useSearchHistoryStore.getState().addRecentListing(listing);
+    onPress();
+  }, [listing, onPress]);
+
   const scrollToPhoto = useCallback((idx: number) => {
     pagerRef.current?.setPage(idx);
     setActivePhotoIdx(idx);
@@ -119,7 +125,7 @@ export function ExplorerListingCard({ listing, onPress }: ExplorerListingCardPro
   return (
     <Animated.View style={[styles.cardOuter, { opacity: fadeAnim, transform: [{ translateY: slideAnim }] }]}>
       {/* ── PHOTO ZONE — Borderless full-width rounded ──────────────── */}
-      <TouchableOpacity activeOpacity={0.95} onPress={onPress} style={styles.imageContainer}>
+      <TouchableOpacity activeOpacity={0.95} onPress={handleCardPress} style={styles.imageContainer}>
         {photos.length > 0 ? (
           <PagerView
             ref={pagerRef}
@@ -205,7 +211,7 @@ export function ExplorerListingCard({ listing, onPress }: ExplorerListingCardPro
       </TouchableOpacity>
 
       {/* ── INFO ZONE — Airbnb-style flush layout ─────────────────── */}
-      <TouchableOpacity activeOpacity={0.8} onPress={onPress} style={styles.infoContainer}>
+      <TouchableOpacity activeOpacity={0.8} onPress={handleCardPress} style={styles.infoContainer}>
         {/* Ligne 1 : Localisation + Note */}
         <View style={styles.locationRatingRow}>
           <View style={styles.locationRow}>
@@ -366,7 +372,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
 
-  // ── Dots (Elongated active dot — signature Klef) ─────────────────
+  // ── Dots (Elongated active dot — signature Paixi) ─────────────────
   dotsContainer: {
     position: 'absolute',
     bottom: 12,

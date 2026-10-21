@@ -503,7 +503,7 @@ export function GestionnaireInspectionDetailModal({ report, isOpen, onClose }: P
               <div>
                 <p className="text-xs font-bold" style={{ color: report.statut === 'VALIDE' ? 'var(--success-700)' : 'var(--foreground)' }}>
                   {report.statut === 'VALIDE'
-                    ? 'Signé numériquement — conforme aux exigences Klef'
+                    ? 'Signé numériquement — conforme aux exigences Paixi'
                     : report.statut === 'LITIGE'
                       ? 'Réserve signalée — en attente de résolution'
                       : 'En attente de signature numérique'}

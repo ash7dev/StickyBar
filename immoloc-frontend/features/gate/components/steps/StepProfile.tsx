@@ -159,7 +159,7 @@ export function StepProfile({ onDone }: Props) {
       {/* Réassurance sécurité */}
       <p className="flex items-center justify-center gap-1.5 text-[10px] text-foreground-faint">
         <Lock className="h-2.5 w-2.5" aria-hidden="true" />
-        Vos données sont protégées et chiffrées par Klef
+        Vos données sont protégées et chiffrées par Paixi
       </p>
     </form>
   );

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import {
   StyleSheet,
   View,
@@ -10,6 +10,7 @@ import {
   TextInput,
   ActivityIndicator,
   Alert,
+  Animated,
 } from 'react-native';
 import { X, Star, Send, UserCheck } from 'lucide-react-native';
 import * as Haptics from 'expo-haptics';
@@ -33,6 +34,20 @@ export function MobileRateGuestModal({
   const [rating, setRating] = useState<number>(5);
   const [commentaire, setCommentaire] = useState<string>('');
 
+  const animVal = useRef(new Animated.Value(0)).current;
+
+  useEffect(() => {
+    if (visible) {
+      animVal.setValue(0);
+      Animated.spring(animVal, {
+        toValue: 1,
+        speed: 16,
+        bounciness: 6,
+        useNativeDriver: true,
+      }).start();
+    }
+  }, [visible, animVal]);
+
   const handleSelectStar = (val: number) => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {});
     setRating(val);
@@ -50,12 +65,20 @@ export function MobileRateGuestModal({
 
   if (!visible) return null;
 
+  const backdropOpacity = animVal.interpolate({ inputRange: [0, 1], outputRange: [0, 1] });
+  const sheetTranslateY = animVal.interpolate({ inputRange: [0, 1], outputRange: [200, 0] });
+
   return (
-    <Modal visible={visible} animationType="slide" transparent onRequestClose={onClose}>
+    <Modal visible={visible} animationType="none" transparent onRequestClose={onClose}>
       <TouchableWithoutFeedback onPress={onClose}>
-        <View style={styles.overlay}>
+        <Animated.View style={[styles.overlay, { opacity: backdropOpacity }]}>
           <TouchableWithoutFeedback>
-            <View style={styles.sheetContainer}>
+            <Animated.View
+              style={[
+                styles.sheetContainer,
+                { transform: [{ translateY: sheetTranslateY }] },
+              ]}
+            >
               <View style={styles.dragHandle} />
 
               <View style={styles.header}>
@@ -127,9 +150,9 @@ export function MobileRateGuestModal({
                   )}
                 </TouchableOpacity>
               </View>
-            </View>
+            </Animated.View>
           </TouchableWithoutFeedback>
-        </View>
+        </Animated.View>
       </TouchableWithoutFeedback>
     </Modal>
   );

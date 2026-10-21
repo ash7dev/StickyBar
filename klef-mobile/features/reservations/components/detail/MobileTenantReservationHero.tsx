@@ -67,7 +67,7 @@ export function MobileTenantReservationHero({ res }: MobileTenantReservationHero
         </View>
 
         <Text style={styles.titleText} numberOfLines={2}>
-          {res.logement?.titre || 'Hébergement Klef'}
+          {res.logement?.titre || 'Hébergement Paixi'}
         </Text>
 
         {/* Hero Image with cinematic overlay */}
@@ -83,7 +83,7 @@ export function MobileTenantReservationHero({ res }: MobileTenantReservationHero
             {/* Escrow badge with shimmer */}
             <Animated.View style={[styles.escrowBadgeOnImage, { opacity: shimmerAnim }]}>
               <ShieldCheck size={13} color={colors.lime[400]} />
-              <Text style={styles.escrowBadgeText}>Séquestre Klef Actif</Text>
+              <Text style={styles.escrowBadgeText}>Séquestre Paixi Actif</Text>
             </Animated.View>
 
             {/* Photo count if multiple */}

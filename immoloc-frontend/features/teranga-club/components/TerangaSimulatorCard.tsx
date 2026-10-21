@@ -69,7 +69,7 @@ export function TerangaSimulatorCard({ cashbackPct }: Props) {
               Simulateur de cashback
             </h2>
             <p className="mt-0.5 text-xs text-foreground-muted">
-              Estimez les Klef Coins gagnés sur votre prochain séjour.
+              Estimez les Paixi Coins gagnés sur votre prochain séjour.
             </p>
           </div>
         </div>

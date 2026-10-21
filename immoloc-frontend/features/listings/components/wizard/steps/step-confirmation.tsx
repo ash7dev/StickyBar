@@ -128,7 +128,7 @@ export function StepConfirmation({ onSubmit, isSubmitting, submitRef }: Props) {
           <p className="text-xs leading-relaxed text-on-inverse-muted">
             {/* « nos modérateurs ImmoLoc » : ancien nom du produit, sur
                l'écran final de publication. */}
-            Votre annonce est transmise à l’équipe Klef. Elle est révisée et activée sous 24 h
+            Votre annonce est transmise à l’équipe Paixi. Elle est révisée et activée sous 24 h
             ouvrées. Vous serez notifié dès sa mise en ligne.
           </p>
         </div>

@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useRef, useEffect } from 'react';
 import {
   StyleSheet,
   View,
@@ -12,6 +12,7 @@ import {
   Alert,
   KeyboardAvoidingView,
   Platform,
+  Animated,
 } from 'react-native';
 import { X, AlertTriangle, ShieldAlert, CheckCircle2, CalendarX, Info } from 'lucide-react-native';
 import * as Haptics from 'expo-haptics';
@@ -44,26 +45,36 @@ export function MobileOwnerCancelModal({
   const [selectedReason, setSelectedReason] = useState<string>(PREDEFINED_REASONS[0]);
   const [customReason, setCustomReason] = useState<string>('');
 
+  const animVal = useRef(new Animated.Value(0)).current;
+
+  useEffect(() => {
+    if (visible) {
+      animVal.setValue(0);
+      Animated.spring(animVal, {
+        toValue: 1,
+        speed: 16,
+        bounciness: 6,
+        useNativeDriver: true,
+      }).start();
+    }
+  }, [visible, animVal]);
+
   const isCustom = selectedReason === 'Autre raison majeure';
   const finalReason = isCustom ? customReason.trim() : selectedReason;
   const isValid = !isCustom || customReason.trim().length >= 15;
 
-  // Calcul du délai avant le check-in et de la pénalité hôte
   const { hoursLeft, penaltyAmount, penaltyTier } = useMemo(() => {
-    if (!dateDebut) return { hoursLeft: 0, penaltyAmount: 30000, penaltyTier: 'CRITICAL' };
+    if (!dateDebut) return { hoursLeft: 0, penaltyAmount: 10000, penaltyTier: 'CRITICAL' };
     const checkin = new Date(dateDebut).getTime();
-    if (Number.isNaN(checkin)) return { hoursLeft: 0, penaltyAmount: 30000, penaltyTier: 'CRITICAL' };
+    if (Number.isNaN(checkin)) return { hoursLeft: 0, penaltyAmount: 10000, penaltyTier: 'CRITICAL' };
     const h = (checkin - Date.now()) / 3600000;
 
-    if (h > 168) {
-      // > 7 jours
+    if (h > 72) {
       return { hoursLeft: h, penaltyAmount: 0, penaltyTier: 'LOW' };
-    } else if (h >= 48) {
-      // 48h à 7 jours
-      return { hoursLeft: h, penaltyAmount: 15000, penaltyTier: 'MEDIUM' };
+    } else if (h >= 24) {
+      return { hoursLeft: h, penaltyAmount: 2500, penaltyTier: 'MEDIUM' };
     } else {
-      // < 48h
-      return { hoursLeft: h, penaltyAmount: 30000, penaltyTier: 'CRITICAL' };
+      return { hoursLeft: h, penaltyAmount: 10000, penaltyTier: 'CRITICAL' };
     }
   }, [dateDebut]);
 
@@ -75,14 +86,20 @@ export function MobileOwnerCancelModal({
 
   if (!visible) return null;
 
+  const backdropOpacity = animVal.interpolate({ inputRange: [0, 1], outputRange: [0, 1] });
+  const sheetTranslateY = animVal.interpolate({ inputRange: [0, 1], outputRange: [250, 0] });
+
   return (
-    <Modal visible={visible} animationType="slide" transparent onRequestClose={onClose}>
+    <Modal visible={visible} animationType="none" transparent onRequestClose={onClose}>
       <TouchableWithoutFeedback onPress={onClose}>
-        <View style={styles.overlay}>
+        <Animated.View style={[styles.overlay, { opacity: backdropOpacity }]}>
           <TouchableWithoutFeedback>
             <KeyboardAvoidingView
               behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-              style={styles.sheetContainer}
+              style={[
+                styles.sheetContainer,
+                { transform: [{ translateY: sheetTranslateY }] },
+              ]}
             >
               <View style={styles.dragHandle} />
 
@@ -109,7 +126,7 @@ export function MobileOwnerCancelModal({
                   <View style={{ flex: 1 }}>
                     <Text style={styles.refundTitle}>Remboursement intégral du locataire</Text>
                     <Text style={styles.refundSub}>
-                      Le locataire sera remboursé à 100 % des sommes versées conformément aux garanties hôtes Klef.
+                      Le locataire sera remboursé à 100 % des sommes versées conformément aux garanties hôtes Paixi.
                     </Text>
                   </View>
                 </View>
@@ -132,20 +149,20 @@ export function MobileOwnerCancelModal({
                     >
                       <Text style={styles.tierTagText}>
                         {penaltyTier === 'LOW'
-                          ? '> 7 jours'
+                          ? '> 3 jours'
                           : penaltyTier === 'MEDIUM'
-                          ? '3 à 7 jours'
-                          : '< 48 heures'}
+                          ? '24 h à 3 jours'
+                          : '< 24 heures'}
                       </Text>
                     </View>
                   </View>
 
                   <Text style={styles.penaltyDescription}>
                     {penaltyTier === 'LOW'
-                      ? 'Annulation anticipée (> 7j). Aucun frais financier prélevé, mais les annulations répétées diminuent la visibilité de votre annonce.'
+                      ? 'Annulation anticipée (> 3j). Aucun frais financier prélevé, mais les annulations répétées diminuent la visibilité de votre annonce.'
                       : penaltyTier === 'MEDIUM'
-                      ? 'Annulation modérée (3-7j). Des frais de gestion d\'annulation hôte de 15 000 FCFA seront déduits de votre prochain virement.'
-                      : 'Annulation tardive (< 48h). Une pénalité forfaitaire de 30 000 FCFA sera retenue et les dates resteront bloquées.'}
+                      ? 'Annulation modérée (24h à 3j). Des frais de gestion d\'annulation hôte de 2 500 FCFA seront déduits de votre wallet.'
+                      : 'Annulation tardive (< 24h). Une pénalité forfaitaire de 10 000 FCFA sera déduite de votre wallet.'}
                   </Text>
                 </View>
 
@@ -212,7 +229,7 @@ export function MobileOwnerCancelModal({
               </View>
             </KeyboardAvoidingView>
           </TouchableWithoutFeedback>
-        </View>
+        </Animated.View>
       </TouchableWithoutFeedback>
     </Modal>
   );

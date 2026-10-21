@@ -95,6 +95,20 @@ export class SearchLogementsDto {
   @Min(1)
   capaciteMin?: number;
 
+  @ApiPropertyOptional({ minimum: 1, example: 2, description: 'Nombre de chambres minimum' })
+  @IsOptional()
+  @Type(() => Number)
+  @IsInt()
+  @Min(1)
+  nombreChambres?: number;
+
+  @ApiPropertyOptional({ minimum: 1, example: 1, description: 'Nombre de salles de bain minimum' })
+  @IsOptional()
+  @Type(() => Number)
+  @IsInt()
+  @Min(1)
+  nombreSallesBain?: number;
+
   @ApiPropertyOptional({ minimum: 1, default: 1 })
   @IsOptional()
   @Type(() => Number)

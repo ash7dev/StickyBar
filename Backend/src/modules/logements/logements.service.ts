@@ -107,8 +107,21 @@ export class LogementsService implements OnModuleInit {
       statut: StatutLogement.PUBLISHED,
       archiveLe: null,
       capaciteMax: { gte: nbPersonnes },
-      ...(dto.ville?.trim() && { ville: { contains: dto.ville.trim(), mode: 'insensitive' } }),
-      ...((dto as any).quartier?.trim() && { quartier: { contains: (dto as any).quartier.trim(), mode: 'insensitive' } }),
+      ...(dto.ville?.trim() && {
+        OR: [
+          { ville: { contains: dto.ville.trim(), mode: 'insensitive' } },
+          { quartier: { contains: dto.ville.trim(), mode: 'insensitive' } },
+          { adresse: { contains: dto.ville.trim(), mode: 'insensitive' } },
+          { titre: { contains: dto.ville.trim(), mode: 'insensitive' } },
+        ],
+      }),
+      ...((dto as any).quartier?.trim() && {
+        OR: [
+          { quartier: { contains: (dto as any).quartier.trim(), mode: 'insensitive' } },
+          { ville: { contains: (dto as any).quartier.trim(), mode: 'insensitive' } },
+          { adresse: { contains: (dto as any).quartier.trim(), mode: 'insensitive' } },
+        ],
+      }),
       ...(((dto as any).derniereMinuteOnly || (dto as any).derniereMinute) && { derniereMinuteActive: true }),
       ...(dto.type && { type: dto.type }),
       ...(dto.sousType?.trim() && {
@@ -120,6 +133,8 @@ export class LogementsService implements OnModuleInit {
       }),
       ...(dto.prixMax !== undefined && { prixBase: { lte: dto.prixMax } }),
       ...(dto.prixMin !== undefined && { prixBase: { gte: dto.prixMin } }),
+      ...(dto.nombreChambres !== undefined && { nombreChambres: { gte: dto.nombreChambres } }),
+      ...(dto.nombreSallesBain !== undefined && { nombreSallesBain: { gte: dto.nombreSallesBain } }),
       ...(withDates && {
         reservations: {
           none: {
@@ -568,7 +583,7 @@ export class LogementsService implements OnModuleInit {
         const shadowAuthId = `shadow_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`;
         const shadowEmail = `shadow_${digitsOnly}@klef.sn`;
         const prenom = managedOwnerPrenom?.trim() || 'Propriétaire';
-        const nom = managedOwnerNom?.trim() || 'Klef';
+        const nom = managedOwnerNom?.trim() || 'Paixi';
 
         const createdUser = await this.prisma.$transaction(async (tx) => {
           await tx.profile.create({

@@ -50,7 +50,7 @@ const PRIORITE_LABEL: Record<TicketSupportItem['priorite'], string> = {
 /* ─── Réponses enregistrées ───────────────────────────────────────────────
    ⚠️ Deux de ces messages disaient « ImmoLoc » — l'ancien nom du produit —
    dans du texte envoyé à des clients, et contredisaient la signature « Support
-   Klef » affichée dans le même fil.
+   Paixi » affichée dans le même fil.
 
    Un libellé court par macro : les chips affichaient la phrase entière
    tronquée à 200 px, donc quatre boutons commençant tous par « Bonjour. Nous
@@ -67,7 +67,7 @@ const REPONSES_TYPES: { id: string; titre: string; texte: string }[] = [
     id: 'paiement-debloque',
     titre: 'Paiement débloqué',
     texte:
-      'Bonjour, votre paiement a été débloqué et crédité sur votre portefeuille Klef.',
+      'Bonjour, votre paiement a été débloqué et crédité sur votre portefeuille Paixi.',
   },
   {
     id: 'kyc-verso',
@@ -382,7 +382,7 @@ export function AdminSupportTicketDetail({ ticket, onRefresh }: AdminSupportTick
             const nouveauJour =
               !precedent || !memeJour(new Date(precedent.creeLe), new Date(m.creeLe));
             const auteur = m.estAdmin
-              ? nomDe(m.auteur) || 'Support Klef'
+              ? nomDe(m.auteur) || 'Support Paixi'
               : nomDe(m.auteur) || nomUtilisateur;
 
             return (

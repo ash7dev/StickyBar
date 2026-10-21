@@ -72,7 +72,7 @@ export function TerangaQuestsCard({ quests, isAuthenticated, onClaimSuccess, use
       setModalResult({
         ...base,
         claimed: false,
-        message: 'Connectez-vous à votre compte Klef pour accomplir des quêtes.',
+        message: 'Connectez-vous à votre compte Paixi pour accomplir des quêtes.',
       });
       setIsModalOpen(true);
       return;
@@ -138,7 +138,7 @@ export function TerangaQuestsCard({ quests, isAuthenticated, onClaimSuccess, use
                   Quêtes Teranga
                 </h2>
                 <p className="mt-0.5 text-xs text-foreground-muted">
-                  Accomplissez des défis pour gagner des Klef Coins.
+                  Accomplissez des défis pour gagner des Paixi Coins.
                 </p>
               </div>
             </div>

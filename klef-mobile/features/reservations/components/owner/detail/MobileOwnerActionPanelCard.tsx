@@ -53,7 +53,7 @@ const PENALITES = { early: 0, mid: 2500, late: 10000 } as const;
 
 /**
  * Palette "warning" (ambre) : n'a pas d'équivalent direct dans le trio
- * forest / lime / gold du design system Klef (le gold est réservé au statut
+ * forest / lime / gold du design system Paixi (le gold est réservé au statut
  * vérifié et aux notes, jamais à un avertissement). Centralisée ici en
  * attendant qu'un token sémantique "warning" existe dans tokens.ts —
  * à remplacer par colors.warning[...] si/quand il est ajouté.
@@ -187,7 +187,7 @@ const STEP_CONFIG = {
     iconBoxBorder: colors.error[200],
     iconColor: colors.error[600],
     label: 'Litige en cours',
-    sub: 'En attente de résolution par l’arbitrage Klef',
+    sub: 'En attente de résolution par l’arbitrage Paixi',
   },
 } as const;
 
@@ -790,7 +790,7 @@ export function MobileOwnerActionPanelCard({
               title="Séjour terminé"
               body={`Le séjour est clôturé avec succès. Merci d’avoir accueilli ${
                 reservation.locataire?.prenom || 'votre voyageur'
-              } sur Klef !`}
+              } sur Paixi !`}
             />
 
             {(reservation.politiqueAppliquee as string) === 'NO_SHOW_LOCATAIRE' && (
@@ -841,7 +841,7 @@ export function MobileOwnerActionPanelCard({
             variant="error"
             icon={AlertTriangle}
             title="Litige ouvert — Fonds gelés sous séquestre"
-            body="Un litige est en cours de traitement par le support Klef (délai 48h à 72h). Les fonds restent sécurisés jusqu'à la résolution du dossier."
+            body="Un litige est en cours de traitement par le support Paixi (délai 48h à 72h). Les fonds restent sécurisés jusqu'à la résolution du dossier."
           />
         )}
       </View>
@@ -890,7 +890,7 @@ export function MobileOwnerActionPanelCard({
               showsVerticalScrollIndicator={false}
             >
               <Text style={styles.modalIntroText}>
-                Klef applique une double validation et un séquestre sécurisé pour protéger les
+                Paixi applique une double validation et un séquestre sécurisé pour protéger les
                 deux parties.
               </Text>
 
@@ -921,8 +921,8 @@ export function MobileOwnerActionPanelCard({
                 title="4. Pénalités d’annulation"
                 body={
                   <>
-                    Après confirmation : Gratuit (0 FCFA) au-delà de 5 jours,{' '}
-                    {PENALITES.mid.toLocaleString('fr-FR')} FCFA entre 24 h et 5 jours,{' '}
+                    Après confirmation : Gratuit (0 FCFA) au-delà de 3 jours,{' '}
+                    {PENALITES.mid.toLocaleString('fr-FR')} FCFA entre 24 h et 3 jours,{' '}
                     {PENALITES.late.toLocaleString('fr-FR')} FCFA à moins de 24 h (dernière
                     minute).
                   </>

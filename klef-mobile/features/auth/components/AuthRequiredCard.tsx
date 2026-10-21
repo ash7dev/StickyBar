@@ -57,7 +57,7 @@ export function AuthRequiredCard({ title, subtitle, redirectTo = '/(auth)/login'
 
         <View style={styles.reassuranceRow}>
           <ShieldCheck size={16} color={colors.lime[300]} />
-          <Text style={styles.reassuranceText}>Garantie Séquestre Klef · Réservation 100% sécurisée</Text>
+          <Text style={styles.reassuranceText}>Garantie Séquestre Paixi · Réservation 100% sécurisée</Text>
         </View>
       </AppCard>
     );

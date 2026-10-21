@@ -54,7 +54,7 @@ export function GestionnaireDemandeManagedDetailModal({
 
   const formattedPhone = lead.telephone.replace(/\s+/g, '');
   const whatsappUrl = `https://wa.me/${formattedPhone.replace('+', '')}?text=${encodeURIComponent(
-    `Bonjour ${lead.prenom}, je suis le responsable Conciergerie Klef. J'ai bien reçu votre demande pour votre bien à ${
+    `Bonjour ${lead.prenom}, je suis le responsable Conciergerie Paixi. J'ai bien reçu votre demande pour votre bien à ${
       lead.ville || 'Dakar'
     }. Quand seriez-vous disponible pour échanger ?`,
   )}`;
@@ -98,7 +98,7 @@ export function GestionnaireDemandeManagedDetailModal({
             </div>
             <div>
               <h3 className="font-display text-lg font-bold" style={{ color: 'var(--forest-950)' }}>
-                Fiche Prospect Klef Managed
+                Fiche Prospect Paixi Managed
               </h3>
               <p className="text-xs font-medium mt-0.5" style={{ color: 'var(--foreground-muted)' }}>
                 Reçue le {new Date(lead.creeLe).toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' })}

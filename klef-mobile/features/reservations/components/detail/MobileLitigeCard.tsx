@@ -71,7 +71,7 @@ export function MobileLitigeCard({ litige }: MobileLitigeCardProps) {
           </Text>
           <Text style={styles.alertSub}>
             {isEnAttente
-              ? "Les fonds sous séquestre restent intégralement gelés jusqu'à arbitrage par l'équipe support Klef."
+              ? "Les fonds sous séquestre restent intégralement gelés jusqu'à arbitrage par l'équipe support Paixi."
               : isFonde
               ? "Le litige a été jugé fondé. Les mesures correctives ont été appliquées."
               : "Le litige a été examiné et jugé non fondé. Les fonds ont été libérés."}

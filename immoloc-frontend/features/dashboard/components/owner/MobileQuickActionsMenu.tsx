@@ -4,6 +4,7 @@ import Link from 'next/link';
 import {
   Plus,
   CalendarDays,
+  CalendarRange,
   Building2,
   Wallet,
   BarChart3,
@@ -36,6 +37,13 @@ const ACTIONS: QuickActionItem[] = [
     subtitle: 'Gérez vos demandes et séjours en cours',
     icon: CalendarDays,
     href: '/dashboard/reservations',
+  },
+  {
+    id: 'view-calendar',
+    title: 'Ouvrir mon calendrier',
+    subtitle: 'Tous vos biens d\'un coup d\'œil, bloquez des dates',
+    icon: CalendarRange,
+    href: '/dashboard/calendrier',
   },
   {
     id: 'view-listings',

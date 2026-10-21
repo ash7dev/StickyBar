@@ -15,7 +15,7 @@ export const metadata: Metadata = {
   description: 'Découvrez tous nos logements au Sénégal : villas, appartements, studios. Propriétaires vérifiés, réservation sécurisée par séquestre.',
   openGraph: {
     title: `Logements au Sénégal — ${BRAND.name}`,
-    description: 'Trouvez votre logement idéal sur Klef. Propriétaires vérifiés, paiement sécurisé.',
+    description: 'Trouvez votre logement idéal sur Paixi. Propriétaires vérifiés, paiement sécurisé.',
     type: 'website',
   },
 };

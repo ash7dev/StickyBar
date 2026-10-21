@@ -74,7 +74,7 @@ export function AdminStatsKpiGrid({ summary, isLoading }: AdminStatsKpiGridProps
   const kpis: Kpi[] = [
     {
       cle: 'net',
-      titre: 'Revenu net Klef',
+      titre: 'Revenu net Paixi',
       icon: TrendingUp,
       montant: netKlef,
       note: 'Commissions et pénalités',

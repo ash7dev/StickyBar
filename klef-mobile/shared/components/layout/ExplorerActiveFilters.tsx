@@ -6,7 +6,7 @@ import {
   ScrollView,
   TouchableOpacity,
 } from 'react-native';
-import { X, MapPin, CalendarDays, ArrowUpDown } from 'lucide-react-native';
+import { X, MapPin, CalendarDays, ArrowUpDown, Users, BedDouble } from 'lucide-react-native';
 import * as Haptics from 'expo-haptics';
 import { colors, radius, typography } from '../../theme/tokens';
 
@@ -15,10 +15,14 @@ interface ExplorerActiveFiltersProps {
   dateArrivee?: string;
   dateDepart?: string;
   sortLabel?: string;
+  nbPersonnes?: number;
+  nombreChambres?: number;
   total: number;
   onClearVille: () => void;
   onClearDates: () => void;
   onClearSort: () => void;
+  onClearGuests?: () => void;
+  onClearBedrooms?: () => void;
 }
 
 export function ExplorerActiveFilters({
@@ -26,16 +30,22 @@ export function ExplorerActiveFilters({
   dateArrivee,
   dateDepart,
   sortLabel,
+  nbPersonnes,
+  nombreChambres,
   total,
   onClearVille,
   onClearDates,
   onClearSort,
+  onClearGuests,
+  onClearBedrooms,
 }: ExplorerActiveFiltersProps) {
   const hasVille = !!ville?.trim();
   const hasDates = !!dateArrivee;
   const hasSort = !!sortLabel;
+  const hasGuests = !!nbPersonnes && nbPersonnes > 1;
+  const hasBedrooms = !!nombreChambres && nombreChambres > 0;
 
-  if (!hasVille && !hasDates && !hasSort) return null;
+  if (!hasVille && !hasDates && !hasSort && !hasGuests && !hasBedrooms) return null;
 
   const formatDate = (d?: string) => {
     if (!d) return '';
@@ -51,7 +61,8 @@ export function ExplorerActiveFilters({
     ? `${formatDate(dateArrivee)}${dateDepart ? ` → ${formatDate(dateDepart)}` : ''}`
     : null;
 
-  const handleDismiss = (cb: () => void) => {
+  const handleDismiss = (cb?: () => void) => {
+    if (!cb) return;
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {});
     cb();
   };
@@ -94,6 +105,36 @@ export function ExplorerActiveFilters({
           >
             <CalendarDays size={11} color={colors.forest[700]} strokeWidth={2.5} />
             <Text style={styles.chipText}>{dateText}</Text>
+            <View style={styles.chipDismiss}>
+              <X size={10} color={colors.neutral[500]} />
+            </View>
+          </TouchableOpacity>
+        )}
+
+        {/* Chip Voyageurs */}
+        {hasGuests && onClearGuests && (
+          <TouchableOpacity
+            activeOpacity={0.7}
+            onPress={() => handleDismiss(onClearGuests)}
+            style={styles.filterChip}
+          >
+            <Users size={11} color={colors.forest[700]} strokeWidth={2.5} />
+            <Text style={styles.chipText}>{nbPersonnes} voy.</Text>
+            <View style={styles.chipDismiss}>
+              <X size={10} color={colors.neutral[500]} />
+            </View>
+          </TouchableOpacity>
+        )}
+
+        {/* Chip Chambres */}
+        {hasBedrooms && onClearBedrooms && (
+          <TouchableOpacity
+            activeOpacity={0.7}
+            onPress={() => handleDismiss(onClearBedrooms)}
+            style={styles.filterChip}
+          >
+            <BedDouble size={11} color={colors.forest[700]} strokeWidth={2.5} />
+            <Text style={styles.chipText}>{nombreChambres}+ ch.</Text>
             <View style={styles.chipDismiss}>
               <X size={10} color={colors.neutral[500]} />
             </View>

@@ -21,6 +21,7 @@ import {
 import { cn } from '@/lib/utils/cn';
 import { useAuth } from '@/features/auth/hooks/use-auth';
 import { createClient } from '@/lib/supabase/client';
+import { PaixiLogo } from '@/components/brand/PaixiLogo';
 
 type NavItem = {
   href: string;
@@ -47,7 +48,7 @@ const GESTIONNAIRE_NAV_GROUPS: NavGroup[] = [
     items: [
       { href: '/gestionnaire/annonces', label: 'Annonces gérées', icon: Building2 },
       { href: '/gestionnaire/proprietaires', label: 'Propriétaires', icon: Users },
-      { href: '/gestionnaire/demandes-managed', label: 'Demandes Klef Managed', icon: UserPlus, badge: 'Nouveau' },
+      { href: '/gestionnaire/demandes-managed', label: 'Demandes Paixi Managed', icon: UserPlus, badge: 'Nouveau' },
     ],
   },
   {
@@ -159,7 +160,7 @@ export function GestionnaireSidebar({ isOpen = false, onClose = () => {} }: Gest
   }, [isOpen, onClose]);
 
   const prenom = user?.user_metadata?.prenom ?? 'Gestionnaire';
-  const nom = user?.user_metadata?.nom ?? 'Klef';
+  const nom = user?.user_metadata?.nom ?? 'Paixi';
   const initials = ((prenom[0] ?? '') + (nom[0] ?? user?.email?.[0] ?? 'G')).toUpperCase() || 'GK';
 
   async function handleLogout() {
@@ -195,9 +196,8 @@ export function GestionnaireSidebar({ isOpen = false, onClose = () => {} }: Gest
         {/* Entête de la Sidebar */}
         <div className="shrink-0 space-y-4 border-b border-border p-5 pt-[calc(1.25rem+env(safe-area-inset-top,0px))]">
           <div className="flex items-center justify-between gap-2">
-            <Link href="/gestionnaire" className="flex items-baseline gap-0.5">
-              <span className="font-display text-2xl font-semibold tracking-tight text-forest-800">klef</span>
-              <span className="font-display text-2xl font-semibold text-forest-600" aria-hidden="true">.</span>
+            <Link href="/gestionnaire" className="flex items-center">
+              <PaixiLogo className="text-2xl" />
             </Link>
 
             <div className="flex items-center gap-2">

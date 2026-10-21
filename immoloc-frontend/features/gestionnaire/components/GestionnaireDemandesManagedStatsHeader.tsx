@@ -41,7 +41,7 @@ export function GestionnaireDemandesManagedStatsHeader({
             {totalLeads} <span className="text-xs font-semibold" style={{ color: 'var(--foreground-muted)' }}>prospects</span>
           </p>
           <p className="text-[0.7rem] font-medium mt-1" style={{ color: 'var(--foreground-muted)' }}>
-            Bailleurs intéressés par Klef Managed
+            Bailleurs intéressés par Paixi Managed
           </p>
         </div>
       </div>

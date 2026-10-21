@@ -89,7 +89,7 @@ function ParametresContent() {
             Paramètres du Compte
           </h1>
           <p className="text-xs text-foreground-muted mt-0.5 font-medium">
-            Gérez vos informations personnelles, votre sécurité et la vérification de votre identité Klef.
+            Gérez vos informations personnelles, votre sécurité et la vérification de votre identité Paixi.
           </p>
         </div>
       </div>

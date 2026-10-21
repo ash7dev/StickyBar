@@ -42,7 +42,7 @@ const CHAIN = [
   },
   {
     icon: Lock,
-    title: 'Klef bloque',
+    title: 'Paixi bloque',
     money: 'Les fonds sont immobilisés',
     detail: 'Le propriétaire est informé de la réservation, mais ne reçoit rien.',
     isKey: false,
@@ -56,7 +56,7 @@ const CHAIN = [
   },
   {
     icon: CheckCircle2,
-    title: 'Klef verse',
+    title: 'Paixi verse',
     money: 'Le propriétaire est payé',
     detail: `Versement sous ${ESCROW.payoutDelay} après votre confirmation.`,
     isKey: false,
@@ -86,24 +86,24 @@ const CASES = [
 
 const FAQ = [
   {
-    q: 'Klef peut-il utiliser mon argent pendant le séquestre ?',
-    a: `Non. Les fonds sont conservés séparément des comptes d’exploitation de Klef, chez ${ESCROW.custodian}. Ils ne peuvent servir ni à financer l’activité, ni à payer une autre réservation.`,
+    q: 'Paixi peut-il utiliser mon argent pendant le séquestre ?',
+    a: `Non. Les fonds sont conservés séparément des comptes d’exploitation de Paixi, chez ${ESCROW.custodian}. Ils ne peuvent servir ni à financer l’activité, ni à payer une autre réservation.`,
   },
   {
     q: 'Que se passe-t-il si je ne confirme jamais la remise des clés ?',
     a: `Passé ${ESCROW.disputeWindow} après la date d’arrivée sans confirmation ni signalement de votre part, la réservation est considérée comme honorée et les fonds sont versés à l’hôte. Vous recevez un rappel avant cette échéance.`,
   },
   {
-    q: 'Le propriétaire peut-il me demander un paiement en dehors de Klef ?',
-    a: 'Non, et c’est un motif de suspension immédiate du compte. Un paiement en espèces ou par transfert direct sort du séquestre : vous perdez toute protection et Klef ne peut plus intervenir. Signalez-nous toute demande de ce type.',
+    q: 'Le propriétaire peut-il me demander un paiement en dehors de Paixi ?',
+    a: 'Non, et c’est un motif de suspension immédiate du compte. Un paiement en espèces ou par transfert direct sort du séquestre : vous perdez toute protection et Paixi ne peut plus intervenir. Signalez-nous toute demande de ce type.',
   },
   {
     q: 'Qui arbitre en cas de désaccord ?',
-    a: 'Un membre de l’équipe Klef examine les éléments fournis par les deux parties — photos, échanges, rapport de visite de l’agent. La décision et son motif vous sont communiqués par écrit. À défaut d’accord, les voies de recours de droit commun sénégalais restent ouvertes.',
+    a: 'Un membre de l’équipe Paixi examine les éléments fournis par les deux parties — photos, échanges, rapport de visite de l’agent. La décision et son motif vous sont communiqués par écrit. À défaut d’accord, les voies de recours de droit commun sénégalais restent ouvertes.',
   },
   {
     q: 'Y a-t-il des frais sur le séquestre ?',
-    a: 'Aucun frais supplémentaire pour le voyageur : le montant affiché à la réservation est celui que vous payez. La commission de Klef est prélevée sur le versement à l’hôte.',
+    a: 'Aucun frais supplémentaire pour le voyageur : le montant affiché à la réservation est celui que vous payez. La commission de Paixi est prélevée sur le versement à l’hôte.',
   },
 ] as const;
 
@@ -117,7 +117,7 @@ export default function SequestrePage() {
           <span className="inline-flex items-center gap-2 rounded-pill border border-white/10 bg-white/[0.06] px-4 py-1.5">
             <ShieldCheck className="h-3.5 w-3.5 text-on-inverse-marker" aria-hidden="true" />
             <span className="text-[0.6875rem] font-semibold uppercase tracking-[0.14em] text-forest-200">
-              Séquestre Klef
+              Séquestre Paixi
             </span>
           </span>
 
@@ -216,12 +216,12 @@ export default function SequestrePage() {
               <p className="mt-3 text-base leading-relaxed text-foreground-muted">
                 Les fonds sont conservés chez{' '}
                 <strong className="font-semibold text-forest-900">{ESCROW.custodian}</strong>,
-                sur un compte distinct des comptes d’exploitation de Klef. Ils ne
+                sur un compte distinct des comptes d’exploitation de Paixi. Ils ne
                 peuvent être utilisés ni pour financer l’activité de la
                 plateforme, ni pour couvrir une autre réservation.
               </p>
               <p className="mt-3 text-sm leading-relaxed text-foreground-muted">
-                Klef n’est ni une banque ni un établissement de crédit. Nous
+                Paixi n’est ni une banque ni un établissement de crédit. Nous
                 organisons la conservation et la libération des fonds pour le
                 compte des deux parties, selon les règles décrites sur cette page
                 et dans nos{' '}

@@ -13,6 +13,7 @@ import {
   ResultatAnnulation,
   SensTransaction,
   TypeTransactionWallet,
+  TypeTransactionTeranga,
   TypeFaute,
 } from '@prisma/client';
 import { PrismaService } from '../../../infrastructure/prisma/prisma.service';
@@ -21,6 +22,7 @@ import { ReservationStateMachine } from '../reservation.state-machine';
 import { RefundPaymentUseCase } from '../../payment/use-cases/refund-payment.use-case';
 import { NotificationsService } from '../../../modules/notifications/notifications.service';
 import { RedisService } from '../../../infrastructure/redis/redis.service';
+import { SystemLedgerService } from '../../system-ledger/system-ledger.service';
 
 @Injectable()
 export class CancelReservationUseCase {
@@ -33,6 +35,7 @@ export class CancelReservationUseCase {
     private readonly refundPayment: RefundPaymentUseCase,
     private readonly notifications: NotificationsService,
     private readonly redis: RedisService,
+    private readonly systemLedger: SystemLedgerService,
   ) {}
 
   async execute(reservationId: string, userId: string, raison: string) {
@@ -73,25 +76,22 @@ export class CancelReservationUseCase {
         reservation.statut === StatutReservation.CHECKED_IN;
 
       if (wasConfirmed) {
-        if (diffDays > 5) penaliteProprio = 0;
+        if (diffDays > 3) penaliteProprio = 0;
         else if (diffHours >= 24) penaliteProprio = 2500;
         else penaliteProprio = 10000;
       } else {
         penaliteProprio = 0;
       }
     } else {
-      if (diffDays > 7) {
+      if (diffDays > 3) {
         politique = ResultatAnnulation.UC2_LOCATAIRE_PLUS_3J;
-        montantRembourse = Number(reservation.totalLocataire);
-      } else if (diffDays >= 3) {
-        politique = ResultatAnnulation.UC2_LOCATAIRE_1_3J;
-        montantRembourse = Number(reservation.totalLocataire) * 0.5;
+        montantRembourse = Number(reservation.totalBase || reservation.totalLocataire);
       } else if (diffHours >= 24) {
         politique = ResultatAnnulation.UC2_LOCATAIRE_1_3J;
-        montantRembourse = Number(reservation.totalLocataire) * 0.25;
+        montantRembourse = Number(reservation.totalLocataire) * 0.75;
       } else {
         politique = ResultatAnnulation.UC2_LOCATAIRE_BLOQUE;
-        montantRembourse = 0;
+        montantRembourse = Number(reservation.totalLocataire) * 0.5;
       }
     }
 
@@ -117,6 +117,64 @@ export class CancelReservationUseCase {
           },
         });
       }
+
+      // Ventilation du remboursement cash vs recrédit Paixi Coins
+      const coinsDeduites = Number(reservation.coinsDeduites || 0);
+      const cashPaye = Number(reservation.montantPayeCash || 0);
+      const cashRefund = Math.min(montantRembourse, cashPaye > 0 ? cashPaye : montantRembourse);
+      const coinsRefund = Math.max(0, Math.min(coinsDeduites, montantRembourse - cashRefund));
+
+      if (coinsRefund > 0) {
+        const terangaAccount = await tx.terangaAccount.findUnique({
+          where: { utilisateurId: reservation.locataireId },
+        });
+
+        if (terangaAccount) {
+          const soldeApres = terangaAccount.soldeCoins + coinsRefund;
+          await tx.terangaAccount.update({
+            where: { id: terangaAccount.id },
+            data: { soldeCoins: soldeApres },
+          });
+
+          await tx.terangaTransaction.create({
+            data: {
+              terangaAccountId: terangaAccount.id,
+              montantCoins: coinsRefund,
+              type: TypeTransactionTeranga.CREDIT_ANNULATION,
+              description: `Recrédit Paixi Coins suite à l'annulation de la réservation #${reservationId.slice(0, 8).toUpperCase()}`,
+              reservationId,
+              soldeApres,
+            },
+          });
+        }
+      }
+
+      // Traçabilité Refund
+      if (reservation.paiement) {
+        await tx.refund.create({
+          data: {
+            reservationId,
+            paiementId: reservation.paiement.id,
+            motif: politique,
+            montantTotal: montantRembourse,
+            montantLocataire: cashRefund,
+            montantPenaliteProprio: penaliteProprio,
+            montantCommissionImmoLoc: Number(reservation.montantCommission || 0),
+            declenchePar: userId,
+            statut: 'EXECUTE',
+            executeLe: now,
+            methodeRemboursement: reservation.paiement.fournisseur,
+          },
+        });
+      }
+
+      // Enregistrement au Grand Livre Système Paixi
+      await this.systemLedger.recordRefund(
+        tx,
+        reservationId,
+        cashRefund,
+        coinsRefund,
+      );
 
       if (isProprio && penaliteProprio > 0) {
         // Pessimistic lock: SELECT FOR UPDATE pour éviter les race conditions sur le wallet
@@ -225,3 +283,4 @@ export class CancelReservationUseCase {
     return result;
   }
 }
+

@@ -16,7 +16,7 @@ async function main() {
     data: {
       reservationId: '8b2888a2-ba3c-4873-89fd-a6f5302ff262',
       titre: 'Supplément litige (Dépassement de personnes)',
-      description: 'Arbitrage Klef : Litige FONDÉ. Dédommagement de 15 000 FCFA crédité au portefeuille de l\'hôte.',
+      description: 'Arbitrage Paixi : Litige FONDÉ. Dédommagement de 15 000 FCFA crédité au portefeuille de l\'hôte.',
       montant: 15000,
       statut: 'PAYE',
       payeLe: new Date('2026-09-03T17:18:50.000Z'),

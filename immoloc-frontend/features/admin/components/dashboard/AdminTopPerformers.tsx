@@ -35,7 +35,7 @@ export function AdminTopPerformers({ performers = [], isLoading = false }: Props
           {/* Le sous-titre annonçait « hôtes vérifiés » alors que rien ne le
              garantit : le badge n'apparaît que si le KYC est validé, donc un
              hôte non vérifié pouvait figurer dans une liste qui se présente
-             comme filtrée. Et « Partenaires Klef » désignait un statut qui
+             comme filtrée. Et « Partenaires Paixi » désignait un statut qui
              n'existe pas dans le produit. */}
           <p className="text-xs text-foreground-muted">
             Classement par nombre de logements publiés

@@ -50,7 +50,7 @@ export function OwnerFloatingTabBar({ state, descriptors, navigation }: any) {
   const [modalVisible, setModalVisible] = useState(false);
 
   const goToAddListing = React.useCallback(() => {
-    router.push('/(owner)/add-listing' as any);
+    router.navigate('/(owner)/add-listing' as any);
   }, [router]);
 
   const {

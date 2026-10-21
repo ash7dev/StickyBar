@@ -85,7 +85,7 @@ export default function ReservationDetailScreen() {
   const [showGalleryModal, setShowGalleryModal] = useState(false);
 
   // Fade-in animation for content
-  const fadeAnim = useRef(new Animated.Value(0.8)).current;
+  const fadeAnim = useRef(new Animated.Value(0.4)).current;
 
   const cacheKey = `klef_tenant_reservation_detail_${reservationId}`;
 
@@ -143,6 +143,16 @@ export default function ReservationDetailScreen() {
 
   const reservation = reservationData || cachedDetail;
   const showSkeleton = !isCacheLoaded && isLoading && !reservation;
+
+  useEffect(() => {
+    if (reservation) {
+      Animated.timing(fadeAnim, {
+        toValue: 1,
+        duration: 300,
+        useNativeDriver: true,
+      }).start();
+    }
+  }, [reservation, fadeAnim]);
 
   const handleRefresh = useCallback(() => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {});
@@ -222,7 +232,7 @@ export default function ReservationDetailScreen() {
                 />
               )}
 
-              {/* 2. Banner Contrat PDF Klef Vérifié */}
+              {/* 2. Banner Contrat PDF Paixi Vérifié */}
               <MobileContractBannerCard
                 contratUrl={reservation.contratUrl}
                 reservationId={reservation.id}
@@ -244,7 +254,7 @@ export default function ReservationDetailScreen() {
               {/* 4. Récapitulatif Financier */}
               <MobileFinancialCard res={reservation} />
 
-              {/* 4.5. Assistance & Support Klef 24/7 */}
+              {/* 4.5. Assistance & Support Paixi 24/7 */}
               <MobileAssistanceCard reservationId={reservation.id} />
 
               <SectionDivider label="Historique" />
@@ -298,7 +308,7 @@ const styles = StyleSheet.create({
   },
   scrollContent: {
     paddingHorizontal: 16,
-    paddingBottom: 40,
+    paddingBottom: 110,
   },
 
   contentStack: {

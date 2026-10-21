@@ -13,6 +13,7 @@ import { useRouter } from 'expo-router';
 import { ChevronDown, Check, User, X } from 'lucide-react-native';
 import * as Haptics from 'expo-haptics';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { PaixiLogo } from '../brand/PaixiLogo';
 import { useAuthStore } from '../../../features/auth/stores/auth.store';
 import {
   useCurrencyStore,
@@ -61,16 +62,13 @@ export function TenantTopHeader() {
   return (
     <View style={[styles.headerContainer, { paddingTop: Math.max(insets.top, Platform.OS === 'ios' ? 44 : 12) }]}>
       <View style={styles.headerContent}>
-        {/* ── Left: Wordmark Logo klef. ───────────────────────────────── */}
+        {/* ── Left: Logo Paixi ────────────────────────────────────────── */}
         <TouchableOpacity
           activeOpacity={0.8}
           onPress={() => router.push('/(tenant)' as any)}
           style={styles.logoButton}
         >
-
-          <Text style={styles.logoTextMain}>
-            klef<Text style={styles.logoTextDot}>.</Text>
-          </Text>
+          <PaixiLogo size={24} />
         </TouchableOpacity>
 
         {/* ── Right: Currency Selector Pill + Profile Avatar ─────────── */}
@@ -174,21 +172,10 @@ const styles = StyleSheet.create({
     height: 44,
   },
 
-  // Wordmark Logo klef.
+  // Logo Paixi
   logoButton: {
     flexDirection: 'row',
-    alignItems: 'baseline',
-  },
-  logoTextMain: {
-    fontSize: 26,
-    fontWeight: '800',
-    color: colors.forest[800],
-    letterSpacing: -0.8,
-  },
-  logoTextDot: {
-    fontSize: 26,
-    fontWeight: '800',
-    color: colors.lime[600],
+    alignItems: 'center',
   },
 
   // Right Actions

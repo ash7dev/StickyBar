@@ -81,7 +81,7 @@ export function AdminStatsOverview({ stats, isLoading }: Props) {
       variation: stats?.gmvVariation,
     },
     {
-      title: 'Commissions Klef',
+      title: 'Commissions Paixi',
       value: fcfa(stats?.commissions),
       subtext: 'Revenus de la plateforme',
       icon: TrendingUp,

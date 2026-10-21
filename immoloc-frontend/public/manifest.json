@@ -1,19 +1,40 @@
 {
-  "name": "Klef - Location Immobilière au Sénégal",
-  "short_name": "Klef",
+  "name": "Paixi - Location Immobilière au Sénégal",
+  "short_name": "Paixi",
   "description": "Plateforme de location immobilière premium au Sénégal",
   "start_url": "/",
   "display": "standalone",
-  "background_color": "#ffffff",
-  "theme_color": "#166534",
+  "background_color": "#F8FBF4",
+  "theme_color": "#14654C",
   "orientation": "portrait-primary",
-  "categories": ["business", "lifestyle"],
+  "categories": [
+    "business",
+    "lifestyle"
+  ],
   "icons": [
+    {
+      "src": "/icon-192x192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/icon-512x512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/icon-maskable-512x512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
+    },
     {
       "src": "/icon.svg",
       "sizes": "any",
       "type": "image/svg+xml",
-      "purpose": "any maskable"
+      "purpose": "any"
     }
   ],
   "screenshots": [
@@ -36,14 +57,24 @@
       "short_name": "Recherche",
       "description": "Trouvez votre logement idéal",
       "url": "/logements",
-      "icons": [{ "src": "/icon.svg", "sizes": "any" }]
+      "icons": [
+        {
+          "src": "/icon.svg",
+          "sizes": "any"
+        }
+      ]
     },
     {
       "name": "Dashboard Propriétaire",
       "short_name": "Dashboard",
       "description": "Gérez vos annonces",
       "url": "/dashboard",
-      "icons": [{ "src": "/icon.svg", "sizes": "any" }]
+      "icons": [
+        {
+          "src": "/icon.svg",
+          "sizes": "any"
+        }
+      ]
     }
   ]
 }

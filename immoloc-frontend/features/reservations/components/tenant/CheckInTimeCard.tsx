@@ -162,7 +162,7 @@ export function CheckInTimeCard({ res, heureDebut, heureFin, supportTel }: Props
             <Phone className="h-3.5 w-3.5 shrink-0 text-on-inverse-marker" aria-hidden="true" />
             <span>
               <span className="font-semibold text-on-inverse">Besoin d’aide ? </span>
-              Le support Klef est joignable au{' '}
+              Le support Paixi est joignable au{' '}
               <a
                 href={`tel:${supportTel.replace(/\s/g, '')}`}
                 className="font-semibold text-on-inverse underline underline-offset-2"

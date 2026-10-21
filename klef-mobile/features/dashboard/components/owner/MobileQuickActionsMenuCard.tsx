@@ -4,6 +4,7 @@ import { useRouter } from 'expo-router';
 import {
   Plus,
   CalendarDays,
+  CalendarRange,
   Building2,
   Wallet,
   BarChart3,
@@ -30,6 +31,13 @@ const ACTIONS = [
     subtitle: 'Gérez vos demandes et séjours en cours',
     icon: CalendarDays,
     href: '/(owner)/reservations',
+  },
+  {
+    id: 'view-calendar',
+    title: 'Ouvrir mon calendrier',
+    subtitle: 'Tous vos biens d’un coup d’œil, bloquez des dates',
+    icon: CalendarRange,
+    href: '/(owner)/calendar',
   },
   {
     id: 'view-listings',
@@ -65,7 +73,7 @@ export function MobileQuickActionsMenuCard() {
   const router = useRouter();
 
   const goToAddListing = React.useCallback(() => {
-    router.push('/(owner)/add-listing' as any);
+    router.navigate('/(owner)/add-listing' as any);
   }, [router]);
 
   const {
@@ -80,7 +88,7 @@ export function MobileQuickActionsMenuCard() {
     if (href === '/(owner)/add-listing') {
       triggerGate();
     } else {
-      router.push(href as any);
+      router.navigate(href as any);
     }
   };
 

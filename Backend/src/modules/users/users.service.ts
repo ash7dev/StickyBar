@@ -234,7 +234,7 @@ export class UsersService {
       });
 
       if (existingUser && existingUser.id !== userId) {
-        throw new ConflictException('Cette adresse email est déjà associée à un autre compte Klef.');
+        throw new ConflictException('Cette adresse email est déjà associée à un autre compte Paixi.');
       }
     }
 

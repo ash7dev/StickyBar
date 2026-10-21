@@ -95,7 +95,7 @@ export function BlocMontant({ r, className }: { r: ReservationState; className?:
 
             {pricing.coinsUtilises > 0 && (
                 <p className="mt-2 text-xs text-on-inverse-muted">
-                    <Montant value={pricing.coinsUtilises} /> réglés en Klef Coins.
+                    <Montant value={pricing.coinsUtilises} /> réglés en Paixi Coins.
                 </p>
             )}
 
@@ -107,7 +107,7 @@ export function BlocMontant({ r, className }: { r: ReservationState; className?:
 
             <p className="mt-4 flex items-start gap-2 border-t border-border-inverse pt-3.5 text-xs text-on-inverse-muted">
                 <ShieldCheck className="mt-px h-4 w-4 shrink-0 text-on-inverse-marker" aria-hidden />
-                <span>Klef conserve les fonds jusqu&apos;à votre arrivée dans le logement.</span>
+                <span>Paixi conserve les fonds jusqu&apos;à votre arrivée dans le logement.</span>
             </p>
         </div>
     );

@@ -27,7 +27,7 @@ export function GestionnaireRevenueChart({ data }: Props) {
             <span>Historique des Réservations & Net Propriétaires</span>
           </h3>
           <p className="text-xs sm:text-sm text-foreground-muted mt-1 font-medium">
-            Ventilation entre le volume payé par les voyageurs, le net revenant aux propriétaires et la commission Klef
+            Ventilation entre le volume payé par les voyageurs, le net revenant aux propriétaires et la commission Paixi
           </p>
         </div>
 
@@ -39,7 +39,7 @@ export function GestionnaireRevenueChart({ data }: Props) {
             </div>
             <div className="flex items-center gap-2">
               <span className="h-3.5 w-3.5 rounded-full bg-lime-400 inline-block border border-forest-900" />
-              <span className="text-foreground">Commission Klef</span>
+              <span className="text-foreground">Commission Paixi</span>
             </div>
           </div>
         )}
@@ -72,7 +72,7 @@ export function GestionnaireRevenueChart({ data }: Props) {
                     <p className="font-bold">{d.mois}</p>
                     <p>Volume: {fcfa(d.ca)} FCFA</p>
                     <p className="text-lime-400">Net Propriétaires: {fcfa(d.netProprietaire)} FCFA</p>
-                    <p className="text-forest-200">Commission Klef: {fcfa(d.commissionKlef)} FCFA</p>
+                    <p className="text-forest-200">Commission Paixi: {fcfa(d.commissionKlef)} FCFA</p>
                   </div>
 
                   {/* Barre Principale CA plus large et haute */}
@@ -84,7 +84,7 @@ export function GestionnaireRevenueChart({ data }: Props) {
                       )}
                       style={{ height: '100%' }}
                     />
-                    {/* Bande supérieure commission Klef */}
+                    {/* Bande supérieure commission Paixi */}
                     <div
                       className="w-full bg-lime-400 transition-all duration-500 absolute top-0"
                       style={{ height: '12%' }}

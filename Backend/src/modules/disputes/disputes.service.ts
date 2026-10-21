@@ -14,11 +14,13 @@ import {
   RoleLitige,
   TypeFaute,
   TypeTransactionWallet,
+  TypeTransactionTeranga,
   SensTransaction,
+  StatutRetrait,
 } from '@prisma/client';
 import { RefundPaymentUseCase } from '../../domain/payment/use-cases/refund-payment.use-case';
-
 import { NotificationsService } from '../notifications/notifications.service';
+import { SystemLedgerService } from '../../domain/system-ledger/system-ledger.service';
 
 @Injectable()
 export class DisputesService {
@@ -28,7 +30,9 @@ export class DisputesService {
     private readonly prisma: PrismaService,
     private readonly refundPayment: RefundPaymentUseCase,
     private readonly notifications: NotificationsService,
+    private readonly systemLedger: SystemLedgerService,
   ) {}
+
 
   /**
    * Ouvrir un litige
@@ -93,6 +97,27 @@ export class DisputesService {
         data: { statut: StatutReservation.DISPUTED },
       });
 
+      // Suspension conservatoire des demandes de retrait EN_ATTENTE du propriétaire
+      const hostId = reservation.proprietaireId;
+      const hostWallet = await tx.wallet.findUnique({
+        where: { utilisateurId: hostId },
+        include: {
+          retraits: {
+            where: { statut: StatutRetrait.EN_ATTENTE },
+          },
+        },
+      });
+
+      if (hostWallet && hostWallet.retraits.length > 0) {
+        for (const r of hostWallet.retraits) {
+          await tx.retrait.update({
+            where: { id: r.id },
+            data: { statut: StatutRetrait.SUSPENDU_POUR_LITIGE },
+          });
+          this.logger.log(`Retrait [${r.id}] suspendu conservatoirement suite à l'ouverture du litige sur la réservation [${dto.reservationId}]`);
+        }
+      }
+
       return litige;
     });
 
@@ -107,7 +132,7 @@ export class DisputesService {
     this.notifications.sendDisputePush(
       autrePartieId,
       'Nouveau litige déclaré 🚨',
-      'Un litige a été ouvert concernant votre réservation. L\'équipe Klef examine le dossier.',
+      'Un litige a été ouvert concernant votre réservation. L\'équipe Paixi examine le dossier.',
       redirectUrl
     ).catch((err) => this.logger.error(`Erreur Push litige create: ${err.message}`));
 
@@ -256,6 +281,96 @@ export class DisputesService {
               description: `Litige FONDE (${effectiveTaux}% remboursé) [Motif: ${litige.motif}] : ${dto.decisionAdmin}`,
             },
           });
+
+          // Recréditer les Paixi Coins au locataire et enregistrer au SystemLedger
+          if (calculatedCompensation > 0) {
+            const coinsDeduites = Number(reservation.coinsDeduites || 0);
+            const cashPaye = Number(reservation.montantPayeCash || 0);
+            const cashRefund = Math.min(calculatedCompensation, cashPaye > 0 ? cashPaye : calculatedCompensation);
+            const coinsRefund = Math.max(0, Math.min(coinsDeduites, calculatedCompensation - cashRefund));
+
+            if (coinsRefund > 0) {
+              const terangaAccount = await tx.terangaAccount.findUnique({
+                where: { utilisateurId: reservation.locataireId },
+              });
+
+              if (terangaAccount) {
+                const soldeApres = terangaAccount.soldeCoins + coinsRefund;
+                await tx.terangaAccount.update({
+                  where: { id: terangaAccount.id },
+                  data: { soldeCoins: soldeApres },
+                });
+
+                await tx.terangaTransaction.create({
+                  data: {
+                    terangaAccountId: terangaAccount.id,
+                    montantCoins: coinsRefund,
+                    type: TypeTransactionTeranga.CREDIT_ANNULATION,
+                    description: `Recrédit Paixi Coins suite au litige fondé #${reservation.id.slice(0, 8).toUpperCase()}`,
+                    reservationId: reservation.id,
+                    soldeApres,
+                  },
+                });
+              }
+            }
+
+            await this.systemLedger.recordRefund(
+              tx,
+              reservation.id,
+              cashRefund,
+              coinsRefund,
+            );
+          }
+
+          // Régularisation financière côté propriétaire s'il avait déjà perçu les fonds
+          const hostWallet = await tx.wallet.findUnique({
+            where: { utilisateurId: reservation.proprietaireId },
+          });
+
+          if (hostWallet && calculatedCompensation > 0) {
+            const alreadyCredited = await tx.transactionWallet.findUnique({
+              where: {
+                reservationId_type: {
+                  reservationId: reservation.id,
+                  type: TypeTransactionWallet.CREDIT_LOCATION,
+                },
+              },
+            });
+
+            if (alreadyCredited) {
+              const soldeDispo = Number(hostWallet.soldeDisponible);
+              const montantAImputer = calculatedCompensation;
+              const montantADebiterSolde = Math.min(soldeDispo, montantAImputer);
+              const montantEnDette = montantAImputer - montantADebiterSolde;
+
+              await tx.wallet.update({
+                where: { id: hostWallet.id },
+                data: {
+                  ...(montantADebiterSolde > 0 && { soldeDisponible: { decrement: montantADebiterSolde } }),
+                  ...(montantEnDette > 0 && { dettePenalites: { increment: montantEnDette } }),
+                },
+              });
+
+              const soldeApres = soldeDispo - montantADebiterSolde;
+              await tx.transactionWallet.create({
+                data: {
+                  walletId: hostWallet.id,
+                  reservationId: reservation.id,
+                  type: TypeTransactionWallet.DEBIT_PENALITE,
+                  montant: montantAImputer,
+                  sens: SensTransaction.DEBIT,
+                  soldeApres,
+                  description: `Régularisation litige FONDÉ (${effectiveTaux}% remboursé locataire)` +
+                    (montantEnDette > 0 ? ` [Dette générée : ${montantEnDette.toLocaleString('fr-FR')} FCFA]` : ''),
+                },
+              });
+
+              this.logger.log(
+                `Régularisation wallet hôte ${reservation.proprietaireId} : ` +
+                `Solde débité: ${montantADebiterSolde} FCFA | Dette ajoutée: ${montantEnDette} FCFA`
+              );
+            }
+          }
         } else {
           // Proprio victime (ex: dommages ou dépassement personnes)
           const typeFauteLocataire =
@@ -303,7 +418,7 @@ export class DisputesService {
               data: {
                 reservationId: reservation.id,
                 titre: `Supplément litige (${litige.motif})`,
-                description: dto.decisionAdmin || 'Montant accordé par l\'arbitrage Klef',
+                description: dto.decisionAdmin || 'Montant accordé par l\'arbitrage Paixi',
                 montant: calculatedCompensation,
                 statut: 'PAYE',
                 payeLe: new Date(),
@@ -311,6 +426,33 @@ export class DisputesService {
               },
             });
           }
+        }
+      }
+
+      // 4. Vérifier s'il reste d'autres litiges EN_ATTENTE pour le propriétaire
+      const remainingLitiges = await tx.litige.count({
+        where: {
+          statut: StatutLitige.EN_ATTENTE,
+          id: { not: id },
+          reservation: { proprietaireId: reservation.proprietaireId },
+        },
+      });
+
+      // S'il n'y a plus aucun litige actif, rétablir les retraits suspendus
+      if (remainingLitiges === 0) {
+        const suspendedRetraits = await tx.retrait.findMany({
+          where: {
+            wallet: { utilisateurId: reservation.proprietaireId },
+            statut: StatutRetrait.SUSPENDU_POUR_LITIGE,
+          },
+        });
+
+        for (const r of suspendedRetraits) {
+          await tx.retrait.update({
+            where: { id: r.id },
+            data: { statut: StatutRetrait.EN_ATTENTE },
+          });
+          this.logger.log(`Retrait [${r.id}] rétabli en statut EN_ATTENTE après résolution de tous les litiges`);
         }
       }
 

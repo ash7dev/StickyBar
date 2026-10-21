@@ -107,7 +107,7 @@ export function RefuseCheckInModal({ reservationId, onSuccess, onClose }: Props)
       <div className="space-y-5 p-6">
 
         <Notice tone="error" icon={AlertTriangle} title="Signalement bloquant">
-          Votre hôte et l’équipe Klef sont informés immédiatement. Les fonds restent en séquestre
+          Votre hôte et l’équipe Paixi sont informés immédiatement. Les fonds restent en séquestre
           jusqu’à résolution. Assurez-vous d’avoir tenté de joindre votre hôte avant de continuer.
         </Notice>
 
@@ -213,7 +213,7 @@ export function RefuseCheckInModal({ reservationId, onSuccess, onClose }: Props)
         <div className="rounded-inner border border-border bg-background-alt p-3.5">
           <p className="text-xs leading-relaxed text-foreground-muted">
             <span className="font-semibold text-foreground">Ce qui se passe ensuite : </span>
-            l’équipe Klef contacte votre hôte. Votre paiement reste en séquestre. Si le problème
+            l’équipe Paixi contacte votre hôte. Votre paiement reste en séquestre. Si le problème
             n’est pas résolu sous 24 h, vous êtes remboursé intégralement.
           </p>
         </div>

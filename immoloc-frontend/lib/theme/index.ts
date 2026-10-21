@@ -1,5 +1,5 @@
 // ─────────────────────────────────────────────────────────────────────────────
-// Klef — Theme Config
+// Paixi — Theme Config
 // Typographie : Fraunces (display) + Inter (interface)
 // Marque : Vert Forêt #14654C · Action : Lime #D3F26E · Statut : Or #C9A24B
 // ─────────────────────────────────────────────────────────────────────────────

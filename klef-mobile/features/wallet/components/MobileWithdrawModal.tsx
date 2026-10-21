@@ -24,6 +24,7 @@ interface MobileWithdrawModalProps {
   visible: boolean;
   onClose: () => void;
   soldeDisponible: number;
+  soldeRetirable?: number;
   onSuccess?: () => void;
 }
 
@@ -33,6 +34,7 @@ export function MobileWithdrawModal({
   visible,
   onClose,
   soldeDisponible,
+  soldeRetirable,
   onSuccess,
 }: MobileWithdrawModalProps) {
   const [montant, setMontant] = useState<string>('');
@@ -40,8 +42,9 @@ export function MobileWithdrawModal({
   const [telephone, setTelephone] = useState<string>('');
   const [loading, setLoading] = useState<boolean>(false);
 
+  const soldeMaxRetirable = soldeRetirable !== undefined ? soldeRetirable : soldeDisponible;
   const parsedMontant = Number(montant.replace(/\s/g, '')) || 0;
-  const isMontantValid = parsedMontant >= 10000 && parsedMontant <= soldeDisponible;
+  const isMontantValid = parsedMontant >= 10000 && parsedMontant <= soldeMaxRetirable;
 
   const handleQuickAmount = (val: number) => {
     Haptics.selectionAsync().catch(() => {});
@@ -53,7 +56,7 @@ export function MobileWithdrawModal({
       if (parsedMontant < 10000) {
         Alert.alert('Montant insuffisant', 'Le montant minimum de retrait est de 10 000 FCFA.');
       } else {
-        Alert.alert('Solde dépassé', 'Le montant demandé dépasse votre solde disponible retirable.');
+        Alert.alert('Solde dépassé', 'Le montant demandé dépasse votre solde retirable disponible.');
       }
       return;
     }
@@ -103,7 +106,7 @@ export function MobileWithdrawModal({
               <View>
                 <Text style={styles.modalTitle}>Demander un Retrait</Text>
                 <Text style={styles.modalSub}>
-                  Disponible : {soldeDisponible.toLocaleString('fr-FR')} FCFA
+                  Solde retirable : {soldeMaxRetirable.toLocaleString('fr-FR')} FCFA
                 </Text>
               </View>
             </View>
@@ -162,24 +165,24 @@ export function MobileWithdrawModal({
 
             {/* Quick Amounts */}
             <View style={styles.quickAmountsRow}>
-              {soldeDisponible >= 25000 && (
+              {soldeMaxRetirable >= 25000 && (
                 <TouchableOpacity onPress={() => handleQuickAmount(25000)} style={styles.quickPill}>
                   <Text style={styles.quickPillText}>25 000</Text>
                 </TouchableOpacity>
               )}
-              {soldeDisponible >= 50000 && (
+              {soldeMaxRetirable >= 50000 && (
                 <TouchableOpacity onPress={() => handleQuickAmount(50000)} style={styles.quickPill}>
                   <Text style={styles.quickPillText}>50 000</Text>
                 </TouchableOpacity>
               )}
-              {soldeDisponible >= 100000 && (
+              {soldeMaxRetirable >= 100000 && (
                 <TouchableOpacity onPress={() => handleQuickAmount(100000)} style={styles.quickPill}>
                   <Text style={styles.quickPillText}>100 000</Text>
                 </TouchableOpacity>
               )}
-              {soldeDisponible >= 10000 && (
-                <TouchableOpacity onPress={() => handleQuickAmount(soldeDisponible)} style={styles.quickPillHighlight}>
-                  <Text style={styles.quickPillHighlightText}>Tout retirer ({soldeDisponible.toLocaleString('fr-FR')})</Text>
+              {soldeMaxRetirable >= 10000 && (
+                <TouchableOpacity onPress={() => handleQuickAmount(soldeMaxRetirable)} style={styles.quickPillHighlight}>
+                  <Text style={styles.quickPillHighlightText}>Tout le solde retirable ({soldeMaxRetirable.toLocaleString('fr-FR')})</Text>
                 </TouchableOpacity>
               )}
             </View>

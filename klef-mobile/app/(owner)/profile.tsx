@@ -22,6 +22,7 @@ import { MobileProfileKycCard } from '../../features/profile/components/MobilePr
 import { MobilePayoutSettingsCard } from '../../features/profile/components/MobilePayoutSettingsCard';
 import { MobileSecurityCard } from '../../features/profile/components/MobileSecurityCard';
 import { MobileProfileActionsCard } from '../../features/profile/components/MobileProfileActionsCard';
+import { MobileProfileLegalCard } from '../../features/profile/components/MobileProfileLegalCard';
 import { TenantActionGateModal } from '../../shared/components/gate/TenantActionGateModal';
 
 const PAYOUT_CACHE_KEY = 'klef_owner_payout_cache_v1';
@@ -124,7 +125,7 @@ export default function OwnerProfileScreen() {
           <View style={styles.guardedStack}>
             <AuthRequiredCard
               title="Connectez-vous pour accéder à vos paramètres Hôte"
-              subtitle="Gérez vos annonces, vos coordonnées de paiement et la sécurité de votre compte Klef."
+              subtitle="Gérez vos annonces, vos coordonnées de paiement et la sécurité de votre compte Paixi."
             />
           </View>
         ) : (
@@ -168,6 +169,9 @@ export default function OwnerProfileScreen() {
               userEmail={authUser?.email}
               onUpdated={handleRefresh}
             />
+
+            {/* 6b. Confidentialité & Mentions Légales (CGU 1:1 & Privacy) */}
+            <MobileProfileLegalCard />
 
             {/* 7. Actions de Compte (Bascule Rôle, Déconnexion, Suppression) */}
             <MobileProfileActionsCard />

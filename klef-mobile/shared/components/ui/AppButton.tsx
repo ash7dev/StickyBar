@@ -11,7 +11,7 @@ import * as Haptics from 'expo-haptics';
 import { colors, radius, shadows, typography } from '../../theme/tokens';
 
 // =============================================================================
-// AppButton — Système de boutons Klef Mobile
+// AppButton — Système de boutons Paixi Mobile
 // SOURCE DE VÉRITÉ : Miroir exact de globals.css btn-action / btn-primary /
 //                     btn-ghost / btn-outline / btn-inverse
 // =============================================================================

@@ -194,11 +194,11 @@ export function TenantReservationActionPanel({ id, res, onRefetch }: Props) {
 
   const header =
     statut === 'DISPUTED'
-      ? { icon: AlertTriangle, label: 'Litige en cours', chip: 'Litige', subtitle: 'Dossier en cours d’examen par l’équipe support Klef' }
+      ? { icon: AlertTriangle, label: 'Litige en cours', chip: 'Litige', subtitle: 'Dossier en cours d’examen par l’équipe support Paixi' }
       : statut === 'COMPLETED'
         ? { icon: CheckCircle2, label: 'Séjour terminé', chip: 'Terminé', subtitle: 'Partagez votre expérience avec la communauté' }
         : statut === 'CHECKED_IN'
-          ? { icon: Home, label: 'Séjour en cours', chip: 'En cours', subtitle: 'Vos garanties Klef sont actives' }
+          ? { icon: Home, label: 'Séjour en cours', chip: 'En cours', subtitle: 'Vos garanties Paixi sont actives' }
           : { icon: LogIn, label: 'Check-in', chip: 'Étape 3', subtitle: SUBTITLES[subState] };
 
   const HeaderIcon = header.icon;
@@ -489,7 +489,7 @@ export function TenantReservationActionPanel({ id, res, onRefetch }: Props) {
               ) : (
                 <Notice tone="forest" icon={CheckCircle2} title="Séjour en cours">
                   Votre arrivée a été validée. Votre séjour reste couvert par l’assistance et la
-                  garantie Klef.
+                  garantie Paixi.
                 </Notice>
               )}
 
@@ -510,7 +510,7 @@ export function TenantReservationActionPanel({ id, res, onRefetch }: Props) {
           {statut === 'COMPLETED' && (
             <>
               <Notice tone="forest" icon={CheckCircle2} title="Séjour terminé">
-                Merci d’avoir utilisé Klef. Votre avis aide les prochains voyageurs à choisir.
+                Merci d’avoir utilisé Paixi. Votre avis aide les prochains voyageurs à choisir.
               </Notice>
 
               <div className="space-y-3 border-t border-border pt-4">
@@ -663,7 +663,7 @@ export function TenantReservationActionPanel({ id, res, onRefetch }: Props) {
               <p className="mt-1 text-sm font-semibold text-foreground">{refundTier.label}</p>
               <p className="mt-1.5 text-xs leading-relaxed text-foreground-muted">
                 Estimation indicative sur le montant payé. Le montant définitif est arrêté par
-                Klef à la réception de votre demande.
+                Paixi à la réception de votre demande.
               </p>
             </section>
 
@@ -716,10 +716,10 @@ export function TenantReservationActionPanel({ id, res, onRefetch }: Props) {
       )}
 
       {showRulesModal && (
-        <Modal title="Vos droits sur Klef" onClose={() => setShowRulesModal(false)}>
+        <Modal title="Vos droits sur Paixi" onClose={() => setShowRulesModal(false)}>
           <div className="space-y-4 p-6">
             <p className="text-xs leading-relaxed text-foreground-muted">
-              Klef protège votre séjour par un séquestre sécurisé et une double validation.
+              Paixi protège votre séjour par un séquestre sécurisé et une double validation.
             </p>
 
             {[

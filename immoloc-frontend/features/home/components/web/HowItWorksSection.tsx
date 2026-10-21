@@ -22,7 +22,7 @@ const STEPS = [
     number: '01',
     icon: Search,
     title: 'Trouvez votre logement',
-    description: 'Chaque bien publié a été visité et photographié par un agent Klef.',
+    description: 'Chaque bien publié a été visité et photographié par un agent Paixi.',
     key: false,
   },
   {
@@ -42,7 +42,7 @@ const STEPS = [
   {
     number: '04',
     icon: ShieldCheck,
-    title: 'Klef verse l’hôte',
+    title: 'Paixi verse l’hôte',
     description: 'Le séquestre est libéré. Si le logement ne correspond pas, vous êtes remboursé.',
     key: false,
   },

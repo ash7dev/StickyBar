@@ -76,7 +76,7 @@ export default function BecomeHostPage() {
               Devenir propriétaire
             </h1>
             <p className="mx-auto max-w-md text-base leading-relaxed text-foreground-muted lg:text-lg">
-              Mettez vos logements en location sur Klef.
+              Mettez vos logements en location sur Paixi.
             </p>
           </div>
 

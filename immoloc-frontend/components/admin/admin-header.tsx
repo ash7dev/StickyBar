@@ -14,7 +14,7 @@ import { cn } from '@/lib/utils/cn';
 
 /* Casse de phrase, comme partout ailleurs dans le système. Les intitulés
    étaient aussi redondants : la page /admin/statistiques n'a pas besoin de
-   rappeler « Klef » dans son titre. */
+   rappeler « Paixi » dans son titre. */
 const TITRES: Array<[string, string]> = [
   ['/admin/dashboard', 'Vue d’ensemble'],
   ['/admin/statistiques', 'Revenus et performance'],

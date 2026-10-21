@@ -1,7 +1,7 @@
 @import "tailwindcss";
 
 /* ═══════════════════════════════════════════════════════════════════════════
-   Klef — Design System v2.1
+   Paixi — Design System v2.1
    ───────────────────────────────────────────────────────────────────────────
    SOURCE DE VÉRITÉ. `colors.ts` est un miroir de ce fichier, jamais l'inverse.
    Dans le DOM : toujours var(--token). colors.ts ne sert que là où le CSS
@@ -94,7 +94,7 @@
 
   /* ── Neutres — blanc vert froid ──────────────────────────────────────────
      Teinte ~86–100°, désaturés davantage que Shoply : le lime doit rester
-     rare sur Klef, donc le fond ne doit pas déjà crier vert.                */
+     rare sur Paixi, donc le fond ne doit pas déjà crier vert.                */
 
   --neutral-0: #FFFFFF;
   --neutral-50: #F8FBF4;
@@ -1000,7 +1000,7 @@
     display: none;
   }
 
-  /* ── Animation Klef Rise ──────────────────────────────────────────────────
+  /* ── Animation Paixi Rise ──────────────────────────────────────────────────
      Uniquement transform et opacity : traitées par le compositeur, sur un
      fil séparé, sans déclencher ni layout ni paint.
      L'animation s'exécute UNE fois (forwards), jamais en boucle.           */
@@ -1045,5 +1045,37 @@
     background-color: #ffffff !important;
     color: #141812 !important;
     color-scheme: light !important;
+  }
+}
+@layer components {
+  /* ── Calendrier propriétaire — dates bloquées (hachures neutres) ───────── */
+  .calendar-block-stripes {
+    background-color: var(--neutral-100);
+    background-image: repeating-linear-gradient(
+      -45deg,
+      var(--neutral-200) 0 4px,
+      transparent 4px 9px
+    );
+  }
+}
+
+/* ── Relevé mensuel imprimable (/releve/[mois]) : seul le relevé s'imprime ── */
+@media print {
+  html.printing-statement body * {
+    visibility: hidden;
+  }
+  html.printing-statement #releve,
+  html.printing-statement #releve * {
+    visibility: visible;
+  }
+  html.printing-statement #releve {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    max-width: none;
+    margin: 0;
+    box-shadow: none;
+    border-radius: 0;
   }
 }

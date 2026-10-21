@@ -63,7 +63,7 @@ export function PaymentSection({ r, montreErreurs }: { r: ReservationState; mont
                 </SectionCard>
             )}
 
-            {/* ── Klef Coins ───────────────────────────────────────────────────────
+            {/* ── Paixi Coins ───────────────────────────────────────────────────────
           Une ligne, pas une carte promotionnelle. Le lime tient dans le
           squircle d'icône ; le reste est neutre. */}
             {pricing.coinsMax > 0 && (
@@ -75,7 +75,7 @@ export function PaymentSection({ r, montreErreurs }: { r: ReservationState; mont
                             </span>
                             <span>
                                 <span className="block text-sm font-semibold text-foreground">
-                                    Utiliser mes Klef Coins
+                                    Utiliser mes Paixi Coins
                                 </span>
                                 <span className="mt-0.5 block text-xs text-foreground-muted">
                                     <Montant value={pricing.coinsMax} /> déduits de ce paiement · solde{' '}

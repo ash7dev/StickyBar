@@ -1,6 +1,6 @@
 import { LoginForm } from '@/features/auth/components/login-form';
 
-export const metadata = { title: 'Connexion — Klef' };
+export const metadata = { title: 'Connexion — Paixi' };
 
 interface Props {
   searchParams: Promise<{ next?: string }>;

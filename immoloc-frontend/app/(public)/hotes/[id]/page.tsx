@@ -205,7 +205,7 @@ export default function OwnerPublicProfilePage({
 
   const handleShare = useCallback(async () => {
     const url = window.location.href;
-    const title = data ? `${data.owner.prenom} ${data.owner.nom} sur Klef` : 'Klef';
+    const title = data ? `${data.owner.prenom} ${data.owner.nom} sur Paixi` : 'Paixi';
 
     // Partage natif sur mobile, presse-papiers en repli.
     if (navigator.share) {
@@ -325,7 +325,7 @@ export default function OwnerPublicProfilePage({
                 {owner.isKycVerified && (
                   <span className="absolute -right-2 -bottom-2 flex h-9 w-9 items-center justify-center rounded-inner border-2 border-surface-inverse bg-gold-400 text-forest-900">
                     <ShieldCheck className="h-5 w-5" aria-hidden="true" />
-                    <span className="sr-only">Compte vérifié Klef</span>
+                    <span className="sr-only">Compte vérifié Paixi</span>
                   </span>
                 )}
               </div>
@@ -347,14 +347,14 @@ export default function OwnerPublicProfilePage({
                   {owner.isKycVerified && (
                     <span className="inline-flex items-center gap-1.5 rounded-pill border border-gold-400/30 bg-gold-400/12 px-3 py-1 text-xs font-semibold text-gold-300">
                       <ShieldCheck className="h-3.5 w-3.5" aria-hidden="true" />
-                      Vérifié Klef
+                      Vérifié Paixi
                     </span>
                   )}
                 </div>
 
                 <p className="mb-4 flex items-center justify-center gap-2 text-sm text-on-inverse-muted sm:justify-start">
                   <Calendar className="h-4 w-4 shrink-0" aria-hidden="true" />
-                  Membre sur Klef depuis {dateMembre}
+                  Membre sur Paixi depuis {dateMembre}
                 </p>
 
                 <div className="flex flex-wrap items-center justify-center gap-2.5 sm:justify-start">
@@ -511,7 +511,7 @@ export default function OwnerPublicProfilePage({
                           </h3>
 
                           <p className="mt-2 text-xs leading-relaxed text-foreground-muted line-clamp-2">
-                            {logement.description || 'Logement vérifié, géré par un hôte Klef.'}
+                            {logement.description || 'Logement vérifié, géré par un hôte Paixi.'}
                           </p>
                         </div>
 
@@ -625,7 +625,7 @@ export default function OwnerPublicProfilePage({
                 Vérifications
               </h2>
               <p className="mb-5 text-xs text-foreground-muted">
-                Contrôles effectués par Klef avant la mise en ligne des annonces.
+                Contrôles effectués par Paixi avant la mise en ligne des annonces.
               </p>
 
               <dl className="space-y-3">
@@ -633,7 +633,7 @@ export default function OwnerPublicProfilePage({
                   {
                     icon: ShieldCheck,
                     label: 'Identité (CNI / Passeport)',
-                    value: owner.isKycVerified ? 'Vérifiée par Klef' : 'En attente',
+                    value: owner.isKycVerified ? 'Vérifiée par Paixi' : 'En attente',
                     ok: owner.isKycVerified,
                   },
                   {

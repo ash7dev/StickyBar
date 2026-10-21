@@ -68,7 +68,7 @@ export function AdminUserBroadcastModal({
               type="text"
               value={titre}
               onChange={(e) => setTitre(e.target.value)}
-              placeholder="ex: Mise à jour importante des conditions Klef"
+              placeholder="ex: Mise à jour importante des conditions Paixi"
               required
               className="w-full rounded-inner border border-border bg-background-card p-3 text-xs text-foreground placeholder:text-foreground-muted focus:border-forest-500 focus:outline-none"
             />
@@ -92,7 +92,7 @@ export function AdminUserBroadcastModal({
           <div className="rounded-inner border border-border bg-background-alt/50 p-3 flex items-start gap-2.5">
             <AlertTriangle className="h-4 w-4 text-warning-600 shrink-0 mt-0.5" />
             <p className="text-[0.6875rem] text-foreground-muted leading-snug">
-              Ce message sera transmis instantanément aux appareils mobiles et navigateurs ayant activé les notifications Push Klef.
+              Ce message sera transmis instantanément aux appareils mobiles et navigateurs ayant activé les notifications Push Paixi.
             </p>
           </div>
 

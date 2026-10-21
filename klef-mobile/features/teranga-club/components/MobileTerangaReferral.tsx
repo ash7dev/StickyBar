@@ -29,7 +29,7 @@ export function MobileTerangaReferral({
     try {
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium).catch(() => {});
       await Share.share({
-        message: `Inscris-toi sur Klef avec mon code parrainage ${codeParrainage} et gagne des Teranga Coins sur tes réservations de vacances au Sénégal ! https://sticky-bar-zeta.vercel.app/register?code=${codeParrainage}`,
+        message: `Inscris-toi sur Paixi avec mon code parrainage ${codeParrainage} et gagne des Teranga Coins sur tes réservations de vacances au Sénégal ! https://sticky-bar-zeta.vercel.app/register?code=${codeParrainage}`,
       });
     } catch (err) {
       console.warn('[MobileTerangaReferral] Erreur partage:', err);

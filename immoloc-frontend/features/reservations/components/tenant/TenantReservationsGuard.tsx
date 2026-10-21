@@ -58,8 +58,8 @@ export function TenantReservationsGuard({ children }: TenantReservationsGuardPro
       : 'Connectez-vous pour voir vos réservations';
 
     const subtitle = isParametres
-      ? 'Gérez vos informations personnelles, votre sécurité et la vérification de votre identité Klef.'
-      : 'Accédez à l’historique complet de vos séjours, vos contrats de réservation et vos reçus sécurisés par le séquestre Klef.';
+      ? 'Gérez vos informations personnelles, votre sécurité et la vérification de votre identité Paixi.'
+      : 'Accédez à l’historique complet de vos séjours, vos contrats de réservation et vos reçus sécurisés par le séquestre Paixi.';
 
     return (
       <div className="max-w-2xl mx-auto px-4 py-12">
@@ -116,7 +116,7 @@ export function TenantReservationsGuard({ children }: TenantReservationsGuardPro
             {/* Rassurance */}
             <div className="pt-4 border-t border-forest-900/80 text-xs text-forest-300/80 flex items-center justify-center gap-2">
               <ShieldCheck className="w-4 h-4 text-on-inverse-marker shrink-0" />
-              <span>Garantie Séquestre Klef · Réservation 100% sécurisée</span>
+              <span>Garantie Séquestre Paixi · Réservation 100% sécurisée</span>
             </div>
           </div>
         </div>

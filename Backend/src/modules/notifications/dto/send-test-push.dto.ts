@@ -12,7 +12,7 @@ export class SendTestPushDto {
   @IsString()
   endpoint?: string;
 
-  @ApiProperty({ example: 'Klef - Notification Test 🚀' })
+  @ApiProperty({ example: 'Paixi - Notification Test 🚀' })
   @IsString()
   @IsNotEmpty()
   title!: string;

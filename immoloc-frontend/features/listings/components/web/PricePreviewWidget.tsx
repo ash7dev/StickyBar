@@ -533,7 +533,7 @@ export function PricePreviewWidget({
                   <span>
                     Ce séjour vous rapporte{' '}
                     <strong className="font-semibold tabular-nums text-on-inverse">
-                      {Math.round(Number(estimatedTotal) * 0.015).toLocaleString('fr-FR')} Klef
+                      {Math.round(Number(estimatedTotal) * 0.015).toLocaleString('fr-FR')} Paixi
                       Coins
                     </strong>
                     .
@@ -640,7 +640,7 @@ export function PricePreviewWidget({
             )}
           </div>
 
-          {/* ── Garantie Séquestre Klef 100% ────────────────────────────── */}
+          {/* ── Garantie Séquestre Paixi 100% ────────────────────────────── */}
           <KlefTrustBadge variant="compact" className="mt-2" />
 
           <p className="text-center text-[11px] text-foreground-muted">

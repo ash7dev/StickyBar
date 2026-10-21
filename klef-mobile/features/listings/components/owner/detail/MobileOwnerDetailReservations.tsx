@@ -113,7 +113,7 @@ export function MobileOwnerDetailReservations({
           {reservations.slice(0, 4).map((res) => {
             const statusCfg = getStatusBadge(res.statut);
             const locataireName =
-              [res.locataire?.prenom, res.locataire?.nom].filter(Boolean).join(' ') || 'Voyageur Klef';
+              [res.locataire?.prenom, res.locataire?.nom].filter(Boolean).join(' ') || 'Voyageur Paixi';
             
             const initials = [res.locataire?.prenom?.[0], res.locataire?.nom?.[0]]
               .filter(Boolean)

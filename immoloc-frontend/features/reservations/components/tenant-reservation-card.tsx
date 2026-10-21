@@ -30,7 +30,7 @@ export interface TenantReservation {
   creeLe: string;
 }
 
-/* ─── Config statut (tokens Klef uniquement) ───────────────────────────── */
+/* ─── Config statut (tokens Paixi uniquement) ───────────────────────────── */
 
 const STATUS_CFG: Record<string, {
   label: string;

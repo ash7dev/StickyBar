@@ -321,7 +321,7 @@ export function GestionnaireTransactionsHistoryTable({ transactions }: Props) {
                               ? 'Encaissement Séjour'
                               : t.type === 'REVERSEMENT'
                                 ? 'Décaissement Bailleur'
-                                : 'Commission Klef'}
+                                : 'Commission Paixi'}
                           </span>
                         </div>
                       </div>

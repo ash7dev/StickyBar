@@ -15,11 +15,11 @@ const ERROR_TRANSLATIONS: Record<string, ErrorTranslation> = {
   },
   'Email already exists': {
     title: 'Adresse e-mail déjà utilisée',
-    message: 'Un compte Klef est déjà enregistré avec cette adresse e-mail. Essayez de vous connecter.',
+    message: 'Un compte Paixi est déjà enregistré avec cette adresse e-mail. Essayez de vous connecter.',
   },
   'Phone already exists': {
     title: 'Numéro déjà enregistré',
-    message: 'Ce numéro de téléphone est déjà associé à un autre compte Klef.',
+    message: 'Ce numéro de téléphone est déjà associé à un autre compte Paixi.',
   },
   'Invalid OTP': {
     title: 'Code de vérification invalide',
@@ -107,7 +107,7 @@ const ERROR_TRANSLATIONS: Record<string, ErrorTranslation> = {
   },
   'KYC rejeté ou suspendu': {
     title: 'Vérification refusée',
-    message: 'Votre vérification d\'identité n\'a pas été validée. Contactez le support Klef.',
+    message: 'Votre vérification d\'identité n\'a pas été validée. Contactez le support Paixi.',
   },
   'Votre KYC doit être vérifié': {
     title: 'Vérification requise',
@@ -139,7 +139,7 @@ const ERROR_TRANSLATIONS: Record<string, ErrorTranslation> = {
   },
   'Network Error': {
     title: 'Connexion interrompue',
-    message: 'Impossible de joindre les serveurs Klef. Vérifiez votre connexion Internet.',
+    message: 'Impossible de joindre les serveurs Paixi. Vérifiez votre connexion Internet.',
   },
   'Failed to fetch': {
     title: 'Connexion réseau instable',

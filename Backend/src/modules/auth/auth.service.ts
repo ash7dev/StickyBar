@@ -47,12 +47,12 @@ export class AuthService {
   }
 
   private async generateUniqueReferralCode(prenom?: string | null): Promise<string> {
-    const cleanPrenom = (prenom || 'KLEF')
+    const cleanPrenom = (prenom || 'PAIXI')
       .normalize('NFD')
       .replace(/[\u0300-\u036f]/g, '')
       .replace(/[^a-zA-Z]/g, '')
       .toUpperCase()
-      .slice(0, 6) || 'KLEF';
+      .slice(0, 6) || 'PAIXI';
 
     for (let attempt = 0; attempt < 10; attempt++) {
       const randomDigits = Math.floor(10 + Math.random() * 90);
@@ -1163,7 +1163,7 @@ export class AuthService {
         const emailPrefix = email ? email.split('@')[0] : '';
         const fullName = userMetadata.full_name || userMetadata.name || emailPrefix || 'Utilisateur';
         const [prenom, ...nomParts] = fullName.trim().split(' ');
-        const nom = nomParts.join(' ') || prenom || 'Klef';
+        const nom = nomParts.join(' ') || prenom || 'Paixi';
         const avatarUrl = userMetadata.avatar_url || userMetadata.picture || null;
 
         this.logger.log(`Création automatique de l'utilisateur Google: ${user.id}, nom: ${fullName}, avatar: ${avatarUrl}`);

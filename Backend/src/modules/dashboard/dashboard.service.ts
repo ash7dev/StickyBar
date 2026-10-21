@@ -76,7 +76,7 @@ export class DashboardService {
         },
         _sum: { nbNuits: true },
       }),
-      // 2c. Montant net en séquestre pour l'hôte sur les réservations DEPOSIT (acompte en ligne moins commission Klef)
+      // 2c. Montant net en séquestre pour l'hôte sur les réservations DEPOSIT (acompte en ligne moins commission Paixi)
       this.prisma.reservation.findMany({
         where: {
           proprietaireId: ownerId,

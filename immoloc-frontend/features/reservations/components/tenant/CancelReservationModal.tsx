@@ -38,9 +38,9 @@ const TIERS: Tier[] = [
     id: 'full',
     percentage: 100,
     short: '100 %',
-    window: 'Plus de 7 jours',
-    label: 'Remboursement intégral',
-    description: 'Vous annulez plus de 7 jours avant l’arrivée.',
+    window: 'Plus de 3 jours',
+    label: 'Remboursement du prix de base',
+    description: 'Vous annulez plus de 3 jours avant l’arrivée. La commission Paixi (7 %) est retenue.',
     tone: {
       chip: 'bg-success-50 border-success-500/25',
       text: 'text-success-700',
@@ -50,11 +50,11 @@ const TIERS: Tier[] = [
   },
   {
     id: 'half',
-    percentage: 50,
-    short: '50 %',
-    window: '3 à 7 jours',
-    label: 'Remboursement partiel',
-    description: 'Vous annulez entre 3 et 7 jours avant l’arrivée.',
+    percentage: 75,
+    short: '75 %',
+    window: '24 h à 3 jours',
+    label: 'Remboursement partiel (75 %)',
+    description: 'Vous annulez entre 24 heures et 3 jours avant l’arrivée.',
     tone: {
       chip: 'bg-warning-50 border-warning-500/25',
       text: 'text-warning-700',
@@ -64,11 +64,11 @@ const TIERS: Tier[] = [
   },
   {
     id: 'quarter',
-    percentage: 25,
-    short: '25 %',
-    window: '24 h à 3 jours',
-    label: 'Remboursement minimal',
-    description: 'Vous annulez entre 24 heures et 3 jours avant l’arrivée.',
+    percentage: 50,
+    short: '50 %',
+    window: 'Moins de 24 h',
+    label: 'Remboursement partiel (50 %)',
+    description: 'Vous annulez moins de 24 heures avant l’arrivée.',
     tone: {
       chip: 'bg-error-50 border-error-500/25',
       text: 'text-error-600',
@@ -76,28 +76,13 @@ const TIERS: Tier[] = [
       dot: 'bg-error-500',
     },
   },
-  {
-    id: 'none',
-    percentage: 0,
-    short: '0 %',
-    window: 'Moins de 24 h',
-    label: 'Aucun remboursement',
-    description: 'Vous annulez moins de 24 heures avant l’arrivée.',
-    tone: {
-      chip: 'bg-error-50 border-error-500/25',
-      text: 'text-error-700',
-      ring: 'ring-error-500/35',
-      dot: 'bg-error-600',
-    },
-  },
 ];
 
 function resolveTier(hoursToCheckin: number): Tier {
   const days = hoursToCheckin / 24;
-  if (days > 7) return TIERS[0];
-  if (days >= 3) return TIERS[1];
-  if (hoursToCheckin >= 24) return TIERS[2];
-  return TIERS[3];
+  if (days > 3) return TIERS[0];
+  if (hoursToCheckin >= 24) return TIERS[1];
+  return TIERS[2];
 }
 
 interface Props {
@@ -145,7 +130,7 @@ export function CancelReservationModal({
 
   const { tier, hasStarted } = useMemo(() => {
     const checkin = new Date(dateDebut).getTime();
-    if (Number.isNaN(checkin)) return { tier: TIERS[3], hasStarted: false };
+    if (Number.isNaN(checkin)) return { tier: TIERS[2], hasStarted: false };
     const hours = (checkin - Date.now()) / 3_600_000;
     return { tier: resolveTier(hours), hasStarted: hours <= 0 };
   }, [dateDebut]);
@@ -314,7 +299,7 @@ export function CancelReservationModal({
             <p className={cn('mt-1 text-sm font-semibold', tier.tone.text)}>{tier.label}</p>
             <p className="mt-1.5 text-xs leading-relaxed text-foreground-muted">
               {tier.description} Estimation indicative : le montant définitif est arrêté par
-              Klef à la réception de votre demande.
+              Paixi à la réception de votre demande.
             </p>
           </section>
 

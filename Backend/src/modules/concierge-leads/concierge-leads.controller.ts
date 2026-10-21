@@ -18,7 +18,7 @@ export class ConciergeLeadsController {
   constructor(private readonly conciergeLeadsService: ConciergeLeadsService) {}
 
   /**
-   * Endpoint public : Soumettre une demande Klef Managed depuis le site client
+   * Endpoint public : Soumettre une demande Paixi Managed depuis le site client
    */
   @Public()
   @Post('concierge-leads')

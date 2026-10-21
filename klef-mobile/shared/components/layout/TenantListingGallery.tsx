@@ -75,7 +75,7 @@ export function TenantListingGallery({
     try {
       await Share.share({
         title: titre,
-        message: `Découvrez "${titre}" sur Klef Sénégal !`,
+        message: `Découvrez "${titre}" sur Paixi Sénégal !`,
       });
     } catch {
       // Ignorer l'annulation

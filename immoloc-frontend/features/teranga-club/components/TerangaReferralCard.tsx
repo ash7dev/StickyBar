@@ -75,7 +75,7 @@ export function TerangaReferralCard({ isAuthenticated, codeParrainageFallback }:
   const lien = code ? `${BASE_URL}/register?ref=${code}` : null;
 
   const texte = code
-    ? `Rejoins-moi sur Klef pour réserver tes séjours au Sénégal. Utilise mon code parrain *${code}* à l’inscription : ${lien}`
+    ? `Rejoins-moi sur Paixi pour réserver tes séjours au Sénégal. Utilise mon code parrain *${code}* à l’inscription : ${lien}`
     : '';
   const whatsapp = `https://api.whatsapp.com/send?text=${encodeURIComponent(texte)}`;
 
@@ -100,7 +100,7 @@ export function TerangaReferralCard({ isAuthenticated, codeParrainageFallback }:
   const partager = useCallback(async () => {
     if (!lien) return;
     try {
-      await navigator.share({ title: 'Klef', text: texte, url: lien });
+      await navigator.share({ title: 'Paixi', text: texte, url: lien });
     } catch {
       // Partage annulé par l'utilisateur : rien à signaler.
     }
@@ -141,7 +141,7 @@ export function TerangaReferralCard({ isAuthenticated, codeParrainageFallback }:
                 Les coins font foi — c'est ce que compte la carte plus bas. */}
             <p className="mt-1 text-xs text-foreground-muted">
               Invitez un proche : dès sa première réservation, vous recevez{' '}
-              {COINS_PAR_FILLEUL.toLocaleString('fr-FR')} Klef Coins.
+              {COINS_PAR_FILLEUL.toLocaleString('fr-FR')} Paixi Coins.
             </p>
           </div>
         </div>
@@ -329,7 +329,7 @@ export function TerangaReferralCard({ isAuthenticated, codeParrainageFallback }:
                     </div>
 
                     {f.aReserve ? (
-                      /* `emerald-*` n'existe pas dans la palette Klef : ce badge
+                      /* `emerald-*` n'existe pas dans la palette Paixi : ce badge
                          rendait sans fond, sans bordure et sans couleur. */
                       <span className="inline-flex shrink-0 items-center gap-1 rounded-pill border border-success-500/25 bg-success-50 px-2.5 py-1 text-xs font-semibold text-success-700">
                         <Check className="h-3 w-3" aria-hidden />

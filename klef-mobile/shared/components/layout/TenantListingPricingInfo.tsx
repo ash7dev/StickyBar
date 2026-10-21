@@ -214,7 +214,7 @@ export function TenantListingPricingInfo({
       <View style={styles.securityRow}>
         <ShieldCheck size={16} color={colors.forest[600]} />
         <Text style={styles.securityText}>
-          Votre paiement est sécurisé et conservé par Klef. Il n'est versé à l'hôte qu'à la remise des clés.
+          Votre paiement est sécurisé et conservé par Paixi. Il n'est versé à l'hôte qu'à la remise des clés.
         </Text>
       </View>
     </View>

@@ -96,7 +96,7 @@ export function GestionnaireFacturationExportModal({ isOpen, onClose, proprietai
             <div className="flex items-center justify-between border-b border-border pb-3">
               <div>
                 <p className="font-display font-bold text-forest-900 text-sm">
-                  RELEVÉ DE COMPTE CONCIERGERIE · KLEF
+                  RELEVÉ DE COMPTE CONCIERGERIE · PAIXI
                 </p>
                 <p className="text-[0.6875rem] text-foreground-muted">Période : {selectedMois}</p>
               </div>

@@ -75,7 +75,7 @@ export function MobileStatsRevenueChart({ stats }: MobileStatsRevenueChartProps)
 
   const handleImproveListings = () => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {});
-    router.push('/(owner)/listings' as any);
+    router.navigate('/(owner)/listings' as any);
   };
 
   /* ── 1. État Vide (Aucun revenu enregistré) ─────────────────────────── */

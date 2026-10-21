@@ -1,5 +1,5 @@
 /**
- * Exemples d'utilisation du service d'emails Klef
+ * Exemples d'utilisation du service d'emails Paixi
  *
  * Ce fichier contient des exemples concrets d'utilisation
  * pour chaque type d'email disponible.
@@ -235,7 +235,7 @@ export async function examplePaymentSuccess(mailService: MailService) {
     items: [
       { label: 'Loyer (5 nuits)', amount: 500000 },
       { label: 'Frais de ménage', amount: 25000 },
-      { label: 'Frais de service Klef', amount: 52500 },
+      { label: 'Frais de service Paixi', amount: 52500 },
     ],
     taxAmount: 0, // Pas de TVA pour cet exemple
     receiptUrl: `${process.env.APP_URL}/receipts/TXN-2024-001234`,

@@ -49,8 +49,11 @@ export function NestSessionSync() {
         // Skip si la session NestJS est déjà valide et non expirée en cache
         const storeState = useRoleStore.getState();
         const hasValidToken = storeState.nestToken && !isTokenExpired(storeState.tokenExpiresAt);
+        // Token expiré mais refreshToken présent : le TokenManager le rafraîchira au premier appel API,
+        // inutile de bloquer sur /auth/me/supabase (appel lent, surtout si le backend sort de veille).
+        const canRefreshLazily = !!storeState.nestToken && !!storeState.refreshToken;
 
-        if (hasValidToken && (event === 'TOKEN_REFRESHED' || event === 'INITIAL_SESSION')) {
+        if ((hasValidToken || canRefreshLazily) && (event === 'TOKEN_REFRESHED' || event === 'INITIAL_SESSION')) {
           console.log('[NestSessionSync] ⚡ Token already valid in cache, skipping Supabase overwrite');
           return;
         }

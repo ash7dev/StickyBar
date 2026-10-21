@@ -54,7 +54,18 @@ export default function OwnerTabsLayout() {
         <Tabs.Screen
           name="calendar"
           options={{
+            title: 'Calendrier',
             href: null,
+            headerShown: false,
+          }}
+        />
+
+        <Tabs.Screen
+          name="today"
+          options={{
+            title: 'Aujourd’hui',
+            href: null,
+            headerShown: false,
           }}
         />
 

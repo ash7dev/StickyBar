@@ -4,7 +4,7 @@ import { useState, useEffect, useRef } from 'react';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import {
-  Menu, X, Home, Search, HelpCircle, Building2,
+  Menu, X, Home, Search, HelpCircle,
   LayoutDashboard, LogIn, LogOut,
   CalendarDays, Settings, ChevronDown,
   Building, Sparkles, Mail
@@ -16,6 +16,7 @@ import { useAuth } from '@/features/auth/hooks/use-auth';
 import { useSwitchRole } from '@/features/auth/hooks/use-switch-role';
 import { PushNotificationWidget } from '@/components/pwa/PushNotificationWidget';
 import { cn } from '@/lib/utils/cn';
+import { PaixiLogo } from '@/components/brand/PaixiLogo';
 
 interface NavLink {
   href: string;
@@ -53,8 +54,9 @@ export function Navbar() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    supabase.auth.getUser().then(({ data }) => {
-      setUser(data.user);
+    // getSession lit le cookie local (0 réseau) ; getUser fait un aller-retour Supabase
+    supabase.auth.getSession().then(({ data }) => {
+      setUser(data.session?.user ?? null);
       setLoading(false);
     });
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_, session) => {
@@ -183,15 +185,8 @@ export function Navbar() {
           <div className="flex items-center justify-between h-16">
 
             {/* ── Logo ─────────────────────────────────────────── */}
-            <Link href="/" className="flex items-center gap-2.5 flex-shrink-0 group">
-              <div className="relative w-9 h-9 rounded-xl bg-gradient-to-br from-emerald-500 to-emerald-800 flex items-center justify-center shadow-md transition-all duration-300 group-hover:shadow-lg group-hover:scale-105">
-                <Building2 className="h-[18px] w-[18px] text-white drop-shadow-sm" />
-                {/* Subtle glow */}
-                <div className="absolute inset-0 rounded-xl bg-emerald-400/20 blur-md opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
-              </div>
-              <span className="font-bold text-xl tracking-tight bg-gradient-to-r from-neutral-900 to-neutral-600 bg-clip-text text-transparent">
-                {BRAND.name}
-              </span>
+            <Link href="/" className="flex items-center flex-shrink-0" aria-label={`${BRAND.name} — accueil`}>
+              <PaixiLogo className="text-2xl" />
             </Link>
 
             {/* ── Navigation desktop ──────────────────────────── */}
@@ -318,7 +313,7 @@ export function Navbar() {
                           <div className="w-8 h-8 rounded-lg bg-gold-100 dark:bg-gold-900/60 flex items-center justify-center">
                             <Sparkles className="h-4 w-4 text-gold-600 dark:text-gold-400" />
                           </div>
-                          Klef Teranga Club 🪙
+                          Paixi Teranga Club 🪙
                         </Link>
 
                         <Link

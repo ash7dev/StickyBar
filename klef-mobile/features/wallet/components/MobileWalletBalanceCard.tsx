@@ -1,6 +1,6 @@
 import React from 'react';
 import { StyleSheet, View, Text, TouchableOpacity } from 'react-native';
-import { Wallet, AlertTriangle, TrendingUp, Info, ArrowUpRight } from 'lucide-react-native';
+import { Wallet, AlertTriangle, TrendingUp, Info, ArrowUpRight, ShieldAlert } from 'lucide-react-native';
 import { colors, radius, shadows, typography } from '../../../shared/theme/tokens';
 import { WalletData } from '../types/wallet.types';
 
@@ -13,11 +13,13 @@ export function MobileWalletBalanceCard({
   wallet,
   onOpenWithdrawalModal,
 }: MobileWalletBalanceCardProps) {
-  const { soldeDisponible, soldeProprietaire, soldeLocataire = 0, dettePenalites } = wallet;
+  const { soldeDisponible, soldeGeleLitige = 0, soldeRetirable, soldeProprietaire, soldeLocataire = 0, dettePenalites } = wallet;
 
   const displaySolde = soldeProprietaire !== undefined ? soldeProprietaire : soldeDisponible;
+  const retirableEffectif = soldeRetirable !== undefined ? soldeRetirable : Math.max(0, displaySolde - soldeGeleLitige - dettePenalites);
   const hasDebt = dettePenalites > 0;
-  const canWithdraw = displaySolde >= 10000;
+  const hasLitigeGele = soldeGeleLitige > 0;
+  const canWithdraw = retirableEffectif >= 10000;
 
   const formatPrice = (val: number) => {
     return (val || 0).toLocaleString('fr-FR').replace(/\s/g, ' ') + ' FCFA';
@@ -39,7 +41,7 @@ export function MobileWalletBalanceCard({
                 <Wallet size={18} color={colors.lime[400]} />
               </View>
               <Text style={styles.eyebrowText}>
-                SOLDE REVENUS HÔTE (RETIRABLE)
+                SOLDE REVENUS HÔTE
               </Text>
             </View>
 
@@ -55,9 +57,19 @@ export function MobileWalletBalanceCard({
               {formatPrice(displaySolde)}
             </Text>
             <Text style={styles.balanceSubtext}>
-              Disponibilité immédiate · Retrait sous 2h par Wave & Orange Money
+              Solde retirable immédiat : {formatPrice(retirableEffectif)}
             </Text>
           </View>
+
+          {/* Alerte Gel Litige si présent */}
+          {hasLitigeGele && (
+            <View style={styles.litigeBanner}>
+              <ShieldAlert size={15} color="#FBBF24" />
+              <Text style={styles.litigeText}>
+                Gel conservatoire litige : <Text style={styles.litigeAmount}>{formatPrice(soldeGeleLitige)}</Text>
+              </Text>
+            </View>
+          )}
 
           {/* Alerte Dette / Pénalités si présent */}
           {hasDebt && (
@@ -81,7 +93,7 @@ export function MobileWalletBalanceCard({
               >
                 <ArrowUpRight size={18} color={canWithdraw ? colors.forest[950] : colors.neutral[500]} strokeWidth={2.5} />
                 <Text style={[styles.btnWithdrawText, !canWithdraw && styles.btnWithdrawTextDisabled]}>
-                  {canWithdraw ? 'Demander un retrait' : 'Solde minimum 10 000 FCFA'}
+                  {canWithdraw ? 'Demander un retrait' : 'Minimum retirable 10 000 FCFA'}
                 </Text>
               </TouchableOpacity>
             </View>
@@ -204,6 +216,27 @@ const styles = StyleSheet.create({
     fontFamily: typography.fontBody,
     fontSize: 12,
     color: colors.forest[300],
+  },
+  litigeBanner: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    backgroundColor: 'rgba(245, 158, 11, 0.15)',
+    paddingVertical: 8,
+    paddingHorizontal: 12,
+    borderRadius: radius.pill,
+    borderWidth: 1,
+    borderColor: 'rgba(245, 158, 11, 0.3)',
+    alignSelf: 'flex-start',
+  },
+  litigeText: {
+    fontFamily: typography.fontBody,
+    fontSize: 12,
+    color: '#FBBF24',
+  },
+  litigeAmount: {
+    fontFamily: typography.fontBodyBold,
+    color: '#F59E0B',
   },
   debtBanner: {
     flexDirection: 'row',

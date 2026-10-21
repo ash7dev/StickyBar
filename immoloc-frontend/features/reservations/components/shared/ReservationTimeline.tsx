@@ -61,7 +61,7 @@ const CFG: Record<string, StepCfg> = {
     tone: 'money',
     // La chronologie ne disait jamais OU est l'argent — sur un produit dont
     // c'est le mecanisme central, c'est l'information la plus attendue.
-    money: 'Les fonds sont bloqués par Klef',
+    money: 'Les fonds sont bloqués par Paixi',
   },
   CONFIRMED: {
     tenant: 'Réservation confirmée par l’hôte',
@@ -212,7 +212,7 @@ export function ReservationTimeline({ historique, variant = 'light', isOwner = f
             } else if (event.modifiePar === reservation.locataire?.id) {
               actorLabel = `Par le Voyageur (${reservation.locataire.prenom} ${reservation.locataire.nom})`;
             } else if (event.modifiePar === 'SYSTEM_AUTO_CHECKIN') {
-              actorLabel = 'Système Klef (Auto Check-In H+6)';
+              actorLabel = 'Système Paixi (Auto Check-In H+6)';
             } else if (event.modifiePar === 'OWNER_SIGNAL_TENANT_NOSHOW') {
               actorLabel = 'Signalement No-show';
             }

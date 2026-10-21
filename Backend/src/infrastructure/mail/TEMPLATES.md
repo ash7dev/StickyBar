@@ -1,10 +1,10 @@
-# 📧 Récapitulatif des Templates Email Klef
+# 📧 Récapitulatif des Templates Email Paixi
 
 Ce document liste toutes les templates d'email disponibles avec leurs variables requises.
 
 ## 🎨 Design System
 
-Toutes les templates utilisent les couleurs Klef :
+Toutes les templates utilisent les couleurs Paixi :
 - **Forest Green** : `#14654C` (primaire), `#041912` (noir)
 - **Lime** : `#D3F26E` (action/CTA)
 - **Gold** : `#C9A24B` (badges vérifiés)
@@ -507,4 +507,4 @@ Avant d'envoyer en production, testez sur :
 
 ---
 
-**Klef SAS** - Design System Email v1.0
+**Paixi SAS** - Design System Email v1.0

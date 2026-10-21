@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import {
   StyleSheet,
   View,
@@ -12,6 +12,7 @@ import {
   Alert,
   KeyboardAvoidingView,
   Platform,
+  Animated,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { X, ShieldAlert, AlertTriangle, Send, Gavel, CheckCircle2 } from 'lucide-react-native';
@@ -60,11 +61,20 @@ export function MobileOpenDisputeModal({
   const [selectedMotif, setSelectedMotif] = useState<string>(initialMotif);
   const [description, setDescription] = useState<string>('');
 
-  React.useEffect(() => {
+  const animVal = useRef(new Animated.Value(0)).current;
+
+  useEffect(() => {
     if (visible) {
       setSelectedMotif(initialMotif || 'DEGRADATION');
+      animVal.setValue(0);
+      Animated.spring(animVal, {
+        toValue: 1,
+        speed: 16,
+        bounciness: 6,
+        useNativeDriver: true,
+      }).start();
     }
-  }, [visible, initialMotif]);
+  }, [visible, initialMotif, animVal]);
 
   const isValid = description.trim().length >= 15;
 
@@ -80,16 +90,22 @@ export function MobileOpenDisputeModal({
 
   if (!visible) return null;
 
+  const backdropOpacity = animVal.interpolate({ inputRange: [0, 1], outputRange: [0, 1] });
+  const sheetTranslateY = animVal.interpolate({ inputRange: [0, 1], outputRange: [250, 0] });
+
   return (
-    <Modal visible={visible} animationType="slide" transparent onRequestClose={onClose}>
+    <Modal visible={visible} animationType="none" transparent onRequestClose={onClose}>
       <TouchableWithoutFeedback onPress={onClose}>
-        <View style={styles.overlay}>
+        <Animated.View style={[styles.overlay, { opacity: backdropOpacity }]}>
           <TouchableWithoutFeedback>
             <KeyboardAvoidingView
               behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
               style={[
                 styles.sheetContainer,
-                { paddingBottom: Math.max(insets.bottom + 12, 24) },
+                {
+                  paddingBottom: Math.max(insets.bottom + 12, 24),
+                  transform: [{ translateY: sheetTranslateY }],
+                },
               ]}
             >
               <View style={styles.dragHandle} />
@@ -102,7 +118,7 @@ export function MobileOpenDisputeModal({
                   </View>
                   <View style={{ flex: 1 }}>
                     <Text style={styles.title}>Ouvrir un litige</Text>
-                    <Text style={styles.subtitle}>Arbitrage et gestion des litiges par Klef</Text>
+                    <Text style={styles.subtitle}>Arbitrage et gestion des litiges par Paixi</Text>
                   </View>
                 </View>
                 <TouchableOpacity onPress={onClose} style={styles.closeButton}>
@@ -180,7 +196,7 @@ export function MobileOpenDisputeModal({
                   <View style={{ flex: 1 }}>
                     <Text style={styles.warningTitle}>Conséquences du litige</Text>
                     <Text style={styles.warningText}>
-                      L'ouverture d'un dossier bloque la caution du locataire et gèle le virement. Un agent juridique Klef traitera la réclamation sous 48h.
+                      L'ouverture d'un dossier bloque la caution du locataire et gèle le virement. Un agent juridique Paixi traitera la réclamation sous 48h.
                     </Text>
                   </View>
                 </View>
@@ -202,14 +218,14 @@ export function MobileOpenDisputeModal({
                   ) : (
                     <>
                       <Send size={18} color="#FFFFFF" />
-                      <Text style={styles.submitButtonText}>Transmettre le dossier à Klef</Text>
+                      <Text style={styles.submitButtonText}>Transmettre le dossier à Paixi</Text>
                     </>
                   )}
                 </TouchableOpacity>
               </View>
             </KeyboardAvoidingView>
           </TouchableWithoutFeedback>
-        </View>
+        </Animated.View>
       </TouchableWithoutFeedback>
     </Modal>
   );

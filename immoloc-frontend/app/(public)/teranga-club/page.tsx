@@ -28,7 +28,7 @@ export default function TerangaClubPage() {
             <span>Retour à l’accueil</span>
           </Link>
           <div className="flex items-center gap-2 text-xs text-foreground-muted">
-            <span className="font-semibold text-foreground">Klef Teranga Club</span>
+            <span className="font-semibold text-foreground">Paixi Teranga Club</span>
             <span>•</span>
             <span className="font-bold text-forest-700 dark:text-lime-300">1 Coin = 1 FCFA</span>
           </div>

@@ -14,7 +14,7 @@ import { cn } from '@/lib/utils/cn';
 import DashboardLoading from '../loading';
 
 /* ⚠️ `amber`, `blue`, `emerald`, `slate`, `rose` : cinq familles absentes de
-   la palette Klef. Les six pastilles de statut n'avaient donc aucune couleur.
+   la palette Paixi. Les six pastilles de statut n'avaient donc aucune couleur.
    Ajout de PAID et DISPUTED : ils figuraient dans ACTIVE_STATUSES mais aucun
    onglet ne permettait de les isoler — or « décision requise » est l'état le
    plus urgent du produit. */
@@ -36,7 +36,11 @@ function ReservationsContent() {
   const searchParams = useSearchParams();
   const qc = useQueryClient();
 
-  const [activeTab, setActiveTab] = useState<string>('ALL');
+  // ?statut=PAID ouvre directement l'onglet correspondant (lien « Tout voir » de l'accueil)
+  const [activeTab, setActiveTab] = useState<string>(() => {
+    const statut = searchParams.get('statut');
+    return STATUS_TABS.some((t) => t.id === statut) ? statut! : 'ALL';
+  });
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('list');
   const [showHistory, setShowHistory] = useState(false);
   const [searchQuery, setSearchQuery] = useState(() => searchParams.get('q') ?? '');

@@ -93,12 +93,12 @@ export function MobileStatsReservationBreakdownCard({ bookings }: ReservationSta
 
   const handleSeeAllReservations = () => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {});
-    router.push('/(owner)/reservations' as any);
+    router.navigate('/(owner)/reservations' as any);
   };
 
   const handleImproveListings = () => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {});
-    router.push('/(owner)/listings' as any);
+    router.navigate('/(owner)/listings' as any);
   };
 
   /* ── 1. État Vide (Aucune réservation) ────────────────────────────── */

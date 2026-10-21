@@ -79,14 +79,14 @@ export function TenantListingSpec({
         </View>
       </View>
 
-      {/* ── Banner Officielle Garantie Séquestre Klef ──────────────────── */}
+      {/* ── Banner Officielle Garantie Séquestre Paixi ──────────────────── */}
       <View style={styles.guaranteeBanner}>
         <View style={styles.guaranteeIconCircle}>
           <ShieldCheck size={20} color={colors.lime[300]} />
         </View>
 
         <View style={styles.guaranteeContent}>
-          <Text style={styles.guaranteeTitle}>Garantie Séquestre Klef</Text>
+          <Text style={styles.guaranteeTitle}>Garantie Séquestre Paixi</Text>
           <Text style={styles.guaranteeSubtext}>
             Votre paiement est bloqué en toute sécurité jusqu'à la remise des clés. Si le logement ne correspond pas, vous êtes{' '}
             <Text style={styles.guaranteeHighlight}>remboursé intégralement</Text>.

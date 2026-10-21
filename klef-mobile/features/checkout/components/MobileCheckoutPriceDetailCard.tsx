@@ -83,12 +83,12 @@ export function MobileCheckoutPriceDetailCard({
           </View>
         )}
 
-        {/* Déduction Klef Coins (si activée) */}
+        {/* Déduction Paixi Coins (si activée) */}
         {useCoins && coinsDeducted > 0 && (
           <View style={styles.coinsRow}>
             <View style={styles.coinsLabelRow}>
               <Coins size={14} color="#B45309" />
-              <Text style={styles.coinsLabel}>Réduction Klef Coins</Text>
+              <Text style={styles.coinsLabel}>Réduction Paixi Coins</Text>
             </View>
             <Text style={styles.coinsValue}>- {formatFcfa(coinsDeducted)} FCFA</Text>
           </View>
@@ -138,11 +138,11 @@ export function MobileCheckoutPriceDetailCard({
         )}
       </View>
 
-      {/* ── Sceau de sécurité Klef ───────────────────────────────────── */}
+      {/* ── Sceau de sécurité Paixi ───────────────────────────────────── */}
       <View style={styles.trustBadge}>
         <ShieldCheck size={15} color={colors.forest[700]} style={styles.trustIcon} />
         <Text style={styles.trustText}>
-          Klef conserve les fonds en séquestre jusqu'à votre arrivée dans le logement.
+          Paixi conserve les fonds en séquestre jusqu'à votre arrivée dans le logement.
         </Text>
       </View>
     </View>

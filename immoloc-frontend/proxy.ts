@@ -84,9 +84,17 @@ export async function proxy(request: NextRequest) {
     },
   );
 
-  const { data: { user } } = await supabase.auth.getUser();
+  // Fast path : le cookie nest_token suffit → pas d'aller-retour réseau vers Supabase.
+  // getUser() n'est appelé que si nécessaire (pas de nest_token) sur les routes protégées/auth.
   const hasNestToken = request.cookies.has('nest_token');
-  const isAuthenticated = !!user || hasNestToken;
+  const needsAuthDecision =
+    PROTECTED_ROUTES.some((route) => pathname.startsWith(route)) ||
+    AUTH_ROUTES.some((route) => pathname.startsWith(route));
+  let isAuthenticated = hasNestToken;
+  if (!hasNestToken && needsAuthDecision) {
+    const { data: { user } } = await supabase.auth.getUser();
+    isAuthenticated = !!user;
+  }
 
   // ── Protection des routes authentifiées sur l'Edge ───────────────────────
   if (PROTECTED_ROUTES.some((route) => pathname.startsWith(route))) {

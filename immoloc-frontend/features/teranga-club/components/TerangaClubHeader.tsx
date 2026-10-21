@@ -36,16 +36,16 @@ export function TerangaClubHeader({ data, isAuthenticated, isLoading }: Props) {
           <div className="max-w-2xl space-y-4">
             <div className="inline-flex items-center gap-2 px-3 py-1 rounded-pill bg-white/10 border border-white/20 text-xs font-semibold text-on-inverse-marker">
               <Sparkles className="w-3.5 h-3.5" />
-              <span>Programme Privilège Klef Teranga Club</span>
+              <span>Programme Privilège Paixi Teranga Club</span>
             </div>
 
             <h1 className="font-display text-2xl sm:text-3xl lg:text-4xl font-semibold text-on-inverse-display tracking-tight leading-tight">
-              Cumulez des Klef Coins à chaque location <br className="hidden sm:inline" />
-              <span className="text-on-inverse-marker font-semibold">1 Klef Coin = 1 FCFA de réduction !</span>
+              Cumulez des Paixi Coins à chaque location <br className="hidden sm:inline" />
+              <span className="text-on-inverse-marker font-semibold">1 Paixi Coin = 1 FCFA de réduction !</span>
             </h1>
 
             <p className="text-sm text-on-inverse-muted leading-relaxed">
-              Rejoignez le club d’exception : gagnez entre 1.5% et 3% de cashback sur vos séjours et déduisez vos Klef Coins directement lors de vos prochaines réservations.
+              Rejoignez le club d’exception : gagnez entre 1.5% et 3% de cashback sur vos séjours et déduisez vos Paixi Coins directement lors de vos prochaines réservations.
             </p>
           </div>
 
@@ -97,7 +97,7 @@ export function TerangaClubHeader({ data, isAuthenticated, isLoading }: Props) {
               </div>
               <div>
                 <p className="text-[11px] font-semibold uppercase tracking-wider text-on-inverse-muted">
-                  Solde Klef Coins
+                  Solde Paixi Coins
                 </p>
                 <p className="font-display text-2xl font-bold text-on-inverse-marker tabular-nums">
                   {data.soldeCoins.toLocaleString('fr-FR')} <span className="text-xs font-semibold text-on-inverse">Coins</span>

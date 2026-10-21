@@ -71,7 +71,7 @@ export function GestionnaireFinancesStatsHeader({
             {fcfa(commissionKlefDuMois)} <span className="text-xs font-semibold text-foreground-muted">FCFA</span>
           </p>
           <p className="text-[0.7rem] font-medium text-gold-800 mt-1">
-            Honoraires de gestion (7% Klef)
+            Honoraires de gestion (7% Paixi)
           </p>
         </div>
       </div>

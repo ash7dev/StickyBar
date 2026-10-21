@@ -38,7 +38,7 @@ const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, {
 const prisma = new PrismaClient();
 
 async function main() {
-  console.log('🚀 Initialisation de la création de l\'Administrateur Klef...\n');
+  console.log('🚀 Initialisation de la création de l\'Administrateur Paixi...\n');
 
   let supabaseUserId = null;
 
@@ -58,7 +58,7 @@ async function main() {
     const { error: updateError } = await supabase.auth.admin.updateUserById(supabaseUserId, {
       password: ADMIN_PASS,
       email_confirm: true,
-      user_metadata: { prenom: 'Admin', nom: 'Klef', role: 'ADMIN' },
+      user_metadata: { prenom: 'Admin', nom: 'Paixi', role: 'ADMIN' },
     });
 
     if (updateError) {
@@ -73,7 +73,7 @@ async function main() {
       email: ADMIN_EMAIL,
       password: ADMIN_PASS,
       email_confirm: true,
-      user_metadata: { prenom: 'Admin', nom: 'Klef', role: 'ADMIN' },
+      user_metadata: { prenom: 'Admin', nom: 'Paixi', role: 'ADMIN' },
     });
 
     if (createError || !newUser.user) {
@@ -113,7 +113,7 @@ async function main() {
       email: ADMIN_EMAIL,
       telephone: ADMIN_PHONE,
       prenom: 'Admin',
-      nom: 'Klef',
+      nom: 'Paixi',
       estProprietaire: true,
       statutKyc: 'VERIFIE',
       profileCompleted: true,
@@ -124,7 +124,7 @@ async function main() {
       email: ADMIN_EMAIL,
       telephone: ADMIN_PHONE,
       prenom: 'Admin',
-      nom: 'Klef',
+      nom: 'Paixi',
       estProprietaire: true,
       statutKyc: 'VERIFIE',
       profileCompleted: true,

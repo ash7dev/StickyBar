@@ -75,11 +75,11 @@ export function MobileHostPropertyGrid({
 
           <View style={styles.hostInfo}>
             <Text style={styles.hostName}>
-              {proprietaire ? `${proprietaire.prenom} ${proprietaire.nom}` : 'Hôte Klef'}
+              {proprietaire ? `${proprietaire.prenom} ${proprietaire.nom}` : 'Hôte Paixi'}
             </Text>
             <View style={styles.verifiedRow}>
               <ShieldCheck size={12} color={colors.forest[600]} />
-              <Text style={styles.verifiedText}>Identité Vérifiée Klef</Text>
+              <Text style={styles.verifiedText}>Identité Vérifiée Paixi</Text>
             </View>
           </View>
         </View>
@@ -186,7 +186,7 @@ export function MobileHostPropertyGrid({
                 accessible={true}
                 accessibilityRole="button"
                 accessibilityLabel="Galerie état des lieux d'entrée"
-                accessibilityHint="Afficher les photos documentées et certifiées par Klef"
+                accessibilityHint="Afficher les photos documentées et certifiées par Paixi"
                 activeOpacity={0.8}
                 onPress={onOpenGallery}
                 style={styles.actionCard}

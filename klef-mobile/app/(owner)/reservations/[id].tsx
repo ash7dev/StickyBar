@@ -252,7 +252,7 @@ export default function OwnerReservationDetailScreen() {
       await submitDispute(id as string, motif, description);
       setShowDisputeModal(false);
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning).catch(() => {});
-      Alert.alert('Litige ouvert', 'Votre signalement a bien été transmis à l\'équipe support et arbitrage Klef.');
+      Alert.alert('Litige ouvert', 'Votre signalement a bien été transmis à l\'équipe support et arbitrage Paixi.');
       fetchDetail();
     } catch (err: any) {
       Alert.alert('Erreur', err?.message || 'Échec lors de l\'ouverture du litige.');
@@ -471,7 +471,7 @@ export default function OwnerReservationDetailScreen() {
               id: 'lit-1',
               statut: 'EN_ATTENTE',
               motif: 'AUTRE',
-              description: 'Dossier de litige en cours d\'examen par l\'équipe support Klef.',
+              description: 'Dossier de litige en cours d\'examen par l\'équipe support Paixi.',
               creeLe: new Date().toISOString(),
             }} />
           )}
@@ -481,7 +481,7 @@ export default function OwnerReservationDetailScreen() {
             <MobileReservationTimeline historique={reservation.historique} />
           )}
 
-          {/* 11. Carte Assistance Hôte Klef */}
+          {/* 11. Carte Assistance Hôte Paixi */}
           <MobileAssistanceCard reservationId={reservation.id} />
         </ScrollView>
       ) : null}
@@ -637,7 +637,7 @@ function getMockOwnerReservation(idStr: string): ReservationDetail {
     },
     historique: [
       { id: 'h1', nouveauStatut: 'PENDING', raison: 'Réservation effectuée par le locataire', modifieLe: '2026-09-10T10:30:00Z' },
-      { id: 'h2', nouveauStatut: 'PAID', raison: 'Paiement Wave consigné sous séquestre Klef', modifieLe: '2026-09-10T10:35:00Z' },
+      { id: 'h2', nouveauStatut: 'PAID', raison: 'Paiement Wave consigné sous séquestre Paixi', modifieLe: '2026-09-10T10:35:00Z' },
     ],
   };
 }

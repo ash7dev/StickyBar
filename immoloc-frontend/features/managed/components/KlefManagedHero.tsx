@@ -31,7 +31,7 @@ export function KlefManagedHero() {
       <div className="relative mx-auto max-w-4xl space-y-6 text-center">
         <span className="badge-brand">
           <Sparkles className="h-3.5 w-3.5" aria-hidden="true" />
-          Klef Managed · Offre Sérénité
+          Paixi Managed · Offre Sérénité
         </span>
 
         {/* Pas de text-* : le clamp() du h1 vient de la couche base, et

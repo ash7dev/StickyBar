@@ -121,11 +121,11 @@ export function TenantListingReviewsSection({
                   </Text>
                 )}
 
-                {/* Footer Séjour Vérifié Klef */}
+                {/* Footer Séjour Vérifié Paixi */}
                 <View style={styles.reviewFooter}>
                   <ShieldCheck size={12} color={colors.forest[600]} />
                   <Text style={styles.reviewFooterText}>
-                    Séjour vérifié par Klef
+                    Séjour vérifié par Paixi
                   </Text>
                 </View>
               </View>

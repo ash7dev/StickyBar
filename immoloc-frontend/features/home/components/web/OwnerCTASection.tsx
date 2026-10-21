@@ -11,7 +11,7 @@ const BENEFITS = [
   { icon: TrendingUp, title: 'Tableau de bord', subtitle: 'Réservations et revenus en temps réel' },
   { icon: Headphones, title: 'Support propriétaires', subtitle: 'Une équipe joignable 7 j/7' },
   { icon: Zap, title: 'Publication rapide', subtitle: 'En ligne après vérification sous 48 h' },
-  { icon: Shield, title: 'Litiges arbitrés', subtitle: 'Médiation Klef en cas de désaccord' },
+  { icon: Shield, title: 'Litiges arbitrés', subtitle: 'Médiation Paixi en cas de désaccord' },
 ];
 
 /* ⚠️ « +30 % de revenus », « 500+ hôtes », « 4.8★ » : aucun de ces chiffres
@@ -136,7 +136,7 @@ export function OwnerCTASection() {
               </h2>
 
               <p className="mb-8 text-lg leading-relaxed text-on-inverse-muted">
-                Publiez votre bien sur Klef. Les paiements sont sécurisés, les locataires
+                Publiez votre bien sur Paixi. Les paiements sont sécurisés, les locataires
                 vérifiés, et vous gardez la main sur chaque réservation.
               </p>
 

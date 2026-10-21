@@ -311,7 +311,7 @@ export function HeroSection({ listings = [] }: Props) {
         </div>
       </div>
 
-      {/* ── Modale Bottom Sheet Mobile Ultra-Premium (Design Tokens Klef) ── */}
+      {/* ── Modale Bottom Sheet Mobile Ultra-Premium (Design Tokens Paixi) ── */}
       {mounted && isMobileSearchOpen && createPortal(
         <>
           {/* Backdrop sombre flouté avec effet de profondeur */}
@@ -496,7 +496,7 @@ export function HeroSection({ listings = [] }: Props) {
 
             </div>
 
-            {/* Pied de modale fixe de haute conversion (Trois Voix Klef : Bouton Lime) */}
+            {/* Pied de modale fixe de haute conversion (Trois Voix Paixi : Bouton Lime) */}
             <div className="shrink-0 z-30 flex items-center justify-between gap-3 border-t border-border bg-white/95 backdrop-blur-md p-3.5 shadow-[0_-8px_30px_rgba(4,25,18,0.12)]">
               <button
                 type="button"

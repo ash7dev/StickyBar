@@ -18,6 +18,7 @@ import { useState, useRef, useEffect } from 'react';
 import { useAuth } from '@/features/auth/hooks/use-auth';
 import { useRoleStore } from '@/stores/role.store';
 import { createClient } from '@/lib/supabase/client';
+import { PaixiLogo } from '@/components/brand/PaixiLogo';
 
 export function GestionnaireNavbar() {
   const pathname = usePathname();
@@ -43,20 +44,17 @@ export function GestionnaireNavbar() {
   }, []);
 
   const prenom = user?.user_metadata?.prenom ?? 'Gestionnaire';
-  const nom = user?.user_metadata?.nom ?? 'Klef';
+  const nom = user?.user_metadata?.nom ?? 'Paixi';
   const initials = prenom ? (prenom[0] + (nom ? nom[0] : '')).toUpperCase() : 'G';
 
   return (
     <header className="sticky top-0 z-40 w-full border-b border-forest-100/60 bg-white/90 backdrop-blur-md">
       <div className="mx-auto flex h-16 max-w-7xl items-center justify-between px-4 sm:px-6">
         
-        {/* Logo Klef & Badge */}
+        {/* Logo Paixi & Badge */}
         <div className="flex items-center gap-4">
-          <Link href="/gestionnaire" className="flex items-baseline gap-0.5">
-            <span className="font-display text-2xl font-bold tracking-tight text-forest-900">
-              klef
-            </span>
-            <span className="font-display text-2xl font-bold text-forest-600">.</span>
+          <Link href="/gestionnaire" className="flex items-center">
+            <PaixiLogo className="text-2xl" />
           </Link>
 
           <span className="inline-flex items-center gap-1.5 rounded-pill bg-forest-900 px-3 py-1 text-xs font-bold text-white shadow-xs">

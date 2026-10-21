@@ -215,7 +215,7 @@ export function MobileStepConfirmation() {
     setIsSubmitting(true);
     setSubmitError(null);
     setProgressPercent(5);
-    setProgressStatus('Création de l’annonce sur Klef…');
+    setProgressStatus('Création de l’annonce sur Paixi…');
 
     try {
       let listingId = draftListingId;
@@ -422,7 +422,7 @@ export function MobileStepConfirmation() {
 
       // 6. Soumission finale pour validation (DRAFT -> PENDING_REVIEW)
       setProgressPercent(95);
-      setProgressStatus('Soumission finale à l’équipe de modération Klef…');
+      setProgressStatus('Soumission finale à l’équipe de modération Paixi…');
 
       await apiClient.patch(`/listings/${listingId}/submit`);
 
@@ -608,7 +608,7 @@ export function MobileStepConfirmation() {
         <View style={styles.noticeTextStack}>
           <Text style={styles.noticeTag}>VALIDATION</Text>
           <Text style={styles.noticeDesc}>
-            Votre annonce est transmise à l’équipe Klef. Elle est révisée et activée sous 24 h ouvrées. Vous serez notifié dès sa mise en ligne.
+            Votre annonce est transmise à l’équipe Paixi. Elle est révisée et activée sous 24 h ouvrées. Vous serez notifié dès sa mise en ligne.
           </Text>
         </View>
       </View>
