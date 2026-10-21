@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import {
   View,
   Text,
@@ -18,8 +18,15 @@ import { TenantListingVideoSection } from '../../shared/components/layout/Tenant
 import { TenantListingAmenities } from '../../shared/components/layout/TenantListingAmenities';
 import { TenantListingReviewsSection } from '../../shared/components/layout/TenantListingReviewsSection';
 import { TenantListingHostAndMap } from '../../shared/components/layout/TenantListingHostAndMap';
-import { TenantStickyReservationBar } from '../../shared/components/layout/TenantStickyReservationBar';
-import { TenantReservationModal } from '../../shared/components/layout/TenantReservationModal';
+import { TenantActionGateModal } from '../../shared/components/gate/TenantActionGateModal';
+import { useGatedAction } from '../../shared/hooks/useGatedAction';
+import { useAuthStore } from '../../features/auth/stores/auth.store';
+import { getPrixDerniereMinute, getPrixPublic } from '../../shared/components/ui/TenantPriceDisplay';
+import { DatesSheet, type StaySelection } from '../../features/booking/components/DatesSheet';
+import { BookingBar, CancellationCard, DatesCard, HowItWorks } from '../../features/booking/components/ListingBooking';
+import { usePricePreview } from '../../features/booking/lib/booking';
+import { ListingPhotosModal, PhotoLightbox, SimilarListings, lightboxItems } from '../../features/booking/components/ListingExtras';
+import { formatAmount } from '../../features/owner-home/lib/format';
 import { TenantListingDetailSkeleton } from '../../shared/components/layout/TenantListingDetailSkeleton';
 import { useListingCacheStore } from '../../shared/stores/listing-cache.store';
 import { AlertCircle, ChevronLeft, RotateCw } from 'lucide-react-native';
@@ -33,6 +40,26 @@ export default function ListingDetailScreen() {
   const [loading, setLoading] = useState(!cachedEntry?.data);
   const [error, setError] = useState<string | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [photosOpen, setPhotosOpen] = useState(false);
+  const [photoIndex, setPhotoIndex] = useState<number | null>(null);
+  // Dates et voyageurs choisis sur la fiche, transmis tels quels à l'écran de paiement
+  const [stay, setStay] = useState<StaySelection>({ start: null, end: null, guests: 1 });
+  const price = usePricePreview(listing?.id ?? id, stay.start, stay.end, stay.guests);
+
+  const reserverPath = `/reserver?listingId=${listing?.id ?? id}&dateDebut=${stay.start}&dateFin=${stay.end}&personnes=${stay.guests}`;
+  const goToCheckout = useCallback(() => router.push(reserverPath as any), [reserverPath]);
+  const { gateState, trigger: triggerGate, complete: completeGate, cancel: cancelGate } = useGatedAction(goToCheckout);
+
+  const book = () => {
+    setIsModalOpen(false);
+    const { token, isAuthenticated } = useAuthStore.getState();
+    // Pas connecté : on garde les dates dans le lien de retour après connexion
+    if (!token || !isAuthenticated) {
+      setTimeout(() => router.push(`/(auth)/login?next=${encodeURIComponent(reserverPath)}` as any), 300);
+      return;
+    }
+    setTimeout(() => triggerGate(), 300);
+  };
 
   const fetchListingDetail = async (retryCount = 0) => {
     if (!id) return;
@@ -158,6 +185,9 @@ export default function ListingDetailScreen() {
         <TenantListingGallery
           photos={listing.photos}
           titre={listing.titre}
+          listingId={listing.id}
+          onOpenAll={() => setPhotosOpen(true)}
+          onOpenPhoto={lightboxItems(listing.photos).length ? setPhotoIndex : undefined}
         />
 
         {/* 2. Spécifications & Garantie (avec superposition Sheet Overlap) */}
@@ -174,6 +204,9 @@ export default function ListingDetailScreen() {
           nuitesMinimum={listing.nuitesMinimum}
           ageMin={listing.ageMin}
         />
+
+        {/* 2b. Vos dates : déclenche le prix exact */}
+        <DatesCard stay={stay} onPress={() => setIsModalOpen(true)} />
 
         {/* 3. Tarifs dégressifs & Conditions */}
         <TenantListingPricingInfo
@@ -214,6 +247,10 @@ export default function ListingDetailScreen() {
           avis={listing.avis}
         />
 
+        {/* 6b. Le parcours de l'argent, puis les règles d'annulation, juste avant l'hôte et l'emplacement */}
+        <HowItWorks hostName={listing.proprietaire?.prenom ?? 'l’hôte'} />
+        <CancellationCard price={price.data} start={stay.start} />
+
         {/* 7. Hôte & Localisation (Carte Visuelle) */}
         <TenantListingHostAndMap
           ville={listing.ville}
@@ -223,28 +260,31 @@ export default function ListingDetailScreen() {
           longitude={listing.longitude}
           proprietaire={listing.proprietaire}
         />
+
+        {/* 8. Autres logements dans la même ville */}
+        <SimilarListings currentId={listing.id} ville={listing.ville} />
       </ScrollView>
 
-      {/* Barre Sticky de Réservation (ancrée en bas) */}
-      <TenantStickyReservationBar
-        prixBase={listing.prixBase}
-        nuitesMinimum={listing.nuitesMinimum}
-        derniereMinuteActive={listing.derniereMinuteActive}
-        onOpenModal={() => setIsModalOpen(true)}
+      {/* Barre du bas : total du séjour dès que les dates sont choisies */}
+      <BookingBar
+        stay={stay}
+        price={price.data}
+        loading={price.isFetching}
+        nightlyLabel={formatAmount(
+          listing.derniereMinuteActive ? getPrixDerniereMinute(getPrixPublic(listing.prixBase)) : getPrixPublic(listing.prixBase),
+        )}
+        onChooseDates={() => setIsModalOpen(true)}
+        onBook={book}
       />
 
-      {/* Modal Bottom Sheet de Réservation */}
-      <TenantReservationModal
+      <DatesSheet
         visible={isModalOpen}
-        listingId={listing.id}
         titre={listing.titre}
-        prixBase={listing.prixBase}
-        nuitesMinimum={listing.nuitesMinimum}
-        capaciteMax={listing.capaciteMax}
-        personnesBase={listing.personnesBase}
-        derniereMinuteActive={listing.derniereMinuteActive}
-        tarifsPersonnes={listing.tarifsPersonnes}
-        tarifsNuits={listing.tarifsNuits}
+        value={stay}
+        onChange={setStay}
+        minNights={listing.nuitesMinimum ?? 1}
+        maxGuests={listing.capaciteMax ?? 1}
+        includedGuests={listing.personnesBase ?? 1}
         disabledDates={[
           ...(Array.isArray(listing.disabledDates) ? listing.disabledDates : []),
           ...(Array.isArray(listing.datesBloquees) ? listing.datesBloquees : []),
@@ -252,7 +292,23 @@ export default function ListingDetailScreen() {
           ...(Array.isArray(listing.indisponibilities) ? listing.indisponibilities : []),
           ...(Array.isArray(listing.reservations) ? listing.reservations : []),
         ]}
+        price={price.data}
+        priceLoading={price.isFetching}
+        priceError={price.error}
+        onContinue={book}
         onClose={() => setIsModalOpen(false)}
+      />
+
+      <PhotoLightbox visible={photoIndex !== null} items={lightboxItems(listing.photos)} index={photoIndex ?? 0} onClose={() => setPhotoIndex(null)} />
+
+      <ListingPhotosModal visible={photosOpen} photos={listing.photos ?? []} onClose={() => setPhotosOpen(false)} />
+
+      <TenantActionGateModal
+        visible={gateState.open}
+        steps={gateState.steps}
+        block={gateState.block}
+        onComplete={completeGate}
+        onCancel={cancelGate}
       />
     </View>
   );

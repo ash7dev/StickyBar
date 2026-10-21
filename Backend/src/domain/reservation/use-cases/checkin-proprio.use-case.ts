@@ -2,12 +2,14 @@ import { Injectable, NotFoundException, ForbiddenException, ConflictException } 
 import { StatutReservation } from '@prisma/client';
 import { PrismaService } from '../../../infrastructure/prisma/prisma.service';
 import { NotificationsService } from '../../../modules/notifications/notifications.service';
+import { QueueService } from '../../../infrastructure/queue/queue.service';
 
 @Injectable()
 export class CheckinProprioUseCase {
   constructor(
     private readonly prisma: PrismaService,
     private readonly notifications: NotificationsService,
+    private readonly queue: QueueService,
   ) {}
 
   async execute(reservationId: string, userId: string) {
@@ -42,10 +44,14 @@ export class CheckinProprioUseCase {
       );
     }
 
+    const now = new Date();
     await this.prisma.reservation.update({
       where: { id: reservationId },
-      data: { checkinProprioLe: new Date() },
+      data: { checkinProprioLe: now },
     });
+
+    // État des lieux après l'heure d'arrivée : le voyageur garde 6h pour valider
+    if (now > reservation.dateDebut) await this.queue.scheduleLateAutoCheckin(reservationId, now);
 
     // Notification au locataire
     this.notifications.sendReservationPush(

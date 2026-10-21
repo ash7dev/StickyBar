@@ -20,6 +20,8 @@ import {
 } from 'lucide-react-native';
 import * as Haptics from 'expo-haptics';
 import { colors, radius, shadows, typography } from '../../theme/tokens';
+import { useFavorite } from '../../../features/favorites/useFavorites';
+import { formatAmount } from '../../../features/owner-home/lib/format';
 import { ListingItem } from '../ui/TenantListingCard';
 import { TenantPriceDisplay } from '../ui/TenantPriceDisplay';
 import { useSearchHistoryStore } from '../../stores/search-history.store';
@@ -38,7 +40,7 @@ interface ExplorerListingCardProps {
 
 export function ExplorerListingCard({ listing, onPress }: ExplorerListingCardProps) {
   const [activePhotoIdx, setActivePhotoIdx] = useState(0);
-  const [isFavorite, setIsFavorite] = useState(false);
+  const [isFavorite, toggleFavorite] = useFavorite(listing.id);
   const heartScale = useRef(new Animated.Value(1)).current;
   const pagerRef = useRef<PagerView>(null);
 
@@ -93,8 +95,8 @@ export function ExplorerListingCard({ listing, onPress }: ExplorerListingCardPro
         useNativeDriver: true,
       }),
     ]).start();
-    setIsFavorite((prev) => !prev);
-  }, []);
+    toggleFavorite();
+  }, [toggleFavorite]);
 
   const handleCardPress = useCallback(() => {
     useSearchHistoryStore.getState().addRecentListing(listing);
@@ -249,12 +251,21 @@ export function ExplorerListingCard({ listing, onPress }: ExplorerListingCardPro
 
         {/* Ligne 4 : Prix */}
         <View style={styles.priceRow}>
-          <TenantPriceDisplay
-            prixBase={listing.prixBase}
-            derniereMinuteActive={listing.derniereMinuteActive}
-            size="sm"
-            reserveSpace={false}
-          />
+          {listing.prixSejour ? (
+            <Text style={styles.stayPrice}>
+              {formatAmount(listing.prixSejour)} FCFA{' '}
+              <Text style={styles.stayPriceSub}>
+                · {listing.nbNuits} nuit{(listing.nbNuits ?? 0) > 1 ? 's' : ''}, frais inclus
+              </Text>
+            </Text>
+          ) : (
+            <TenantPriceDisplay
+              prixBase={listing.prixBase}
+              derniereMinuteActive={listing.derniereMinuteActive}
+              size="sm"
+              reserveSpace={false}
+            />
+          )}
           {listing.isInstantBooking && (
             <View style={styles.instantChip}>
               <Zap size={9} color={colors.forest[950]} fill={colors.forest[950]} />
@@ -268,6 +279,8 @@ export function ExplorerListingCard({ listing, onPress }: ExplorerListingCardPro
 }
 
 const styles = StyleSheet.create({
+  stayPrice: { fontFamily: typography.fontDisplaySemiBold, fontSize: 17, color: colors.forest[950] },
+  stayPriceSub: { fontFamily: typography.fontBody, fontSize: 12, color: colors.neutral[600] },
   // ── Outer wrapper — no border, no card bg, clean spacing ─────────
   cardOuter: {
     marginBottom: 24,

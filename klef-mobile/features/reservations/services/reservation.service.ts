@@ -21,7 +21,8 @@ export async function updateReservationStatus(
     return res.data;
   }
   if (action === 'REFUSE') {
-    const res = await apiClient.patch(`/reservations/${id}/refuse`, payload);
+    // L'API n'expose pas de /refuse : refuser une demande payée = l'annuler avant confirmation (sans pénalité)
+    const res = await apiClient.patch(`/reservations/${id}/cancel`, { raison: payload?.raison || 'Refusée par l’hôte' });
     return res.data;
   }
   if (action === 'NOSHOW') {

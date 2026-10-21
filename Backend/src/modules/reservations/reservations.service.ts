@@ -20,6 +20,9 @@ import { NotificationsService } from '../notifications/notifications.service';
 import { StatutReservation, TypeAvis, RoleLitige, MotifLitige, StatutLitige, TypeTransactionWallet, SensTransaction } from '@prisma/client';
 import { Decimal } from '@prisma/client/runtime/library';
 
+/** Fenêtre pour noter l'autre partie après la clôture (cf. job fermer-fenetre-avis). */
+const REVIEW_WINDOW_DAYS = 7;
+
 @Injectable()
 export class ReservationsService {
   constructor(
@@ -106,6 +109,12 @@ export class ReservationsService {
         litige: true,
         demandesFrais: { orderBy: { creeLe: 'desc' } },
         historique: { orderBy: { modifieLe: 'desc' }, take: 20 },
+        // Lecture seule pour l'écran de détail : avis déjà laissés et remboursements réels
+        avis: { select: { auteurId: true, note: true, commentaire: true, creeLe: true } },
+        refunds: {
+          orderBy: { creeLe: 'desc' },
+          select: { montantLocataire: true, statut: true, motif: true, methodeRemboursement: true, creeLe: true },
+        },
       },
     });
   }
@@ -388,6 +397,10 @@ export class ReservationsService {
         throw new BadRequestException('La réservation doit être terminée pour noter le locataire');
       }
 
+      if (reservation.closeLe && Date.now() > reservation.closeLe.getTime() + REVIEW_WINDOW_DAYS * 86_400_000) {
+        throw new BadRequestException(`Le délai de ${REVIEW_WINDOW_DAYS} jours pour laisser un avis est dépassé`);
+      }
+
       // Check if rating already exists
       const existingRating = await tx.avis.findUnique({
         where: {
@@ -436,8 +449,9 @@ export class ReservationsService {
         locataireId: string;
         logementId: string;
         statut: string;
+        closeLe: Date | null;
       }>>`
-        SELECT id, "proprietaireId", "locataireId", "logementId", statut
+        SELECT id, "proprietaireId", "locataireId", "logementId", statut, "closeLe"
         FROM "Reservation"
         WHERE id = ${reservationId}
         FOR UPDATE
@@ -453,6 +467,10 @@ export class ReservationsService {
 
       if (reservation.statut !== 'COMPLETED') {
         throw new BadRequestException('La réservation doit être terminée pour noter le propriétaire');
+      }
+
+      if (reservation.closeLe && Date.now() > reservation.closeLe.getTime() + REVIEW_WINDOW_DAYS * 86_400_000) {
+        throw new BadRequestException(`Le délai de ${REVIEW_WINDOW_DAYS} jours pour laisser un avis est dépassé`);
       }
 
       // Check if rating already exists

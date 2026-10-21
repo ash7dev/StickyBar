@@ -9,28 +9,33 @@ import { AnimatedStaggerGroup } from '../../shared/components/animation/Animated
 import { MobileCancellationWarningBanner } from '../../features/dashboard/components/owner/MobileCancellationWarningBanner';
 import { MobileQuickActionsMenuCard } from '../../features/dashboard/components/owner/MobileQuickActionsMenuCard';
 import { useOwnerOverview } from '../../features/owner-home/hooks/useOwnerOverview';
-import { WalletHeroCard } from '../../features/owner-home/components/WalletHeroCard';
-import { TodoSection } from '../../features/owner-home/components/TodoSection';
-import { WeekSection } from '../../features/owner-home/components/WeekSection';
+import {
+  FocusQueue,
+  MoneyCard,
+  TodayList,
+  buildMoves,
+  describeMove,
+} from '../../features/owner-home/components/Cockpit';
 import { useOwnerCalendar, apiErrorMessage } from '../../features/calendar/hooks/useOwnerCalendar';
 import { usePendingDecisions } from '../../features/calendar/hooks/usePendingDecisions';
 import { addDays, todayDay } from '../../features/calendar/lib/days';
 
 /**
- * Accueil hôte mobile (direction M1 « Carte solde ») :
- * l'argent d'abord, puis ce qu'il faut faire aujourd'hui, la semaine et les raccourcis.
+ * Accueil hôte mobile : une carte sombre pour l'argent (solde, revenus du semestre),
+ * « À faire maintenant » — une demande à la fois —, puis les mouvements du jour et les raccourcis.
  */
 export default function OwnerDashboardScreen() {
   const today = todayDay();
   const overview = useOwnerOverview();
   const decisions = usePendingDecisions();
-  const calendar = useOwnerCalendar(today, addDays(today, 8));
+  const calendar = useOwnerCalendar(today, addDays(today, 2));
 
   const logementTitles = useMemo(
     () => new Map((calendar.data?.logements ?? []).map((l) => [l.id, l.titre])),
     [calendar.data],
   );
-  const events = calendar.data?.events ?? [];
+  const moves = useMemo(() => buildMoves(calendar.data?.events ?? [], today), [calendar.data, today]);
+  const nextUp = moves[0] ? describeMove(moves[0], logementTitles) : null;
 
   const isRefetching = overview.isRefetching || decisions.isRefetching || calendar.isRefetching;
   const refetchAll = () => Promise.all([overview.refetch(), decisions.refetch(), calendar.refetch()]);
@@ -68,15 +73,10 @@ export default function OwnerDashboardScreen() {
               <AppButton label="Réessayer" variant="ghost" size="sm" onPress={() => overview.refetch()} />
             </View>
           ) : (
-            <AnimatedStaggerGroup staggerDelay={60} preset="slideUp" distance={16}>
-              <WalletHeroCard wallet={overview.data.wallet} revenueThisMonth={overview.data.revenue.currentMonth} />
-              <TodoSection
-                decisions={decisions.data ?? []}
-                events={events}
-                logementTitles={logementTitles}
-                today={today}
-              />
-              <WeekSection events={events} logementTitles={logementTitles} today={today} />
+            <AnimatedStaggerGroup staggerDelay={60} preset="slideUp" distance={16} style={styles.stack}>
+              <MoneyCard wallet={overview.data.wallet} revenue={overview.data.revenue} today={today} />
+              <FocusQueue decisions={decisions.data ?? []} nextUp={nextUp} />
+              <TodayList moves={moves} logementTitles={logementTitles} />
               <MobileQuickActionsMenuCard />
             </AnimatedStaggerGroup>
           )}
@@ -88,7 +88,8 @@ export default function OwnerDashboardScreen() {
 
 const styles = StyleSheet.create({
   safeArea: { flex: 1, backgroundColor: colors.neutral[50] },
-  container: { padding: 18, gap: 20, paddingBottom: 120 },
+  container: { padding: 18, gap: 20, paddingBottom: 130 },
+  stack: { gap: 26 },
   errorCard: {
     alignItems: 'center',
     gap: 10,

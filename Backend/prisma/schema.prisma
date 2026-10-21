@@ -106,6 +106,7 @@ model Utilisateur {
   profile                  Profile             @relation(fields: [userId], references: [userId])
   logements                Logement[]          @relation("ProprietaireLogement")
   logementsGeres           Logement[]          @relation("GestionnaireLogement")
+  favoris                  Favori[]
   reservationsLocataire    Reservation[]       @relation("locataire")
   reservationsProprietaire Reservation[]       @relation("proprietaire_res")
   avisEnvoyes              Avis[]              @relation("auteur")
@@ -146,6 +147,20 @@ model CompteurFaute {
 // =============================================================================
 // LOGEMENT
 // =============================================================================
+
+/// Logement gardé par un voyageur (cœur de l'annonce, « Mes gardés »)
+model Favori {
+  id            String   @id @default(uuid())
+  utilisateurId String
+  logementId    String
+  creeLe        DateTime @default(now())
+
+  utilisateur Utilisateur @relation(fields: [utilisateurId], references: [id], onDelete: Cascade)
+  logement    Logement    @relation(fields: [logementId], references: [id], onDelete: Cascade)
+
+  @@unique([utilisateurId, logementId])
+  @@index([utilisateurId, creeLe(sort: Desc)])
+}
 
 model Logement {
   id             String  @id @default(uuid())
@@ -220,6 +235,7 @@ model Logement {
   proprietaire     Utilisateur               @relation("ProprietaireLogement", fields: [proprietaireId], references: [id])
   gestionnaire     Utilisateur?              @relation("GestionnaireLogement", fields: [gestionnaireId], references: [id])
   photos           PhotoLogement[]
+  favoris          Favori[]
   equipements      LogementEquipement[]
   tarifsPersonnes  TarifPersonnes[]
   tarifsNuits      TarifNuits[]

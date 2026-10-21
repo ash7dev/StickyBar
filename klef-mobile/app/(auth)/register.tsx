@@ -11,7 +11,8 @@ import {
   SafeAreaView,
   StatusBar,
 } from 'react-native';
-import { useRouter } from 'expo-router';
+import { useLocalSearchParams, useRouter } from 'expo-router';
+import { safeNext, nextQuery } from '../../features/auth/lib/next';
 import { ArrowLeft, User, Mail, Lock, AlertCircle, CheckCircle2, Eye, EyeOff, ShieldCheck, CheckSquare, Square } from 'lucide-react-native';
 import { useAuth } from '../../features/auth/hooks/useAuth';
 import { PhoneInputWithCountry } from '../../shared/components/ui/PhoneInputWithCountry';
@@ -20,6 +21,7 @@ import { colors, radius, shadows, typography } from '../../shared/theme/tokens';
 
 export default function RegisterScreen() {
   const router = useRouter();
+  const { next } = useLocalSearchParams<{ next?: string }>();
   const { register, loginGoogle, loading, error } = useAuth();
 
   const [prenom, setPrenom] = useState('');
@@ -59,7 +61,7 @@ export default function RegisterScreen() {
     });
 
     if (success) {
-      router.push(`/(auth)/otp-verify?email=${encodeURIComponent(email.trim())}` as any);
+      router.push(`/(auth)/otp-verify?email=${encodeURIComponent(email.trim())}${nextQuery(next, '&')}` as any);
     }
   };
 
@@ -67,7 +69,7 @@ export default function RegisterScreen() {
     setLocalError(null);
     const success = await loginGoogle();
     if (success) {
-      router.replace('/(tenant)' as any);
+      router.replace(safeNext(next) as any);
     }
   };
 
@@ -87,7 +89,7 @@ export default function RegisterScreen() {
             <AppButton
               fullWidth
               label="Se connecter"
-              onPress={() => router.replace('/(auth)/login' as any)}
+              onPress={() => router.replace(`/(auth)/login${nextQuery(next)}` as any)}
               size="lg"
               variant="action"
             />
@@ -331,7 +333,7 @@ export default function RegisterScreen() {
             <Text style={styles.footerText}>Vous avez déjà un compte ?</Text>
             <TouchableOpacity
               activeOpacity={0.7}
-              onPress={() => router.push('/(auth)/login' as any)}
+              onPress={() => router.push(`/(auth)/login${nextQuery(next)}` as any)}
             >
 
               <Text style={styles.loginLink}>Se connecter</Text>

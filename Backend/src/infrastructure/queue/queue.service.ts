@@ -86,6 +86,27 @@ export class QueueService {
     this.logger.debug(`Job auto-checkin schedulé → ${reservationId} (dans ${Math.round(delayMs / 3_600_000)}h)`);
   }
 
+  // État des lieux fait après l'heure d'arrivée : le voyageur garde 6h pour valider à partir de ce moment
+  async scheduleLateAutoCheckin(reservationId: string, checkinProprioLe: Date): Promise<void> {
+    const MS_6H = 6 * 60 * 60 * 1000;
+    const jobId = `autocheckin-late-${reservationId}`;
+    const existing = await this.reservationQueue.getJob(jobId);
+    if (existing) await existing.remove().catch(() => {});
+    const delayMs = Math.max(checkinProprioLe.getTime() + MS_6H - Date.now(), 0);
+    await this.reservationQueue.add(
+      'auto-checkin',
+      { reservationId },
+      {
+        jobId,
+        delay: delayMs,
+        attempts: 3,
+        backoff: { type: 'exponential', delay: 5000 },
+        removeOnComplete: true,
+      },
+    );
+    this.logger.debug(`Job auto-checkin (EDL tardif) schedulé → ${reservationId} (dans ${Math.round(delayMs / 3_600_000)}h)`);
+  }
+
   // Rappels check-in : dateDebut, dateDebut+2h, dateDebut+4h
   async scheduleCheckinReminders(reservationId: string, dateDebut: Date): Promise<void> {
     const offsets = [
@@ -158,6 +179,7 @@ export class QueueService {
       `autoclose-${reservationId}`,
       `rappel-${reservationId}`,
       `autocheckin-${reservationId}`,
+      `autocheckin-late-${reservationId}`,
       `rappel-checkin-0h-${reservationId}`,
       `rappel-checkin-2h-${reservationId}`,
       `rappel-checkin-4h-${reservationId}`,

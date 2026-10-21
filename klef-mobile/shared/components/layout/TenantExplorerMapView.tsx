@@ -8,11 +8,13 @@ import {
 } from 'react-native';
 import MapView, { Marker, PROVIDER_DEFAULT } from 'react-native-maps';
 import { Image as ExpoImage } from 'expo-image';
-import { Star, ChevronRight, RefreshCw } from 'lucide-react-native';
+import { Star, ChevronRight, RefreshCw, Heart, Play, Search, X } from 'lucide-react-native';
 import * as Haptics from 'expo-haptics';
 import { colors, radius, typography } from '../../theme/tokens';
 import { ListingItem } from '../ui/TenantListingCard';
-import { TenantPriceDisplay } from '../ui/TenantPriceDisplay';
+import { TenantPriceDisplay, getPrixDerniereMinute, getPrixPublic } from '../ui/TenantPriceDisplay';
+import { useFavorite, useFavoriteIds } from '../../../features/favorites/useFavorites';
+import { formatAmount } from '../../../features/owner-home/lib/format';
 import { useListingCacheStore } from '../../stores/listing-cache.store';
 import { apiClient } from '../../api/api-client';
 
@@ -28,6 +30,17 @@ interface TenantExplorerMapViewProps {
   onSelectListing: (listing: ExtendedListingItem) => void;
   selectedType?: string;
   selectedSousType?: string;
+  /** « Chercher dans cette zone » : relance la recherche autour du centre de la carte. */
+  onSearchArea?: (area: { lat: number; lng: number; radiusKm: number }) => void;
+  areaActive?: boolean;
+  onClearArea?: () => void;
+}
+
+/** Prix affiché sur la pastille : total du séjour si la recherche a des dates, sinon prix public par nuit. */
+function pinPrice(l: ListingItem): string {
+  if (l.prixSejour) return formatAmount(l.prixSejour);
+  const pub = getPrixPublic(l.prixBase);
+  return formatAmount(l.derniereMinuteActive ? getPrixDerniereMinute(pub) : pub);
 }
 
 const CITY_COORDINATES: Record<string, { lat: number; lng: number }> = {
@@ -50,7 +63,14 @@ export function TenantExplorerMapView({
   onSelectListing,
   selectedType,
   selectedSousType,
+  onSearchArea,
+  areaActive,
+  onClearArea,
 }: TenantExplorerMapViewProps) {
+  const { data: favoriteIds } = useFavoriteIds();
+  const favorites = React.useMemo(() => new Set(favoriteIds ?? []), [favoriteIds]);
+  // Centre de la carte après déplacement : propose « Chercher dans cette zone »
+  const [movedRegion, setMovedRegion] = useState<{ latitude: number; longitude: number; latitudeDelta: number } | null>(null);
   const mapRef = useRef<MapView>(null);
   const { formatPrice } = useCurrencyStore();
   const feedSections = useListingCacheStore((state) => state.feedSections);
@@ -198,6 +218,10 @@ export function TenantExplorerMapView({
         }}
         showsUserLocation
         showsCompass={false}
+        onRegionChangeComplete={(r, details) => {
+          // Seulement quand c'est l'utilisateur qui a bougé la carte
+          if (onSearchArea && (details as { isGesture?: boolean } | undefined)?.isGesture !== false) setMovedRegion(r);
+        }}
       >
         {mappedListings.map((item) => {
           const isSelected = item.id === selectedId;
@@ -207,15 +231,43 @@ export function TenantExplorerMapView({
               coordinate={{ latitude: item.lat, longitude: item.lng }}
               onPress={() => handleSelectMarker(item)}
             >
-              <View style={[styles.markerPill, isSelected && styles.markerPillSelected]}>
-                <Text style={[styles.markerText, isSelected && styles.markerTextSelected]}>
-                  {formatPrice(item.prixBase)}
+              <View style={[styles.markerPill, favorites.has(item.id) && styles.markerPillKept, isSelected && styles.markerPillSelected]}>
+                {favorites.has(item.id) && <Heart size={11} color={isSelected ? colors.forest[950] : colors.lime[400]} fill={isSelected ? colors.forest[950] : colors.lime[400]} />}
+                <Text style={[styles.markerText, favorites.has(item.id) && { color: colors.lime[400] }, isSelected && styles.markerTextSelected]}>
+                  {pinPrice(item)}
                 </Text>
               </View>
             </Marker>
           );
         })}
       </MapView>
+
+      {/* Chercher dans la zone affichée, ou effacer la zone choisie */}
+      {onSearchArea && (movedRegion || areaActive) ? (
+        <View style={styles.areaRow} pointerEvents="box-none">
+          {movedRegion ? (
+            <TouchableOpacity
+              onPress={() => {
+                Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {});
+                // Rayon ≈ demi-hauteur visible (1° de latitude ≈ 111 km)
+                const radiusKm = Math.max(1, Math.min(50, Math.round((movedRegion.latitudeDelta * 111) / 2)));
+                onSearchArea({ lat: movedRegion.latitude, lng: movedRegion.longitude, radiusKm });
+                setMovedRegion(null);
+              }}
+              style={styles.areaBtn}
+              accessibilityRole="button"
+            >
+              <Search size={14} color={colors.lime[400]} strokeWidth={2.4} />
+              <Text style={styles.areaBtnText}>Chercher dans cette zone</Text>
+            </TouchableOpacity>
+          ) : (
+            <TouchableOpacity onPress={onClearArea} style={styles.areaChip} accessibilityRole="button">
+              <Text style={styles.areaChipText}>Zone de la carte</Text>
+              <X size={13} color={colors.forest[950]} strokeWidth={2.6} />
+            </TouchableOpacity>
+          )}
+        </View>
+      ) : null}
 
       {/* Carte d'aperçu flottante en bas de l'écran */}
       {selectedListing ? (
@@ -231,16 +283,23 @@ export function TenantExplorerMapView({
               contentFit="cover"
               transition={200}
             />
+            {selectedListing.videoUrl ? (
+              <View style={styles.videoBadge}>
+                <Play size={10} color={colors.lime[400]} fill={colors.lime[400]} />
+                <Text style={styles.videoBadgeText}>Vidéo</Text>
+              </View>
+            ) : null}
+            <PreviewHeart listingId={selectedListing.id} />
 
             <View style={styles.previewInfo}>
               <View style={styles.headerRow}>
                 <Text style={styles.typeText}>{selectedListing.type || 'Logement'}</Text>
-                <View style={styles.ratingRow}>
-                  <Star size={12} color={colors.gold[500]} fill={colors.gold[500]} />
-                  <Text style={styles.ratingText}>
-                    {selectedListing.note ? Number(selectedListing.note).toFixed(1) : '4.8'}
-                  </Text>
-                </View>
+                {selectedListing.note ? (
+                  <View style={styles.ratingRow}>
+                    <Star size={12} color={colors.gold[500]} fill={colors.gold[500]} />
+                    <Text style={styles.ratingText}>{Number(selectedListing.note).toFixed(1).replace('.', ',')}</Text>
+                  </View>
+                ) : null}
               </View>
 
               <Text style={styles.titleText} numberOfLines={1}>
@@ -253,12 +312,19 @@ export function TenantExplorerMapView({
               </Text>
 
               <View style={styles.footerRow}>
-                <TenantPriceDisplay
-                  prixBase={selectedListing.prixBase}
-                  derniereMinuteActive={selectedListing.derniereMinuteActive}
-                  size="sm"
-                  reserveSpace={false}
-                />
+                {selectedListing.prixSejour ? (
+                  <Text style={styles.stayPrice}>
+                    {formatAmount(selectedListing.prixSejour)} FCFA
+                    <Text style={styles.stayPriceSub}> · {selectedListing.nbNuits} nuit{(selectedListing.nbNuits ?? 0) > 1 ? 's' : ''}</Text>
+                  </Text>
+                ) : (
+                  <TenantPriceDisplay
+                    prixBase={selectedListing.prixBase}
+                    derniereMinuteActive={selectedListing.derniereMinuteActive}
+                    size="sm"
+                    reserveSpace={false}
+                  />
+                )}
 
                 <View style={styles.actionBtn}>
                   <Text style={styles.actionBtnText}>Voir</Text>
@@ -277,7 +343,28 @@ export function TenantExplorerMapView({
   );
 }
 
+/** Cœur sur l'aperçu : garder sans quitter la carte. */
+function PreviewHeart({ listingId }: { listingId: string }) {
+  const [kept, toggle] = useFavorite(listingId);
+  return (
+    <TouchableOpacity onPress={toggle} style={styles.previewHeart} hitSlop={6} accessibilityRole="button" accessibilityLabel={kept ? 'Ne plus garder' : 'Garder'}>
+      <Heart size={15} color={kept ? colors.forest[950] : colors.neutral[0]} fill={kept ? colors.forest[950] : 'rgba(0,0,0,0.25)'} />
+    </TouchableOpacity>
+  );
+}
+
 const styles = StyleSheet.create({
+  markerPillKept: { flexDirection: 'row', alignItems: 'center', gap: 4, backgroundColor: colors.forest[950], borderColor: colors.forest[950] },
+  areaRow: { position: 'absolute', top: 12, left: 0, right: 0, alignItems: 'center' },
+  areaBtn: { flexDirection: 'row', alignItems: 'center', gap: 6, height: 38, paddingHorizontal: 14, borderRadius: 999, backgroundColor: colors.forest[950] },
+  areaBtnText: { fontFamily: typography.fontBodyBold, fontSize: 13, color: colors.neutral[0] },
+  areaChip: { flexDirection: 'row', alignItems: 'center', gap: 6, height: 34, paddingHorizontal: 12, borderRadius: 999, backgroundColor: colors.lime[400] },
+  areaChipText: { fontFamily: typography.fontBodyBold, fontSize: 12, color: colors.forest[950] },
+  videoBadge: { position: 'absolute', left: 8, bottom: 8, flexDirection: 'row', alignItems: 'center', gap: 4, paddingHorizontal: 7, paddingVertical: 3, borderRadius: 999, backgroundColor: 'rgba(4,25,18,0.75)' },
+  videoBadgeText: { fontFamily: typography.fontBodyBold, fontSize: 10, color: colors.neutral[0] },
+  previewHeart: { position: 'absolute', left: 8, top: 8, width: 30, height: 30, borderRadius: 15, backgroundColor: 'rgba(255,255,255,0.9)', alignItems: 'center', justifyContent: 'center' },
+  stayPrice: { fontFamily: typography.fontDisplaySemiBold, fontSize: 15, color: colors.forest[950] },
+  stayPriceSub: { fontFamily: typography.fontBody, fontSize: 11, color: colors.neutral[600] },
   container: {
     width: '100%',
     height: 540,
@@ -305,12 +392,12 @@ const styles = StyleSheet.create({
     height: '100%',
   },
   markerPill: {
-    backgroundColor: colors.forest[950],
+    backgroundColor: colors.neutral[0],
     paddingVertical: 6,
     paddingHorizontal: 12,
     borderRadius: radius.pill,
     borderWidth: 1.5,
-    borderColor: colors.neutral[0],
+    borderColor: 'rgba(4,25,18,0.08)',
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.25,
@@ -325,7 +412,7 @@ const styles = StyleSheet.create({
   markerText: {
     fontFamily: typography.fontBodyBold,
     fontSize: 12,
-    color: colors.neutral[0],
+    color: colors.forest[950],
   },
   markerTextSelected: {
     color: colors.forest[950],

@@ -8,12 +8,16 @@ import {
 } from '@nestjs/common';
 import { StatutReservation } from '@prisma/client';
 import { PrismaService } from '../../../infrastructure/prisma/prisma.service';
+import { QueueService } from '../../../infrastructure/queue/queue.service';
 
 @Injectable()
 export class CheckInUploadPhotosUseCase {
   private readonly logger = new Logger(CheckInUploadPhotosUseCase.name);
 
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly queue: QueueService,
+  ) {}
 
   async execute(reservationId: string, userId: string, photos: string[]) {
     const reservation = await this.prisma.reservation.findUnique({
@@ -32,8 +36,13 @@ export class CheckInUploadPhotosUseCase {
     if (!photos || photos.length === 0) {
       throw new BadRequestException('Au moins une photo de l\'état des lieux est requise');
     }
+    // Même garde que checkin-proprio : pas d'état des lieux plus de 4h avant l'arrivée
+    if (Date.now() < reservation.dateDebut.getTime() - 4 * 60 * 60 * 1000) {
+      throw new ConflictException("L'état des lieux d'entrée ne peut être fait que 4h avant l'arrivée du locataire");
+    }
 
-    return await this.prisma.$transaction(async (tx) => {
+    const now = new Date();
+    const updated = await this.prisma.$transaction(async (tx) => {
       await tx.photoEtatLieu.deleteMany({ where: { reservationId, type: 'CHECKIN' } });
       await tx.photoEtatLieu.createMany({
         data: photos.map((url, index) => ({
@@ -48,8 +57,12 @@ export class CheckInUploadPhotosUseCase {
 
       return tx.reservation.update({
         where: { id: reservationId },
-        data: { checkinProprioLe: new Date() },
+        data: { checkinProprioLe: now },
       });
     });
+
+    // État des lieux après l'heure d'arrivée : le voyageur garde 6h pour valider
+    if (now > reservation.dateDebut) await this.queue.scheduleLateAutoCheckin(reservationId, now);
+    return updated;
   }
 }

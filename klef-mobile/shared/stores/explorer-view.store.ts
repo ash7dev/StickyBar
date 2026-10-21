@@ -1,14 +1,14 @@
 import { create } from 'zustand';
 
+export type ExplorerViewMode = 'video' | 'map' | 'list';
+
 interface ExplorerViewState {
-  viewMode: 'list' | 'map';
-  toggleViewMode: () => void;
-  setViewMode: (mode: 'list' | 'map') => void;
+  viewMode: ExplorerViewMode;
+  setViewMode: (mode: ExplorerViewMode) => void;
 }
 
+/** Onglet d'Explorer : Vidéos (logements filmés) | Carte | Liste. Liste par défaut, la plus légère en données. */
 export const useExplorerViewStore = create<ExplorerViewState>((set) => ({
   viewMode: 'list',
-  toggleViewMode: () =>
-    set((state) => ({ viewMode: state.viewMode === 'list' ? 'map' : 'list' })),
   setViewMode: (mode) => set({ viewMode: mode }),
 }));

@@ -35,9 +35,10 @@ export function useGatedAction(onReady: () => void) {
     let block: GateBlock = null;
 
     // 1. Profil requis (Prénom et Nom au minimum, ou profileCompleted true)
+    //    + date de naissance : l'API refuse la réservation sans elle (âge minimum du logement)
     const hasProfile =
-      Boolean(user.profileCompleted) ||
-      (Boolean(user.prenom) && Boolean(user.nom));
+      (Boolean(user.profileCompleted) || (Boolean(user.prenom) && Boolean(user.nom))) &&
+      Boolean((user as { dateNaissance?: string | null }).dateNaissance);
 
     if (!hasProfile) {
       steps.push('profile');

@@ -57,6 +57,8 @@ export default function OwnerTabsLayout() {
             title: 'Calendrier',
             href: null,
             headerShown: false,
+            // Écran de travail plein écran : la frise et la sélection de nuits prennent toute la hauteur.
+            tabBarStyle: { display: 'none' },
           }}
         />
 

@@ -10,6 +10,7 @@ import { Image as ExpoImage } from 'expo-image';
 import { Star, Heart, ShieldCheck, Users, BedDouble, Moon, Wallet } from 'lucide-react-native';
 import * as Haptics from 'expo-haptics';
 import { colors, radius, typography } from '../../theme/tokens';
+import { useFavorite } from '../../../features/favorites/useFavorites';
 import { ListingItem } from '../ui/TenantListingCard';
 import { TenantPriceDisplay } from '../ui/TenantPriceDisplay';
 
@@ -19,7 +20,7 @@ interface ExplorerListingRowProps {
 }
 
 export function ExplorerListingRow({ listing, onPress }: ExplorerListingRowProps) {
-  const [isFavorite, setIsFavorite] = useState(false);
+  const [isFavorite, toggleFavorite] = useFavorite(listing.id);
 
   const photos = Array.isArray(listing.photos) && listing.photos.length > 0
     ? listing.photos.map((p) => (typeof p === 'string' ? p : p.url))
@@ -28,8 +29,7 @@ export function ExplorerListingRow({ listing, onPress }: ExplorerListingRowProps
     : ['https://images.unsplash.com/photo-1600596542815-ffad4c1539a9?w=800&auto=format&fit=crop&q=80'];
 
   const handleFavoritePress = () => {
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium).catch(() => {});
-    setIsFavorite((prev) => !prev);
+    toggleFavorite();
   };
 
   return (

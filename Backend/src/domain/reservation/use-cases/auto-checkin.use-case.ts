@@ -11,9 +11,13 @@ import { QueueService } from '../../../infrastructure/queue/queue.service';
  * en statut CONFIRMED et qu'aucune annulation ni litige n'a été déclaré.
  *
  * Cela garantit que :
- * - Les fonds ne restent jamais gelés en séquestre indéfiniment
  * - Le propriétaire est crédité même si le locataire oublie de confirmer le check-in
  * - L'auto-clôture peut s'enchaîner normalement à dateFin + 24h
+ *
+ * Mais jamais sans état des lieux d'entrée du propriétaire : sans lui, rien ne prouve
+ * que le logement a été remis, donc aucun versement automatique. Si l'état des lieux
+ * arrive après l'heure d'arrivée, le voyageur garde 6h à partir de ce moment
+ * (job `autocheckin-late`, programmé par les use-cases de check-in propriétaire).
  */
 @Injectable()
 export class AutoCheckinUseCase {
@@ -52,15 +56,27 @@ export class AutoCheckinUseCase {
       return;
     }
 
-    // 3. Vérifier que dateDebut + 6h est bien passée
+    // 3. Pas d'état des lieux d'entrée du propriétaire : pas de versement automatique
+    if (!reservation.checkinProprioLe) {
+      this.logger.log(`Auto-checkin ignoré [${reservationId}] : aucun état des lieux d'entrée du propriétaire`);
+      await this.queue.enqueueNotification(reservation.proprietaireId, 'AUTO_CHECKIN_SYSTEME', {
+        reservationId,
+        logementId: reservation.logementId,
+        title: '📸 État des lieux d’entrée manquant',
+        message: 'Votre paiement reste bloqué : faites l’état des lieux d’entrée pour que le voyageur puisse valider son arrivée.',
+      });
+      return;
+    }
+
+    // 4. Vérifier que 6h se sont écoulées depuis l'arrivée prévue ET depuis l'état des lieux
     const MS_6H = 6 * 60 * 60 * 1000;
-    const seuilAutoCheckin = new Date(reservation.dateDebut.getTime() + MS_6H);
-    if (Date.now() < seuilAutoCheckin.getTime()) {
+    const depart = Math.max(reservation.dateDebut.getTime(), reservation.checkinProprioLe.getTime());
+    if (Date.now() < depart + MS_6H) {
       this.logger.log(`Auto-checkin ignoré [${reservationId}] : seuil de 6h non atteint`);
       return;
     }
 
-    // 4. Valider la transition via la state machine
+    // 5. Valider la transition via la state machine
     try {
       this.stateMachine.transition(reservation.statut, StatutReservation.CHECKED_IN);
     } catch {
@@ -77,8 +93,6 @@ export class AutoCheckinUseCase {
         where: { id: reservationId },
         data: {
           statut: StatutReservation.CHECKED_IN,
-          // Positionner les timestamps de check-in système (garder les existants si le proprio avait déjà uploadé)
-          checkinProprioLe: reservation.checkinProprioLe ?? now,
           checkinLocataireLe: reservation.checkinLocataireLe ?? now,
           updatedBySystem: true,
         },

@@ -13,6 +13,7 @@ import {
   Pressable,
 } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
+import { safeNext, nextQuery } from '../../features/auth/lib/next';
 import {
   ArrowLeft,
   ShieldCheck,
@@ -30,7 +31,7 @@ import { colors, radius, shadows, typography } from '../../shared/theme/tokens';
 
 export default function OtpVerifyScreen() {
   const router = useRouter();
-  const { phone, email } = useLocalSearchParams<{ phone?: string; email?: string }>();
+  const { phone, email, next } = useLocalSearchParams<{ phone?: string; email?: string; next?: string }>();
   const targetPhone = phone ? decodeURIComponent(phone) : '';
   const targetEmail = email ? decodeURIComponent(email) : '';
 
@@ -74,7 +75,7 @@ export default function OtpVerifyScreen() {
     }
 
     if (success) {
-      router.replace('/(tenant)' as any);
+      router.replace(safeNext(next) as any);
     }
   };
 

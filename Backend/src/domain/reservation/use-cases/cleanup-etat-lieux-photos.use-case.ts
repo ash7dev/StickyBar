@@ -2,6 +2,9 @@ import { Injectable, Logger } from '@nestjs/common';
 import { PrismaService } from '../../../infrastructure/prisma/prisma.service';
 import { CloudinaryService } from '../../../infrastructure/cloudinary/cloudinary.service';
 
+/** Durée de conservation des photos d'état des lieux après la fin du séjour (miroir côté app mobile). */
+export const PHOTO_RETENTION_DAYS = 23;
+
 @Injectable()
 export class CleanupEtatLieuxPhotosUseCase {
   private readonly logger = new Logger(CleanupEtatLieuxPhotosUseCase.name);
@@ -13,7 +16,7 @@ export class CleanupEtatLieuxPhotosUseCase {
 
   async execute(): Promise<void> {
     const cutoff = new Date();
-    cutoff.setDate(cutoff.getDate() - 15);
+    cutoff.setDate(cutoff.getDate() - PHOTO_RETENTION_DAYS);
 
     const photos = await this.prisma.photoEtatLieu.findMany({
       where: {

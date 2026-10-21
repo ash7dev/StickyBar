@@ -17,6 +17,7 @@ import {
   Grid2x2,
 } from 'lucide-react-native';
 import { colors, radius, shadows, typography } from '../../theme/tokens';
+import { useFavorite } from '../../../features/favorites/useFavorites';
 import { router } from 'expo-router';
 
 export interface ListingPhoto {
@@ -28,7 +29,13 @@ export interface ListingPhoto {
 interface TenantListingGalleryProps {
   photos: ListingPhoto[];
   titre: string;
+  /** Pour le cœur « garder » (favoris synchronisés avec l'API). */
+  listingId?: string;
   onBack?: () => void;
+  /** Ouvre toutes les photos classées par pièce. */
+  onOpenAll?: () => void;
+  /** Ouvre la visionneuse plein écran sur la photo touchée. */
+  onOpenPhoto?: (index: number) => void;
 }
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
@@ -36,10 +43,13 @@ const { width: SCREEN_WIDTH } = Dimensions.get('window');
 export function TenantListingGallery({
   photos = [],
   titre,
+  listingId,
   onBack,
+  onOpenAll,
+  onOpenPhoto,
 }: TenantListingGalleryProps) {
   const [activeIdx, setActiveIdx] = useState(0);
-  const [isFavorite, setIsFavorite] = useState(false);
+  const [isFavorite, toggleFavorite] = useFavorite(listingId);
   const pagerRef = useRef<PagerView>(null);
 
   const normalizedPhotos: string[] = React.useMemo(() => {
@@ -66,6 +76,8 @@ export function TenantListingGallery({
   const handleBack = () => {
     if (onBack) {
       onBack();
+    } else if (router.canGoBack()) {
+      router.back();
     } else {
       router.push('/(tenant)/explorer' as any);
     }
@@ -93,13 +105,21 @@ export function TenantListingGallery({
           onPageSelected={(e) => setActiveIdx(e.nativeEvent.position)}
         >
           {normalizedPhotos.map((photoUrl, index) => (
-            <View key={`${photoUrl}-${index}`} style={styles.pageWrapper}>
+            <TouchableOpacity
+              key={`${photoUrl}-${index}`}
+              activeOpacity={0.95}
+              onPress={() => onOpenPhoto?.(index)}
+              disabled={!onOpenPhoto}
+              style={styles.pageWrapper}
+              accessibilityRole="imagebutton"
+              accessibilityLabel={`Agrandir la photo ${index + 1}`}
+            >
               <Image
                 source={{ uri: photoUrl }}
                 style={styles.image}
                 resizeMode="cover"
               />
-            </View>
+            </TouchableOpacity>
           ))}
         </PagerView>
       ) : (
@@ -132,7 +152,7 @@ export function TenantListingGallery({
 
           <TouchableOpacity
             activeOpacity={0.85}
-            onPress={() => setIsFavorite(!isFavorite)}
+            onPress={toggleFavorite}
             style={styles.glassButton}
             accessibilityLabel="Mettre en favori"
           >
@@ -147,7 +167,7 @@ export function TenantListingGallery({
 
       {/* ── Overlay Bottom Controls (Compteur + Dots) ────────────────── */}
       {normalizedPhotos.length > 1 && (
-        <View style={styles.bottomControlsRow} pointerEvents="none">
+        <View style={styles.bottomControlsRow} pointerEvents="box-none">
           {/* Dots indicateurs au centre */}
           <View style={styles.dotsWrapper}>
             {normalizedPhotos.slice(0, 5).map((_, i) => (
@@ -162,12 +182,19 @@ export function TenantListingGallery({
           </View>
 
           {/* Badge Compteur 1 / N à droite */}
-          <View style={styles.counterBadge}>
+          <TouchableOpacity
+            activeOpacity={0.85}
+            onPress={onOpenAll}
+            disabled={!onOpenAll}
+            style={styles.counterBadge}
+            accessibilityRole="button"
+            accessibilityLabel={`Voir les ${normalizedPhotos.length} photos`}
+          >
             <Grid2x2 size={12} color={colors.neutral[0]} />
             <Text style={styles.counterText}>
               {activeIdx + 1} / {normalizedPhotos.length}
             </Text>
-          </View>
+          </TouchableOpacity>
         </View>
       )}
     </View>

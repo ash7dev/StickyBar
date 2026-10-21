@@ -6,6 +6,8 @@ export interface ReservationLogement {
   quartier?: string | null;
   adresse?: string | null;
   photos: Array<{ url: string; estPrincipale?: boolean }>;
+  gestionnaireId?: string | null;
+  gestionnaire?: { id: string; prenom: string; nom: string; telephone?: string | null; avatarUrl?: string | null } | null;
 }
 
 export interface ReservationProprietaire {
@@ -38,15 +40,50 @@ export interface HistoriqueReservation {
   nouveauStatut: string;
   modifiePar?: string | null;
   raison?: string | null;
+  /** Ex. annulation : { politique, montantRembourse, penaliteProprio } */
+  metadonnees?: Record<string, unknown> | null;
   modifieLe: string;
 }
 
 export interface LitigeReservation {
   id: string;
+  /** EN_ATTENTE | FONDE | NON_FONDE */
   statut: string;
   declarePar?: string;
   motif: string;
   description: string;
+  creeLe: string;
+  montantCompensation?: number | string | null;
+  decisionAdmin?: string | null;
+  resoluLe?: string | null;
+}
+
+export interface DemandeFraisReservation {
+  id: string;
+  titre: string;
+  description?: string | null;
+  montant: number | string;
+  /** EN_ATTENTE | PAYE | REFUSE | CONTESTE */
+  statut: string;
+  methodePaiement?: string | null;
+  creeLe: string;
+  payeLe?: string | null;
+  refuseLe?: string | null;
+}
+
+export interface AvisReservation {
+  auteurId: string;
+  note: number;
+  commentaire?: string | null;
+  creeLe: string;
+}
+
+export interface RefundReservation {
+  montantLocataire: number | string;
+  /** EN_ATTENTE | EN_COURS | EXECUTE | ECHOUE | ANNULE */
+  statut: string;
+  motif: string;
+  methodeRemboursement?: string | null;
   creeLe: string;
 }
 
@@ -99,6 +136,8 @@ export interface ReservationDetail {
     email?: string | null;
     avatarUrl?: string | null;
     estVerifie?: boolean;
+    /** NON_VERIFIE | EN_ATTENTE | VERIFIE | REJETE | A_RENOUVELER | SUSPENDU */
+    statutKyc?: string | null;
     terangaBadge?: 'OR' | 'ARGENT' | 'BRONZE' | string | null;
     noteMoyenne?: number | null;
     nbAvis?: number | null;
@@ -109,5 +148,8 @@ export interface ReservationDetail {
   photosEtatLieu?: PhotoEtatLieu[];
   historique?: HistoriqueReservation[];
   litige?: LitigeReservation | null;
+  demandesFrais?: DemandeFraisReservation[];
+  avis?: AvisReservation[];
+  refunds?: RefundReservation[];
 }
 

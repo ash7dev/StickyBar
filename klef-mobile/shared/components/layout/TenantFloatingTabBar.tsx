@@ -20,14 +20,12 @@ import {
 import * as Haptics from 'expo-haptics';
 import { colors, radius, shadows, typography } from '../../theme/tokens';
 import { useAuthStore } from '../../../features/auth/stores/auth.store';
-import { useExplorerViewStore } from '../../stores/explorer-view.store';
 
 export function TenantFloatingTabBar({ state, descriptors, navigation }: any) {
 
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const { isAuthenticated } = useAuthStore();
-  const { viewMode: explorerView, toggleViewMode } = useExplorerViewStore();
 
   const currentRoute = state.routes[state.index];
   const focusedDescriptor = descriptors[currentRoute?.key];
@@ -67,10 +65,6 @@ export function TenantFloatingTabBar({ state, descriptors, navigation }: any) {
   };
 
 
-  const toggleExplorerView = () => {
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {});
-    toggleViewMode();
-  };
 
   const visibleRoutes = state.routes.filter((route: any) => {
     const { options } = descriptors[route.key];
@@ -85,28 +79,6 @@ export function TenantFloatingTabBar({ state, descriptors, navigation }: any) {
         { paddingBottom: Math.max(insets.bottom, Platform.OS === 'ios' ? 8 : 12) },
       ]}
     >
-      {/* ── Floating Action Bar (Carte/Liste pour Explorer) ─────────── */}
-      {isExplorer && (
-        <View pointerEvents="box-none" style={styles.topRowActions}>
-          <TouchableOpacity
-            activeOpacity={0.85}
-            onPress={toggleExplorerView}
-            style={styles.actionBtnDark}
-          >
-            {explorerView === 'list' ? (
-              <>
-                <Map size={15} color={colors.lime[400]} />
-                <Text style={styles.actionBtnDarkText}>Carte</Text>
-              </>
-            ) : (
-              <>
-                <List size={15} color={colors.lime[400]} />
-                <Text numberOfLines={1} style={styles.actionBtnDarkText}>Liste</Text>
-              </>
-            )}
-          </TouchableOpacity>
-        </View>
-      )}
 
       {/* ── Floating Bottom Navigation Card ──────────────────────── */}
       <View style={styles.floatingNavCard}>

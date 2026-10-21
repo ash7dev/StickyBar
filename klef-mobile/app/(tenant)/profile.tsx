@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
+import { FavoritesEntryCard } from '../../features/favorites/FavoritesEntryCard';
 import {
   StyleSheet,
   SafeAreaView,
@@ -191,6 +192,9 @@ export default function ProfileScreen() {
 
             {/* 2. Espace Actif (Bascule Rôle Voyageur / Hôte) */}
             <MobileActiveRoleCard />
+
+            {/* Logements gardés avec le cœur */}
+            <FavoritesEntryCard />
 
             {/* 3. Coordonnées & Infos Personnelles */}
             <MobileProfileInfoCard

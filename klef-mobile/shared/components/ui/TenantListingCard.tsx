@@ -16,6 +16,7 @@ import {
   ImageOff,
 } from 'lucide-react-native';
 import { colors, radius, shadows, typography } from '../../theme/tokens';
+import { useFavorite } from '../../../features/favorites/useFavorites';
 import { TenantPriceDisplay } from './TenantPriceDisplay';
 import { useListingCacheStore } from '../../stores/listing-cache.store';
 import { useSearchHistoryStore } from '../../stores/search-history.store';
@@ -46,6 +47,9 @@ export interface ListingItem {
   derniereMinuteActive?: boolean;
   videoUrl?: string | null;
   photos?: ListingPhoto[];
+  /** Total exact du séjour quand la recherche a des dates (API search). */
+  prixSejour?: number | null;
+  nbNuits?: number | null;
 }
 
 interface TenantListingCardProps {
@@ -60,7 +64,7 @@ export function TenantListingCard({
   onPress,
 }: TenantListingCardProps) {
   const [activePhotoIdx, setActivePhotoIdx] = useState(0);
-  const [isFavorite, setIsFavorite] = useState(false);
+  const [isFavorite, toggleFavorite] = useFavorite(listing.id);
   const pagerRef = useRef<PagerView>(null);
 
   const normalizedPhotos: string[] = React.useMemo(() => {
@@ -159,7 +163,7 @@ export function TenantListingCard({
         {/* Bouton Favori */}
         <TouchableOpacity
           activeOpacity={0.8}
-          onPress={() => setIsFavorite(!isFavorite)}
+          onPress={toggleFavorite}
           style={styles.favoriteButton}
         >
           <Heart

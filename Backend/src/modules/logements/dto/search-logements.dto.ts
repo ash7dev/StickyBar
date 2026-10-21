@@ -31,6 +31,12 @@ export class SearchLogementsDto {
   @IsBoolean()
   derniereMinute?: boolean;
 
+  @ApiPropertyOptional({ example: true, description: 'Uniquement les logements avec une visite vidéo' })
+  @IsOptional()
+  @Transform(({ value }) => value === 'true' || value === true || value === '1')
+  @IsBoolean()
+  avecVideo?: boolean;
+
   @ApiPropertyOptional({ example: 14.7167, description: 'Latitude GPS pour recherche à proximité' })
   @IsOptional()
   @Type(() => Number)

@@ -84,6 +84,7 @@ export default function RootLayout() {
               <Stack.Screen name="hote/[id]" options={{ headerShown: false, animation: 'slide_from_right' }} />
               <Stack.Screen name="reservation/[id]" options={{ headerShown: false, animation: 'slide_from_right' }} />
               <Stack.Screen name="reserver" options={{ headerShown: false, presentation: 'modal', animation: 'slide_from_bottom' }} />
+              <Stack.Screen name="favoris" options={{ headerShown: false }} />
               <Stack.Screen name="assistance" options={{ headerShown: false, animation: 'slide_from_right' }} />
               <Stack.Screen name="support/[id]" options={{ headerShown: false, animation: 'slide_from_right' }} />
               <Stack.Screen name="teranga-club" options={{ headerShown: false, presentation: 'modal', animation: 'slide_from_bottom' }} />

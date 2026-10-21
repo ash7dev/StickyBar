@@ -25,6 +25,7 @@ import { SupportModule } from './modules/support/support.module';
 import { TerangaClubModule } from './modules/teranga-club/teranga-club.module';
 import { GestionnaireModule } from './modules/gestionnaire/gestionnaire.module';
 import { ConciergeLeadsModule } from './modules/concierge-leads/concierge-leads.module';
+import { FavoritesModule } from './modules/favorites/favorites.module';
 import { JwtAuthGuard } from './shared/guards/jwt-auth.guard';
 import { RolesGuard } from './shared/guards/roles.guard';
 
@@ -63,6 +64,7 @@ import { RolesGuard } from './shared/guards/roles.guard';
     TerangaClubModule,
     GestionnaireModule,
     ConciergeLeadsModule,
+    FavoritesModule,
   ],
   providers: [
     { provide: APP_GUARD, useClass: ThrottlerGuard },

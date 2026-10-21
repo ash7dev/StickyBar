@@ -13,6 +13,7 @@ import {
 import { Logement, PhotoLogement, Prisma, StatutLogement, StatutReservation, TarifNuits, TarifPersonnes, TypeAvis, TypeHote, TypeLogement } from '@prisma/client';
 import { v2 as cloudinary } from 'cloudinary';
 import { CloudinaryService } from '../../infrastructure/cloudinary/cloudinary.service';
+import { PricingService } from '@shared/pricing/pricing.service';
 import { PrismaService } from '../../infrastructure/prisma/prisma.service';
 import { RedisService } from '../../infrastructure/redis/redis.service';
 import { AddPhotoDto } from './dto/add-photo.dto';
@@ -42,6 +43,7 @@ export class LogementsService implements OnModuleInit {
     private readonly cloudinaryService: CloudinaryService,
     private readonly redis: RedisService,
     private readonly notificationsService: NotificationsService,
+    private readonly pricing: PricingService,
   ) { }
 
   async onModuleInit() {
@@ -124,6 +126,7 @@ export class LogementsService implements OnModuleInit {
       }),
       ...(((dto as any).derniereMinuteOnly || (dto as any).derniereMinute) && { derniereMinuteActive: true }),
       ...(dto.type && { type: dto.type }),
+      ...(dto.avecVideo && { videoUrl: { not: null } }),
       ...(dto.sousType?.trim() && {
         OR: [
           { sousType: { contains: dto.sousType.trim(), mode: 'insensitive' } },
@@ -170,13 +173,20 @@ export class LogementsService implements OnModuleInit {
       note: true,
       totalSejours: true,
       derniereMinuteActive: true,
+      videoUrl: true,
+      commissionPourcentage: true,
       photos: {
         orderBy: [{ estPrincipale: 'desc' }, { position: 'asc' }],
         select: { url: true, categorie: true },
         take: 10,
       },
       tarifsPersonnes: {
+        orderBy: { position: 'asc' },
         select: { personnesMin: true, personnesMax: true, supplement: true },
+      },
+      tarifsNuits: {
+        orderBy: { position: 'asc' },
+        select: { nuitsMin: true, nuitsMax: true, prix: true },
       },
       proprietaire: {
         select: { id: true, prenom: true, nom: true, avatarUrl: true },
@@ -249,6 +259,22 @@ export class LogementsService implements OnModuleInit {
         supplementPersonnes = tarif ? Number(tarif.supplement) : 0;
       }
       const prixNuitEffectif = Number(l.prixBase) + supplementPersonnes;
+      // Avec des dates : le total exact du séjour (même moteur que price-preview et la réservation)
+      let prixSejour: number | null = null;
+      let nbNuits: number | null = null;
+      if (withDates) {
+        try {
+          const b = this.pricing.calculateForLoaded(l, {
+            dateDebut: new Date(dto.dateDebut!),
+            dateFin: new Date(dto.dateFin!),
+            nbPersonnes,
+          });
+          prixSejour = b.totalLocataire;
+          nbNuits = b.nbNuits;
+        } catch {
+          // séjour minimum non atteint ou capacité dépassée : pas de prix affiché
+        }
+      }
       return {
         id: l.id,
         titre: l.titre,
@@ -269,6 +295,10 @@ export class LogementsService implements OnModuleInit {
         totalSejours: l.totalSejours,
         photos: l.photos,
         prixNuitEffectif,
+        prixSejour,
+        nbNuits,
+        derniereMinuteActive: l.derniereMinuteActive,
+        videoUrl: l.videoUrl ?? null,
         proprietaire: l.proprietaire,
         equipements: l.equipements
           .map((e: any) => e.equipement)

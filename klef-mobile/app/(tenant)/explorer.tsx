@@ -24,6 +24,8 @@ import { ExplorerActiveFilters } from '../../shared/components/layout/ExplorerAc
 import { TenantExplorerMapView } from '../../shared/components/layout/TenantExplorerMapView';
 import { useListingCacheStore } from '../../shared/stores/listing-cache.store';
 import { useExplorerViewStore } from '../../shared/stores/explorer-view.store';
+import { ExplorerModeTabs, KeptBar } from '../../features/explorer/ExplorerChrome';
+import { VideoFeed } from '../../features/explorer/VideoFeed';
 import { ListingItem } from '../../shared/components/ui/TenantListingCard';
 
 function getUpcomingWeekendDates(): { start: string; end: string } {
@@ -126,6 +128,8 @@ export default function ExplorerScreen() {
   const [activeCategory, setActiveCategory] = useState<string>('all');
   const [currentSort, setCurrentSort] = useState<SortOptionValue>('pertinence');
   const [filterDerniereMinute, setFilterDerniereMinute] = useState(false);
+  // Zone choisie sur la carte (« Chercher dans cette zone »)
+  const [area, setArea] = useState<{ lat: number; lng: number; radiusKm: number } | null>(null);
 
   const routeParams = useLocalSearchParams<{
     category?: string;
@@ -190,7 +194,7 @@ export default function ExplorerScreen() {
     routeParams.openSearch,
   ]);
 
-  const { viewMode } = useExplorerViewStore();
+  const { viewMode, setViewMode } = useExplorerViewStore();
 
   const [listings, setListings] = useState<ListingItem[]>([]);
   const [page, setPage] = useState(1);
@@ -219,6 +223,19 @@ export default function ExplorerScreen() {
       })
       .catch((err) => console.warn('[ExplorerScreen] Erreur AsyncStorage:', err));
   }, []);
+
+  // Mêmes critères pour la liste, la carte et les vidéos
+  const searchApiParams: Record<string, unknown> = {
+    ...(searchParams.ville?.trim() && { ville: searchParams.ville.trim() }),
+    ...(searchParams.arrivee && { dateDebut: searchParams.arrivee }),
+    ...(searchParams.depart && { dateFin: searchParams.depart }),
+    ...(searchParams.nbPersonnes && { nbPersonnes: Number(searchParams.nbPersonnes) }),
+    ...(searchParams.nombreChambres !== undefined && { nombreChambres: Number(searchParams.nombreChambres) }),
+    ...(selectedSousType && { sousType: selectedSousType }),
+    ...(selectedType && { type: selectedType }),
+    ...(filterDerniereMinute && { derniereMinute: true }),
+    ...(area && { lat: area.lat, lng: area.lng, radiusKm: area.radiusKm }),
+  };
 
   const requestIdRef = useRef(0);
   const { prefillFromFeed } = useListingCacheStore();
@@ -260,6 +277,7 @@ export default function ExplorerScreen() {
         ...(selectedSousType && { sousType: selectedSousType }),
         ...(selectedType && { type: selectedType }),
         ...(filterDerniereMinute && { derniereMinute: true }),
+        ...(area && { lat: area.lat, lng: area.lng, radiusKm: area.radiusKm }),
         ...(sortVal && { sort: sortVal }),
         page: pageToFetch,
         limit: 20,
@@ -326,6 +344,7 @@ export default function ExplorerScreen() {
     searchParams.nombreChambres,
     currentSort,
     filterDerniereMinute,
+    area,
   ]);
 
   const handleCategorySelect = useCallback((cat: CategoryItem) => {
@@ -403,6 +422,7 @@ export default function ExplorerScreen() {
           onFilterPress={() => setSortBottomSheetVisible(true)}
         />
       </View>
+      <ExplorerModeTabs mode={viewMode} onChange={setViewMode} total={total} />
       <ExplorerCategoryRail
         activeCategory={activeCategory}
         onSelect={handleCategorySelect}
@@ -463,14 +483,39 @@ export default function ExplorerScreen() {
         <View style={styles.emptyIconCircle}>
           <SearchX size={28} color={colors.neutral[400]} />
         </View>
-        <Text style={styles.emptyTitle}>Aucun hebergement disponible</Text>
-        <Text style={styles.emptySubtitle}>
-          Modifiez vos criteres ou explorez d'autres categories pour trouver votre logement ideal.
-        </Text>
+        <Text style={styles.emptyTitle}>Rien de libre pour ces critères</Text>
+        <Text style={styles.emptySubtitle}>Mais en ajustant un seul critère :</Text>
+        <View style={styles.widenStack}>
+          {searchParams.arrivee ? (
+            <TouchableOpacity style={styles.widenRow} onPress={handleClearDates} accessibilityRole="button">
+              <Text style={styles.widenTitle}>Retirer les dates</Text>
+              <Text style={styles.widenSub}>voir tout ce qui existe, puis choisir des dates libres</Text>
+            </TouchableOpacity>
+          ) : null}
+          {searchParams.ville ? (
+            <TouchableOpacity style={styles.widenRow} onPress={handleClearVille} accessibilityRole="button">
+              <Text style={styles.widenTitle}>Chercher partout au Sénégal</Text>
+              <Text style={styles.widenSub}>au lieu de {searchParams.ville} uniquement</Text>
+            </TouchableOpacity>
+          ) : null}
+          {searchParams.nbPersonnes ? (
+            <TouchableOpacity style={styles.widenRow} onPress={handleClearGuests} accessibilityRole="button">
+              <Text style={styles.widenTitle}>Retirer le nombre de voyageurs</Text>
+              <Text style={styles.widenSub}>{searchParams.nbPersonnes} voyageurs demandés</Text>
+            </TouchableOpacity>
+          ) : null}
+          {selectedType || selectedSousType || filterDerniereMinute ? (
+            <TouchableOpacity style={styles.widenRow} onPress={() => handleCategorySelect({ key: 'all', label: 'Tous' } as CategoryItem)} accessibilityRole="button">
+              <Text style={styles.widenTitle}>Toutes les catégories</Text>
+              <Text style={styles.widenSub}>sans le filtre de catégorie actuel</Text>
+            </TouchableOpacity>
+          ) : null}
+        </View>
         <TouchableOpacity
           activeOpacity={0.8}
           onPress={() => {
             setSearchParams({});
+            setArea(null);
             setSelectedType('');
             setSelectedSousType('');
             setActiveCategory('all');
@@ -480,7 +525,7 @@ export default function ExplorerScreen() {
           style={styles.resetBtn}
         >
           <RotateCcw size={13} color={colors.neutral[0]} />
-          <Text style={styles.resetBtnText}>Reinitialiser</Text>
+          <Text style={styles.resetBtnText}>Tout réinitialiser</Text>
         </TouchableOpacity>
       </View>
     );
@@ -488,7 +533,12 @@ export default function ExplorerScreen() {
 
   return (
     <View style={styles.mainWrapper}>
-      {viewMode === 'list' ? (
+      {viewMode === 'video' ? (
+        <View style={{ flex: 1 }}>
+          {renderStickyHeader()}
+          <VideoFeed params={searchApiParams} totalAll={total} />
+        </View>
+      ) : viewMode === 'list' ? (
         <FlatList
           data={listings}
           keyExtractor={(item) => item.id}
@@ -525,9 +575,18 @@ export default function ExplorerScreen() {
             selectedType={selectedType}
             selectedSousType={selectedSousType}
             onSelectListing={(item) => router.push(`/listing/${item.id}` as any)}
+            onSearchArea={(a) => {
+              // La zone remplace la ville : on cherche autour du centre de la carte
+              setSearchParams((prev) => ({ ...prev, ville: undefined }));
+              setArea(a);
+            }}
+            areaActive={!!area}
+            onClearArea={() => setArea(null)}
           />
         </View>
       )}
+
+      {viewMode !== 'video' && <KeptBar bottom={104} />}
 
       <ExplorerSortBottomSheet
         visible={sortBottomSheetVisible}
@@ -540,7 +599,10 @@ export default function ExplorerScreen() {
         initialVille={searchParams.ville || ''}
         initialParams={searchParams}
         onClose={() => setSearchModalVisible(false)}
-        onSearch={(p) => setSearchParams(p)}
+        onSearch={(p) => {
+          setSearchParams(p);
+          if (p.ville) setArea(null);
+        }}
         visible={searchModalVisible}
       />
     </View>
@@ -622,6 +684,10 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     lineHeight: 18,
   },
+  widenStack: { alignSelf: 'stretch', gap: 8, marginTop: 6, marginBottom: 10 },
+  widenRow: { padding: 14, borderRadius: 18, backgroundColor: colors.neutral[0], borderWidth: 1, borderColor: colors.neutral[200] },
+  widenTitle: { fontFamily: typography.fontBodyBold, fontSize: 14, color: colors.forest[950] },
+  widenSub: { marginTop: 2, fontFamily: typography.fontBody, fontSize: 12, color: colors.neutral[600] },
   resetBtn: {
     flexDirection: 'row',
     alignItems: 'center',

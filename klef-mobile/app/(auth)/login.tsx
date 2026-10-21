@@ -11,7 +11,8 @@ import {
   SafeAreaView,
   StatusBar,
 } from 'react-native';
-import { useRouter } from 'expo-router';
+import { useLocalSearchParams, useRouter } from 'expo-router';
+import { safeNext, nextQuery } from '../../features/auth/lib/next';
 import { Phone, Mail, Lock, ArrowLeft, AlertCircle, Eye, EyeOff, ShieldCheck, Sparkles } from 'lucide-react-native';
 import { useAuth } from '../../features/auth/hooks/useAuth';
 import { PhoneInputWithCountry } from '../../shared/components/ui/PhoneInputWithCountry';
@@ -20,6 +21,7 @@ import { colors, radius, shadows, typography } from '../../shared/theme/tokens';
 
 export default function LoginScreen() {
   const router = useRouter();
+  const { next } = useLocalSearchParams<{ next?: string }>();
   const { sendPhoneOtp, loginEmail, loginGoogle, loading, error } = useAuth();
 
   const [mode, setMode] = useState<'phone' | 'email'>('phone');
@@ -39,7 +41,7 @@ export default function LoginScreen() {
 
     const success = await sendPhoneOtp(telephone);
     if (success) {
-      router.push(`/(auth)/otp-verify?phone=${encodeURIComponent(telephone)}` as any);
+      router.push(`/(auth)/otp-verify?phone=${encodeURIComponent(telephone)}${nextQuery(next, '&')}` as any);
     }
   };
 
@@ -52,7 +54,7 @@ export default function LoginScreen() {
 
     const success = await loginEmail(email, password);
     if (success) {
-      router.replace('/(tenant)' as any);
+      router.replace(safeNext(next) as any);
     }
   };
 
@@ -60,7 +62,7 @@ export default function LoginScreen() {
     setLocalError(null);
     const success = await loginGoogle();
     if (success) {
-      router.replace('/(tenant)' as any);
+      router.replace(safeNext(next) as any);
     }
   };
 
@@ -269,7 +271,7 @@ export default function LoginScreen() {
             <Text style={styles.footerText}>Nouveau sur Paixi ?</Text>
             <TouchableOpacity
               activeOpacity={0.7}
-              onPress={() => router.push('/(auth)/register' as any)}
+              onPress={() => router.push(`/(auth)/register${nextQuery(next)}` as any)}
             >
 
               <Text style={styles.registerLink}>Créer un compte</Text>

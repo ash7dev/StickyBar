@@ -9,7 +9,9 @@ export interface PendingDecision {
   dateFin: string;
   nbNuits: number;
   delaiConfirmation: string;
-  locataire: { prenom: string; nom: string } | null;
+  /** Decimal Prisma sérialisé en chaîne */
+  netProprietaire?: number | string;
+  locataire: { prenom: string; nom: string; avatarUrl?: string | null } | null;
   logement: { id: string; titre: string } | null;
 }
 

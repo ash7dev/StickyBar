@@ -149,6 +149,31 @@ export class PricingService {
 
     if (!logement) throw new NotFoundException('Logement introuvable');
 
+    return this.calculateForLoaded(logement, { dateDebut, dateFin, nbPersonnes });
+  }
+
+  /**
+   * Même calcul que calculateForLogement, sur un logement déjà chargé
+   * (recherche : un prix par résultat sans requête supplémentaire).
+   */
+  calculateForLoaded(
+    logement: {
+      prixBase: Decimal | number;
+      nuitesMinimum: number;
+      capaciteMax: number;
+      personnesBase: number;
+      commissionPourcentage: Decimal | number | null;
+      derniereMinuteActive: boolean;
+      tarifsPersonnes: PricingInput['tarifsPersonnes'];
+      tarifsNuits: PricingInput['tarifsNuits'];
+    },
+    { dateDebut, dateFin, nbPersonnes }: { dateDebut: Date; dateFin: Date; nbPersonnes: number },
+  ): PriceBreakdown {
+    const nbNuits = this.computeNights(dateDebut, dateFin);
+    if (nbNuits < 1) {
+      throw new UnprocessableEntityException('dateFin doit être postérieure à dateDebut d\'au moins 1 nuit');
+    }
+
     const maxTarifPers = logement.tarifsPersonnes.reduce((max, t) => Math.max(max, t.personnesMax), 0);
     const realCapaciteMax = Math.max(logement.capaciteMax, maxTarifPers);
 
