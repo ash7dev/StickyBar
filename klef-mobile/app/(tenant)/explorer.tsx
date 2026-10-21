@@ -23,8 +23,10 @@ import { ExplorerCategoryRail, CategoryItem } from '../../shared/components/layo
 import { ExplorerActiveFilters } from '../../shared/components/layout/ExplorerActiveFilters';
 import { TenantExplorerMapView } from '../../shared/components/layout/TenantExplorerMapView';
 import { useListingCacheStore } from '../../shared/stores/listing-cache.store';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useExplorerViewStore } from '../../shared/stores/explorer-view.store';
-import { ExplorerModeTabs, KeptBar } from '../../features/explorer/ExplorerChrome';
+import { KeptBar } from '../../features/explorer/ExplorerChrome';
+import { ExplorerTopBar } from '../../features/explorer/ExplorerTopBar';
 import { VideoFeed } from '../../features/explorer/VideoFeed';
 import { ListingItem } from '../../shared/components/ui/TenantListingCard';
 
@@ -195,6 +197,7 @@ export default function ExplorerScreen() {
   ]);
 
   const { viewMode, setViewMode } = useExplorerViewStore();
+  const insets = useSafeAreaInsets();
 
   const [listings, setListings] = useState<ListingItem[]>([]);
   const [page, setPage] = useState(1);
@@ -412,17 +415,32 @@ export default function ExplorerScreen() {
     ? `${searchParams.nbNuits} nuits • Sénégal`
     : 'Destination • Dates • Tout Sénégal';
 
+  // « Saly · 31 oct. → 2 nov. · 6 voyageurs »
+  const summary = [
+    area ? 'Zone de la carte' : searchParams.ville?.trim() || 'Tout le Sénégal',
+    searchParams.arrivee ? `${formatDate(searchParams.arrivee)}${searchParams.depart ? ` → ${formatDate(searchParams.depart)}` : ''}` : 'Dates flexibles',
+    searchParams.nbPersonnes ? `${searchParams.nbPersonnes} voyageur${Number(searchParams.nbPersonnes) > 1 ? 's' : ''}` : null,
+  ]
+    .filter(Boolean)
+    .join(' · ');
+  const filterCount =
+    (currentSort !== 'pertinence' ? 1 : 0) + (searchParams.nombreChambres !== undefined ? 1 : 0) + (activeCategory !== 'all' ? 1 : 0);
+
+  const topBar = (variant: 'dark' | 'light' | 'solid') => (
+    <ExplorerTopBar
+      mode={viewMode}
+      onMode={setViewMode}
+      summary={summary}
+      onSearch={() => setSearchModalVisible(true)}
+      onFilters={() => setSortBottomSheetVisible(true)}
+      filterCount={filterCount}
+      variant={variant}
+    />
+  );
+
   const renderStickyHeader = () => (
     <View style={styles.stickyHeader}>
-      <View style={styles.paddingHorizontal}>
-        <TenantSearchBarPill
-          destination={searchParams.ville}
-          subtitle={explorerSubtitle}
-          onPress={() => setSearchModalVisible(true)}
-          onFilterPress={() => setSortBottomSheetVisible(true)}
-        />
-      </View>
-      <ExplorerModeTabs mode={viewMode} onChange={setViewMode} total={total} />
+      {topBar('solid')}
       <ExplorerCategoryRail
         activeCategory={activeCategory}
         onSelect={handleCategorySelect}
@@ -534,9 +552,11 @@ export default function ExplorerScreen() {
   return (
     <View style={styles.mainWrapper}>
       {viewMode === 'video' ? (
-        <View style={{ flex: 1 }}>
-          {renderStickyHeader()}
-          <VideoFeed params={searchApiParams} totalAll={total} />
+        <View style={styles.immersive}>
+          <VideoFeed params={searchApiParams} totalAll={total} topInset={insets.top + 112} />
+          <View style={styles.overlayTop} pointerEvents="box-none">
+            {topBar('dark')}
+          </View>
         </View>
       ) : viewMode === 'list' ? (
         <FlatList
@@ -569,8 +589,9 @@ export default function ExplorerScreen() {
         />
       ) : (
         <View style={{ flex: 1 }}>
-          {renderStickyHeader()}
           <TenantExplorerMapView
+            overlayTop={insets.top + 112}
+            overlayBottom={112}
             listings={listings}
             selectedType={selectedType}
             selectedSousType={selectedSousType}
@@ -583,10 +604,13 @@ export default function ExplorerScreen() {
             areaActive={!!area}
             onClearArea={() => setArea(null)}
           />
+          <View style={styles.overlayTop} pointerEvents="box-none">
+            {topBar('light')}
+          </View>
         </View>
       )}
 
-      {viewMode !== 'video' && <KeptBar bottom={104} />}
+      {viewMode === 'list' && <KeptBar bottom={104} />}
 
       <ExplorerSortBottomSheet
         visible={sortBottomSheetVisible}
@@ -610,6 +634,8 @@ export default function ExplorerScreen() {
 }
 
 const styles = StyleSheet.create({
+  immersive: { flex: 1, backgroundColor: colors.forest[950] },
+  overlayTop: { position: 'absolute', top: 0, left: 0, right: 0 },
   mainWrapper: {
     flex: 1,
     backgroundColor: colors.neutral[50],
@@ -617,7 +643,7 @@ const styles = StyleSheet.create({
   stickyHeader: {
     backgroundColor: colors.neutral[0],
     zIndex: 10,
-    paddingTop: 10,
+    paddingTop: 0,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.04,

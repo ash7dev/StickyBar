@@ -24,6 +24,8 @@ export default function TenantTabsLayout() {
           name="explorer"
           options={{
             title: 'Explorer',
+            // Vidéos et carte en plein écran : Explorer a sa propre barre du haut
+            headerShown: false,
           }}
         />
         <Tabs.Screen

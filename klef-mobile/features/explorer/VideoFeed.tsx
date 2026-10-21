@@ -35,23 +35,44 @@ function useAutoplay(): [boolean, (v: boolean) => void] {
  * Onglet « Vidéos » d'Explorer : seulement les logements filmés, en plein écran.
  * Une seule vidéo est chargée à la fois (celle à l'écran) ; les autres montrent leur photo.
  */
-export function VideoFeed({ params, totalAll }: { params: Record<string, unknown>; totalAll: number }) {
+export function VideoFeed({ params, totalAll, topInset = 10 }: { params: Record<string, unknown>; totalAll: number; topInset?: number }) {
   const [height, setHeight] = useState(0);
   const [active, setActive] = useState(0);
   const [muted, setMuted] = useState(true);
   const [autoplay, setAutoplay] = useAutoplay();
   const [showHint, setShowHint] = useState(false);
+  // « Voir toutes les vidéos » : ignorer les critères quand ils excluent tous les logements filmés
+  const [ignoreFilters, setIgnoreFilters] = useState(false);
+  const effectiveParams = ignoreFilters ? {} : params;
+  const hasCriteria = Object.keys(params).length > 0;
 
-  const { data, isLoading } = useQuery<{ items: ListingItem[]; total: number }>({
-    queryKey: ['explorer-videos', params],
+  const { data, isLoading, isError, refetch } = useQuery<{ items: ListingItem[]; total: number }>({
+    queryKey: ['explorer-videos', effectiveParams],
     queryFn: async () => {
-      const res = await apiClient.get('/listings/search', { params: { ...params, avecVideo: true, limit: 30 } });
+      const res = await apiClient.get('/listings/search', { params: { ...effectiveParams, avecVideo: true, limit: 30 } });
       const items = res.data?.data ?? res.data?.items ?? [];
       return { items: Array.isArray(items) ? items.filter((l: ListingItem) => !!l.videoUrl) : [], total: Number(res.data?.meta?.total ?? res.data?.total ?? 0) };
     },
     staleTime: 2 * 60_000,
   });
   const items = data?.items ?? [];
+
+  // Combien de logements filmés au total, pour expliquer un résultat vide
+  const allVideos = useQuery<number>({
+    queryKey: ['explorer-videos-count'],
+    queryFn: async () => {
+      const res = await apiClient.get('/listings/search', { params: { avecVideo: true, limit: 1 } });
+      return Number(res.data?.meta?.total ?? res.data?.total ?? 0);
+    },
+    enabled: !isLoading && items.length === 0 && hasCriteria && !ignoreFilters,
+    staleTime: 5 * 60_000,
+  });
+
+  // Nouveaux critères : on revient aux résultats filtrés
+  const paramsKey = JSON.stringify(params);
+  useEffect(() => {
+    setIgnoreFilters(false);
+  }, [paramsKey]);
 
   useEffect(() => {
     AsyncStorage.getItem(HINT_KEY).then((v) => !v && setShowHint(true)).catch(() => {});
@@ -72,13 +93,31 @@ export function VideoFeed({ params, totalAll }: { params: Record<string, unknown
         <View style={styles.center}>
           <ActivityIndicator color={colors.lime[400]} />
         </View>
+      ) : isError ? (
+        <View style={styles.center}>
+          <Play size={30} color={colors.lime[400]} />
+          <Text style={styles.emptyTitle}>Les vidéos n’ont pas pu charger</Text>
+          <Text style={styles.emptyText}>Vérifiez votre connexion, puis réessayez.</Text>
+          <TouchableOpacity onPress={() => refetch()} style={styles.emptyBtn} accessibilityRole="button">
+            <Text style={styles.emptyBtnText}>Réessayer</Text>
+          </TouchableOpacity>
+        </View>
       ) : items.length === 0 ? (
         <View style={styles.center}>
           <Play size={30} color={colors.lime[400]} />
-          <Text style={styles.emptyTitle}>Aucune visite vidéo ici</Text>
+          <Text style={styles.emptyTitle}>Aucune visite vidéo pour ces critères</Text>
           <Text style={styles.emptyText}>
-            {totalAll > 0 ? `Les ${totalAll} logements de cette recherche sont dans Liste et Carte.` : 'Élargissez la recherche pour voir plus de logements.'}
+            {allVideos.data
+              ? `Vos critères (ville, dates, voyageurs ou catégorie) excluent les ${allVideos.data} logements filmés.`
+              : totalAll > 0
+                ? `Les ${totalAll} logements de cette recherche sont dans Liste et Carte.`
+                : 'Élargissez la recherche pour voir plus de logements.'}
           </Text>
+          {allVideos.data ? (
+            <TouchableOpacity onPress={() => { tap(); setIgnoreFilters(true); }} style={styles.emptyBtn} accessibilityRole="button">
+              <Text style={styles.emptyBtnText}>Voir les {allVideos.data} vidéos</Text>
+            </TouchableOpacity>
+          ) : null}
         </View>
       ) : (
         <FlatList
@@ -107,10 +146,16 @@ export function VideoFeed({ params, totalAll }: { params: Record<string, unknown
 
       {/* Bandeau : combien de logements filmés, et la lecture automatique */}
       {items.length > 0 && (
-        <View style={styles.banner} pointerEvents="box-none">
-          <Text style={styles.bannerText}>
-            {data?.total ?? items.length} filmé{(data?.total ?? 0) > 1 ? 's' : ''} sur {totalAll} · les autres dans Liste et Carte
-          </Text>
+        <View style={[styles.banner, { top: topInset }]} pointerEvents="box-none">
+          {ignoreFilters ? (
+            <TouchableOpacity onPress={() => setIgnoreFilters(false)} accessibilityRole="button">
+              <Text style={styles.bannerText}>Toutes les vidéos · revenir à ma recherche ✕</Text>
+            </TouchableOpacity>
+          ) : (
+            <Text style={styles.bannerText}>
+              {data?.total ?? items.length} filmé{(data?.total ?? 0) > 1 ? 's' : ''} sur {totalAll} · les autres dans Liste et Carte
+            </Text>
+          )}
           <View style={styles.autoRow}>
             <Text style={styles.bannerText}>Lecture auto</Text>
             <Switch value={autoplay} onValueChange={setAutoplay} trackColor={{ true: colors.lime[600], false: 'rgba(255,255,255,0.3)' }} thumbColor="#FFFFFF" style={{ transform: [{ scale: 0.75 }] }} />
@@ -268,6 +313,8 @@ const styles = StyleSheet.create({
   center: { flex: 1, alignItems: 'center', justifyContent: 'center', gap: 10, padding: 30 },
   emptyTitle: { fontFamily: typography.fontDisplaySemiBold, fontSize: 21, color: PAPER },
   emptyText: { fontFamily: typography.fontBody, fontSize: 13, lineHeight: 19, color: '#C9DBD1', textAlign: 'center' },
+  emptyBtn: { marginTop: 8, height: 48, paddingHorizontal: 22, borderRadius: 999, backgroundColor: colors.lime[400], alignItems: 'center', justifyContent: 'center' },
+  emptyBtnText: { fontFamily: typography.fontBodyBold, fontSize: 14, color: INK },
 
   banner: { position: 'absolute', left: 14, right: 14, top: 10, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
   bannerText: { fontFamily: typography.fontBodySemiBold, fontSize: 11, color: 'rgba(255,255,255,0.8)' },

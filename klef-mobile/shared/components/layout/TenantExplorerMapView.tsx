@@ -34,6 +34,9 @@ interface TenantExplorerMapViewProps {
   onSearchArea?: (area: { lat: number; lng: number; radiusKm: number }) => void;
   areaActive?: boolean;
   onClearArea?: () => void;
+  /** Espace laissé libre par la barre posée au-dessus de la carte, et par la barre d'onglets en bas. */
+  overlayTop?: number;
+  overlayBottom?: number;
 }
 
 /** Prix affiché sur la pastille : total du séjour si la recherche a des dates, sinon prix public par nuit. */
@@ -66,6 +69,8 @@ export function TenantExplorerMapView({
   onSearchArea,
   areaActive,
   onClearArea,
+  overlayTop = 12,
+  overlayBottom = 16,
 }: TenantExplorerMapViewProps) {
   const { data: favoriteIds } = useFavoriteIds();
   const favorites = React.useMemo(() => new Set(favoriteIds ?? []), [favoriteIds]);
@@ -244,7 +249,7 @@ export function TenantExplorerMapView({
 
       {/* Chercher dans la zone affichée, ou effacer la zone choisie */}
       {onSearchArea && (movedRegion || areaActive) ? (
-        <View style={styles.areaRow} pointerEvents="box-none">
+        <View style={[styles.areaRow, { top: overlayTop }]} pointerEvents="box-none">
           {movedRegion ? (
             <TouchableOpacity
               onPress={() => {
@@ -271,7 +276,7 @@ export function TenantExplorerMapView({
 
       {/* Carte d'aperçu flottante en bas de l'écran */}
       {selectedListing ? (
-        <View style={styles.previewContainer}>
+        <View style={[styles.previewContainer, { bottom: overlayBottom }]}>
           <TouchableOpacity
             activeOpacity={0.92}
             onPress={() => onSelectListing(selectedListing)}
@@ -335,7 +340,7 @@ export function TenantExplorerMapView({
           </TouchableOpacity>
         </View>
       ) : (
-        <View style={styles.noResultsBanner}>
+        <View style={[styles.noResultsBanner, { bottom: overlayBottom }]}>
           <Text style={styles.noResultsText}>Aucun logement disponible pour ce filtre sur la carte</Text>
         </View>
       )}
@@ -366,17 +371,15 @@ const styles = StyleSheet.create({
   stayPrice: { fontFamily: typography.fontDisplaySemiBold, fontSize: 15, color: colors.forest[950] },
   stayPriceSub: { fontFamily: typography.fontBody, fontSize: 11, color: colors.neutral[600] },
   container: {
+    flex: 1,
     width: '100%',
-    height: 540,
-    borderRadius: radius.card,
     overflow: 'hidden',
     position: 'relative',
     backgroundColor: colors.neutral[100],
   },
   loadingContainer: {
+    flex: 1,
     width: '100%',
-    height: 540,
-    borderRadius: radius.card,
     backgroundColor: colors.neutral[100],
     alignItems: 'center',
     justifyContent: 'center',
