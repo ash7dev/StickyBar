@@ -133,9 +133,13 @@ const fcfa = (n: number) => String(Math.round(n)).replace(/\B(?=(\d{3})+(?!\d))/
 
 interface Props {
   reservation: OwnerReservationItem;
+  /** Espace gestionnaire : le propriétaire pour qui le séjour est géré */
+  ownerName?: string;
+  /** Ouverture de la fiche (par défaut : fiche de l'espace hôte) */
+  onPress?: () => void;
 }
 
-export function MobileOwnerReservationCard({ reservation: r }: Props) {
+export function MobileOwnerReservationCard({ reservation: r, ownerName, onPress }: Props) {
   const router = useRouter();
   const status = STATUS[r.statut] ?? STATUS.COMPLETED;
   const tone = TONES[status.tone];
@@ -159,7 +163,8 @@ export function MobileOwnerReservationCard({ reservation: r }: Props) {
       activeOpacity={0.88}
       onPress={() => {
         Haptics.selectionAsync().catch(() => {});
-        router.push(`/(owner)/reservations/${r.id}` as any);
+        if (onPress) onPress();
+        else router.push(`/(owner)/reservations/${r.id}` as any);
       }}
       style={[styles.card, isDecision && styles.cardDecision, isPast && styles.cardPast]}
       accessibilityRole="button"
@@ -192,6 +197,11 @@ export function MobileOwnerReservationCard({ reservation: r }: Props) {
           <Text style={styles.place} numberOfLines={1}>
             {place || 'Logement'}
           </Text>
+          {ownerName ? (
+            <Text style={styles.owner} numberOfLines={1}>
+              pour <Text style={styles.ownerName}>{ownerName}</Text>
+            </Text>
+          ) : null}
           <Text style={styles.meta} numberOfLines={1}>
             {shortDate(r.dateDebut)} → {shortDate(r.dateFin)} · {nuits} nuit{nuits > 1 ? 's' : ''}
             {r.nbPersonnes ? ` · ${r.nbPersonnes} voy.` : ''}
@@ -261,6 +271,8 @@ const styles = StyleSheet.create({
   chipText: { fontFamily: typography.fontBodyBold, fontSize: 10.5 },
   place: { fontFamily: typography.fontBodySemiBold, fontSize: 13, color: colors.neutral[700] },
   meta: { fontFamily: typography.fontBody, fontSize: 12, color: colors.neutral[500] },
+  owner: { fontFamily: typography.fontBody, fontSize: 12, color: colors.neutral[500] },
+  ownerName: { fontFamily: typography.fontBodyBold, color: colors.forest[700] },
   divider: { height: 1, backgroundColor: colors.neutral[100] },
   foot: { flexDirection: 'row', alignItems: 'center', gap: 8 },
   stageDot: { width: 7, height: 7, borderRadius: 4 },

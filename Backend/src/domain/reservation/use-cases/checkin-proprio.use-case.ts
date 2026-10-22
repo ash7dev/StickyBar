@@ -2,6 +2,7 @@ import { Injectable, NotFoundException, ForbiddenException, ConflictException } 
 import { StatutReservation } from '@prisma/client';
 import { PrismaService } from '../../../infrastructure/prisma/prisma.service';
 import { NotificationsService } from '../../../modules/notifications/notifications.service';
+import { traceAction } from '../trace';
 import { QueueService } from '../../../infrastructure/queue/queue.service';
 
 @Injectable()
@@ -49,6 +50,7 @@ export class CheckinProprioUseCase {
       where: { id: reservationId },
       data: { checkinProprioLe: now },
     });
+    await traceAction(this.prisma, { reservationId, statut: reservation.statut, actorId: userId, action: 'ETAT_LIEUX_ENTREE' });
 
     // État des lieux après l'heure d'arrivée : le voyageur garde 6h pour valider
     if (now > reservation.dateDebut) await this.queue.scheduleLateAutoCheckin(reservationId, now);

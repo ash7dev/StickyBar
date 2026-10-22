@@ -120,6 +120,15 @@ const CFG: Record<string, StepCfg> = {
   },
 };
 
+/** Actions tracées sans changement de statut (metadonnees.action, cf. API domain/reservation/trace). */
+const ACTIONS: Record<string, { tenant: string; owner: string }> = {
+  ETAT_LIEUX_ENTREE: { tenant: 'État des lieux d’entrée envoyé', owner: 'État des lieux d’entrée envoyé' },
+  ETAT_LIEUX_SORTIE: { tenant: 'État des lieux de sortie envoyé', owner: 'État des lieux de sortie envoyé' },
+  SUPPLEMENT_DECLARE: { tenant: 'Supplément voyageurs en plus demandé', owner: 'Supplément voyageurs en plus déclaré' },
+  SUPPLEMENT_ENCAISSE: { tenant: 'Supplément réglé en espèces', owner: 'Supplément encaissé en espèces' },
+  SUPPLEMENT_CONTESTE: { tenant: 'Supplément contesté', owner: 'Supplément contesté par le voyageur' },
+};
+
 export function ReservationTimeline({ historique, variant = 'light', isOwner = false, reservation }: Props) {
   const isDark = variant === 'dark';
 
@@ -194,26 +203,30 @@ export function ReservationTimeline({ historique, variant = 'light', isOwner = f
 
           const Icon = cfg.icon;
           const isLast = i === events.length - 1;
-          const label = isOwner ? cfg.owner : cfg.tenant;
+          const meta = (event as { metadonnees?: { action?: string; actorId?: string } | null }).metadonnees;
+          const action = meta?.action ? ACTIONS[meta.action] : undefined;
+          const label = action ? (isOwner ? action.owner : action.tenant) : isOwner ? cfg.owner : cfg.tenant;
+          // Signalement de no-show : le code système reste, l'auteur réel est dans metadonnees.actorId
+          const actorId = event.modifiePar === 'OWNER_SIGNAL_TENANT_NOSHOW' && meta?.actorId ? meta.actorId : event.modifiePar;
           const tone = TONES[cfg.tone][isDark ? 'dark' : 'light'];
 
           let actorLabel: string | null = null;
-          if (event.modifiePar && reservation) {
-            if (event.modifiePar === reservation.proprietaire?.id) {
+          if (actorId && reservation) {
+            if (actorId === reservation.proprietaire?.id) {
               actorLabel = `Par le Propriétaire (${reservation.proprietaire.prenom} ${reservation.proprietaire.nom})`;
             } else if (
-              event.modifiePar === reservation.logement?.gestionnaireId ||
-              (reservation.logement?.gestionnaire && event.modifiePar === reservation.logement.gestionnaire.id)
+              actorId === reservation.logement?.gestionnaireId ||
+              (reservation.logement?.gestionnaire && actorId === reservation.logement.gestionnaire.id)
             ) {
               const gName = reservation.logement.gestionnaire
                 ? `${reservation.logement.gestionnaire.prenom} ${reservation.logement.gestionnaire.nom}`
                 : 'Délégué';
               actorLabel = `Par le Gestionnaire (${gName})`;
-            } else if (event.modifiePar === reservation.locataire?.id) {
+            } else if (actorId === reservation.locataire?.id) {
               actorLabel = `Par le Voyageur (${reservation.locataire.prenom} ${reservation.locataire.nom})`;
-            } else if (event.modifiePar === 'SYSTEM_AUTO_CHECKIN') {
+            } else if (actorId === 'SYSTEM_AUTO_CHECKIN') {
               actorLabel = 'Système Paixi (Auto Check-In H+6)';
-            } else if (event.modifiePar === 'OWNER_SIGNAL_TENANT_NOSHOW') {
+            } else if (actorId === 'OWNER_SIGNAL_TENANT_NOSHOW') {
               actorLabel = 'Signalement No-show';
             }
           }

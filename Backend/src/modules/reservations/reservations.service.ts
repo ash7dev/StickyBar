@@ -19,6 +19,7 @@ import { CreateReservationDto } from './dto/create-reservation.dto';
 import { NotificationsService } from '../notifications/notifications.service';
 import { StatutReservation, TypeAvis, RoleLitige, MotifLitige, StatutLitige, TypeTransactionWallet, SensTransaction } from '@prisma/client';
 import { Decimal } from '@prisma/client/runtime/library';
+import { traceAction } from '../../domain/reservation/trace';
 import { computeExtraGuests } from './extra-guests';
 
 /** Fenêtre pour noter l'autre partie après la clôture (cf. job fermer-fenetre-avis). */
@@ -112,7 +113,7 @@ export class ReservationsService {
         photosEtatLieu: true,
         litige: true,
         demandesFrais: { orderBy: { creeLe: 'desc' } },
-        historique: { orderBy: { modifieLe: 'desc' }, take: 20 },
+        historique: { orderBy: { modifieLe: 'desc' }, take: 50 },
         // Lecture seule pour l'écran de détail : avis déjà laissés et remboursements réels
         avis: { select: { auteurId: true, note: true, commentaire: true, creeLe: true } },
         refunds: {
@@ -315,6 +316,8 @@ export class ReservationsService {
           nouveauStatut: reservation.statut as StatutReservation,
           modifiePar: 'OWNER_SIGNAL_TENANT_NOSHOW',
           raison: commentaire || 'Locataire absent - No-show signalé',
+          // Le code système reste (détection du no-show) ; l'auteur réel est gardé pour la traçabilité
+          metadonnees: { actorId: userId },
         },
       });
 
@@ -641,6 +644,13 @@ export class ReservationsService {
         statut: 'EN_ATTENTE',
       },
     });
+    await traceAction(this.prisma, {
+      reservationId,
+      statut: reservation.statut,
+      actorId: userId,
+      action: 'SUPPLEMENT_DECLARE',
+      meta: { montant: calc.montant, voyageurs: calc.nbVoyageurs },
+    });
 
     this.notifications.sendReservationPush(
       reservation.locataireId,
@@ -697,6 +707,13 @@ export class ReservationsService {
       const contested = await tx.demandeFrais.update({
         where: { id: fraisId },
         data: { statut: 'CONTESTE', refuseLe: new Date() },
+      });
+      await traceAction(tx, {
+        reservationId,
+        statut: demande.reservation.statut,
+        actorId: userId,
+        action: 'SUPPLEMENT_CONTESTE',
+        meta: { montant: Number(demande.montant) },
       });
 
       const existingLitige = await tx.litige.findUnique({ where: { reservationId } });
@@ -759,6 +776,13 @@ export class ReservationsService {
         payeLe: new Date(),
         methodePaiement: 'ESPECES',
       },
+    });
+    await traceAction(this.prisma, {
+      reservationId,
+      statut: demande.reservation.statut,
+      actorId: userId,
+      action: 'SUPPLEMENT_ENCAISSE',
+      meta: { montant: Number(demande.montant) },
     });
 
     this.notifications.sendReservationPush(

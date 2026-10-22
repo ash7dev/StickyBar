@@ -84,7 +84,7 @@ export function CockpitHero(p: Props) {
           </TouchableOpacity>
         </View>
 
-        <Text style={styles.revenueLabel}>Volume encaissé ce mois</Text>
+        <Text style={styles.revenueLabel}>Réservé ce mois · payé par les voyageurs</Text>
         <View style={styles.revenueRow}>
           <Text style={styles.revenue} numberOfLines={1} adjustsFontSizeToFit>
             {fmt(p.revenue)}
@@ -100,7 +100,7 @@ export function CockpitHero(p: Props) {
             </Text>
           </View>
         ) : p.revenue === 0 ? (
-          <Text style={styles.firstMonth}>Les premiers encaissements du mois arrivent.</Text>
+          <Text style={styles.firstMonth}>Aucune réservation ce mois-ci pour l’instant.</Text>
         ) : null}
 
         {p.bars.length > 1 && (
@@ -138,29 +138,35 @@ export function CockpitHero(p: Props) {
         <View style={[styles.ringCard, styles.ringCardWhite]}>
           <Ring
             pct={p.occupancy ?? 0}
-            size={60}
-            stroke={8}
+            size={52}
+            stroke={7}
             color={colors.forest[600]}
             track="#E9F0E1"
             label={p.occupancy === null ? '—' : `${Math.round(p.occupancy * 100)}%`}
           />
           <View style={styles.flex}>
-            <Text style={styles.ringTitle}>Occupation</Text>
-            <Text style={styles.ringSub}>sur 30 jours</Text>
+            <Text style={styles.ringTitle} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.85}>
+              Occupation
+            </Text>
+            <Text style={styles.ringSub} numberOfLines={1}>
+              sur 30 jours
+            </Text>
           </View>
         </View>
         <View style={[styles.ringCard, styles.ringCardLime]}>
           <Ring
             pct={p.listings ? p.online / p.listings : 0}
-            size={60}
-            stroke={8}
+            size={52}
+            stroke={7}
             color={INK}
             track="rgba(4,25,18,0.12)"
             label={`${p.online}/${p.listings}`}
           />
           <View style={styles.flex}>
-            <Text style={styles.ringTitle}>En ligne</Text>
-            <Text style={[styles.ringSub, { color: colors.forest[800] }]}>
+            <Text style={styles.ringTitle} numberOfLines={1}>
+              En ligne
+            </Text>
+            <Text style={[styles.ringSub, { color: colors.forest[800] }]} numberOfLines={1}>
               {p.toReview > 0 ? `${p.toReview} à revoir` : 'Tout le parc'}
             </Text>
           </View>
@@ -205,11 +211,11 @@ const styles = StyleSheet.create({
   tileLabel: { fontFamily: typography.fontBody, fontSize: 11, color: colors.forest[200] },
   tileValue: { fontFamily: typography.fontDisplaySemiBold, fontSize: 18, color: '#FFFFFF', marginTop: 3 },
   rings: { flexDirection: 'row', gap: 10, paddingHorizontal: 16, marginTop: 16 },
-  ringCard: { flex: 1, flexDirection: 'row', alignItems: 'center', gap: 12, padding: 14, borderRadius: 22 },
+  ringCard: { flex: 1, flexDirection: 'row', alignItems: 'center', gap: 10, padding: 12, borderRadius: 22 },
   ringCardWhite: { backgroundColor: '#FFFFFF', borderWidth: 1, borderColor: LINE },
   ringCardLime: { backgroundColor: LIME },
   ringLabel: { alignItems: 'center', justifyContent: 'center' },
-  ringText: { fontFamily: typography.fontDisplaySemiBold, fontSize: 14, color: INK },
+  ringText: { fontFamily: typography.fontDisplaySemiBold, fontSize: 13, color: INK },
   ringTitle: { fontFamily: typography.fontBodyBold, fontSize: 13, color: INK },
   ringSub: { fontFamily: typography.fontBody, fontSize: 11.5, color: MUTED, marginTop: 1 },
 });

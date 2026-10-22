@@ -1,7 +1,8 @@
 import React from 'react';
 import { ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import * as Haptics from 'expo-haptics';
-import { Banknote, Camera, Check, Clock, MessageCircle, Phone, Users } from 'lucide-react-native';
+import { Banknote, Camera, Check, Clock, Phone, Users } from 'lucide-react-native';
+import { WhatsAppIcon, WHATSAPP_GREEN } from '../../../../shared/components/brand/WhatsAppIcon';
 import { colors, radius, typography } from '../../../../shared/theme/tokens';
 import { fmt, type Task, type TaskKind } from '../../lib/today';
 import { INK, LIME, LINE, MUTED } from './ui';
@@ -88,9 +89,14 @@ export function TaskDeck({ tasks, index, onNext, handlers }: { tasks: Task[]; in
         <Text style={styles.sub}>{task.sub}</Text>
         <View style={styles.actions}>
           {isLead && (
-            <TouchableOpacity onPress={() => handlers.onWhatsApp(task)} style={[styles.btn, styles.btnGhost]} accessibilityRole="button">
-              <MessageCircle size={16} color={INK} />
-              <Text style={styles.btnGhostText}>WhatsApp</Text>
+            <TouchableOpacity
+              onPress={() => handlers.onWhatsApp(task)}
+              style={[styles.btn, styles.btnWa]}
+              accessibilityRole="button"
+              accessibilityLabel="Écrire sur WhatsApp"
+            >
+              <WhatsAppIcon size={18} />
+              <Text style={styles.btnWaText}>WhatsApp</Text>
             </TouchableOpacity>
           )}
           <TouchableOpacity
@@ -176,8 +182,8 @@ export function NextTiles({ tasks, currentKey, onSelect, handlers }: { tasks: Ta
                     <TouchableOpacity onPress={() => handlers.onCall(t)} style={[styles.leadBtn, { backgroundColor: INK }]} accessibilityLabel="Appeler">
                       <Phone size={14} color={LIME} />
                     </TouchableOpacity>
-                    <TouchableOpacity onPress={() => handlers.onWhatsApp(t)} style={[styles.leadBtn, { borderWidth: 1, borderColor: LINE }]} accessibilityLabel="WhatsApp">
-                      <MessageCircle size={14} color={colors.forest[600]} />
+                    <TouchableOpacity onPress={() => handlers.onWhatsApp(t)} style={[styles.leadBtn, { backgroundColor: WHATSAPP_GREEN }]} accessibilityLabel="Écrire sur WhatsApp">
+                      <WhatsAppIcon size={15} />
                     </TouchableOpacity>
                   </View>
                 ) : (
@@ -230,9 +236,17 @@ const styles = StyleSheet.create({
   sub: { fontFamily: typography.fontBody, fontSize: 12.5, lineHeight: 18, color: colors.forest[800], marginTop: 4 },
   actions: { flexDirection: 'row', gap: 8, marginTop: 14 },
   btn: { flexDirection: 'row', gap: 7, height: 48, borderRadius: radius.pill, alignItems: 'center', justifyContent: 'center' },
-  btnGhost: { flex: 1, borderWidth: 1.5, borderColor: 'rgba(4,25,18,0.25)' },
-  btnGhostText: { fontFamily: typography.fontBodyBold, fontSize: 14, color: INK },
-  btnInk: { flex: 2, backgroundColor: INK },
+  btnWa: {
+    flex: 1.3,
+    backgroundColor: WHATSAPP_GREEN,
+    shadowColor: '#128C7E',
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+    shadowOffset: { width: 0, height: 4 },
+    elevation: 3,
+  },
+  btnWaText: { fontFamily: typography.fontBodyBold, fontSize: 14, color: '#FFFFFF' },
+  btnInk: { flex: 1.7, backgroundColor: INK },
   btnInkText: { fontFamily: typography.fontBodyBold, fontSize: 14, color: LIME },
   contacted: { alignSelf: 'center', paddingTop: 10 },
   contactedText: { fontFamily: typography.fontBodySemiBold, fontSize: 12, color: colors.forest[800], textDecorationLine: 'underline' },

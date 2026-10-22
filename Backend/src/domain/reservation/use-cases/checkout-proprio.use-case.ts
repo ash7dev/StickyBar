@@ -1,6 +1,7 @@
 import { Injectable, NotFoundException, ForbiddenException, ConflictException } from '@nestjs/common';
 import { StatutReservation } from '@prisma/client';
 import { PrismaService } from '../../../infrastructure/prisma/prisma.service';
+import { traceAction } from '../trace';
 import { NotificationsService } from '../../../modules/notifications/notifications.service';
 
 @Injectable()
@@ -43,6 +44,7 @@ export class CheckoutProprioUseCase {
       where: { id: reservationId },
       data: { checkoutProprioLe: new Date() },
     });
+    await traceAction(this.prisma, { reservationId, statut: reservation.statut, actorId: userId, action: 'ETAT_LIEUX_SORTIE' });
 
     // Notification au locataire
     this.notifications.sendReservationPush(

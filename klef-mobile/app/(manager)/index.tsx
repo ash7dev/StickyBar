@@ -11,7 +11,6 @@ import { formatExpiry } from '../../features/calendar/lib/agenda';
 import {
   managerKeys,
   useManagedListings,
-  useManagerDashboard,
   useManagerLeads,
   useManagerOverview,
   useManagerReservations,
@@ -29,6 +28,7 @@ import {
   type Move,
   type Task,
 } from '../../features/manager/lib/today';
+import { computeMoney } from '../../features/manager/lib/money';
 import { CockpitHero } from '../../features/manager/components/today/CockpitHero';
 import { NextTiles, TaskDeck, type TaskHandlers } from '../../features/manager/components/today/TaskDeck';
 import { Tour } from '../../features/manager/components/today/Tour';
@@ -59,13 +59,16 @@ export default function ManagerTodayScreen() {
     return () => clearInterval(t);
   }, []);
 
-  const dashboard = useManagerDashboard(ownerId);
   const listingsQ = useManagedListings();
   const reservationsQ = useManagerReservations();
   const overview = useManagerOverview();
   const leadsQ = useManagerLeads();
 
-  const allListings = listingsQ.data ?? [];
+  // Seuls les biens confiés à ce gestionnaire : ceux dont il est aussi propriétaire relèvent de l'espace hôte
+  const allListings = useMemo(
+    () => (listingsQ.data ?? []).filter((l) => !user?.id || !l.gestionnaireId || l.gestionnaireId === user.id),
+    [listingsQ.data, user?.id],
+  );
   const listings = useMemo(
     () => (ownerId ? allListings.filter((l) => l.proprietaireId === ownerId) : allListings),
     [allListings, ownerId],
@@ -109,22 +112,14 @@ export default function ManagerTodayScreen() {
   const deckIndex = Math.max(0, tasks.findIndex((t) => t.key === deckKey));
   const current = tasks[deckIndex];
 
-  // ── Chiffres ──
-  const kpis = dashboard.data?.kpis;
-  const monthly = dashboard.data?.revenusMensuels ?? [];
-  const bars = monthly.map((m) => Number(m.ca) || 0);
-  const last = bars[bars.length - 1] ?? 0;
-  const prev = bars[bars.length - 2] ?? 0;
-  const changePct = prev > 0 ? Math.round(((last - prev) / prev) * 100) : null;
+  // ── Chiffres : mêmes réservations que la tournée, donc toujours en phase avec le filtre ──
+  const money = useMemo(() => computeMoney(reservations, clock), [reservations, clock]);
   const occupancy = useMemo(() => {
-    const ov = overview.data;
-    if (!ov) return null;
-    if (!ownerId) return ov.occupancy.rate;
-    const mine = ov.logements.filter((l) => listingMap.has(l.id));
+    const mine = (overview.data?.logements ?? []).filter((l) => listingMap.has(l.id));
     const booked = mine.reduce((s, l) => s + l.occupancy.bookedNights, 0);
     const available = mine.reduce((s, l) => s + l.occupancy.availableNights, 0);
     return available > 0 ? booked / available : null;
-  }, [overview.data, ownerId, listingMap]);
+  }, [overview.data, listingMap]);
   const online = listings.filter((l) => l.statut === 'PUBLISHED').length;
   const ownerName = ownerId ? owners.find((o) => o.id === ownerId)?.name ?? null : null;
 
@@ -143,7 +138,12 @@ export default function ManagerTodayScreen() {
     onOpen: (t: Task) => openStay(t.reservationId),
     onCall: (t: Task) => t.lead && Linking.openURL(`tel:${t.lead.telephone}`),
     onWhatsApp: (t: Task) =>
-      t.lead && Linking.openURL(`https://wa.me/${waNumber(t.lead.telephone)}`).catch(() => Alert.alert('WhatsApp indisponible')),
+      t.lead &&
+      Linking.openURL(
+        `https://wa.me/${waNumber(t.lead.telephone)}?text=${encodeURIComponent(
+          `Bonjour ${t.lead.prenom}, ici ${user?.prenom ?? 'votre gestionnaire'} de Paixi Managed. Vous nous avez demandé de vous rappeler au sujet de votre logement${t.lead.ville ? ` à ${t.lead.ville}` : ''}. Quand êtes-vous disponible ?`,
+        )}`,
+      ).catch(() => Alert.alert('WhatsApp indisponible', 'Installez WhatsApp ou appelez directement le prospect.')),
     onContacted: async (t: Task) => {
       if (!t.lead) return;
       try {
@@ -170,7 +170,7 @@ export default function ManagerTodayScreen() {
     );
   };
 
-  const refreshing = listingsQ.isRefetching || reservationsQ.isRefetching || dashboard.isRefetching;
+  const refreshing = listingsQ.isRefetching || reservationsQ.isRefetching;
   const onRefresh = () => qc.invalidateQueries({ queryKey: managerKeys.all });
 
   const firstLoad = (listingsQ.isLoading || reservationsQ.isLoading) && !listingsQ.data;
@@ -214,12 +214,12 @@ export default function ManagerTodayScreen() {
             firstName={user?.prenom}
             listings={listings.length}
             owners={ownerId ? 1 : owners.length}
-            revenue={Number(kpis?.caDuMois ?? 0)}
-            ownersShare={Number(kpis?.netProprietairesDuMois ?? 0)}
-            commission={Number(kpis?.commissionKlefDuMois ?? 0)}
-            stays={Number(kpis?.reservationsDuMois ?? 0)}
-            bars={bars}
-            changePct={changePct}
+            revenue={money.revenue}
+            ownersShare={money.ownersShare}
+            commission={money.commission}
+            stays={money.stays}
+            bars={money.bars.map((b) => b.value)}
+            changePct={money.changePct}
             occupancy={occupancy}
             online={online}
             toReview={listings.length - online}

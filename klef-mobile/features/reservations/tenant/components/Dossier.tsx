@@ -53,6 +53,15 @@ const OWNER_EVENTS: Record<string, Partial<EventCfg>> = {
   EXPIRED: { label: () => 'Demande expirée sans réponse' },
 };
 
+/** Actions tracées sans changement de statut (metadonnees.action, cf. API domain/reservation/trace). */
+const ACTION_EVENTS: Record<string, Partial<EventCfg>> = {
+  ETAT_LIEUX_ENTREE: { label: () => 'État des lieux d’entrée envoyé', icon: Camera, detail: undefined },
+  ETAT_LIEUX_SORTIE: { label: () => 'État des lieux de sortie envoyé', icon: Camera, detail: undefined },
+  SUPPLEMENT_DECLARE: { label: () => 'Supplément voyageurs en plus', icon: Banknote, detail: undefined },
+  SUPPLEMENT_ENCAISSE: { label: () => 'Supplément réglé en espèces', icon: Banknote, detail: undefined },
+  SUPPLEMENT_CONTESTE: { label: () => 'Supplément contesté', icon: TriangleAlert, detail: undefined },
+};
+
 /** Événements écrits par l'API sous un code système (modifiePar). */
 const SYSTEM_EVENTS: Record<string, Partial<EventCfg>> = {
   OWNER_SIGNAL_TENANT_NOSHOW: { label: () => 'Absence du voyageur signalée', icon: TriangleAlert, detail: undefined },
@@ -114,17 +123,36 @@ export function Dossier({
   const missingExit = res.checkoutProprioLe ? 'Indisponibles' : 'Au départ';
   const purgedOn = new Date(new Date(res.dateFin).getTime() + PHOTO_RETENTION_DAYS * 86_400_000).toISOString();
 
+  // Traçabilité : chaque ligne dit qui a agi. Le gestionnaire et le propriétaire sont
+  // distingués, y compris quand c'est le gestionnaire qui consulte la fiche hôte.
+  const viewerIsHost = !!currentUserId && currentUserId === host?.id;
+  const hostLabel = viewerIsHost ? 'Vous' : owner ? `${host?.prenom ?? 'Le propriétaire'} · propriétaire` : (host?.prenom ?? 'L’hôte');
+  const metaOf = (e: HistoriqueReservation) => (e.metadonnees ?? {}) as { action?: string; actorId?: string; montant?: number };
+  const actorId = (e: HistoriqueReservation) =>
+    e.modifiePar === 'OWNER_SIGNAL_TENANT_NOSHOW' ? metaOf(e).actorId ?? host?.id : e.modifiePar;
   const actor = (e: HistoriqueReservation) => {
-    if (!e.modifiePar) return 'Paixi';
-    if (e.modifiePar === currentUserId) return 'Vous';
-    if (e.modifiePar === 'OWNER_SIGNAL_TENANT_NOSHOW' || e.modifiePar === host?.id) return owner ? 'Vous' : hostName;
-    if (e.modifiePar === res.locataire?.id) return guestName;
-    if (manager && e.modifiePar === manager.id) return manager.prenom;
+    const id = actorId(e);
+    if (!id) return 'Paixi';
+    if (id === currentUserId) return 'Vous';
+    if (id === host?.id) return hostLabel;
+    if (manager && id === manager.id) return owner ? `${manager.prenom} · gestionnaire` : manager.prenom;
+    if (id === res.locataire?.id) return guestName;
     return 'Paixi';
   };
   const eventCfg = (e: HistoriqueReservation): EventCfg => {
     const base = EVENTS[e.nouveauStatut] ?? { label: () => e.nouveauStatut, icon: Clock, money: 'none' as Money };
-    return { ...base, ...(owner ? OWNER_EVENTS[e.nouveauStatut] : undefined), ...(e.modifiePar ? SYSTEM_EVENTS[e.modifiePar] : undefined) };
+    const action = metaOf(e).action;
+    return {
+      ...base,
+      ...(owner ? OWNER_EVENTS[e.nouveauStatut] : undefined),
+      ...(e.modifiePar ? SYSTEM_EVENTS[e.modifiePar] : undefined),
+      ...(action ? ACTION_EVENTS[action] : undefined),
+    };
+  };
+  // « Acceptée par … » nomme celui qui a vraiment accepté (hôte ou gestionnaire)
+  const labelOf = (e: HistoriqueReservation, cfg: EventCfg) => {
+    const who = actor(e);
+    return cfg.label(owner || who === 'Paixi' || who === 'Vous' ? hostName : who);
   };
 
   // Événements dans l'ordre chronologique, groupés par jour
@@ -192,7 +220,7 @@ export function Dossier({
                     </View>
                     <View style={styles.eventBody}>
                       <View style={styles.rowBetween}>
-                        <Text style={styles.eventTitle}>{cfg.label(hostName)}</Text>
+                        <Text style={styles.eventTitle}>{labelOf(e, cfg)}</Text>
                         <Text style={styles.eventTime}>{clock(e.modifieLe)}</Text>
                       </View>
                       {e.nouveauStatut === 'PAID' && (

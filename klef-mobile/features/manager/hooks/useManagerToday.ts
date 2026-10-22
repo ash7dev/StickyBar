@@ -5,7 +5,6 @@ import type { OwnerOverviewResponse } from '../../owner-home/types';
 /** Toutes les clés de l'espace gestionnaire : jamais partagées avec l'espace hôte (données différentes). */
 export const managerKeys = {
   all: ['manager'] as const,
-  dashboard: (ownerId: string | null) => ['manager', 'dashboard', ownerId] as const,
   listings: ['manager', 'listings'] as const,
   reservations: ['manager', 'reservations'] as const,
   leads: ['manager', 'leads'] as const,
@@ -13,19 +12,6 @@ export const managerKeys = {
 };
 
 const unwrap = <T,>(data: any): T => (data?.data ?? data) as T;
-
-export interface ManagerDashboard {
-  kpis: {
-    totalLogements: number;
-    logementsActifs: number;
-    totalProprietaires: number;
-    reservationsDuMois: number;
-    caDuMois: number;
-    netProprietairesDuMois: number;
-    commissionKlefDuMois: number;
-  };
-  revenusMensuels: Array<{ mois: string; ca: number; netProprietaire: number; commissionKlef: number }>;
-}
 
 export interface ManagedListing {
   id: string;
@@ -36,6 +22,7 @@ export interface ManagedListing {
   latitude?: number | string | null;
   longitude?: number | string | null;
   proprietaireId: string;
+  gestionnaireId?: string | null;
   proprietaire?: { id: string; prenom: string; nom: string; telephone?: string | null } | null;
   photos?: Array<{ url: string }>;
 }
@@ -53,6 +40,9 @@ export interface ManagerReservation {
   typePaiement?: string | null;
   montantSoldeRestant?: number | string | null;
   totalLocataire?: number | string | null;
+  netProprietaire?: number | string | null;
+  montantCommission?: number | string | null;
+  creeLe?: string;
   checkinProprioLe?: string | null;
   checkinLocataireLe?: string | null;
   checkoutProprioLe?: string | null;
@@ -70,15 +60,6 @@ export interface ManagedLead {
   nombreLogements?: number;
   statut: 'NOUVEAU' | 'CONTACTE' | 'CONVERTI' | 'ARCHIVE';
   creeLe: string;
-}
-
-export function useManagerDashboard(ownerId: string | null) {
-  return useQuery({
-    queryKey: managerKeys.dashboard(ownerId),
-    queryFn: async () =>
-      unwrap<ManagerDashboard>((await apiClient.get('/gestionnaire/dashboard', { params: ownerId ? { ownerId } : undefined })).data),
-    staleTime: 60_000,
-  });
 }
 
 export function useManagedListings() {

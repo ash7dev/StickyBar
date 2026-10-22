@@ -215,10 +215,8 @@ export class GestionnaireService {
       (r) => r.creeLe >= startOfMonth && r.creeLe <= endOfMonth,
     );
 
-    // Si aucune réservation n'a été créée pendant le mois civil courant, on s'appuie sur l'ensemble des réservations gérées pour afficher des KPIs financiers réalistes
-    const targetReservations = currentMonthReservations.length > 0
-      ? currentMonthReservations
-      : allManagedReservations;
+    // Toujours le mois civil courant : un mois sans réservation affiche 0, jamais le cumul de toujours
+    const targetReservations = currentMonthReservations;
 
     const reservationsDuMois = targetReservations.length;
     const caDuMois = targetReservations.reduce((sum, r) => sum + Number(r.totalLocataire || 0), 0);
