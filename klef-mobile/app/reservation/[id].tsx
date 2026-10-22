@@ -8,7 +8,7 @@ import { colors, typography } from '../../shared/theme/tokens';
 import { apiClient } from '../../shared/api/api-client';
 import { useAuthStore } from '../../features/auth/stores/auth.store';
 import type { DemandeFraisReservation, ReservationDetail } from '../../features/reservations/types/reservation-detail.types';
-import { tenantStage } from '../../features/reservations/tenant/lib/stage';
+import { escrowAmount, isDeposit, tenantStage } from '../../features/reservations/tenant/lib/stage';
 import { useTenantActions } from '../../features/reservations/tenant/hooks/useTenantActions';
 import { PillButton, StayTopBar, type DetailTab } from '../../features/reservations/tenant/components/ui';
 import { renderStage } from '../../features/reservations/tenant/components/StayStages';
@@ -33,7 +33,7 @@ export default function ReservationDetailScreen() {
   const [cacheLoaded, setCacheLoaded] = useState(false);
   const [sheet, setSheet] = useState<'cancel' | 'refuse' | 'report' | 'welcome' | null>(null);
   const [gallery, setGallery] = useState<'CHECKIN' | 'CHECKOUT' | null>(null);
-  const [fee, setFee] = useState<{ item: DemandeFraisReservation; mode: 'pay' | 'contest' } | null>(null);
+  const [fee, setFee] = useState<{ item: DemandeFraisReservation; mode: 'contest' } | null>(null);
   const [now, setNow] = useState(() => new Date());
 
   const cacheKey = `klef_tenant_reservation_detail_${reservationId}`;
@@ -160,7 +160,9 @@ export default function ReservationDetailScreen() {
         visible={sheet === 'cancel'}
         reservationId={reservation.id}
         dateDebut={reservation.dateDebut}
-        montantPaye={Number(reservation.totalLocataire)}
+        montantPaye={escrowAmount(reservation)}
+        totalLocataire={Number(reservation.totalLocataire)}
+        totalBase={Number(reservation.totalBase)}
         onSuccess={() => {
           setSheet(null);
           refetch();
@@ -169,7 +171,7 @@ export default function ReservationDetailScreen() {
       />
       <RefuseCheckinSheet
         visible={sheet === 'refuse'}
-        amountLabel={formatFCFA(Number(reservation.totalLocataire))}
+        amountLabel={isDeposit(reservation) ? `${formatFCFA(escrowAmount(reservation))} d’acompte` : formatFCFA(Number(reservation.totalLocataire))}
         actions={actions}
         onClose={() => setSheet(null)}
       />
@@ -177,7 +179,6 @@ export default function ReservationDetailScreen() {
       <FeeSheet
         key={fee ? `${fee.item.id}-${fee.mode}` : 'none'}
         fee={fee?.item ?? null}
-        initialMode={fee?.mode}
         hostName={reservation.proprietaire?.prenom ?? 'l’hôte'}
         actions={actions}
         onClose={() => setFee(null)}

@@ -19,9 +19,11 @@ import { CreateReservationDto } from './dto/create-reservation.dto';
 import { NotificationsService } from '../notifications/notifications.service';
 import { StatutReservation, TypeAvis, RoleLitige, MotifLitige, StatutLitige, TypeTransactionWallet, SensTransaction } from '@prisma/client';
 import { Decimal } from '@prisma/client/runtime/library';
+import { computeExtraGuests } from './extra-guests';
 
 /** Fenêtre pour noter l'autre partie après la clôture (cf. job fermer-fenetre-avis). */
 const REVIEW_WINDOW_DAYS = 7;
+const EXTRA_GUESTS_TITLE = 'Voyageurs en plus';
 
 @Injectable()
 export class ReservationsService {
@@ -71,10 +73,12 @@ export class ReservationsService {
         proprietaire: { select: { id: true, prenom: true, nom: true, avatarUrl: true, telephone: true } },
         logement: {
           select: {
-            id: true, titre: true, ville: true,
+            id: true, titre: true, ville: true, quartier: true,
             photos: { take: 1, where: { estPrincipale: true }, select: { url: true } },
           },
         },
+        // L'accueil voyageur propose de noter un séjour terminé tant qu'aucun avis n'est laissé
+        avis: { select: { auteurId: true } },
         paiement: { select: { statut: true, fournisseur: true } },
         litige: { select: { id: true, statut: true } },
       },
@@ -591,50 +595,89 @@ export class ReservationsService {
     }, { isolationLevel: 'Serializable' });
   }
 
-  // ── DEMANDES DE FRAIS SUPPLÉMENTAIRES ────────────────────────────────────────
+  // ── SUPPLÉMENT « VOYAGEURS EN PLUS » ─────────────────────────────────────────
+  // Seul supplément possible : l'hôte déclare le nombre réel de voyageurs, le serveur
+  // calcule le montant avec la grille du logement. Réglé en espèces sur place ;
+  // le voyageur peut contester (litige arbitré par Paixi). Les dégâts passent par un litige.
 
-  async createDemandeFrais(reservationId: string, userId: string, titre: string, montant: number, description?: string) {
+  private async loadForExtraGuests(reservationId: string, userId: string) {
     const reservation = await this.prisma.reservation.findUnique({
       where: { id: reservationId },
-      include: { logement: { select: { gestionnaireId: true } } },
+      include: {
+        logement: {
+          select: {
+            gestionnaireId: true,
+            capaciteMax: true,
+            personnesBase: true,
+            tarifsPersonnes: { select: { personnesMin: true, personnesMax: true, supplement: true } },
+          },
+        },
+        demandesFrais: { select: { statut: true } },
+      },
     });
     if (!reservation) throw new NotFoundException('Réservation introuvable');
-
-    const isProprioOrGestionnaire =
-      reservation.proprietaireId === userId || reservation.logement?.gestionnaireId === userId;
-
-    if (!isProprioOrGestionnaire) {
-      throw new ForbiddenException('Seul le propriétaire ou gestionnaire peut demander des frais supplémentaires');
+    if (reservation.proprietaireId !== userId && reservation.logement?.gestionnaireId !== userId) {
+      throw new ForbiddenException('Seul l’hôte peut déclarer des voyageurs en plus');
     }
+    return reservation;
+  }
+
+  async estimateExtraGuests(reservationId: string, userId: string, nbVoyageurs: number) {
+    const reservation = await this.loadForExtraGuests(reservationId, userId);
+    return computeExtraGuests(reservation, nbVoyageurs);
+  }
+
+  async createDemandeFrais(reservationId: string, userId: string, nbVoyageurs: number) {
+    const reservation = await this.loadForExtraGuests(reservationId, userId);
+    const calc = computeExtraGuests(reservation, nbVoyageurs);
+    const plural = (n: number, w: string) => `${n} ${w}${n > 1 ? 's' : ''}`;
 
     const demande = await this.prisma.demandeFrais.create({
       data: {
         reservationId,
-        titre,
-        description,
-        montant,
+        titre: EXTRA_GUESTS_TITLE,
+        description: `${calc.prevus} → ${calc.nbVoyageurs} voyageurs · ${plural(calc.nuits, 'nuit')} × ${calc.parNuit.toLocaleString('fr-FR')} FCFA`,
+        montant: calc.montant,
         statut: 'EN_ATTENTE',
       },
     });
 
     this.notifications.sendReservationPush(
       reservation.locataireId,
-      '⚡ Supplément demandé par votre hôte',
-      `Votre hôte demande un supplément de ${montant.toLocaleString('fr-FR')} FCFA (${titre}).`,
-      `/reservations/${reservationId}`,
+      'Supplément voyageurs en plus',
+      `Votre hôte déclare ${calc.nbVoyageurs} voyageurs au lieu de ${calc.prevus} : ${calc.montant.toLocaleString('fr-FR')} FCFA à régler sur place, ou à contester.`,
+      `/reservation/${reservationId}`,
     ).catch(() => {});
 
     return demande;
   }
 
-  async getDemandesFrais(reservationId: string) {
+  async getDemandesFrais(reservationId: string, userId: string) {
+    const reservation = await this.prisma.reservation.findFirst({
+      where: {
+        id: reservationId,
+        OR: [{ locataireId: userId }, { proprietaireId: userId }, { logement: { gestionnaireId: userId } }],
+      },
+      select: { id: true },
+    });
+    if (!reservation) throw new NotFoundException('Réservation introuvable');
     return this.prisma.demandeFrais.findMany({
       where: { reservationId },
       orderBy: { creeLe: 'desc' },
     });
   }
 
-  async payerDemandeFrais(reservationId: string, fraisId: string, userId: string, methodePaiement?: string) {
+  /**
+   * Paiement en ligne d'un supplément : désactivé tant qu'il n'est pas branché sur
+   * un vrai encaissement Wave / Orange Money. Avant, cet appel créditait le wallet
+   * de l'hôte sans qu'aucun argent ne soit reçu.
+   */
+  async payerDemandeFrais(_reservationId: string, _fraisId: string, _userId: string, _methodePaiement?: string): Promise<never> {
+    throw new BadRequestException('Le supplément se règle en espèces auprès de votre hôte. Vous pouvez aussi le contester.');
+  }
+
+  /** Contestation par le voyageur : ouvre (ou rejoint) le litige du séjour. */
+  async refuserDemandeFrais(reservationId: string, fraisId: string, userId: string, raison?: string) {
     const demande = await this.prisma.demandeFrais.findUnique({
       where: { id: fraisId },
       include: { reservation: true },
@@ -643,115 +686,47 @@ export class ReservationsService {
     if (!demande || demande.reservationId !== reservationId) {
       throw new NotFoundException('Demande de frais introuvable');
     }
-
     if (demande.reservation.locataireId !== userId) {
-      throw new ForbiddenException('Seul le locataire peut régler ce supplément');
+      throw new ForbiddenException('Seul le voyageur peut contester un supplément');
     }
-
     if (demande.statut !== 'EN_ATTENTE') {
       throw new ConflictException('Ce supplément a déjà été traité');
     }
 
-    const montant = Number(demande.montant);
-
-    return await this.prisma.$transaction(async (tx) => {
-      const updated = await tx.demandeFrais.update({
+    const updated = await this.prisma.$transaction(async (tx) => {
+      const contested = await tx.demandeFrais.update({
         where: { id: fraisId },
-        data: {
-          statut: 'PAYE',
-          payeLe: new Date(),
-          methodePaiement: methodePaiement || 'WAVE',
-        },
+        data: { statut: 'CONTESTE', refuseLe: new Date() },
       });
 
-      const hostWallet = await tx.wallet.upsert({
-        where: { utilisateurId: demande.reservation.proprietaireId },
-        create: {
-          utilisateurId: demande.reservation.proprietaireId,
-          soldeDisponible: montant,
-        },
-        update: {
-          soldeDisponible: { increment: montant },
-        },
-      });
-
-      const soldeApres = Number(hostWallet.soldeDisponible);
-
-      await tx.transactionWallet.create({
-        data: {
-          walletId: hostWallet.id,
-          type: TypeTransactionWallet.CREDIT_LOCATION,
-          montant,
-          sens: SensTransaction.CREDIT,
-          soldeApres,
-          description: `Règlement supplément (${demande.titre}) via ${methodePaiement || 'Mobile Money'} — résa ${reservationId.slice(0, 8).toUpperCase()}`,
-        },
-      });
-
-      this.notifications.sendReservationPush(
-        demande.reservation.proprietaireId,
-        '💰 Supplément réglé par le locataire !',
-        `Le locataire a réglé le supplément de ${montant.toLocaleString('fr-FR')} FCFA (${demande.titre}). Les fonds ont été crédités sur votre portefeuille.`,
-        `/dashboard/reservations/${reservationId}`,
-      ).catch(() => {});
-
-      return updated;
-    });
-  }
-
-  async refuserDemandeFrais(reservationId: string, fraisId: string, userId: string, raison?: string) {
-    const demande = await this.prisma.demandeFrais.findUnique({
-      where: { id: fraisId },
-      include: { reservation: { include: { logement: true } } },
-    });
-
-    if (!demande || demande.reservationId !== reservationId) {
-      throw new NotFoundException('Demande de frais introuvable');
-    }
-
-    const isLocataire = demande.reservation.locataireId === userId;
-    const isProprio = demande.reservation.proprietaireId === userId || demande.reservation.logement?.gestionnaireId === userId;
-
-    if (!isLocataire && !isProprio) {
-      throw new ForbiddenException('Accès non autorisé');
-    }
-
-    return await this.prisma.$transaction(async (tx) => {
-      const updated = await tx.demandeFrais.update({
-        where: { id: fraisId },
-        data: {
-          statut: 'REFUSE',
-          refuseLe: new Date(),
-        },
-      });
-
-      const existingLitige = await tx.litige.findUnique({
-        where: { reservationId },
-      });
-
+      const existingLitige = await tx.litige.findUnique({ where: { reservationId } });
       if (!existingLitige) {
-        const isDepassement = demande.titre.toLowerCase().includes('personne') || demande.titre.toLowerCase().includes('surnombre');
-        const motifEnum = isDepassement ? MotifLitige.DEPASSEMENT_PERSONNES : MotifLitige.NON_PAIEMENT;
-
         await tx.litige.create({
           data: {
             reservationId,
-            declarePar: isLocataire ? RoleLitige.LOCATAIRE : RoleLitige.PROPRIETAIRE,
-            motif: motifEnum,
-            description: `Refus/Contestation du supplément "${demande.titre}" d'un montant de ${Number(demande.montant).toLocaleString('fr-FR')} FCFA. ${raison || ''}`.trim(),
+            declarePar: RoleLitige.LOCATAIRE,
+            motif: MotifLitige.DEPASSEMENT_PERSONNES,
+            description: `Contestation du supplément « ${demande.titre} » de ${Number(demande.montant).toLocaleString('fr-FR')} FCFA (${demande.description ?? ''}). ${raison ?? ''}`.trim(),
             coutEstime: demande.montant,
             statut: StatutLitige.EN_ATTENTE,
           },
         });
-
         await tx.reservation.update({
           where: { id: reservationId },
           data: { statut: StatutReservation.DISPUTED },
         });
       }
-
-      return updated;
+      return contested;
     });
+
+    this.notifications.sendReservationPush(
+      demande.reservation.proprietaireId,
+      'Supplément contesté',
+      `Le voyageur conteste le supplément de ${Number(demande.montant).toLocaleString('fr-FR')} FCFA. L’équipe Paixi examine le dossier.`,
+      `/(owner)/reservations/${reservationId}`,
+    ).catch(() => {});
+
+    return updated;
   }
 
   async payerDemandeFraisLiquide(reservationId: string, fraisId: string, userId: string) {
@@ -777,7 +752,7 @@ export class ReservationsService {
     }
 
     // Marquer PAYÉ avec méthode de paiement 'ESPECES' (sans toucher au solde du wallet)
-    return await this.prisma.demandeFrais.update({
+    const updated = await this.prisma.demandeFrais.update({
       where: { id: fraisId },
       data: {
         statut: 'PAYE',
@@ -785,5 +760,14 @@ export class ReservationsService {
         methodePaiement: 'ESPECES',
       },
     });
+
+    this.notifications.sendReservationPush(
+      demande.reservation.locataireId,
+      'Supplément réglé',
+      `Votre hôte confirme avoir reçu ${Number(demande.montant).toLocaleString('fr-FR')} FCFA en espèces.`,
+      `/reservation/${reservationId}`,
+    ).catch(() => {});
+
+    return updated;
   }
 }

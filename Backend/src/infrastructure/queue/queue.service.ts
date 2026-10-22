@@ -154,9 +154,9 @@ export class QueueService {
     this.logger.debug(`Job rappel-jour-j schedulé → ${reservationId} (dans ${Math.round(delayMs / 3_600_000)}h)`);
   }
 
-  // Ferme la fenêtre d'avis 7 jours après la clôture
+  // Rappel d'avis 3 jours après la clôture (la fenêtre de notation dure 7 jours)
   async scheduleFenetreAvis(reservationId: string, closeLe: Date): Promise<void> {
-    const delayMs = Math.max(closeLe.getTime() + 7 * MS_24H - Date.now(), 0);
+    const delayMs = Math.max(closeLe.getTime() + 3 * MS_24H - Date.now(), 0);
     await this.reservationQueue.add(
       'fermer-fenetre-avis',
       { reservationId },
@@ -168,7 +168,7 @@ export class QueueService {
         removeOnComplete: true,
       },
     );
-    this.logger.debug(`Job fermer-fenetre-avis schedulé → ${reservationId} (dans 7j)`);
+    this.logger.debug(`Job rappel d'avis schedulé → ${reservationId} (J+3 après clôture)`);
   }
 
   // Annule tous les jobs liés à une réservation (annulation, litige, expiration)

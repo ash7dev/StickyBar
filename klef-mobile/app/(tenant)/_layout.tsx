@@ -18,6 +18,8 @@ export default function TenantTabsLayout() {
           name="index"
           options={{
             title: 'Accueil',
+            // La fenêtre et le compte à rebours occupent tout l'écran : l'accueil a son propre en-tête
+            headerShown: false,
           }}
         />
         <Tabs.Screen
@@ -32,6 +34,8 @@ export default function TenantTabsLayout() {
           name="reservations"
           options={{
             title: 'Réservations',
+            // « Vos séjours » a son propre titre éditorial
+            headerShown: false,
           }}
         />
         <Tabs.Screen

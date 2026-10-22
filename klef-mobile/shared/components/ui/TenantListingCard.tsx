@@ -17,6 +17,7 @@ import {
 } from 'lucide-react-native';
 import { colors, radius, shadows, typography } from '../../theme/tokens';
 import { useFavorite } from '../../../features/favorites/useFavorites';
+import { formatAmount } from '../../../features/owner-home/lib/format';
 import { TenantPriceDisplay } from './TenantPriceDisplay';
 import { useListingCacheStore } from '../../stores/listing-cache.store';
 import { useSearchHistoryStore } from '../../stores/search-history.store';
@@ -50,6 +51,8 @@ export interface ListingItem {
   /** Total exact du séjour quand la recherche a des dates (API search). */
   prixSejour?: number | null;
   nbNuits?: number | null;
+  /** Date d'ajout sur Paixi (section « Nouveautés »). */
+  creeLe?: string | null;
 }
 
 interface TenantListingCardProps {
@@ -232,11 +235,18 @@ export function TenantListingCard({
 
         {/* Composant Partagé d'Affichage du Prix (Paixi Design System) */}
         <View style={styles.priceRowContainer}>
-          <TenantPriceDisplay
-            prixBase={listing.prixBase}
-            derniereMinuteActive={listing.derniereMinuteActive}
-            size="sm"
-          />
+          {listing.prixSejour ? (
+            <Text style={styles.stayPrice}>
+              {formatAmount(listing.prixSejour)} FCFA
+              <Text style={styles.stayPriceSub}> · {listing.nbNuits} nuit{(listing.nbNuits ?? 0) > 1 ? 's' : ''}, frais inclus</Text>
+            </Text>
+          ) : (
+            <TenantPriceDisplay
+              prixBase={listing.prixBase}
+              derniereMinuteActive={listing.derniereMinuteActive}
+              size="sm"
+            />
+          )}
           {listing.sponsorise && !listing.derniereMinuteActive && (
             <View style={styles.sponsoredBadge}>
               <Text style={styles.sponsoredText}>Mis en avant</Text>
@@ -249,6 +259,8 @@ export function TenantListingCard({
 }
 
 const styles = StyleSheet.create({
+  stayPrice: { fontFamily: typography.fontDisplaySemiBold, fontSize: 16, color: colors.forest[950] },
+  stayPriceSub: { fontFamily: typography.fontBody, fontSize: 11, color: colors.neutral[600] },
   cardContainer: {
     backgroundColor: colors.neutral[0],
     borderRadius: radius.card,

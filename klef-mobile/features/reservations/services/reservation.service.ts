@@ -45,131 +45,75 @@ export async function updateReservationStatus(
   return res.data;
 }
 
-async function uploadPhotoToCloudinary(uploadParams: any, uri: string, filename: string): Promise<string> {
-  if (!uri || uri.startsWith('http://') || uri.startsWith('https://')) {
-    return uri;
-  }
-  return new Promise((resolve) => {
+interface EtatLieuxUploadParams {
+  uploadUrl: string;
+  folder: string;
+  signature: string;
+  timestamp: number;
+  apiKey: string;
+  transformation?: string;
+}
+
+/**
+ * Envoie une photo à Cloudinary et renvoie son adresse publique (https).
+ * Échoue franchement : une adresse locale (file://…) n'est visible que sur ce téléphone,
+ * elle ne doit jamais être enregistrée côté serveur.
+ */
+function uploadPhotoToCloudinary(params: EtatLieuxUploadParams, uri: string, filename: string): Promise<string> {
+  if (uri.startsWith('https://')) return Promise.resolve(uri);
+  return new Promise((resolve, reject) => {
     const formData = new FormData();
-    formData.append('file', {
-      uri,
-      name: filename,
-      type: 'image/jpeg',
-    } as any);
-    formData.append('folder', uploadParams.folder);
-    formData.append('signature', uploadParams.signature);
-    formData.append('timestamp', String(uploadParams.timestamp));
-    formData.append('api_key', uploadParams.apiKey);
+    formData.append('file', { uri, name: filename, type: 'image/jpeg' } as any);
+    formData.append('folder', params.folder);
+    formData.append('signature', params.signature);
+    formData.append('timestamp', String(params.timestamp));
+    formData.append('api_key', params.apiKey);
+    // Signé côté serveur avec la transformation : l'omettre rend la signature invalide
+    if (params.transformation) formData.append('transformation', params.transformation);
 
     const xhr = new XMLHttpRequest();
-    xhr.open('POST', uploadParams.uploadUrl);
+    xhr.open('POST', params.uploadUrl);
+    xhr.timeout = 60_000;
     xhr.onload = () => {
-      if (xhr.status >= 200 && xhr.status < 300) {
-        try {
-          const res = JSON.parse(xhr.responseText);
-          resolve(res.secure_url || uri);
-        } catch {
-          resolve(uri);
-        }
-      } else {
-        resolve(uri);
+      try {
+        const res = JSON.parse(xhr.responseText);
+        if (xhr.status >= 200 && xhr.status < 300 && typeof res.secure_url === 'string') return resolve(res.secure_url);
+        reject(new Error(res?.error?.message || `Envoi refusé (${xhr.status})`));
+      } catch {
+        reject(new Error(`Envoi refusé (${xhr.status})`));
       }
     };
-    xhr.onerror = () => resolve(uri);
-    xhr.ontimeout = () => resolve(uri);
-    xhr.timeout = 30000;
+    xhr.onerror = () => reject(new Error('Connexion perdue pendant l’envoi de la photo.'));
+    xhr.ontimeout = () => reject(new Error('L’envoi de la photo a pris trop de temps.'));
     xhr.send(formData);
   });
 }
 
-export async function submitCheckinProprio(
-  id: string,
-  photos: Array<{ uri: string; categorie: string }>
-): Promise<any> {
-  // 1. Tenter l'upload Cloudinary direct si des photos locales existent
-  let photoUrls: string[] = photos.map((p) => p.uri);
+/** Envoie toutes les photos d'un état des lieux, puis les enregistre sur la réservation. */
+async function submitEtatLieux(id: string, kind: 'checkin' | 'checkout', photos: Array<{ uri: string; categorie: string }>) {
+  const paramsRes = await apiClient.get(`/reservations/${id}/etat-lieux/upload-params`);
+  const params: EtatLieuxUploadParams = paramsRes.data?.data || paramsRes.data;
+  if (!params?.uploadUrl) throw new Error('Le service photo est indisponible. Réessayez dans un instant.');
+
+  let urls: string[];
   try {
-    const paramsRes = await apiClient.get(`/reservations/${id}/etat-lieux/upload-params`);
-    const params = paramsRes.data?.data || paramsRes.data;
-    if (params && params.uploadUrl) {
-      photoUrls = await Promise.all(
-        photos.map((p, idx) => uploadPhotoToCloudinary(params, p.uri, `checkin_${id}_${idx}.jpg`))
-      );
-    }
-  } catch {
-    // Si les params d'upload ne sont pas dispos, on continue avec les URIs fournies
+    urls = await Promise.all(photos.map((p, idx) => uploadPhotoToCloudinary(params, p.uri, `${kind}_${id}_${idx}.jpg`)));
+  } catch (err) {
+    throw new Error(`Les photos n’ont pas pu être envoyées. ${(err as Error).message} Réessayez.`);
   }
 
-  // 2. Transmettre le tableau de photos au serveur
-  try {
-    const resUpload = await apiClient.post(`/reservations/${id}/checkin/upload`, { photos: photoUrls });
-    try {
-      await apiClient.post(`/reservations/${id}/checkin-proprio`);
-    } catch {
-      // Confirmation déjà traitée par l'upload
-    }
-    return resUpload.data;
-  } catch {
-    const formData = new FormData();
-    photos.forEach((p, index) => {
-      formData.append('photos', {
-        uri: photoUrls[index] || p.uri,
-        type: 'image/jpeg',
-        name: `checkin_photo_${index}.jpg`,
-      } as any);
-      formData.append('categories', p.categorie);
-    });
-
-    const res = await apiClient.post(`/reservations/${id}/checkin-proprio`, formData, {
-      headers: { 'Content-Type': 'multipart/form-data' },
-    });
-    return res.data;
-  }
+  const res = await apiClient.post(`/reservations/${id}/${kind}/upload`, { photos: urls });
+  // La confirmation peut déjà avoir été faite par l'enregistrement des photos
+  await apiClient.post(`/reservations/${id}/${kind}-proprio`).catch(() => {});
+  return res.data;
 }
 
-export async function submitCheckoutProprio(
-  id: string,
-  photos: Array<{ uri: string; categorie: string }>
-): Promise<any> {
-  // 1. Tenter l'upload Cloudinary direct si des photos locales existent
-  let photoUrls: string[] = photos.map((p) => p.uri);
-  try {
-    const paramsRes = await apiClient.get(`/reservations/${id}/etat-lieux/upload-params`);
-    const params = paramsRes.data?.data || paramsRes.data;
-    if (params && params.uploadUrl) {
-      photoUrls = await Promise.all(
-        photos.map((p, idx) => uploadPhotoToCloudinary(params, p.uri, `checkout_${id}_${idx}.jpg`))
-      );
-    }
-  } catch {
-    // Si les params d'upload ne sont pas dispos, on continue avec les URIs fournies
-  }
+export function submitCheckinProprio(id: string, photos: Array<{ uri: string; categorie: string }>): Promise<any> {
+  return submitEtatLieux(id, 'checkin', photos);
+}
 
-  // 2. Transmettre le tableau de photos au serveur
-  try {
-    const resUpload = await apiClient.post(`/reservations/${id}/checkout/upload`, { photos: photoUrls });
-    try {
-      await apiClient.post(`/reservations/${id}/checkout-proprio`);
-    } catch {
-      // Confirmation déjà traitée par l'upload
-    }
-    return resUpload.data;
-  } catch {
-    const formData = new FormData();
-    photos.forEach((p, index) => {
-      formData.append('photos', {
-        uri: photoUrls[index] || p.uri,
-        type: 'image/jpeg',
-        name: `checkout_photo_${index}.jpg`,
-      } as any);
-      formData.append('categories', p.categorie);
-    });
-
-    const res = await apiClient.post(`/reservations/${id}/checkout-proprio`, formData, {
-      headers: { 'Content-Type': 'multipart/form-data' },
-    });
-    return res.data;
-  }
+export function submitCheckoutProprio(id: string, photos: Array<{ uri: string; categorie: string }>): Promise<any> {
+  return submitEtatLieux(id, 'checkout', photos);
 }
 
 export async function submitDispute(

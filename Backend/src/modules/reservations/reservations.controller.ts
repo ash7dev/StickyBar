@@ -217,30 +217,40 @@ export class ReservationsController {
 
   // ── DEMANDES DE FRAIS SUPPLÉMENTAIRES ────────────────────────────────────────
 
+  @Get(':id/frais/estimation')
+  @Roles(Role.PROPRIETAIRE, Role.GESTIONNAIRE)
+  @ApiOperation({ summary: 'Calculer le supplément « voyageurs en plus » avant de l’envoyer' })
+  @ApiParam({ name: 'id', description: 'UUID de la réservation' })
+  estimateExtraGuests(
+    @Param('id') id: string,
+    @CurrentUser() user: AuthUser,
+    @Query('voyageurs') voyageurs: string,
+  ) {
+    return this.reservationsService.estimateExtraGuests(id, user.id, Number(voyageurs));
+  }
+
   @Post(':id/frais')
   @Roles(Role.PROPRIETAIRE, Role.GESTIONNAIRE)
-  @ApiOperation({ summary: 'Demander des frais supplémentaires / supplément (propriétaire ou gestionnaire)' })
+  @ApiOperation({ summary: 'Déclarer des voyageurs en plus (montant calculé avec la grille du logement)' })
   @ApiParam({ name: 'id', description: 'UUID de la réservation' })
   createDemandeFrais(
     @Param('id') id: string,
     @CurrentUser() user: AuthUser,
-    @Body('titre') titre: string,
-    @Body('montant') montant: number,
-    @Body('description') description?: string,
+    @Body('nbVoyageurs') nbVoyageurs: number,
   ) {
-    return this.reservationsService.createDemandeFrais(id, user.id, titre, Number(montant), description);
+    return this.reservationsService.createDemandeFrais(id, user.id, Number(nbVoyageurs));
   }
 
   @Get(':id/frais')
-  @ApiOperation({ summary: 'Lister les demandes de frais supplémentaires d\'une réservation' })
+  @ApiOperation({ summary: 'Lister les suppléments d\'une réservation (voyageur ou hôte)' })
   @ApiParam({ name: 'id', description: 'UUID de la réservation' })
-  getDemandesFrais(@Param('id') id: string) {
-    return this.reservationsService.getDemandesFrais(id);
+  getDemandesFrais(@Param('id') id: string, @CurrentUser() user: AuthUser) {
+    return this.reservationsService.getDemandesFrais(id, user.id);
   }
 
   @Post(':id/frais/:fraisId/payer')
   @Roles(Role.LOCATAIRE)
-  @ApiOperation({ summary: 'Régler une demande de frais supplémentaire (crédite le Wallet hôte)' })
+  @ApiOperation({ summary: 'Paiement en ligne d’un supplément — désactivé, réglement en espèces' })
   @ApiParam({ name: 'id', description: 'UUID de la réservation' })
   @ApiParam({ name: 'fraisId', description: 'UUID de la demande de frais' })
   payerDemandeFrais(
@@ -253,7 +263,7 @@ export class ReservationsController {
   }
 
   @Post(':id/frais/:fraisId/refuser')
-  @ApiOperation({ summary: 'Déclarer un refus ou contestation sur une demande de frais (ouvre un litige)' })
+  @ApiOperation({ summary: 'Contester un supplément (voyageur) — ouvre un litige' })
   @ApiParam({ name: 'id', description: 'UUID de la réservation' })
   @ApiParam({ name: 'fraisId', description: 'UUID de la demande de frais' })
   refuserDemandeFrais(

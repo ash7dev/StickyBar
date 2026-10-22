@@ -175,6 +175,7 @@ export class LogementsService implements OnModuleInit {
       derniereMinuteActive: true,
       videoUrl: true,
       commissionPourcentage: true,
+      creeLe: true,
       photos: {
         orderBy: [{ estPrincipale: 'desc' }, { position: 'asc' }],
         select: { url: true, categorie: true },
@@ -299,6 +300,7 @@ export class LogementsService implements OnModuleInit {
         nbNuits,
         derniereMinuteActive: l.derniereMinuteActive,
         videoUrl: l.videoUrl ?? null,
+        creeLe: l.creeLe,
         proprietaire: l.proprietaire,
         equipements: l.equipements
           .map((e: any) => e.equipement)
@@ -893,6 +895,7 @@ export class LogementsService implements OnModuleInit {
     await this.assertNoActiveReservations(id);
 
     const { equipementIds, ...fields } = dto;
+    const before = await this.prisma.logement.findUnique({ where: { id }, select: { derniereMinuteActive: true } });
 
     const logement = await this.prisma.logement.update({
       where: { id },
@@ -912,8 +915,26 @@ export class LogementsService implements OnModuleInit {
       await this.invalidateSearchCache(id);
     }
 
+    if (!before?.derniereMinuteActive && logement.derniereMinuteActive && logement.statut === StatutLogement.PUBLISHED) {
+      this.notifyFavoritesLastMinute(logement.id, logement.titre).catch((err) =>
+        this.logger.warn(`Push dernière minute échoué [${id}] : ${(err as Error).message}`),
+      );
+    }
+
     this.logger.log(`Logement [${id}] mis à jour par utilisateur [${userId}]`);
     return logement;
+  }
+
+  /** « Villa X, que vous avez gardée, passe à −15 % » : seulement aux voyageurs qui l'ont gardée. */
+  private async notifyFavoritesLastMinute(logementId: string, titre: string) {
+    const fans = await this.prisma.favori.findMany({ where: { logementId }, select: { utilisateurId: true } });
+    await Promise.all(
+      fans.map((f) =>
+        this.notificationsService
+          .sendReservationPush(f.utilisateurId, `${titre} passe en dernière minute`, 'Un logement que vous avez gardé est à −15 % pour les arrivées sous 48 h.', `/listing/${logementId}`)
+          .catch(() => {}),
+      ),
+    );
   }
 
   async submit(id: string, userId: string): Promise<{ message: string }> {

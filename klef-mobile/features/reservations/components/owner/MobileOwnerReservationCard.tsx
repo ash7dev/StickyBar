@@ -1,19 +1,12 @@
 import React from 'react';
-import {
-  View,
-  Text,
-  TouchableOpacity,
-  Image,
-  StyleSheet,
-} from 'react-native';
+import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
+import { Image } from 'expo-image';
 import { useRouter } from 'expo-router';
-import {
-  Calendar,
-  ChevronRight,
-  ImageOff,
-  User,
-} from 'lucide-react-native';
-import { colors, typography } from '../../../../shared/theme/tokens';
+import { Banknote, ChevronRight } from 'lucide-react-native';
+import * as Haptics from 'expo-haptics';
+import { colors, radius, typography } from '../../../../shared/theme/tokens';
+import { nameCase } from '../../../home/lib/home';
+import { formatExpiry } from '../../../calendar/lib/agenda';
 
 export interface OwnerReservationItem {
   id: string;
@@ -21,8 +14,16 @@ export interface OwnerReservationItem {
   dateDebut: string;
   dateFin: string;
   nbNuits?: number;
+  nbPersonnes?: number;
   totalLocataire?: number;
   netProprietaire?: number;
+  typePaiement?: string;
+  montantAcompte?: number | string | null;
+  montantCommission?: number | string | null;
+  montantSoldeRestant?: number | string | null;
+  delaiConfirmation?: string | null;
+  proprietaireId?: string;
+  avis?: Array<{ auteurId: string }>;
   logement?: {
     id?: string;
     titre?: string;
@@ -39,266 +40,246 @@ export interface OwnerReservationItem {
   };
 }
 
-interface Props {
-  reservation: OwnerReservationItem;
-  onConfirm?: (id: string) => Promise<void> | void;
-  onCancel?: (id: string, reason: string) => Promise<void> | void;
-}
+const INK = colors.forest[950];
+const DAY = 86_400_000;
+const MONTHS = ['janv.', 'févr.', 'mars', 'avr.', 'mai', 'juin', 'juil.', 'août', 'sept.', 'oct.', 'nov.', 'déc.'];
 
-const STATUT_CONFIG: Record<string, { label: string; bg: string; text: string; dot: string }> = {
-  PAID: { label: 'À décider', bg: '#FEF9C3', text: '#854D0E', dot: '#EAB308' },
-  PENDING: { label: 'En attente', bg: '#FEF3C7', text: '#92400E', dot: '#F59E0B' },
-  CONFIRMED: { label: 'Confirmée', bg: '#ECFDF5', text: '#065F46', dot: '#10B981' },
-  CHECKED_IN: { label: 'En séjour', bg: '#D1FAE5', text: '#064E3B', dot: '#059669' },
-  COMPLETED: { label: 'Terminée', bg: colors.neutral[100], text: colors.neutral[700], dot: colors.neutral[400] },
-  DISPUTED: { label: 'Litige', bg: '#FEE2E2', text: '#991B1B', dot: '#DC2626' },
-  CANCELLED: { label: 'Annulée', bg: '#F1F5F9', text: '#475569', dot: '#94A3B8' },
-  EXPIRED: { label: 'Expirée', bg: '#F1F5F9', text: '#475569', dot: '#94A3B8' },
+type Tone = 'gold' | 'lime' | 'green' | 'grey' | 'red';
+
+/** Statut vu par l'hôte (libellé de la pastille). */
+const STATUS: Record<string, { label: string; tone: Tone }> = {
+  PAID: { label: 'À décider', tone: 'gold' },
+  PENDING: { label: 'Paiement en cours', tone: 'grey' },
+  CONFIRMED: { label: 'Confirmée', tone: 'green' },
+  CHECKED_IN: { label: 'En séjour', tone: 'lime' },
+  COMPLETED: { label: 'Terminée', tone: 'grey' },
+  DISPUTED: { label: 'Litige', tone: 'red' },
+  CANCELLED: { label: 'Annulée', tone: 'grey' },
+  EXPIRED: { label: 'Expirée', tone: 'grey' },
 };
 
-function formatDateShort(dateStr: string): string {
-  if (!dateStr) return '';
-  try {
-    const d = new Date(dateStr);
-    return d.toLocaleDateString('fr-FR', { day: 'numeric', month: 'short' });
-  } catch {
-    return dateStr;
+const TONES: Record<Tone, { bg: string; fg: string; dot: string }> = {
+  gold: { bg: colors.gold[50], fg: colors.gold[700], dot: colors.gold[400] },
+  lime: { bg: INK, fg: colors.lime[400], dot: colors.lime[400] },
+  green: { bg: colors.forest[50], fg: colors.forest[800], dot: colors.forest[500] },
+  grey: { bg: colors.neutral[100], fg: colors.neutral[600], dot: colors.neutral[400] },
+  red: { bg: colors.error[50], fg: colors.error[700], dot: colors.error[500] },
+};
+
+/** « 24 oct. » en heure de Dakar (UTC). */
+export const shortDate = (iso: string) => {
+  const d = new Date(iso);
+  return `${d.getUTCDate()} ${MONTHS[d.getUTCMonth()]}`;
+};
+
+const hourOf = (iso: string) => {
+  const t = new Date(iso).toISOString().slice(11, 16);
+  return t === '00:00' ? null : t.replace(':', ' h ');
+};
+
+/** Jours calendaires entre aujourd'hui et la date (Dakar = UTC). */
+function daysUntil(iso: string, now = new Date()): number {
+  const a = Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate());
+  const d = new Date(iso);
+  const b = Date.UTC(d.getUTCFullYear(), d.getUTCMonth(), d.getUTCDate());
+  return Math.round((b - a) / DAY);
+}
+
+function whenLabel(iso: string): string {
+  const n = daysUntil(iso);
+  if (n === 0) return 'aujourd’hui';
+  if (n === 1) return 'demain';
+  if (n > 1 && n < 7) return `dans ${n} jours`;
+  return `le ${shortDate(iso)}`;
+}
+
+/** Ce que l'hôte touche via Paixi (acompte moins commission en formule acompte). */
+export function payoutOf(r: OwnerReservationItem): number {
+  if (r.typePaiement?.toUpperCase() === 'DEPOSIT') {
+    return Math.max(0, Number(r.montantAcompte ?? 0) - Number(r.montantCommission ?? 0));
+  }
+  return Number(r.netProprietaire ?? r.totalLocataire ?? 0);
+}
+
+function cashOf(r: OwnerReservationItem): number {
+  return r.typePaiement?.toUpperCase() === 'DEPOSIT' ? Number(r.montantSoldeRestant ?? 0) : 0;
+}
+
+/** Une phrase : ce qui se passe maintenant pour ce séjour. */
+function stageLine(r: OwnerReservationItem): { text: string; tone: Tone } {
+  switch (r.statut) {
+    case 'PAID':
+      return { text: r.delaiConfirmation ? `Répondez vite · ${formatExpiry(r.delaiConfirmation)}` : 'Le voyageur attend votre réponse', tone: 'gold' };
+    case 'PENDING':
+      return { text: 'Le voyageur finalise son paiement', tone: 'grey' };
+    case 'CONFIRMED': {
+      const h = hourOf(r.dateDebut);
+      return { text: `Arrivée ${whenLabel(r.dateDebut)}${h && daysUntil(r.dateDebut) <= 1 ? ` à ${h}` : ''}`, tone: daysUntil(r.dateDebut) <= 1 ? 'lime' : 'green' };
+    }
+    case 'CHECKED_IN':
+      return { text: `Chez vous · départ ${whenLabel(r.dateFin)}`, tone: 'lime' };
+    case 'COMPLETED': {
+      const rated = (r.avis ?? []).some((a) => a.auteurId === r.proprietaireId);
+      return { text: rated ? 'Séjour terminé' : 'Séjour terminé · notez votre voyageur', tone: rated ? 'grey' : 'gold' };
+    }
+    case 'DISPUTED':
+      return { text: 'Litige en cours d’examen par Paixi', tone: 'red' };
+    default:
+      return { text: STATUS[r.statut]?.label ?? 'Réservation', tone: 'grey' };
   }
 }
 
-function formatFcfa(amount?: number | string | null): string {
-  if (amount == null) return '0';
-  return Math.round(Number(amount)).toLocaleString('fr-FR');
+const fcfa = (n: number) => String(Math.round(n)).replace(/\B(?=(\d{3})+(?!\d))/g, ' ');
+
+interface Props {
+  reservation: OwnerReservationItem;
 }
 
-export function MobileOwnerReservationCard({
-  reservation,
-}: Props) {
+export function MobileOwnerReservationCard({ reservation: r }: Props) {
   const router = useRouter();
+  const status = STATUS[r.statut] ?? STATUS.COMPLETED;
+  const tone = TONES[status.tone];
+  const stage = stageLine(r);
+  const stageTone = TONES[stage.tone];
+  const isDecision = r.statut === 'PAID';
+  const isPast = ['COMPLETED', 'CANCELLED', 'EXPIRED'].includes(r.statut);
 
-  const statusCfg = STATUT_CONFIG[reservation.statut] ?? STATUT_CONFIG.COMPLETED;
-
-  const photos = reservation.logement?.photos ?? [];
-  const mainPhoto = photos.find((p) => p.estPrincipale)?.url ?? photos[0]?.url;
-
-  const prenom = reservation.locataire?.prenom ?? '';
-  const nom = reservation.locataire?.nom ?? '';
-  const guestName = `${prenom} ${nom}`.trim() || 'Locataire';
-
-  const dateDeb = new Date(reservation.dateDebut);
-  const dateFin = new Date(reservation.dateFin);
-  const nuits = reservation.nbNuits
-    ?? Math.max(1, Math.round((dateFin.getTime() - dateDeb.getTime()) / 86_400_000));
-
-  const hostRevenue = reservation.netProprietaire ?? reservation.totalLocataire ?? 0;
-
-  const handlePressCard = () => {
-    router.push(`/(owner)/reservations/${reservation.id}` as any);
-  };
+  const start = new Date(r.dateDebut);
+  const nuits = r.nbNuits ?? Math.max(1, Math.round((new Date(r.dateFin).getTime() - start.getTime()) / DAY));
+  const prenom = nameCase(r.locataire?.prenom) ?? '';
+  const initial = r.locataire?.nom ? `${r.locataire.nom.charAt(0).toUpperCase()}.` : '';
+  const guest = `${prenom} ${initial}`.trim() || 'Voyageur';
+  const place = [r.logement?.titre, r.logement?.quartier].filter(Boolean).join(' · ');
+  const payout = payoutOf(r);
+  const cash = cashOf(r);
+  const avatar = r.locataire?.avatarUrl;
 
   return (
-    <View style={styles.card}>
-      <TouchableOpacity
-        onPress={handlePressCard}
-        activeOpacity={0.85}
-        style={styles.cardTouchable}
-      >
-        {/* ── Top Bar: Status Badge + City/Quartier ───────────────── */}
-        <View style={styles.topHeader}>
-          <View style={[styles.statusBadge, { backgroundColor: statusCfg.bg }]}>
-            <View style={[styles.statusDot, { backgroundColor: statusCfg.dot }]} />
-            <Text style={[styles.statusText, { color: statusCfg.text }]}>
-              {statusCfg.label}
+    <TouchableOpacity
+      activeOpacity={0.88}
+      onPress={() => {
+        Haptics.selectionAsync().catch(() => {});
+        router.push(`/(owner)/reservations/${r.id}` as any);
+      }}
+      style={[styles.card, isDecision && styles.cardDecision, isPast && styles.cardPast]}
+      accessibilityRole="button"
+      accessibilityLabel={`${status.label}, ${guest}, du ${shortDate(r.dateDebut)} au ${shortDate(r.dateFin)}`}
+    >
+      <View style={styles.top}>
+        {/* Talon de date : le repère principal d'une liste de séjours */}
+        <View style={[styles.dateTile, isPast && styles.dateTilePast]}>
+          <Text style={[styles.dateDay, isPast && styles.dateDayPast]}>{start.getUTCDate()}</Text>
+          <Text style={[styles.dateMonth, isPast && styles.dateMonthPast]}>{MONTHS[start.getUTCMonth()].replace('.', '').toUpperCase()}</Text>
+        </View>
+
+        <View style={styles.main}>
+          <View style={styles.guestRow}>
+            {avatar ? (
+              <Image source={{ uri: avatar }} style={styles.avatar} contentFit="cover" />
+            ) : (
+              <View style={[styles.avatar, styles.avatarEmpty]}>
+                <Text style={styles.avatarText}>{(prenom.charAt(0) || '?').toUpperCase()}</Text>
+              </View>
+            )}
+            <Text style={styles.guest} numberOfLines={1}>
+              {guest}
             </Text>
-          </View>
-
-          <ChevronRight size={18} color={colors.neutral[400]} />
-        </View>
-
-        {/* ── Main Content: Image & Listing Title ──────────────────── */}
-        <View style={styles.contentRow}>
-          {mainPhoto ? (
-            <Image source={{ uri: mainPhoto }} style={styles.thumbnail} />
-          ) : (
-            <View style={[styles.thumbnail, styles.thumbnailFallback]}>
-              <ImageOff size={20} color={colors.neutral[400]} />
-            </View>
-          )}
-
-          <View style={styles.infoCol}>
-            <Text style={styles.listingTitle} numberOfLines={2}>
-              {reservation.logement?.titre ?? 'Réservation Logement'}
-            </Text>
-
-            {/* Guest details */}
-            <View style={styles.guestRow}>
-              <User size={13} color={colors.forest[700]} />
-              <Text style={styles.guestName} numberOfLines={1}>
-                {guestName}
-              </Text>
-            </View>
-
-            {/* Dates & Duration */}
-            <View style={styles.datesRow}>
-              <Calendar size={13} color={colors.neutral[500]} />
-              <Text style={styles.datesText}>
-                {formatDateShort(reservation.dateDebut)} → {formatDateShort(reservation.dateFin)}
-              </Text>
-              <Text style={styles.durationChip}>· {nuits} nuit{nuits > 1 ? 's' : ''}</Text>
+            <View style={[styles.chip, { backgroundColor: tone.bg }]}>
+              <View style={[styles.chipDot, { backgroundColor: tone.dot }]} />
+              <Text style={[styles.chipText, { color: tone.fg }]}>{status.label}</Text>
             </View>
           </View>
+          <Text style={styles.place} numberOfLines={1}>
+            {place || 'Logement'}
+          </Text>
+          <Text style={styles.meta} numberOfLines={1}>
+            {shortDate(r.dateDebut)} → {shortDate(r.dateFin)} · {nuits} nuit{nuits > 1 ? 's' : ''}
+            {r.nbPersonnes ? ` · ${r.nbPersonnes} voy.` : ''}
+          </Text>
         </View>
+      </View>
 
-        {/* ── Footer: Revenue Amount Highlight ───────────────────── */}
-        <View style={styles.footerRow}>
-          <View>
-            <Text style={styles.revenueLabel}>Revenu hôte net</Text>
-            <View style={styles.revenuePriceRow}>
-              <Text style={styles.revenueAmount}>{formatFcfa(hostRevenue)}</Text>
-              <Text style={styles.revenueCurrency}>FCFA</Text>
-            </View>
-          </View>
+      <View style={styles.divider} />
+
+      <View style={styles.foot}>
+        <View style={[styles.stageDot, { backgroundColor: stageTone.dot }]} />
+        <Text style={[styles.stage, stage.tone === 'gold' && styles.stageGold, stage.tone === 'red' && styles.stageRed]} numberOfLines={1}>
+          {stage.text}
+        </Text>
+        {r.statut !== 'CANCELLED' && r.statut !== 'EXPIRED' && payout > 0 && (
+          <Text style={styles.amount}>
+            {fcfa(payout)} <Text style={styles.amountUnit}>FCFA</Text>
+          </Text>
+        )}
+        <ChevronRight size={16} color={colors.neutral[400]} />
+      </View>
+
+      {cash > 0 && !isPast && (
+        <View style={styles.cash}>
+          <Banknote size={13} color={colors.gold[700]} />
+          <Text style={styles.cashText} numberOfLines={1}>
+            + {fcfa(cash)} FCFA de solde à encaisser à l’arrivée
+          </Text>
         </View>
-      </TouchableOpacity>
-    </View>
+      )}
+
+      {isDecision && (
+        <View style={styles.decisionCta}>
+          <Text style={styles.decisionCtaText}>Voir la demande et répondre</Text>
+        </View>
+      )}
+    </TouchableOpacity>
   );
 }
 
 const styles = StyleSheet.create({
   card: {
+    gap: 12,
+    padding: 14,
+    borderRadius: 24,
     backgroundColor: colors.neutral[0],
-    borderRadius: 20,
     borderWidth: 1,
     borderColor: colors.neutral[200],
-    overflow: 'hidden',
-    shadowColor: '#141812',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.04,
-    shadowRadius: 8,
-    elevation: 2,
-    marginBottom: 12,
   },
-  cardTouchable: {
-    padding: 16,
-    gap: 12,
-  },
-  topHeader: {
+  cardDecision: { borderColor: colors.gold[300], borderWidth: 1.5 },
+  cardPast: { backgroundColor: colors.neutral[50] },
+  top: { flexDirection: 'row', gap: 12 },
+  dateTile: { width: 54, height: 62, borderRadius: 16, backgroundColor: INK, alignItems: 'center', justifyContent: 'center' },
+  dateTilePast: { backgroundColor: colors.neutral[100] },
+  dateDay: { fontFamily: typography.fontDisplaySemiBold, fontSize: 24, lineHeight: 27, color: '#FFFFFF' },
+  dateDayPast: { color: colors.neutral[600] },
+  dateMonth: { fontFamily: typography.fontBodyBold, fontSize: 10, letterSpacing: 1, color: colors.lime[400] },
+  dateMonthPast: { color: colors.neutral[500] },
+  main: { flex: 1, minWidth: 0, gap: 3, justifyContent: 'center' },
+  guestRow: { flexDirection: 'row', alignItems: 'center', gap: 7 },
+  avatar: { width: 22, height: 22, borderRadius: 11 },
+  avatarEmpty: { backgroundColor: colors.forest[100], alignItems: 'center', justifyContent: 'center' },
+  avatarText: { fontFamily: typography.fontBodyBold, fontSize: 10, color: INK },
+  guest: { flexShrink: 1, fontFamily: typography.fontBodyBold, fontSize: 16, color: colors.neutral[900] },
+  chip: { flexDirection: 'row', alignItems: 'center', gap: 5, height: 22, paddingHorizontal: 8, borderRadius: radius.pill, marginLeft: 'auto' },
+  chipDot: { width: 6, height: 6, borderRadius: 3 },
+  chipText: { fontFamily: typography.fontBodyBold, fontSize: 10.5 },
+  place: { fontFamily: typography.fontBodySemiBold, fontSize: 13, color: colors.neutral[700] },
+  meta: { fontFamily: typography.fontBody, fontSize: 12, color: colors.neutral[500] },
+  divider: { height: 1, backgroundColor: colors.neutral[100] },
+  foot: { flexDirection: 'row', alignItems: 'center', gap: 8 },
+  stageDot: { width: 7, height: 7, borderRadius: 4 },
+  stage: { flex: 1, fontFamily: typography.fontBodySemiBold, fontSize: 12.5, color: colors.neutral[700] },
+  stageGold: { color: colors.gold[700] },
+  stageRed: { color: colors.error[700] },
+  amount: { fontFamily: typography.fontDisplaySemiBold, fontSize: 16, color: colors.neutral[900] },
+  amountUnit: { fontFamily: typography.fontBodySemiBold, fontSize: 10.5, color: colors.neutral[500] },
+  cash: {
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'space-between',
-  },
-  statusBadge: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    gap: 6,
+    alignSelf: 'flex-start',
+    height: 28,
     paddingHorizontal: 10,
-    paddingVertical: 4,
-    borderRadius: 12,
-    gap: 6,
+    borderRadius: radius.pill,
+    backgroundColor: colors.gold[50],
   },
-  statusDot: {
-    width: 6,
-    height: 6,
-    borderRadius: 3,
-  },
-  statusText: {
-    fontFamily: typography.fontBodyBold,
-    fontSize: 11,
-    textTransform: 'uppercase',
-    letterSpacing: 0.5,
-  },
-  contentRow: {
-    flexDirection: 'row',
-    gap: 12,
-  },
-  thumbnail: {
-    width: 80,
-    height: 80,
-    borderRadius: 14,
-    backgroundColor: colors.neutral[100],
-  },
-  thumbnailFallback: {
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  infoCol: {
-    flex: 1,
-    justifyContent: 'center',
-    gap: 5,
-  },
-  listingTitle: {
-    fontFamily: typography.fontDisplaySemiBold,
-    fontSize: 14,
-    color: colors.forest[950],
-    lineHeight: 19,
-  },
-  guestRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 6,
-  },
-  avatarCircle: {
-    width: 20,
-    height: 20,
-    borderRadius: 10,
-    backgroundColor: colors.forest[100],
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  avatarText: {
-    fontFamily: typography.fontBodyBold,
-    fontSize: 9,
-    color: colors.forest[800],
-  },
-  guestName: {
-    fontFamily: typography.fontBodyBold,
-    fontSize: 12,
-    color: colors.forest[950],
-    flex: 1,
-  },
-  datesRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 4,
-  },
-  datesText: {
-    fontFamily: typography.fontBodyMedium,
-    fontSize: 11,
-    color: colors.neutral[600],
-  },
-  durationChip: {
-    fontFamily: typography.fontBodySemiBold,
-    fontSize: 11,
-    color: colors.neutral[400],
-  },
-  footerRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingTop: 12,
-    borderTopWidth: 1,
-    borderTopColor: colors.neutral[100],
-  },
-  revenueLabel: {
-    fontFamily: typography.fontBodyMedium,
-    fontSize: 10,
-    textTransform: 'uppercase',
-    color: colors.neutral[500],
-    letterSpacing: 0.5,
-  },
-  revenuePriceRow: {
-    flexDirection: 'row',
-    alignItems: 'baseline',
-    gap: 4,
-  },
-  revenueAmount: {
-    fontFamily: typography.fontDisplaySemiBold,
-    fontSize: 17,
-    color: colors.forest[950],
-    letterSpacing: -0.3,
-  },
-  revenueCurrency: {
-    fontFamily: typography.fontBodyMedium,
-    fontSize: 11,
-    color: colors.neutral[500],
-  },
+  cashText: { flexShrink: 1, fontFamily: typography.fontBodyBold, fontSize: 11.5, color: colors.gold[700] },
+  decisionCta: { height: 44, borderRadius: radius.pill, backgroundColor: INK, alignItems: 'center', justifyContent: 'center' },
+  decisionCtaText: { fontFamily: typography.fontBodyBold, fontSize: 14, color: colors.lime[400] },
 });

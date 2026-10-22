@@ -1,6 +1,9 @@
 import { Injectable, Logger, NotFoundException, UnprocessableEntityException } from '@nestjs/common';
 import { Decimal } from '@prisma/client/runtime/library';
 import { PrismaService } from '@infrastructure/prisma/prisma.service';
+import { supplementPersonnesParNuit } from './supplement-personnes';
+
+export { supplementPersonnesParNuit };
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
@@ -62,13 +65,7 @@ export class PricingService {
 
     // 1. Supplément personnes
     // On ne cherche un supplément QUE si on dépasse personnesBase
-    let supplementPersonnes = 0;
-    if (nbPersonnes > personnesBase) {
-      const tarifPersonnes = tarifsPersonnes.find(
-        (t) => nbPersonnes >= t.personnesMin && nbPersonnes <= t.personnesMax,
-      );
-      supplementPersonnes = tarifPersonnes ? Number(tarifPersonnes.supplement) : 0;
-    }
+    const supplementPersonnes = supplementPersonnesParNuit(nbPersonnes, personnesBase, tarifsPersonnes);
 
     // 2. Prix effectif par nuit (avant réduction durée)
     const prixNuitEffectif = prixBase + supplementPersonnes;

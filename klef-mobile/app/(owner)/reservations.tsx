@@ -1,21 +1,13 @@
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
-import {
-  View,
-  Text,
-  ScrollView,
-  RefreshControl,
-  TouchableOpacity,
-  StyleSheet,
-} from 'react-native';
+import { View, Text, ScrollView, RefreshControl, TouchableOpacity, StyleSheet } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { History, ChevronDown, CalendarDays, AlertCircle } from 'lucide-react-native';
+import { AlertCircle, ArrowRight, BellRing, CalendarDays, ChevronDown, Handshake, SearchX, ShieldCheck } from 'lucide-react-native';
 import * as Haptics from 'expo-haptics';
-import { colors, typography } from '../../shared/theme/tokens';
+import { colors, radius, typography } from '../../shared/theme/tokens';
 import { apiClient } from '../../shared/api/api-client';
-import { updateReservationStatus } from '../../features/reservations/services/reservation.service';
 import {
   MobileOwnerReservationHeaderBar,
   OwnerStatusTabId,
@@ -23,24 +15,39 @@ import {
 import {
   MobileOwnerReservationCard,
   OwnerReservationItem,
+  payoutOf,
 } from '../../features/reservations/components/owner/MobileOwnerReservationCard';
 
+const INK = colors.forest[950];
 const ACTIVE_STATUSES = ['PENDING', 'PAID', 'CONFIRMED', 'CHECKED_IN', 'DISPUTED'];
 const RESERVATIONS_CACHE_KEY = 'klef_owner_reservations_cache_v1';
+const tap = () => Haptics.selectionAsync().catch(() => {});
+const fcfa = (n: number) => String(Math.round(n)).replace(/\B(?=(\d{3})+(?!\d))/g, ' ');
+const plural = (n: number, word: string) => `${n} ${word}${n > 1 ? 's' : ''}`;
+
+const time = (r: OwnerReservationItem) => new Date(r.dateDebut).getTime();
 
 function SkeletonCard() {
   return (
     <View style={skeletonStyles.card}>
-      <View style={skeletonStyles.topRow} />
-      <View style={skeletonStyles.contentRow}>
-        <View style={skeletonStyles.thumb} />
+      <View style={skeletonStyles.row}>
+        <View style={skeletonStyles.tile} />
         <View style={skeletonStyles.lines}>
-          <View style={[skeletonStyles.line, { width: '80%' }]} />
+          <View style={[skeletonStyles.line, { width: '70%' }]} />
           <View style={[skeletonStyles.line, { width: '50%' }]} />
           <View style={[skeletonStyles.line, { width: '60%' }]} />
         </View>
       </View>
-      <View style={skeletonStyles.footerRow} />
+      <View style={skeletonStyles.foot} />
+    </View>
+  );
+}
+
+function SectionLabel({ children, count }: { children: string; count: number }) {
+  return (
+    <View style={styles.sectionLabel}>
+      <Text style={styles.sectionLabelText}>{children.toUpperCase()}</Text>
+      <Text style={styles.sectionLabelCount}>{count}</Text>
     </View>
   );
 }
@@ -52,30 +59,26 @@ export default function OwnerReservationsScreen() {
   const [activeTab, setActiveTab] = useState<OwnerStatusTabId>('ALL');
   const [searchQuery, setSearchQuery] = useState('');
   const [showHistory, setShowHistory] = useState(false);
-  const [actionError, setActionError] = useState<string | null>(null);
   const [cachedReservations, setCachedReservations] = useState<OwnerReservationItem[] | null>(null);
   const [isCacheLoaded, setIsCacheLoaded] = useState(false);
 
-  // ── 1. Hydratation Persistante Instantanée (0ms au démarrage à froid) ──
+  // ── 1. Hydratation persistante instantanée (démarrage à froid) ──
   useEffect(() => {
     AsyncStorage.getItem(RESERVATIONS_CACHE_KEY)
       .then((raw) => {
-        if (raw) {
-          try {
-            const parsed = JSON.parse(raw);
-            if (Array.isArray(parsed)) {
-              setCachedReservations(parsed);
-            }
-          } catch (e) {
-            console.warn('[OwnerReservationsScreen] Erreur de lecture du cache JSON:', e);
-          }
+        if (!raw) return;
+        try {
+          const parsed = JSON.parse(raw);
+          if (Array.isArray(parsed)) setCachedReservations(parsed);
+        } catch (e) {
+          console.warn('[OwnerReservationsScreen] Erreur de lecture du cache JSON:', e);
         }
       })
       .catch((err) => console.warn('[OwnerReservationsScreen] Erreur de cache:', err))
       .finally(() => setIsCacheLoaded(true));
   }, []);
 
-  // ── 2. Query avec SWR et Cache Persistant sur disque ─────────
+  // ── 2. Query SWR + cache disque ──
   const {
     data: reservationsData = [],
     isLoading,
@@ -93,20 +96,13 @@ export default function OwnerReservationsScreen() {
         } catch (err) {
           res = await apiClient.get<any[]>('/reservations/owner');
         }
-        const list = Array.isArray(res?.data)
-          ? res.data
-          : Array.isArray(res)
-          ? res
-          : res?.reservations ?? [];
-
+        const list = Array.isArray(res?.data) ? res.data : Array.isArray(res) ? res : res?.reservations ?? [];
         if (list.length > 0) {
           AsyncStorage.setItem(RESERVATIONS_CACHE_KEY, JSON.stringify(list)).catch(() => {});
         }
         return list;
       } catch (err) {
-        if (cachedReservations && cachedReservations.length > 0) {
-          return cachedReservations;
-        }
+        if (cachedReservations && cachedReservations.length > 0) return cachedReservations;
         throw err;
       }
     },
@@ -115,295 +111,312 @@ export default function OwnerReservationsScreen() {
     initialData: cachedReservations || undefined,
   });
 
-  const reservations = reservationsData.length > 0 ? reservationsData : (cachedReservations || []);
+  const reservations = reservationsData.length > 0 ? reservationsData : cachedReservations || [];
 
-  const invalidate = useCallback(() => {
-    setActionError(null);
-    queryClient.invalidateQueries({ queryKey: ['reservations', 'mine'] });
+  const onRefresh = useCallback(() => {
+    refetch();
     queryClient.invalidateQueries({ queryKey: ['owner', 'dashboard-full'] });
-    queryClient.invalidateQueries({ queryKey: ['owner', 'stats-page-full'] });
-    queryClient.invalidateQueries({ queryKey: ['wallet', 'mine'] });
-  }, [queryClient]);
+  }, [refetch, queryClient]);
 
-  // ── 3. Mutations Optimistes (Réponse Instantanée 0ms) ──────────
-  const confirmMutation = useMutation({
-    mutationFn: async (id: string) => {
-      return updateReservationStatus(id, 'CONFIRM', { heureDebut: '14:00', heureFin: '12:00' });
-    },
-    onMutate: async (id) => {
-      await queryClient.cancelQueries({ queryKey: ['reservations', 'mine'] });
-      const previous = queryClient.getQueryData<OwnerReservationItem[]>(['reservations', 'mine']);
-
-      queryClient.setQueryData<OwnerReservationItem[]>(['reservations', 'mine'], (old = []) =>
-        old.map((item) => (item.id === id ? { ...item, statut: 'CONFIRMED' } : item))
-      );
-
-      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => {});
-      return { previous };
-    },
-    onError: (err: any, _, context) => {
-      if (context?.previous) {
-        queryClient.setQueryData(['reservations', 'mine'], context.previous);
-      }
-      setActionError(err?.response?.data?.message || err?.message || 'La confirmation a échoué.');
-    },
-    onSettled: () => invalidate(),
-  });
-
-  const cancelMutation = useMutation({
-    mutationFn: async ({ id, reason }: { id: string; reason: string }) => {
-      return apiClient.patch(`/reservations/${id}/cancel`, { raison: reason });
-    },
-    onMutate: async ({ id }) => {
-      await queryClient.cancelQueries({ queryKey: ['reservations', 'mine'] });
-      const previous = queryClient.getQueryData<OwnerReservationItem[]>(['reservations', 'mine']);
-
-      queryClient.setQueryData<OwnerReservationItem[]>(['reservations', 'mine'], (old = []) =>
-        old.map((item) => (item.id === id ? { ...item, statut: 'CANCELLED' } : item))
-      );
-
-      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning).catch(() => {});
-      return { previous };
-    },
-    onError: (err: any, _, context) => {
-      if (context?.previous) {
-        queryClient.setQueryData(['reservations', 'mine'], context.previous);
-      }
-      setActionError(err?.response?.data?.message || err?.message || 'L’annulation a échoué.');
-    },
-    onSettled: () => invalidate(),
-  });
-
-  /* ── Data Filtrée & Groupée ─────────────────────────── */
-  const { filteredList, activeList, historyList, counts, showSkeleton } = useMemo(() => {
+  /* ── Données filtrées et groupées ─────────────────────────── */
+  const { filteredList, decide, live, upcoming, others, historyList, counts, summary, showSkeleton } = useMemo(() => {
     const showSkeleton = (isLoading || isFetching || isRefetching || !isCacheLoaded) && reservations.length === 0;
     const valid = reservations.filter((r) => r.statut !== 'EXPIRED');
 
     const q = searchQuery.trim().toLowerCase();
     const matches = (r: OwnerReservationItem) => {
       if (!q) return true;
-      const title = (r.logement?.titre ?? '').toLowerCase();
-      const guest = `${r.locataire?.prenom ?? ''} ${r.locataire?.nom ?? ''}`.toLowerCase();
-      const location = `${r.logement?.ville ?? ''} ${r.logement?.quartier ?? ''}`.toLowerCase();
-      const resId = (r.id ?? '').toLowerCase();
-
-      return (
-        title.includes(q) ||
-        guest.includes(q) ||
-        location.includes(q) ||
-        resId.includes(q)
-      );
+      const hay = [
+        r.logement?.titre,
+        r.locataire?.prenom,
+        r.locataire?.nom,
+        r.logement?.ville,
+        r.logement?.quartier,
+        r.id,
+      ]
+        .filter(Boolean)
+        .join(' ')
+        .toLowerCase();
+      return hay.includes(q);
     };
 
-    const list = valid
-      .filter((r) => activeTab === 'ALL' || r.statut === activeTab)
-      .filter(matches);
+    const list = valid.filter((r) => activeTab === 'ALL' || r.statut === activeTab).filter(matches);
+    const active = list.filter((r) => ACTIVE_STATUSES.includes(r.statut));
 
     const byStatus = new Map<string, number>();
-    valid.forEach((r) => {
-      byStatus.set(r.statut, (byStatus.get(r.statut) ?? 0) + 1);
-    });
+    valid.forEach((r) => byStatus.set(r.statut, (byStatus.get(r.statut) ?? 0) + 1));
+
+    const toDecide = valid.filter((r) => r.statut === 'PAID');
+    const inStay = valid.filter((r) => r.statut === 'CHECKED_IN');
+    const coming = valid.filter((r) => r.statut === 'CONFIRMED');
 
     return {
-      filteredList: list,
-      activeList: list.filter((r) => ACTIVE_STATUSES.includes(r.statut)),
-      historyList: list.filter((r) => !ACTIVE_STATUSES.includes(r.statut)),
+      filteredList: [...list].sort((a, b) => (ACTIVE_STATUSES.includes(a.statut) ? time(a) - time(b) : time(b) - time(a))),
+      decide: active.filter((r) => r.statut === 'PAID').sort((a, b) => time(a) - time(b)),
+      live: active.filter((r) => r.statut === 'CHECKED_IN').sort((a, b) => time(a) - time(b)),
+      upcoming: active.filter((r) => r.statut === 'CONFIRMED').sort((a, b) => time(a) - time(b)),
+      others: active.filter((r) => r.statut === 'PENDING' || r.statut === 'DISPUTED'),
+      historyList: list.filter((r) => !ACTIVE_STATUSES.includes(r.statut)).sort((a, b) => time(b) - time(a)),
       counts: byStatus,
+      summary: {
+        toDecide: toDecide.length,
+        inStay: inStay.length,
+        upcoming: coming.length,
+        // Ce que Paixi versera encore sur les séjours confirmés ou en cours
+        incoming: [...coming, ...inStay].reduce((sum, r) => sum + payoutOf(r), 0),
+      },
       showSkeleton,
     };
-  }, [reservations, activeTab, searchQuery, isCacheLoaded, isLoading]);
+  }, [reservations, activeTab, searchQuery, isCacheLoaded, isLoading, isFetching, isRefetching]);
 
-  const handleConfirmReservation = (id: string) => {
-    confirmMutation.mutate(id);
-  };
+  const headline =
+    summary.toDecide > 0
+      ? { main: plural(summary.toDecide, 'demande'), accent: 'à décider' }
+      : summary.inStay > 0
+      ? { main: plural(summary.inStay, 'voyageur'), accent: 'chez vous' }
+      : summary.upcoming > 0
+      ? { main: plural(summary.upcoming, 'séjour'), accent: 'à venir' }
+      : { main: 'Tout est', accent: 'à jour' };
 
-  const handleCancelReservation = (id: string, reason: string) => {
-    cancelMutation.mutate({ id, reason });
-  };
+  const renderCards = (items: OwnerReservationItem[]) =>
+    items.map((item) => <MobileOwnerReservationCard key={item.id} reservation={item} />);
+
+  const filtering = searchQuery.length > 0 || activeTab !== 'ALL';
 
   return (
     <SafeAreaView style={styles.safeArea}>
       <ScrollView
         contentContainerStyle={styles.container}
-        refreshControl={
-          <RefreshControl
-            refreshing={isRefetching}
-            onRefresh={refetch}
-            tintColor={colors.forest[800]}
-            colors={[colors.forest[800]]}
-          />
-        }
+        showsVerticalScrollIndicator={false}
+        refreshControl={<RefreshControl refreshing={isRefetching} onRefresh={onRefresh} tintColor={colors.forest[600]} colors={[colors.forest[600]]} />}
       >
-        {/* ── Filter Bar (Search + Tabs) ──────────────────────── */}
-        <MobileOwnerReservationHeaderBar
-          searchQuery={searchQuery}
-          onSearchChange={setSearchQuery}
-          activeTab={activeTab}
-          onTabChange={setActiveTab}
-          counts={counts}
-          totalCount={reservations.length}
-        />
-
-        {/* ── Error Banner ───────────────────────────────────── */}
-        {(actionError || error) && (
-          <View style={styles.errorBox}>
-            <AlertCircle size={18} color="#DC2626" />
-            <Text style={styles.errorText}>
-              {actionError || (error as any)?.response?.data?.message || (error as any)?.message || 'Impossible de charger vos réservations.'}
+        {/* ── Résumé de l'activité ───────────────────────────── */}
+        {reservations.length > 0 && (
+          <View style={styles.summary}>
+            <View style={[styles.ring, styles.ringOuter]} />
+            <View style={[styles.ring, styles.ringInner]} />
+            <Text style={styles.kicker}>VOS SÉJOURS</Text>
+            <Text style={styles.headline}>
+              {headline.main} <Text style={styles.headlineAccent}>{headline.accent}</Text>
             </Text>
-          </View>
-        )}
 
-        {/* ── Skeleton Loading ───────────────────────────────── */}
-        {showSkeleton && (
-          <View style={styles.listContainer}>
-            <SkeletonCard />
-            <SkeletonCard />
-            <SkeletonCard />
-          </View>
-        )}
-
-        {/* ── Empty State (Aucune réservation ou aucun filtre correspondant) ───── */}
-        {!showSkeleton && filteredList.length === 0 && (
-          <View style={styles.emptyCard}>
-            <View style={styles.glowCircle} />
-            <View style={styles.emptyIconCircle}>
-              <CalendarDays size={30} color={colors.lime[300]} />
+            <View style={styles.kpis}>
+              <View style={styles.kpi}>
+                <Text style={[styles.kpiValue, summary.toDecide > 0 && styles.kpiGold]}>{summary.toDecide}</Text>
+                <Text style={styles.kpiLabel}>à décider</Text>
+              </View>
+              <View style={styles.kpiSep} />
+              <View style={styles.kpi}>
+                <Text style={styles.kpiValue}>{summary.upcoming}</Text>
+                <Text style={styles.kpiLabel}>à venir</Text>
+              </View>
+              <View style={styles.kpiSep} />
+              <View style={styles.kpi}>
+                <Text style={styles.kpiValue}>{summary.inStay}</Text>
+                <Text style={styles.kpiLabel}>en séjour</Text>
+              </View>
             </View>
-            
-            <Text style={styles.emptyTitle}>
-              {reservations.length === 0
-                ? 'Aucune réservation pour le moment'
-                : searchQuery
-                ? 'Aucun résultat trouvé'
-                : 'Aucune réservation dans cette catégorie'}
-            </Text>
 
-            <Text style={styles.emptySubtitle}>
-              {reservations.length === 0
-                ? 'Dès qu’un voyageur effectue une réservation ou une demande sur l’une de vos annonces, elle apparaîtra instantanément ici.'
-                : searchQuery
-                ? 'Aucune réservation ne correspond à vos critères de recherche.'
-                : 'Aucune réservation ne possède actuellement ce statut.'}
-            </Text>
-
-            {/* Badges pédagogiques pour état totalement vide */}
-            {reservations.length === 0 && (
-              <View style={styles.emptyBadgesRow}>
-                <View style={styles.emptyBadge}>
-                  <Text style={styles.emptyBadgeText}>⚡ Confirmation instantanée</Text>
-                </View>
-                <View style={styles.emptyBadge}>
-                  <Text style={styles.emptyBadgeText}>🛡️ Séquestre 100% garanti</Text>
-                </View>
-                <View style={styles.emptyBadge}>
-                  <Text style={styles.emptyBadgeText}>📄 Contrat numérique</Text>
-                </View>
+            {summary.incoming > 0 && (
+              <View style={styles.incoming}>
+                <Text style={styles.incomingLabel}>À recevoir via Paixi</Text>
+                <Text style={styles.incomingValue}>
+                  {fcfa(summary.incoming)} <Text style={styles.incomingUnit}>FCFA</Text>
+                </Text>
               </View>
             )}
 
-            {/* Action buttons */}
-            {reservations.length === 0 ? (
+            {summary.toDecide > 0 && activeTab !== 'PAID' && (
+              <TouchableOpacity
+                onPress={() => {
+                  tap();
+                  setSearchQuery('');
+                  setActiveTab('PAID');
+                }}
+                style={styles.summaryCta}
+                accessibilityRole="button"
+              >
+                <Text style={styles.summaryCtaText}>Répondre {summary.toDecide > 1 ? 'aux demandes' : 'à la demande'}</Text>
+                <View style={styles.summaryCtaArrow}>
+                  <ArrowRight size={14} color={colors.lime[400]} strokeWidth={2.6} />
+                </View>
+              </TouchableOpacity>
+            )}
+          </View>
+        )}
+
+        {/* ── Recherche + filtres ─────────────────────────────── */}
+        {reservations.length > 0 && (
+          <MobileOwnerReservationHeaderBar
+            searchQuery={searchQuery}
+            onSearchChange={setSearchQuery}
+            activeTab={activeTab}
+            onTabChange={(tab) => {
+              tap();
+              setActiveTab(tab);
+            }}
+            counts={counts}
+            totalCount={reservations.filter((r) => r.statut !== 'EXPIRED').length}
+          />
+        )}
+
+        {error && reservations.length === 0 && (
+          <View style={styles.errorBox}>
+            <AlertCircle size={18} color={colors.error[600]} />
+            <Text style={styles.errorText}>
+              {(error as any)?.response?.data?.message || (error as any)?.message || 'Impossible de charger vos réservations.'}
+            </Text>
+          </View>
+        )}
+
+        {showSkeleton && (
+          <View style={styles.list}>
+            <SkeletonCard />
+            <SkeletonCard />
+            <SkeletonCard />
+          </View>
+        )}
+
+        {/* ── Aucune réservation du tout ─────────────────────── */}
+        {!showSkeleton && reservations.length === 0 && !error && (
+          <View style={styles.hero}>
+            <View style={[styles.ring, styles.ringOuter]} />
+            <View style={[styles.ring, styles.ringInner]} />
+            <Text style={styles.kicker}>VOS SÉJOURS</Text>
+            <Text style={styles.heroTitle}>
+              Vos premiers voyageurs{'\n'}
+              <Text style={styles.headlineAccent}>arrivent bientôt.</Text>
+            </Text>
+            <Text style={styles.heroText}>Chaque demande s’affichera ici, avec tout ce qu’il faut pour accueillir sereinement.</Text>
+            <View style={styles.steps}>
+              {[
+                { Icon: BellRing, title: 'Une demande arrive', text: 'Vous êtes notifié, le voyageur a déjà payé.' },
+                { Icon: Handshake, title: 'Vous acceptez', text: 'Vous fixez vos horaires d’arrivée et de départ.' },
+                { Icon: ShieldCheck, title: 'Paiement sécurisé', text: 'Paixi garde l’argent jusqu’à l’arrivée du voyageur.' },
+              ].map(({ Icon, title, text }, i, all) => (
+                <View key={title} style={styles.step}>
+                  <View style={styles.stepRail}>
+                    <View style={styles.stepIcon}>
+                      <Icon size={15} color={colors.lime[400]} />
+                    </View>
+                    {i < all.length - 1 && <View style={styles.stepLine} />}
+                  </View>
+                  <View style={styles.stepBody}>
+                    <Text style={styles.stepTitle}>{title}</Text>
+                    <Text style={styles.stepText}>{text}</Text>
+                  </View>
+                </View>
+              ))}
+            </View>
+            <View style={styles.heroActions}>
               <TouchableOpacity
                 onPress={() => router.navigate('/(owner)/listings' as any)}
-                style={styles.emptyCtaBtn}
-                activeOpacity={0.85}
+                style={[styles.heroBtn, styles.heroBtnLime]}
+                accessibilityRole="link"
               >
-                <Text style={styles.emptyCtaText}>Gérer mes logements</Text>
+                <Text style={styles.heroBtnLimeText}>Mes biens</Text>
               </TouchableOpacity>
-            ) : (searchQuery.length > 0 || activeTab !== 'ALL') ? (
+              <TouchableOpacity
+                onPress={() => router.navigate('/(owner)/calendar' as any)}
+                style={[styles.heroBtn, styles.heroBtnGhost]}
+                accessibilityRole="link"
+              >
+                <CalendarDays size={15} color="#FFFFFF" />
+                <Text style={styles.heroBtnGhostText}>Calendrier</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        )}
+
+        {/* ── Aucun résultat pour la recherche ou le filtre ──── */}
+        {!showSkeleton && reservations.length > 0 && filteredList.length === 0 && (
+          <View style={styles.noResult}>
+            <View style={styles.noResultIcon}>
+              <SearchX size={20} color={colors.neutral[600]} />
+            </View>
+            <Text style={styles.noResultTitle}>{searchQuery ? 'Aucun résultat' : 'Rien dans ce filtre'}</Text>
+            <Text style={styles.noResultText}>
+              {searchQuery ? `Aucun séjour ne correspond à « ${searchQuery} ».` : 'Aucune réservation n’a ce statut pour le moment.'}
+            </Text>
+            {filtering && (
               <TouchableOpacity
                 onPress={() => {
                   setSearchQuery('');
                   setActiveTab('ALL');
                 }}
-                style={styles.emptyCtaBtn}
-                activeOpacity={0.85}
+                style={styles.noResultBtn}
+                accessibilityRole="button"
               >
-                <Text style={styles.emptyCtaText}>Réinitialiser les filtres</Text>
+                <Text style={styles.noResultBtnText}>Voir tous les séjours</Text>
               </TouchableOpacity>
-            ) : null}
+            )}
           </View>
         )}
 
-        {/* ── Reservations List ──────────────────────────────── */}
+        {/* ── Liste ──────────────────────────────────────────── */}
         {!showSkeleton && filteredList.length > 0 && (
-          <View style={styles.listContainer}>
+          <View style={styles.list}>
             {activeTab === 'ALL' ? (
               <>
-                {/* Active Stay Section */}
-                {activeList.length > 0 ? (
-                  activeList.map((item) => (
-                    <MobileOwnerReservationCard
-                      key={item.id}
-                      reservation={item}
-                      onConfirm={handleConfirmReservation}
-                      onCancel={handleCancelReservation}
-                    />
-                  ))
-                ) : (
-                  <View style={styles.subEmptyCard}>
-                    <Text style={styles.subEmptyText}>Aucune réservation active actuellement.</Text>
+                {decide.length > 0 && (
+                  <View style={styles.group}>
+                    <SectionLabel count={decide.length}>À décider</SectionLabel>
+                    {renderCards(decide)}
+                  </View>
+                )}
+                {live.length > 0 && (
+                  <View style={styles.group}>
+                    <SectionLabel count={live.length}>En séjour</SectionLabel>
+                    {renderCards(live)}
+                  </View>
+                )}
+                {upcoming.length > 0 && (
+                  <View style={styles.group}>
+                    <SectionLabel count={upcoming.length}>À venir</SectionLabel>
+                    {renderCards(upcoming)}
+                  </View>
+                )}
+                {others.length > 0 && (
+                  <View style={styles.group}>
+                    <SectionLabel count={others.length}>À suivre</SectionLabel>
+                    {renderCards(others)}
+                  </View>
+                )}
+                {decide.length + live.length + upcoming.length + others.length === 0 && (
+                  <View style={styles.calm}>
+                    <Text style={styles.calmTitle}>Aucun séjour en cours</Text>
+                    <Text style={styles.calmText}>Rien à préparer pour l’instant. Vos séjours passés sont juste en dessous.</Text>
                   </View>
                 )}
 
-                {/* Collapsible History Section */}
                 {historyList.length > 0 && (
-                  <View style={styles.historySection}>
+                  <View style={styles.group}>
                     <TouchableOpacity
-                      onPress={() => setShowHistory((prev) => !prev)}
+                      onPress={() => {
+                        tap();
+                        setShowHistory((prev) => !prev);
+                      }}
                       activeOpacity={0.8}
-                      style={styles.historyHeaderBtn}
+                      style={styles.historyBtn}
+                      accessibilityRole="button"
                     >
-                      <View style={styles.historyTitleGroup}>
-                        <View style={styles.historyIconBox}>
-                          <History size={16} color={colors.neutral[600]} />
-                        </View>
-                        <View style={styles.historyTextCol}>
-                          <Text style={styles.historyTitle} numberOfLines={1}>
-                            Historique ({historyList.length})
-                          </Text>
-                          <Text style={styles.historySub} numberOfLines={1}>
-                            Séjours terminés et demandes annulées
-                          </Text>
-                        </View>
-                      </View>
-
-                      <View style={styles.toggleChip}>
-                        <Text style={styles.toggleChipText}>
-                          {showHistory ? 'Masquer' : 'Afficher'}
+                      <View style={styles.flex}>
+                        <Text style={styles.historyTitle}>Séjours passés</Text>
+                        <Text style={styles.historySub}>
+                          {plural(historyList.length, 'séjour')} · terminés et annulés
                         </Text>
-                        <ChevronDown
-                          size={16}
-                          color={colors.neutral[600]}
-                          style={showHistory ? styles.iconRotate : undefined}
-                        />
+                      </View>
+                      <View style={styles.historyToggle}>
+                        <Text style={styles.historyToggleText}>{showHistory ? 'Masquer' : 'Afficher'}</Text>
+                        <ChevronDown size={15} color={INK} style={showHistory ? styles.rotate : undefined} />
                       </View>
                     </TouchableOpacity>
-
-                    {showHistory && (
-                      <View style={styles.historyListContainer}>
-                        {historyList.map((item) => (
-                          <MobileOwnerReservationCard
-                            key={item.id}
-                            reservation={item}
-                          />
-                        ))}
-                      </View>
-                    )}
+                    {showHistory && renderCards(historyList)}
                   </View>
                 )}
               </>
             ) : (
-              /* Specific Tab View */
-              filteredList.map((item) => (
-                <MobileOwnerReservationCard
-                  key={item.id}
-                  reservation={item}
-                  onConfirm={handleConfirmReservation}
-                  onCancel={handleCancelReservation}
-                />
-              ))
+              renderCards(filteredList)
             )}
           </View>
         )}
@@ -413,244 +426,137 @@ export default function OwnerReservationsScreen() {
 }
 
 const styles = StyleSheet.create({
-  safeArea: {
-    flex: 1,
-    backgroundColor: colors.neutral[50],
-  },
-  container: {
-    padding: 16,
-    paddingBottom: 110,
-  },
-  headerTitleRow: {
+  safeArea: { flex: 1, backgroundColor: colors.neutral[50] },
+  flex: { flex: 1, minWidth: 0 },
+  container: { padding: 16, gap: 16, paddingBottom: 120 },
+
+  // Résumé
+  summary: { gap: 16, padding: 20, borderRadius: 28, overflow: 'hidden', backgroundColor: INK },
+  ring: { position: 'absolute', borderWidth: 1, borderColor: 'rgba(211,242,110,0.12)' },
+  ringOuter: { width: 220, height: 220, borderRadius: 110, top: -110, right: -70 },
+  ringInner: { width: 130, height: 130, borderRadius: 65, top: -65, right: -25, borderColor: 'rgba(211,242,110,0.2)' },
+  kicker: { fontFamily: typography.fontBodyBold, fontSize: 10.5, letterSpacing: 1.3, color: colors.lime[400] },
+  headline: { fontFamily: typography.fontDisplaySemiBold, fontSize: 28, lineHeight: 32, letterSpacing: -0.7, color: '#FFFFFF', marginTop: -8 },
+  headlineAccent: { fontStyle: 'italic', color: colors.lime[400] },
+  kpis: { flexDirection: 'row', alignItems: 'center', paddingVertical: 14, borderRadius: 20, backgroundColor: 'rgba(248,251,244,0.06)' },
+  kpi: { flex: 1, alignItems: 'center', gap: 2 },
+  kpiValue: { fontFamily: typography.fontDisplaySemiBold, fontSize: 22, color: '#FFFFFF' },
+  kpiGold: { color: colors.gold[300] },
+  kpiLabel: { fontFamily: typography.fontBodyMedium, fontSize: 11.5, color: colors.forest[200] },
+  kpiSep: { width: 1, height: 30, backgroundColor: 'rgba(248,251,244,0.12)' },
+  incoming: { flexDirection: 'row', alignItems: 'baseline', justifyContent: 'space-between', gap: 12 },
+  incomingLabel: { fontFamily: typography.fontBodySemiBold, fontSize: 13, color: colors.forest[200] },
+  incomingValue: { fontFamily: typography.fontDisplaySemiBold, fontSize: 20, color: '#FFFFFF' },
+  incomingUnit: { fontFamily: typography.fontBodySemiBold, fontSize: 11, color: colors.forest[200] },
+  summaryCta: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    marginBottom: 16,
+    height: 50,
+    paddingLeft: 20,
+    paddingRight: 5,
+    borderRadius: radius.pill,
+    backgroundColor: colors.lime[400],
   },
-  eyebrow: {
-    fontSize: 10,
-    fontWeight: '800',
-    textTransform: 'uppercase',
-    color: colors.forest[600],
-    letterSpacing: 1,
-    marginBottom: 2,
-  },
-  pageTitle: {
-    fontSize: typography.sizes.xl,
-    fontWeight: '900',
-    color: colors.forest[950],
-    letterSpacing: -0.5,
-  },
+  summaryCtaText: { fontFamily: typography.fontBodyBold, fontSize: 14, color: INK },
+  summaryCtaArrow: { width: 40, height: 40, borderRadius: 20, backgroundColor: INK, alignItems: 'center', justifyContent: 'center' },
+
   errorBox: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#FEE2E2',
-    padding: 12,
-    borderRadius: 14,
     gap: 8,
-    marginBottom: 12,
+    padding: 12,
+    borderRadius: 16,
+    backgroundColor: colors.error[50],
   },
-  errorText: {
-    fontSize: typography.sizes.xs,
-    color: '#991B1B',
-    fontWeight: '600',
-    flex: 1,
-  },
-  listContainer: {
-    gap: 4,
-  },
-  emptyCard: {
-    backgroundColor: colors.forest[950],
-    borderRadius: 24,
-    padding: 24,
-    alignItems: 'center',
-    gap: 12,
-    marginTop: 8,
-    position: 'relative',
+  errorText: { flex: 1, fontFamily: typography.fontBodySemiBold, fontSize: 12, color: colors.error[700] },
+
+  // Liste
+  list: { gap: 22 },
+  group: { gap: 10 },
+  sectionLabel: { flexDirection: 'row', alignItems: 'center', gap: 8, paddingHorizontal: 2 },
+  sectionLabelText: { fontFamily: typography.fontBodyBold, fontSize: 11, letterSpacing: 1.2, color: colors.neutral[500] },
+  sectionLabelCount: {
+    fontFamily: typography.fontBodyBold,
+    fontSize: 11,
+    color: colors.neutral[600],
+    paddingHorizontal: 7,
+    paddingVertical: 1,
+    borderRadius: radius.pill,
+    backgroundColor: colors.neutral[100],
     overflow: 'hidden',
   },
-  glowCircle: {
-    position: 'absolute',
-    top: -50,
-    right: -50,
-    width: 150,
-    height: 150,
-    borderRadius: 75,
-    backgroundColor: 'rgba(211, 242, 110, 0.08)',
-  },
-  emptyIconCircle: {
-    width: 58,
-    height: 58,
-    borderRadius: 29,
-    backgroundColor: 'rgba(255, 255, 255, 0.08)',
-    borderWidth: 1.5,
-    borderColor: 'rgba(211, 242, 110, 0.3)',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  emptyTitle: {
-    fontSize: typography.sizes.md,
-    fontWeight: '800',
-    color: colors.neutral[0],
-    textAlign: 'center',
-  },
-  emptySubtitle: {
-    fontSize: typography.sizes.xs,
-    color: colors.forest[200],
-    textAlign: 'center',
-    lineHeight: 18,
-    maxWidth: 290,
-  },
-  emptyBadgesRow: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    justifyContent: 'center',
-    gap: 6,
-    marginVertical: 4,
-  },
-  emptyBadge: {
-    backgroundColor: 'rgba(255, 255, 255, 0.07)',
-    borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.12)',
-    paddingVertical: 5,
-    paddingHorizontal: 10,
-    borderRadius: 14,
-  },
-  emptyBadgeText: {
-    fontSize: 10,
-    fontWeight: '600',
-    color: colors.lime[300],
-  },
-  emptyCtaBtn: {
-    marginTop: 6,
-    paddingHorizontal: 20,
-    paddingVertical: 12,
-    borderRadius: 22,
-    backgroundColor: colors.lime[400],
-  },
-  emptyCtaText: {
-    fontSize: typography.sizes.xs,
-    fontWeight: '800',
-    color: colors.forest[950],
-  },
-  subEmptyCard: {
-    padding: 16,
-    borderRadius: 16,
-    backgroundColor: colors.neutral[100],
-    alignItems: 'center',
-    marginBottom: 12,
-  },
-  subEmptyText: {
-    fontSize: typography.sizes.xs,
-    color: colors.neutral[600],
-    fontWeight: '500',
-  },
-  historySection: {
-    marginTop: 12,
-    gap: 12,
-  },
-  historyHeaderBtn: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    backgroundColor: colors.neutral[0],
-    padding: 14,
-    borderRadius: 18,
-    borderWidth: 1,
-    borderColor: colors.neutral[200],
-  },
-  historyTitleGroup: {
-    flex: 1,
+  calm: { gap: 4, padding: 18, borderRadius: 22, backgroundColor: colors.neutral[0], borderWidth: 1, borderColor: colors.neutral[200] },
+  calmTitle: { fontFamily: typography.fontDisplaySemiBold, fontSize: 17, color: colors.neutral[900] },
+  calmText: { fontFamily: typography.fontBody, fontSize: 13, lineHeight: 19, color: colors.neutral[600] },
+  historyBtn: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 10,
-    marginRight: 8,
-    minWidth: 0,
+    padding: 14,
+    borderRadius: 22,
+    borderWidth: 1.5,
+    borderStyle: 'dashed',
+    borderColor: colors.neutral[300],
   },
-  historyIconBox: {
-    width: 34,
-    height: 34,
-    borderRadius: 10,
-    backgroundColor: colors.neutral[100],
-    alignItems: 'center',
-    justifyContent: 'center',
-    flexShrink: 0,
-  },
-  historyTextCol: {
-    flex: 1,
-    minWidth: 0,
-  },
-  historyTitle: {
-    fontFamily: typography.fontBodyBold,
-    fontSize: typography.sizes.xs,
-    color: colors.neutral[900],
-  },
-  historySub: {
-    fontFamily: typography.fontBodyMedium,
-    fontSize: 11,
-    color: colors.neutral[500],
-  },
-  toggleChip: {
-    flexShrink: 0,
+  historyTitle: { fontFamily: typography.fontBodyBold, fontSize: 14, color: colors.neutral[900] },
+  historySub: { fontFamily: typography.fontBody, fontSize: 12, color: colors.neutral[500], marginTop: 1 },
+  historyToggle: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 4,
-    paddingHorizontal: 10,
-    paddingVertical: 6,
-    borderRadius: 12,
-    backgroundColor: colors.neutral[100],
+    height: 32,
+    paddingHorizontal: 12,
+    borderRadius: radius.pill,
+    backgroundColor: colors.neutral[0],
+    borderWidth: 1,
+    borderColor: colors.neutral[200],
   },
-  toggleChipText: {
-    fontFamily: typography.fontBodyBold,
-    fontSize: 11,
-    color: colors.neutral[700],
+  historyToggleText: { fontFamily: typography.fontBodyBold, fontSize: 12, color: INK },
+  rotate: { transform: [{ rotate: '180deg' }] },
+
+  // Aucune réservation
+  hero: { gap: 14, padding: 22, borderRadius: 30, overflow: 'hidden', backgroundColor: INK },
+  heroTitle: { fontFamily: typography.fontDisplaySemiBold, fontSize: 30, lineHeight: 34, letterSpacing: -0.8, color: '#FFFFFF' },
+  heroText: { fontFamily: typography.fontBody, fontSize: 13, lineHeight: 19, color: colors.forest[200] },
+  steps: { marginTop: 4 },
+  step: { flexDirection: 'row', gap: 12 },
+  stepRail: { alignItems: 'center', width: 34 },
+  stepIcon: { width: 34, height: 34, borderRadius: 17, backgroundColor: 'rgba(211,242,110,0.12)', alignItems: 'center', justifyContent: 'center' },
+  stepLine: { flex: 1, width: 1, marginVertical: 4, backgroundColor: 'rgba(211,242,110,0.2)' },
+  stepBody: { flex: 1, paddingBottom: 16, paddingTop: 2 },
+  stepTitle: { fontFamily: typography.fontBodyBold, fontSize: 14, color: '#FFFFFF' },
+  stepText: { fontFamily: typography.fontBody, fontSize: 12, lineHeight: 17, color: colors.forest[200], marginTop: 2 },
+  heroActions: { flexDirection: 'row', gap: 10 },
+  heroBtn: { flex: 1, flexDirection: 'row', gap: 7, height: 48, borderRadius: radius.pill, alignItems: 'center', justifyContent: 'center' },
+  heroBtnLime: { backgroundColor: colors.lime[400] },
+  heroBtnLimeText: { fontFamily: typography.fontBodyBold, fontSize: 14, color: INK },
+  heroBtnGhost: { borderWidth: 1, borderColor: 'rgba(248,251,244,0.25)' },
+  heroBtnGhostText: { fontFamily: typography.fontBodySemiBold, fontSize: 14, color: '#FFFFFF' },
+
+  // Aucun résultat
+  noResult: {
+    alignItems: 'center',
+    gap: 6,
+    paddingVertical: 32,
+    paddingHorizontal: 24,
+    borderRadius: 26,
+    backgroundColor: colors.neutral[0],
+    borderWidth: 1,
+    borderColor: colors.neutral[200],
   },
-  iconRotate: {
-    transform: [{ rotate: '180deg' }],
-  },
-  historyListContainer: {
-    marginTop: 4,
-  },
+  noResultIcon: { width: 48, height: 48, borderRadius: 24, backgroundColor: colors.neutral[100], alignItems: 'center', justifyContent: 'center', marginBottom: 6 },
+  noResultTitle: { fontFamily: typography.fontDisplaySemiBold, fontSize: 19, color: colors.neutral[900] },
+  noResultText: { fontFamily: typography.fontBody, fontSize: 13, lineHeight: 19, color: colors.neutral[600], textAlign: 'center' },
+  noResultBtn: { marginTop: 10, height: 42, paddingHorizontal: 18, borderRadius: radius.pill, backgroundColor: INK, justifyContent: 'center' },
+  noResultBtnText: { fontFamily: typography.fontBodyBold, fontSize: 13, color: colors.lime[400] },
 });
 
 const skeletonStyles = StyleSheet.create({
-  card: {
-    height: 140,
-    backgroundColor: colors.neutral[100],
-    borderRadius: 20,
-    marginBottom: 12,
-    padding: 16,
-    justifyContent: 'space-between',
-  },
-  topRow: {
-    height: 20,
-    width: 90,
-    backgroundColor: colors.neutral[200],
-    borderRadius: 8,
-  },
-  contentRow: {
-    flexDirection: 'row',
-    gap: 12,
-  },
-  thumb: {
-    width: 60,
-    height: 60,
-    backgroundColor: colors.neutral[200],
-    borderRadius: 12,
-  },
-  lines: {
-    flex: 1,
-    gap: 8,
-  },
-  line: {
-    height: 12,
-    backgroundColor: colors.neutral[200],
-    borderRadius: 6,
-  },
-  footerRow: {
-    height: 24,
-    width: '100%',
-    backgroundColor: colors.neutral[200],
-    borderRadius: 8,
-  },
+  card: { gap: 14, padding: 14, borderRadius: 24, backgroundColor: colors.neutral[0], borderWidth: 1, borderColor: colors.neutral[200] },
+  row: { flexDirection: 'row', gap: 12 },
+  tile: { width: 54, height: 62, borderRadius: 16, backgroundColor: colors.neutral[100] },
+  lines: { flex: 1, gap: 8, justifyContent: 'center' },
+  line: { height: 11, borderRadius: 6, backgroundColor: colors.neutral[100] },
+  foot: { height: 16, borderRadius: 8, backgroundColor: colors.neutral[100] },
 });

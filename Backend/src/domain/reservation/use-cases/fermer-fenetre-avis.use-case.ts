@@ -2,6 +2,7 @@ import { Injectable, Logger } from '@nestjs/common';
 import { StatutReservation } from '@prisma/client';
 import { PrismaService } from '../../../infrastructure/prisma/prisma.service';
 import { QueueService } from '../../../infrastructure/queue/queue.service';
+import { NotificationsService } from '../../../modules/notifications/notifications.service';
 
 @Injectable()
 export class FermerFenetreAvisUseCase {
@@ -10,6 +11,7 @@ export class FermerFenetreAvisUseCase {
   constructor(
     private readonly prisma: PrismaService,
     private readonly queue: QueueService,
+    private readonly notifications: NotificationsService,
   ) {}
 
   async execute(reservationId: string): Promise<void> {
@@ -28,22 +30,21 @@ export class FermerFenetreAvisUseCase {
 
     const authorIds = new Set(reservation.avis.map((a) => a.auteurId));
     const logementTitre = reservation.logement.titre;
-    const dateDebut = reservation.dateDebut.toLocaleDateString('fr-FR');
 
-    // Rappel CHECKOUT_VALIDE utilisé comme proxy pour le rappel d'avis
-    const toNotify: string[] = [];
-    if (!authorIds.has(reservation.locataireId))   toNotify.push(reservation.locataireId);
-    if (!authorIds.has(reservation.proprietaireId)) toNotify.push(reservation.proprietaireId);
-
-    await Promise.all(
-      toNotify.map((userId) =>
-        this.queue.enqueueNotification(userId, 'CHECKOUT_VALIDE', {
-          logementTitre,
-          dateDebut,
-          reservationId,
-        }),
-      ),
-    );
+    // Rappel J+3 : il reste 4 jours pour noter (fenêtre de 7 jours, refusée ensuite par l'API)
+    const reminders: Promise<unknown>[] = [];
+    if (!authorIds.has(reservation.locataireId)) {
+      reminders.push(
+        this.notifications.sendReservationPush(reservation.locataireId, `Comment était ${logementTitre} ?`, 'Votre avis aide votre hôte et les prochains voyageurs. Encore 4 jours pour noter.', `/reservation/${reservationId}`),
+      );
+    }
+    if (!authorIds.has(reservation.proprietaireId)) {
+      reminders.push(
+        this.notifications.sendReservationPush(reservation.proprietaireId, 'Notez votre voyageur', `Comment s’est passé le séjour à ${logementTitre} ? Encore 4 jours pour noter.`, `/(owner)/reservations/${reservationId}`),
+      );
+    }
+    await Promise.all(reminders.map((r) => r.catch(() => {})));
+    const toNotify = reminders;
 
     this.logger.log(
       `[FermerFenetreAvis] Fenêtre fermée pour ${reservationId} — ${toNotify.length} rappel(s) d'avis envoyé(s)`,

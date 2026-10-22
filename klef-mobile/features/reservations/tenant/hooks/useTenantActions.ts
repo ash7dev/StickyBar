@@ -97,13 +97,6 @@ export function useTenantActions(reservationId: string, onDone: () => void) {
         'Signalement envoyé|L’équipe Paixi examine votre dossier. Les fonds restent gelés pendant l’examen.',
         'Impossible d’ouvrir le signalement.',
       ),
-    payFee: (feeId: string, methodePaiement: string, telephone: string) =>
-      run(
-        'pay-fee',
-        () => apiClient.post(`${base}/frais/${feeId}/payer`, { methodePaiement, telephone: telephone || undefined }),
-        'Supplément réglé|Merci, l’hôte est prévenu.',
-        'Impossible de régler ce supplément.',
-      ),
     contestFee: (feeId: string, titre: string) =>
       run(
         'contest-fee',

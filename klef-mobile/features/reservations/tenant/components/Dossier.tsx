@@ -19,7 +19,7 @@ import {
 import { colors, typography } from '../../../../shared/theme/tokens';
 import { formatFCFA } from '../../../owner-home/lib/format';
 import type { HistoriqueReservation, ReservationDetail } from '../../types/reservation-detail.types';
-import { clock, longDate, shortDate } from '../lib/stage';
+import { balanceDue, clock, escrowAmount, isDeposit, longDate, shortDate } from '../lib/stage';
 import { INK, PAPER, PillButton, tap } from './ui';
 
 type Money = 'none' | 'blocked' | 'released' | 'refunded';
@@ -194,7 +194,7 @@ export function Dossier({
                       </View>
                       {e.nouveauStatut === 'PAID' && (
                         <Text style={styles.eventDetail}>
-                          {fcfa(res.totalLocataire)}
+                          {isDeposit(res) ? `Acompte de ${fcfa(escrowAmount(res))}` : fcfa(res.totalLocataire)}
                           {res.paiement?.fournisseur ? ` · ${res.paiement.fournisseur.replace('_', ' ').toLowerCase()}` : ''}
                         </Text>
                       )}
@@ -233,7 +233,16 @@ export function Dossier({
             ) : null}
             <View style={styles.methodBox}>
               <Text style={styles.methodText}>
-                {guestName} a payé <Text style={styles.bold}>{fcfa(res.totalLocataire)}</Text>, dont {fcfa(res.montantCommission)} de frais de service Paixi à sa charge.
+                {isDeposit(res) ? (
+                  <>
+                    {guestName} a payé <Text style={styles.bold}>{fcfa(escrowAmount(res))}</Text> d’acompte en ligne, dont {fcfa(res.montantCommission)} de frais de service Paixi, et vous règle{' '}
+                    <Text style={styles.bold}>{fcfa(balanceDue(res))}</Text> sur place.
+                  </>
+                ) : (
+                  <>
+                    {guestName} a payé <Text style={styles.bold}>{fcfa(res.totalLocataire)}</Text>, dont {fcfa(res.montantCommission)} de frais de service Paixi à sa charge.
+                  </>
+                )}
               </Text>
             </View>
           </View>
@@ -243,7 +252,7 @@ export function Dossier({
           {Number(res.reductionNuits) > 0 && <DottedLine label="Réduction séjour long" value={`− ${amountOnly(res.reductionNuits)}`} />}
           <DottedLine label="Frais de service Paixi" value={amountOnly(res.montantCommission)} />
           <View style={styles.totalRow}>
-            <Text style={styles.totalLabel}>Total payé</Text>
+            <Text style={styles.totalLabel}>{isDeposit(res) ? 'Total du séjour' : 'Total payé'}</Text>
             <Text style={styles.totalValue}>
               {amountOnly(res.totalLocataire)} <Text style={styles.totalCur}>FCFA</Text>
             </Text>
@@ -251,7 +260,7 @@ export function Dossier({
           {res.montantSoldeRestant ? (
             <View style={styles.methodBox}>
               <Text style={styles.methodText}>
-                <Text style={styles.bold}>{amountOnly(res.montantAcompte)}</Text> d’acompte en ligne · <Text style={styles.bold}>{amountOnly(res.montantSoldeRestant)}</Text> à régler sur place
+                <Text style={styles.bold}>{amountOnly(res.montantAcompte)}</Text> d’acompte payé en ligne et protégé par Paixi · <Text style={styles.bold}>{amountOnly(res.montantSoldeRestant)}</Text> à régler à {host?.prenom ?? 'l’hôte'} sur place
               </Text>
             </View>
           ) : null}

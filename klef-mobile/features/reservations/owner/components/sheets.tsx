@@ -1,13 +1,14 @@
 import React, { useState } from 'react';
 import { StyleSheet, Switch, Text, TextInput, TouchableOpacity, View } from 'react-native';
-import { AlertTriangle, CalendarX, Check, CircleEllipsis, Clock, Phone, ShieldCheck, Users, Wrench } from 'lucide-react-native';
+import { AlertTriangle, CalendarX, Check, CircleEllipsis, Clock, Minus, Phone, Plus, ShieldCheck, Users, Wrench } from 'lucide-react-native';
+import { useQuery } from '@tanstack/react-query';
+import { apiClient } from '../../../../shared/api/api-client';
 import { colors, radius, typography } from '../../../../shared/theme/tokens';
 import { BottomSheet } from '../../../calendar/components/BottomSheet';
 import { formatFCFA } from '../../../owner-home/lib/format';
 import { InfoNote, INK, PillButton, tap } from '../../tenant/components/ui';
 import {
   CANCEL_REASONS,
-  FEE_TYPES,
   HOST_DISPUTE_MOTIFS,
   REFUSE_REASONS,
   type OwnerActions,
@@ -232,19 +233,58 @@ export function CancelSheet({
   );
 }
 
-// ── Demander un supplément ───────────────────────────────────────────────────
+// ── Voyageurs en plus (seul supplément possible) ─────────────────────────────
 
-export function FeeCreateSheet({ visible, guestName, actions, onClose }: { visible: boolean; guestName: string; actions: OwnerActions; onClose: () => void }) {
-  const [type, setType] = useState<string>(FEE_TYPES[0]);
-  const [amount, setAmount] = useState('');
-  const [description, setDescription] = useState('');
+interface ExtraGuestsEstimate {
+  prevus: number;
+  nbVoyageurs: number;
+  capacite: number;
+  parNuit: number;
+  nuits: number;
+  montant: number;
+}
+
+function apiMessage(err: unknown): string | null {
+  const raw = (err as { response?: { data?: { message?: unknown } } })?.response?.data?.message;
+  if (Array.isArray(raw)) return raw.join(' · ');
+  return typeof raw === 'string' ? raw : null;
+}
+
+/**
+ * L'hôte indique seulement le nombre réel de voyageurs : le montant est calculé par
+ * le serveur avec la grille « tarif par voyageur » de l'annonce, puis réglé en espèces.
+ */
+export function FeeCreateSheet({
+  visible,
+  reservationId,
+  guestName,
+  booked,
+  actions,
+  onClose,
+}: {
+  visible: boolean;
+  reservationId: string;
+  guestName: string;
+  booked: number;
+  actions: OwnerActions;
+  onClose: () => void;
+}) {
+  const [count, setCount] = useState(booked + 1);
   const [cash, setCash] = useState(false);
-  const value = Number(amount.replace(/\D/g, ''));
+
+  const estimate = useQuery<ExtraGuestsEstimate>({
+    queryKey: ['reservation', reservationId, 'extra-guests', count],
+    queryFn: async () => (await apiClient.get(`/reservations/${reservationId}/frais/estimation`, { params: { voyageurs: count } })).data,
+    enabled: visible,
+    retry: false,
+    staleTime: 60_000,
+  });
+  const calc = estimate.data;
+  const error = estimate.error ? apiMessage(estimate.error) ?? 'Calcul impossible pour le moment.' : null;
+  const max = calc?.capacite ?? Infinity;
 
   const submit = async () => {
-    if (await actions.createFee(type, value, description, cash)) {
-      setAmount('');
-      setDescription('');
+    if (await actions.createFee(count, cash)) {
       setCash(false);
       onClose();
     }
@@ -254,57 +294,73 @@ export function FeeCreateSheet({ visible, guestName, actions, onClose }: { visib
     <BottomSheet
       visible={visible}
       onClose={onClose}
-      title="Demander un supplément"
-      subtitle={`${guestName} le reçoit tout de suite et peut le payer ou le contester.`}
+      title="Voyageurs en plus"
+      subtitle={`La réservation prévoit ${booked} voyageur${booked > 1 ? 's' : ''}. Le supplément est calculé avec votre tarif par voyageur.`}
       footer={
         <PillButton
-          label={value > 0 ? `${cash ? 'Enregistrer' : `Envoyer à ${guestName}`} · ${formatFCFA(value)}` : 'Indiquez un montant'}
-          disabled={value <= 0}
+          label={calc ? `${cash ? 'Enregistrer' : `Envoyer à ${guestName}`} · ${formatFCFA(calc.montant)}` : 'Supplément indisponible'}
+          disabled={!calc || estimate.isFetching}
           loading={actions.pending === 'fee'}
           onPress={submit}
         />
       }
     >
-      <View style={styles.chips}>
-        {FEE_TYPES.map((t) => {
-          const active = type === t;
-          return (
-            <TouchableOpacity key={t} onPress={() => { tap(); setType(t); }} style={[styles.chip, active && styles.chipActive]} accessibilityRole="radio" accessibilityState={{ checked: active }}>
-              <Text style={[styles.chipText, active && { color: colors.lime[400] }]}>{t}</Text>
-            </TouchableOpacity>
-          );
-        })}
+      <Text style={styles.label}>NOMBRE RÉEL DE VOYAGEURS</Text>
+      <View style={styles.guestStepper}>
+        <TouchableOpacity
+          onPress={() => { tap(); setCount((c) => Math.max(booked + 1, c - 1)); }}
+          disabled={count <= booked + 1}
+          style={[styles.stepBtn, count <= booked + 1 && styles.stepBtnOff]}
+          accessibilityLabel="Un voyageur de moins"
+        >
+          <Minus size={18} color={INK} />
+        </TouchableOpacity>
+        <View style={styles.guestCount}>
+          <Text style={styles.guestCountValue}>{count}</Text>
+          <Text style={styles.guestCountSub}>au lieu de {booked}</Text>
+        </View>
+        <TouchableOpacity
+          onPress={() => { tap(); setCount((c) => c + 1); }}
+          disabled={count >= max}
+          style={[styles.stepBtn, count >= max && styles.stepBtnOff]}
+          accessibilityLabel="Un voyageur de plus"
+        >
+          <Plus size={18} color={INK} />
+        </TouchableOpacity>
       </View>
-      <Text style={styles.label}>MONTANT</Text>
-      <View style={styles.amountBox}>
-        <TextInput
-          value={amount ? Number(amount.replace(/\D/g, '') || 0).toLocaleString('fr-FR') : ''}
-          onChangeText={setAmount}
-          keyboardType="number-pad"
-          placeholder="0"
-          placeholderTextColor={colors.neutral[300]}
-          style={styles.amountInput}
-          accessibilityLabel="Montant en FCFA"
-        />
-        <Text style={styles.amountCur}>FCFA</Text>
-      </View>
-      <Text style={styles.label}>DÉTAIL POUR {guestName.toUpperCase()}</Text>
-      <TextInput
-        value={description}
-        onChangeText={setDescription}
-        multiline
-        placeholder="Ex. : départ à 15:00 au lieu de 12:00, comme convenu par téléphone."
-        placeholderTextColor={colors.neutral[400]}
-        style={styles.textarea}
-        accessibilityLabel="Détail du supplément"
-      />
+
+      {calc ? (
+        <View style={styles.calc}>
+          <View style={styles.calcRow}>
+            <Text style={styles.calcLabel}>Supplément par nuit</Text>
+            <Text style={styles.calcValue}>{formatFCFA(calc.parNuit)}</Text>
+          </View>
+          <View style={styles.calcRow}>
+            <Text style={styles.calcLabel}>Nuits restantes</Text>
+            <Text style={styles.calcValue}>× {calc.nuits}</Text>
+          </View>
+          <View style={styles.calcDivider} />
+          <View style={styles.calcRow}>
+            <Text style={styles.calcTotalLabel}>À régler par {guestName}</Text>
+            <Text style={styles.calcTotal}>{formatFCFA(calc.montant)}</Text>
+          </View>
+        </View>
+      ) : error ? (
+        <InfoNote tone="red" icon={<AlertTriangle size={15} color={colors.error[700]} strokeWidth={2.2} />}>
+          {error}
+        </InfoNote>
+      ) : null}
+
       <View style={styles.switchRow}>
         <View style={{ flex: 1 }}>
-          <Text style={styles.switchTitle}>Déjà encaissé en espèces</Text>
-          <Text style={styles.switchSub}>Trace le paiement sans le redemander</Text>
+          <Text style={styles.switchTitle}>Déjà reçu en espèces</Text>
+          <Text style={styles.switchSub}>Sinon, {guestName} vous le règle sur place ou le conteste</Text>
         </View>
         <Switch value={cash} onValueChange={setCash} trackColor={{ true: colors.forest[600], false: colors.neutral[200] }} thumbColor={colors.neutral[0]} />
       </View>
+      <InfoNote tone="mint" icon={<ShieldCheck size={15} color={colors.forest[600]} strokeWidth={2.2} />}>
+        Un dégât ou un problème ? Utilisez « Signaler un problème » : un médiateur Paixi tranche avec vos photos.
+      </InfoNote>
     </BottomSheet>
   );
 }
@@ -488,9 +544,6 @@ const styles = StyleSheet.create({
   chipActive: { backgroundColor: INK, borderColor: INK },
   chipText: { fontFamily: typography.fontBodySemiBold, fontSize: 12, color: INK },
 
-  amountBox: { flexDirection: 'row', alignItems: 'baseline', gap: 8, paddingHorizontal: 16, height: 64, borderRadius: 18, borderWidth: 1.5, borderColor: colors.forest[600], backgroundColor: colors.neutral[0] },
-  amountInput: { flex: 1, height: 64, fontFamily: typography.fontDisplaySemiBold, fontSize: 30, letterSpacing: -0.6, color: INK },
-  amountCur: { fontFamily: typography.fontBodyBold, fontSize: 14, color: INK },
 
   switchRow: { flexDirection: 'row', alignItems: 'center', gap: 12, marginTop: 12, padding: 12, paddingHorizontal: 14, borderRadius: 18, borderWidth: 1, borderColor: colors.neutral[200] },
   switchTitle: { fontFamily: typography.fontBodySemiBold, fontSize: 14, color: INK },
@@ -501,4 +554,17 @@ const styles = StyleSheet.create({
   lineN: { fontFamily: typography.fontBodyBold, fontSize: 12, color: INK },
   lineTitle: { fontFamily: typography.fontBodySemiBold, fontSize: 13, color: INK },
   lineSub: { fontFamily: typography.fontBody, fontSize: 12, color: colors.neutral[600] },
+  guestStepper: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16 },
+  stepBtn: { width: 48, height: 48, borderRadius: 24, borderWidth: 1, borderColor: colors.neutral[300], alignItems: 'center', justifyContent: 'center' },
+  stepBtnOff: { opacity: 0.35 },
+  guestCount: { alignItems: 'center' },
+  guestCountValue: { fontFamily: typography.fontDisplaySemiBold, fontSize: 40, lineHeight: 44, color: INK },
+  guestCountSub: { fontFamily: typography.fontBodySemiBold, fontSize: 12, color: colors.neutral[500] },
+  calc: { gap: 8, padding: 14, borderRadius: 18, backgroundColor: colors.neutral[50], borderWidth: 1, borderColor: colors.neutral[200], marginBottom: 12 },
+  calcRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'baseline', gap: 12 },
+  calcLabel: { fontFamily: typography.fontBody, fontSize: 13, color: colors.neutral[600] },
+  calcValue: { fontFamily: typography.fontBodySemiBold, fontSize: 13, color: colors.neutral[900] },
+  calcDivider: { height: 1, backgroundColor: colors.neutral[200] },
+  calcTotalLabel: { flex: 1, fontFamily: typography.fontBodyBold, fontSize: 14, color: colors.neutral[900] },
+  calcTotal: { fontFamily: typography.fontDisplaySemiBold, fontSize: 20, color: INK },
 });

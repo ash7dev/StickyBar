@@ -18,6 +18,7 @@ import {
 } from 'lucide-react-native';
 import { colors, radius, shadows, typography } from '../../theme/tokens';
 import { useFavorite } from '../../../features/favorites/useFavorites';
+import { shareListing } from '../../../features/share/share';
 import { router } from 'expo-router';
 
 export interface ListingPhoto {
@@ -85,10 +86,11 @@ export function TenantListingGallery({
 
   const handleShare = async () => {
     try {
-      await Share.share({
-        title: titre,
-        message: `Découvrez "${titre}" sur Paixi Sénégal !`,
-      });
+      if (listingId) {
+        await shareListing({ id: listingId, titre });
+      } else {
+        await Share.share({ title: titre, message: `Découvrez "${titre}" sur Paixi Sénégal !` });
+      }
     } catch {
       // Ignorer l'annulation
     }

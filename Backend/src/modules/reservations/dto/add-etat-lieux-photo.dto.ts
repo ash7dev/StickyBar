@@ -1,4 +1,4 @@
-import { IsEnum, IsNotEmpty, IsOptional, IsString } from 'class-validator';
+import { IsEnum, IsNotEmpty, IsOptional, IsString, Matches } from 'class-validator';
 import { CategoriePhotoEtatLieu, TypeEtatLieu } from '@prisma/client';
 
 export class AddEtatLieuxPhotoDto {
@@ -10,6 +10,7 @@ export class AddEtatLieuxPhotoDto {
 
   @IsNotEmpty()
   @IsString()
+  @Matches(/^https:\/\//, { message: 'La photo doit être une adresse https (serveur d’images), pas un fichier du téléphone.' })
   url!: string;
 
   @IsOptional()

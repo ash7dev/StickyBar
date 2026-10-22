@@ -95,7 +95,11 @@ export interface MobileCancelReservationModalProps {
   visible: boolean;
   reservationId: string;
   dateDebut: string;
+  /** Payé en ligne (l'acompte en formule acompte) : un remboursement ne peut pas le dépasser. */
   montantPaye?: number;
+  /** Total du séjour et prix des nuits seules : bases du barème côté API (cancel-reservation). */
+  totalLocataire?: number;
+  totalBase?: number;
   onSuccess: () => void;
   onClose: () => void;
 }
@@ -105,6 +109,8 @@ export function MobileCancelReservationModal({
   reservationId,
   dateDebut,
   montantPaye,
+  totalLocataire,
+  totalBase,
   onSuccess,
   onClose,
 }: MobileCancelReservationModalProps) {
@@ -123,8 +129,14 @@ export function MobileCancelReservationModal({
     return { tier: resolveTier(hours), hasStarted: hours <= 0 };
   }, [dateDebut]);
 
-  const montantRembourse =
-    montantPaye != null ? Math.round((montantPaye * tier.percentage) / 100) : null;
+  // Même calcul que l'API : plus de 3 jours = les nuits (hors frais), sinon 75 % / 50 % du total,
+  // et jamais plus que ce qui a été payé en ligne
+  const montantRembourse = (() => {
+    if (montantPaye == null) return null;
+    if (totalLocataire == null) return Math.round((montantPaye * tier.percentage) / 100);
+    const bareme = tier.id === 'full' ? Number(totalBase ?? totalLocataire) : Math.round((totalLocataire * tier.percentage) / 100);
+    return Math.min(bareme, montantPaye);
+  })();
 
   const handleClose = useCallback(() => {
     if (isSubmitting) return;

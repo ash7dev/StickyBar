@@ -36,6 +36,10 @@ export class CheckInUploadPhotosUseCase {
     if (!photos || photos.length === 0) {
       throw new BadRequestException('Au moins une photo de l\'état des lieux est requise');
     }
+    // Une adresse locale (file://…) n'est visible que sur le téléphone qui a pris la photo
+    if (photos.some((url) => typeof url !== 'string' || !url.startsWith('https://'))) {
+      throw new BadRequestException("Photo invalide : elle doit d'abord être envoyée sur le serveur d'images (adresse https).");
+    }
     // Même garde que checkin-proprio : pas d'état des lieux plus de 4h avant l'arrivée
     if (Date.now() < reservation.dateDebut.getTime() - 4 * 60 * 60 * 1000) {
       throw new ConflictException("L'état des lieux d'entrée ne peut être fait que 4h avant l'arrivée du locataire");

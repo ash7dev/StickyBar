@@ -76,7 +76,7 @@ export default function OwnerDashboardScreen() {
             <AnimatedStaggerGroup staggerDelay={60} preset="slideUp" distance={16} style={styles.stack}>
               <MoneyCard wallet={overview.data.wallet} revenue={overview.data.revenue} today={today} />
               <FocusQueue decisions={decisions.data ?? []} nextUp={nextUp} />
-              <TodayList moves={moves} logementTitles={logementTitles} />
+              <TodayList moves={moves} logementTitles={logementTitles} today={today} />
               <MobileQuickActionsMenuCard />
             </AnimatedStaggerGroup>
           )}

@@ -41,19 +41,13 @@ export const HOST_DISPUTE_MOTIFS = [
   { key: 'AUTRE', label: 'Autre' },
 ] as const;
 
-/** Types de supplément proposés (titre envoyé à POST /frais). */
-export const FEE_TYPES = [
-  'Voyageurs en plus',
-  'Départ tardif',
-  'Électricité / eau',
-  'Ménage ou dégâts',
-  'Autre',
-] as const;
-
 function message(err: unknown, fallback: string): string {
   const raw = (err as { response?: { data?: { message?: unknown } } })?.response?.data?.message;
   if (Array.isArray(raw)) return raw.join(' · ');
-  return typeof raw === 'string' && raw ? raw : fallback;
+  if (typeof raw === 'string' && raw) return raw;
+  // Erreurs locales (envoi des photos, réseau) : leur message est déjà rédigé pour l'utilisateur
+  const local = err instanceof Error && !(err as { response?: unknown }).response ? err.message : '';
+  return local || fallback;
 }
 
 /**
@@ -115,16 +109,16 @@ export function useOwnerActions(reservationId: string, onDone: () => void) {
         'Litige ouvert|L’équipe Paixi examine le dossier avec vos photos d’état des lieux.',
         'Impossible d’ouvrir le litige.',
       ),
-    /** Crée un supplément ; s'il a déjà été encaissé en espèces, le marque payé dans la foulée. */
-    createFee: (titre: string, montant: number, description: string, paidCash: boolean) =>
+    /** Déclare des voyageurs en plus ; s'ils ont déjà réglé en espèces, marque le supplément payé dans la foulée. */
+    createFee: (nbVoyageurs: number, paidCash: boolean) =>
       run(
         'fee',
         async () => {
-          const res = await apiClient.post(`${base}/frais`, { titre, montant, description: description.trim() || undefined });
+          const res = await apiClient.post(`${base}/frais`, { nbVoyageurs });
           const id = (res.data?.data ?? res.data)?.id as string | undefined;
           if (paidCash && id) await apiClient.post(`${base}/frais/${id}/payer-liquide`);
         },
-        paidCash ? 'Supplément enregistré|Il apparaît comme payé en espèces.' : 'Supplément envoyé|Le voyageur peut le payer ou le contester.',
+        paidCash ? 'Supplément enregistré|Il apparaît comme réglé en espèces.' : 'Supplément envoyé|Le voyageur vous le règle sur place ou peut le contester.',
         'Impossible d’envoyer le supplément.',
       ),
     markFeeCash: (feeId: string) =>

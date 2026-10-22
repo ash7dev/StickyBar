@@ -2,12 +2,14 @@ import React, { useState } from 'react';
 import { Alert, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { useRouter } from 'expo-router';
 import * as Haptics from 'expo-haptics';
-import { ArrowUp, ChevronRight, LogIn, LogOut } from 'lucide-react-native';
+import { Image } from 'expo-image';
+import { ArrowRight, ArrowUp, Banknote, CalendarDays, Check, ChevronRight, Clock, Coffee, Home, LogIn, LogOut, Moon, Users } from 'lucide-react-native';
 import { colors, radius, typography } from '../../../shared/theme/tokens';
+import { nameCase } from '../../home/lib/home';
 import type { PendingDecision } from '../../calendar/hooks/usePendingDecisions';
 import type { OwnerCalendarEvent, OwnerCalendarReservationEvent } from '../../calendar/types';
 import { formatExpiry } from '../../calendar/lib/agenda';
-import { addDays, formatShort, type Day } from '../../calendar/lib/days';
+import { addDays, formatLong, formatShort, type Day } from '../../calendar/lib/days';
 import { apiErrorMessage } from '../../calendar/hooks/useOwnerCalendar';
 import { DEFAULT_CHECKIN_LABEL, useAcceptReservation } from '../hooks/useOwnerOverview';
 import type { OwnerOverviewResponse } from '../types';
@@ -132,6 +134,7 @@ interface FocusQueueProps {
 }
 
 export function FocusQueue({ decisions, nextUp }: FocusQueueProps) {
+  const router = useRouter();
   const [index, setIndex] = useState(0);
   const count = decisions.length;
   const current = count > 0 ? decisions[index % count] : null;
@@ -168,12 +171,61 @@ export function FocusQueue({ decisions, nextUp }: FocusQueueProps) {
         </View>
       ) : (
         <View style={styles.calm}>
-          <Text style={styles.calmTitle}>Tout est à jour</Text>
-          <Text style={styles.calmText}>Aucune demande en attente. Vous serez prévenu dès qu’un voyageur réserve.</Text>
+          {/* Cercles décoratifs : le calme, pas le vide */}
+          <View style={[styles.calmRing, styles.calmRingOuter]} />
+          <View style={[styles.calmRing, styles.calmRingInner]} />
+
+          <View style={styles.calmBadge}>
+            <Check size={18} color={INK} strokeWidth={3} />
+          </View>
+          <View style={styles.calmBody}>
+            <Text style={styles.calmTitle}>
+              Rien ne vous attend.{'\n'}
+              <Text style={styles.calmAccent}>Tout est à jour.</Text>
+            </Text>
+            <Text style={styles.calmText}>Aucune demande en attente. Vous êtes prévenu dès qu’un voyageur réserve.</Text>
+          </View>
+
+          {nextUp && (
+            <View style={styles.calmNext}>
+              <Clock size={14} color={colors.lime[400]} />
+              <View style={styles.flex}>
+                <Text style={styles.calmNextLabel}>ENSUITE</Text>
+                <Text style={styles.calmNextText} numberOfLines={2}>
+                  {nextUp}
+                </Text>
+              </View>
+            </View>
+          )}
+
+          <View style={styles.calmActions}>
+            <TouchableOpacity
+              onPress={() => {
+                tap();
+                router.navigate('/(owner)/calendar' as never);
+              }}
+              style={[styles.calmBtn, styles.calmBtnLime]}
+              accessibilityRole="link"
+            >
+              <CalendarDays size={15} color={INK} />
+              <Text style={styles.calmBtnLimeText}>Calendrier</Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              onPress={() => {
+                tap();
+                router.navigate('/(owner)/listings' as never);
+              }}
+              style={[styles.calmBtn, styles.calmBtnGhost]}
+              accessibilityRole="link"
+            >
+              <Home size={15} color={PAPER} />
+              <Text style={styles.calmBtnGhostText}>Mes annonces</Text>
+            </TouchableOpacity>
+          </View>
         </View>
       )}
 
-      {nextUp && (
+      {current && nextUp && (
         <View style={styles.nextUp}>
           <Text style={styles.nextUpLabel}>Ensuite</Text>
           <View style={styles.dot} />
@@ -232,7 +284,7 @@ function FocusCard({ decision }: { decision: PendingDecision }) {
           </View>
           <View style={styles.flex}>
             <Text style={styles.guestName} numberOfLines={1}>
-              {decision.locataire?.prenom ?? 'Voyageur'}
+              {nameCase(decision.locataire?.prenom) ?? 'Voyageur'}
               {decision.locataire?.nom ? ` ${decision.locataire.nom.charAt(0)}.` : ''}
             </Text>
             <Text style={styles.guestMeta}>Voir le profil et la demande</Text>
@@ -244,12 +296,21 @@ function FocusCard({ decision }: { decision: PendingDecision }) {
           {nights} du {start} au {end}
         </Text>
 
-        {decision.netProprietaire !== undefined && (
-          <View style={styles.focusAmountRow}>
-            <Text style={styles.focusAmount}>{formatAmount(decision.netProprietaire)}</Text>
-            <Text style={styles.focusAmountNote}>FCFA, versés à son arrivée</Text>
-          </View>
-        )}
+        {decision.netProprietaire !== undefined &&
+          (() => {
+            // Acompte : Paixi verse l'acompte moins sa commission, le solde se règle sur place (credit-wallet)
+            const deposit = decision.typePaiement?.toUpperCase() === 'DEPOSIT' && Number(decision.montantSoldeRestant ?? 0) > 0;
+            const viaPaixi = deposit ? Math.max(0, Number(decision.montantAcompte ?? 0) - Number(decision.montantCommission ?? 0)) : Number(decision.netProprietaire);
+            return (
+              <View style={{ gap: 2 }}>
+                <View style={styles.focusAmountRow}>
+                  <Text style={styles.focusAmount}>{formatAmount(viaPaixi)}</Text>
+                  <Text style={styles.focusAmountNote}>FCFA versés par Paixi à son arrivée</Text>
+                </View>
+                {deposit && <Text style={styles.focusCash}>+ {formatAmount(decision.montantSoldeRestant!)} FCFA de solde à encaisser sur place</Text>}
+              </View>
+            );
+          })()}
       </TouchableOpacity>
 
       <View style={styles.focusActions}>
@@ -273,76 +334,214 @@ function FocusCard({ decision }: { decision: PendingDecision }) {
 
 type Move = { kind: 'DEPARTURE' | 'ARRIVAL'; event: OwnerCalendarReservationEvent; when: string };
 
-/** Départs du jour, arrivées du jour puis de demain. */
+const moveTime = ({ kind, event }: Move) => (kind === 'DEPARTURE' ? event.heureDepart : event.heureArrivee);
+
+/** Départs du jour, arrivées du jour puis de demain — chaque jour trié par heure. */
 export function buildMoves(events: OwnerCalendarEvent[], today: Day): Move[] {
   const tomorrow = addDays(today, 1);
   const stays = events.filter(
     (e): e is OwnerCalendarReservationEvent => e.kind === 'RESERVATION' && STAY_STATUSES.has(e.statut),
   );
+  const byTime = (a: Move, b: Move) => (moveTime(a) ?? '99').localeCompare(moveTime(b) ?? '99');
   return [
-    ...stays.filter((e) => e.end === today).map((event) => ({ kind: 'DEPARTURE' as const, event, when: 'Aujourd’hui' })),
-    ...stays.filter((e) => e.start === today).map((event) => ({ kind: 'ARRIVAL' as const, event, when: 'Aujourd’hui' })),
-    ...stays.filter((e) => e.start === tomorrow).map((event) => ({ kind: 'ARRIVAL' as const, event, when: 'Demain' })),
+    ...[
+      ...stays.filter((e) => e.end === today).map((event) => ({ kind: 'DEPARTURE' as const, event, when: 'Aujourd’hui' })),
+      ...stays.filter((e) => e.start === today).map((event) => ({ kind: 'ARRIVAL' as const, event, when: 'Aujourd’hui' })),
+    ].sort(byTime),
+    ...stays
+      .filter((e) => e.start === tomorrow)
+      .map((event) => ({ kind: 'ARRIVAL' as const, event, when: 'Demain' }))
+      .sort(byTime),
   ];
 }
 
 export function describeMove(move: Move, logementTitles: Map<string, string>): string {
-  const who = `${move.event.locataire.prenom} ${move.event.locataire.nomInitiale}`.trim();
+  const who = `${nameCase(move.event.locataire.prenom)} ${move.event.locataire.nomInitiale}`.trim();
   const where = logementTitles.get(move.event.logementId);
   const what = move.kind === 'DEPARTURE' ? `départ de ${who}` : `arrivée de ${who}`;
-  return `${move.when} · ${what}${where ? ` · ${where}` : ''}`;
+  const at = moveTime(move);
+  return `${move.when}${at ? ` à ${at.replace(':', ' h ')}` : ''} · ${what}${where ? ` · ${where}` : ''}`;
 }
 
-export function TodayList({ moves, logementTitles }: { moves: Move[]; logementTitles: Map<string, string> }) {
+const plural = (n: number, word: string) => `${n} ${word}${n > 1 ? 's' : ''}`;
+
+/**
+ * La journée de l'hôte en frise : l'heure de chaque arrivée et départ, une ligne de temps,
+ * et pour chaque voyageur ce qu'il faut savoir avant d'ouvrir la porte.
+ */
+export function TodayList({ moves, logementTitles, today }: { moves: Move[]; logementTitles: Map<string, string>; today: Day }) {
   const router = useRouter();
+  const groups = (['Aujourd’hui', 'Demain'] as const)
+    .map((label) => ({ label, items: moves.filter((m) => m.when === label) }))
+    .filter((g) => g.items.length > 0);
+  const todays = moves.filter((m) => m.when === 'Aujourd’hui');
+  const arrivals = todays.filter((m) => m.kind === 'ARRIVAL').length;
+  const departures = todays.length - arrivals;
+  const cash = todays.reduce((sum, m) => sum + (m.kind === 'ARRIVAL' ? m.event.soldeSurPlace ?? 0 : 0), 0);
+  const date = formatLong(today);
+
+  const summary = [
+    arrivals > 0 && plural(arrivals, 'arrivée'),
+    departures > 0 && plural(departures, 'départ'),
+  ].filter(Boolean).join(' · ');
 
   return (
     <View style={styles.section}>
-      <View style={styles.sectionHeader}>
-        <Text style={styles.sectionTitle} accessibilityRole="header">
-          Aujourd’hui
-        </Text>
-        <View style={styles.flex} />
-        <TouchableOpacity onPress={() => router.navigate('/(owner)/today' as never)} accessibilityRole="link">
-          <Text style={styles.link}>Tout voir</Text>
+      <View style={styles.todayHeader}>
+        <View style={styles.flex}>
+          <Text style={styles.todayKicker}>{date.charAt(0).toUpperCase() + date.slice(1)}</Text>
+          <Text style={styles.todayTitle} accessibilityRole="header">
+            Aujourd’hui
+          </Text>
+        </View>
+        <TouchableOpacity
+          onPress={() => {
+            tap();
+            router.navigate('/(owner)/today' as never);
+          }}
+          style={styles.allPill}
+          accessibilityRole="link"
+          accessibilityLabel="Voir toute la journée"
+        >
+          <Text style={styles.allPillText}>Tout voir</Text>
+          <View style={styles.allPillArrow}>
+            <ArrowRight size={13} color={colors.lime[400]} strokeWidth={2.6} />
+          </View>
         </TouchableOpacity>
       </View>
 
       {moves.length === 0 ? (
-        <View style={styles.emptyCard}>
-          <Text style={styles.empty}>Aucune arrivée ni départ aujourd’hui ou demain.</Text>
+        <View style={styles.quiet}>
+          <View style={styles.quietIcon}>
+            <Coffee size={20} color={colors.lime[400]} />
+          </View>
+          <View style={styles.flex}>
+            <Text style={styles.quietTitle}>Journée calme</Text>
+            <Text style={styles.quietText}>Aucune arrivée ni départ aujourd’hui ou demain. Profitez-en pour ajuster vos prix.</Text>
+          </View>
+          <TouchableOpacity
+            onPress={() => {
+              tap();
+              router.navigate('/(owner)/calendar' as never);
+            }}
+            style={styles.quietBtn}
+            accessibilityRole="link"
+          >
+            <CalendarDays size={14} color={INK} />
+            <Text style={styles.quietBtnText}>Calendrier</Text>
+          </TouchableOpacity>
         </View>
       ) : (
-        moves.map(({ kind, event, when }) => {
-          const isDeparture = kind === 'DEPARTURE';
-          const Icon = isDeparture ? LogOut : LogIn;
-          return (
-            <TouchableOpacity
-              key={`${kind}-${event.id}`}
-              activeOpacity={0.8}
-              onPress={() => {
-                tap();
-                router.push({ pathname: '/(owner)/reservations/[id]' as never, params: { id: event.id } });
-              }}
-              style={styles.row}
-              accessibilityRole="button"
-            >
-              <View style={[styles.rowIcon, !isDeparture && styles.rowIconArrival]}>
-                <Icon size={17} color={isDeparture ? colors.neutral[700] : colors.lime[400]} />
-              </View>
-              <View style={styles.flex}>
-                <Text style={styles.rowTitle} numberOfLines={1}>
-                  {isDeparture ? 'Départ' : 'Arrivée'} · {event.locataire.prenom} {event.locataire.nomInitiale}
-                </Text>
-                <Text style={styles.rowMeta} numberOfLines={1}>
-                  {when} · {logementTitles.get(event.logementId) ?? ''}
-                </Text>
-              </View>
-              <ChevronRight size={16} color={colors.neutral[400]} />
-            </TouchableOpacity>
-          );
-        })
+        <>
+          {todays.length > 0 && (
+            <View style={styles.summary}>
+              <Text style={styles.summaryText}>{summary}</Text>
+              {cash > 0 && (
+                <View style={styles.summaryCash}>
+                  <Banknote size={13} color={colors.gold[700]} />
+                  <Text style={styles.summaryCashText}>{formatFCFA(cash)} à encaisser</Text>
+                </View>
+              )}
+            </View>
+          )}
+
+          {groups.map((group) => (
+            <View key={group.label} style={styles.dayGroup}>
+              {groups.length > 1 && <Text style={styles.dayLabel}>{group.label.toUpperCase()}</Text>}
+              {group.items.map((move, i) => (
+                <TimelineRow
+                  key={`${move.kind}-${move.event.id}`}
+                  move={move}
+                  logement={logementTitles.get(move.event.logementId)}
+                  last={i === group.items.length - 1}
+                  onPress={() => {
+                    tap();
+                    router.push({ pathname: '/(owner)/reservations/[id]' as never, params: { id: move.event.id } });
+                  }}
+                />
+              ))}
+            </View>
+          ))}
+        </>
       )}
+    </View>
+  );
+}
+
+function TimelineRow({ move, logement, last, onPress }: { move: Move; logement?: string; last: boolean; onPress: () => void }) {
+  const { kind, event } = move;
+  const isArrival = kind === 'ARRIVAL';
+  const time = moveTime(move);
+  const name = `${nameCase(event.locataire.prenom) ?? ''} ${event.locataire.nomInitiale}`.trim();
+  const solde = isArrival ? event.soldeSurPlace ?? 0 : 0;
+  const Icon = isArrival ? LogIn : LogOut;
+
+  return (
+    <View style={styles.tlRow}>
+      <View style={styles.tlTime}>
+        <Text style={[styles.tlHour, !time && styles.tlHourMissing]}>{time ?? '—'}</Text>
+      </View>
+      <View style={styles.tlRail}>
+        <View style={[styles.tlDot, isArrival ? styles.tlDotArrival : styles.tlDotDeparture]} />
+        {!last && <View style={styles.tlLine} />}
+      </View>
+      <TouchableOpacity
+        activeOpacity={0.85}
+        onPress={onPress}
+        style={styles.tlCard}
+        accessibilityRole="button"
+        accessibilityLabel={`${isArrival ? 'Arrivée' : 'Départ'} de ${name}${time ? ` à ${time}` : ''}`}
+      >
+        <View style={styles.tlTop}>
+          <View style={[styles.kindChip, isArrival ? styles.kindChipArrival : styles.kindChipDeparture]}>
+            <Icon size={11} color={isArrival ? colors.lime[400] : colors.neutral[700]} strokeWidth={2.6} />
+            <Text style={[styles.kindChipText, isArrival && styles.kindChipTextArrival]}>{isArrival ? 'Arrivée' : 'Départ'}</Text>
+          </View>
+          <View style={styles.flex} />
+          <ChevronRight size={16} color={colors.neutral[400]} />
+        </View>
+
+        <View style={styles.tlGuest}>
+          {event.locataire.avatarUrl ? (
+            <Image source={{ uri: event.locataire.avatarUrl }} style={styles.tlAvatar} contentFit="cover" />
+          ) : (
+            <View style={[styles.tlAvatar, styles.tlAvatarEmpty]}>
+              <Text style={styles.tlAvatarText}>{initials(event.locataire.prenom, event.locataire.nomInitiale)}</Text>
+            </View>
+          )}
+          <View style={styles.flex}>
+            <Text style={styles.tlName} numberOfLines={1}>
+              {name}
+            </Text>
+            {logement ? (
+              <Text style={styles.tlPlace} numberOfLines={1}>
+                {logement}
+              </Text>
+            ) : null}
+          </View>
+        </View>
+
+        <View style={styles.tlFacts}>
+          <View style={styles.fact}>
+            <Users size={12} color={colors.neutral[600]} />
+            <Text style={styles.factText}>{plural(event.nbPersonnes, 'voyageur')}</Text>
+          </View>
+          <View style={styles.fact}>
+            <Moon size={12} color={colors.neutral[600]} />
+            <Text style={styles.factText}>{plural(event.nbNuits, 'nuit')}</Text>
+          </View>
+        </View>
+
+        {/* Arrivée en formule acompte : le solde se règle de la main à la main */}
+        {solde > 0 && (
+          <View style={styles.cashPill}>
+            <Banknote size={13} color={colors.gold[700]} />
+            <Text style={styles.cashPillText} numberOfLines={1}>
+              Solde de {formatFCFA(solde)} à encaisser
+            </Text>
+          </View>
+        )}
+      </TouchableOpacity>
     </View>
   );
 }
@@ -358,6 +557,7 @@ const styles = StyleSheet.create({
   amountRow: { flexDirection: 'row', alignItems: 'baseline', gap: 8 },
   amount: { flexShrink: 1, fontFamily: typography.fontDisplaySemiBold, fontSize: 46, letterSpacing: -1.4, color: PAPER },
   currency: { fontFamily: typography.fontBodySemiBold, fontSize: 15, color: colors.forest[200] },
+  focusCash: { fontFamily: typography.fontBodySemiBold, fontSize: 12, color: colors.gold[700] },
   payoutChip: {
     alignSelf: 'flex-start',
     flexDirection: 'row',
@@ -389,10 +589,9 @@ const styles = StyleSheet.create({
   // Sections
   section: { gap: 12 },
   sectionHeader: { flexDirection: 'row', alignItems: 'center', gap: 8 },
-  sectionTitle: { fontFamily: typography.fontBodyBold, fontSize: 17, color: colors.neutral[900] },
+  sectionTitle: { fontFamily: typography.fontDisplaySemiBold, fontSize: 26, letterSpacing: -0.6, color: colors.neutral[900] },
   counter: { flexDirection: 'row', alignItems: 'center', gap: 2, paddingVertical: 6, paddingLeft: 8 },
   counterText: { fontFamily: typography.fontBodySemiBold, fontSize: 13, color: colors.neutral[600] },
-  link: { fontFamily: typography.fontBodySemiBold, fontSize: 13, color: colors.link },
 
   // À faire maintenant (H4)
   stack: { position: 'relative' },
@@ -431,43 +630,138 @@ const styles = StyleSheet.create({
   focusBtnGhostText: { fontFamily: typography.fontBodySemiBold, fontSize: 15, color: INK },
   focusBtnInk: { flex: 2, backgroundColor: INK },
   focusBtnInkText: { fontFamily: typography.fontBodySemiBold, fontSize: 15, color: colors.lime[400] },
-  calm: {
-    gap: 4,
-    padding: 18,
-    borderRadius: 24,
-    backgroundColor: colors.neutral[0],
-    borderWidth: 1,
-    borderColor: colors.neutral[200],
+  calm: { gap: 16, padding: 20, borderRadius: 30, overflow: 'hidden', backgroundColor: INK },
+  calmRing: { position: 'absolute', borderWidth: 1, borderColor: 'rgba(211,242,110,0.12)' },
+  calmRingOuter: { width: 220, height: 220, borderRadius: 110, top: -110, right: -70 },
+  calmRingInner: { width: 130, height: 130, borderRadius: 65, top: -65, right: -25, borderColor: 'rgba(211,242,110,0.2)' },
+  calmBadge: { width: 40, height: 40, borderRadius: 20, backgroundColor: colors.lime[400], alignItems: 'center', justifyContent: 'center' },
+  calmBody: { gap: 8 },
+  calmTitle: { fontFamily: typography.fontDisplaySemiBold, fontSize: 26, lineHeight: 30, letterSpacing: -0.6, color: PAPER },
+  calmAccent: { color: colors.lime[400], fontStyle: 'italic' },
+  calmText: { fontFamily: typography.fontBody, fontSize: 13, lineHeight: 19, color: colors.forest[200] },
+  calmNext: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    gap: 10,
+    padding: 12,
+    borderRadius: 18,
+    backgroundColor: 'rgba(248,251,244,0.06)',
   },
-  calmTitle: { fontFamily: typography.fontDisplaySemiBold, fontSize: 18, color: colors.neutral[900] },
-  calmText: { fontFamily: typography.fontBody, fontSize: 13, lineHeight: 19, color: colors.neutral[600] },
+  calmNextLabel: { fontFamily: typography.fontBodyBold, fontSize: 10, letterSpacing: 1.2, color: colors.lime[400] },
+  calmNextText: { fontFamily: typography.fontBodySemiBold, fontSize: 13, lineHeight: 18, color: PAPER, marginTop: 2 },
+  calmActions: { flexDirection: 'row', gap: 10 },
+  calmBtn: { flex: 1, flexDirection: 'row', gap: 7, height: 46, borderRadius: radius.pill, alignItems: 'center', justifyContent: 'center' },
+  calmBtnLime: { backgroundColor: colors.lime[400] },
+  calmBtnLimeText: { fontFamily: typography.fontBodyBold, fontSize: 14, color: INK },
+  calmBtnGhost: { borderWidth: 1, borderColor: 'rgba(248,251,244,0.25)' },
+  calmBtnGhostText: { fontFamily: typography.fontBodySemiBold, fontSize: 14, color: PAPER },
   nextUp: { flexDirection: 'row', alignItems: 'center', gap: 8, paddingHorizontal: 4 },
   nextUpLabel: { fontFamily: typography.fontBodyBold, fontSize: 13, color: colors.neutral[900] },
   dot: { width: 4, height: 4, borderRadius: 2, backgroundColor: colors.neutral[400] },
   nextUpText: { flex: 1, fontFamily: typography.fontBody, fontSize: 13, color: colors.neutral[600] },
 
   // Aujourd'hui
-  emptyCard: { padding: 16, borderRadius: 20, backgroundColor: colors.neutral[0], borderWidth: 1, borderColor: colors.neutral[200] },
-  empty: { fontFamily: typography.fontBody, fontSize: 13, color: colors.neutral[600] },
-  row: {
+  todayHeader: { flexDirection: 'row', alignItems: 'flex-end', gap: 12 },
+  todayKicker: { fontFamily: typography.fontBodySemiBold, fontSize: 12, color: colors.neutral[500] },
+  todayTitle: { fontFamily: typography.fontDisplaySemiBold, fontSize: 26, letterSpacing: -0.6, color: colors.neutral[900], marginTop: 1 },
+  allPill: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 12,
-    padding: 12,
-    borderRadius: 20,
+    gap: 8,
+    height: 36,
+    paddingLeft: 14,
+    paddingRight: 4,
+    borderRadius: radius.pill,
     backgroundColor: colors.neutral[0],
     borderWidth: 1,
     borderColor: colors.neutral[200],
   },
-  rowIcon: {
-    width: 38,
-    height: 38,
-    borderRadius: 12,
-    backgroundColor: colors.neutral[100],
+  allPillText: { fontFamily: typography.fontBodyBold, fontSize: 13, color: INK },
+  allPillArrow: { width: 28, height: 28, borderRadius: 14, backgroundColor: INK, alignItems: 'center', justifyContent: 'center' },
+  summary: { flexDirection: 'row', alignItems: 'center', flexWrap: 'wrap', gap: 8 },
+  summaryText: { fontFamily: typography.fontBodySemiBold, fontSize: 13, color: colors.neutral[700] },
+  summaryCash: {
+    flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'center',
+    gap: 5,
+    height: 26,
+    paddingHorizontal: 10,
+    borderRadius: radius.pill,
+    backgroundColor: colors.gold[50],
   },
-  rowIconArrival: { backgroundColor: INK },
-  rowTitle: { fontFamily: typography.fontBodySemiBold, fontSize: 14, color: colors.neutral[900] },
-  rowMeta: { fontFamily: typography.fontBody, fontSize: 12, color: colors.neutral[600], marginTop: 2 },
+  summaryCashText: { fontFamily: typography.fontBodyBold, fontSize: 12, color: colors.gold[700] },
+  dayGroup: { gap: 0 },
+  dayLabel: { fontFamily: typography.fontBodyBold, fontSize: 11, letterSpacing: 1.2, color: colors.neutral[500], marginBottom: 8, marginTop: 4 },
+  tlRow: { flexDirection: 'row', alignItems: 'stretch' },
+  tlTime: { width: 46, paddingTop: 14 },
+  tlHour: { fontFamily: typography.fontDisplaySemiBold, fontSize: 15, letterSpacing: -0.2, color: colors.neutral[900] },
+  tlHourMissing: { color: colors.neutral[400] },
+  tlRail: { width: 18, alignItems: 'center' },
+  tlDot: { width: 12, height: 12, borderRadius: 6, marginTop: 18, borderWidth: 3 },
+  tlDotArrival: { backgroundColor: colors.lime[400], borderColor: INK },
+  tlDotDeparture: { backgroundColor: colors.neutral[0], borderColor: colors.neutral[400] },
+  tlLine: { flex: 1, width: 2, marginTop: 4, marginBottom: -14, borderRadius: 1, backgroundColor: colors.neutral[200] },
+  tlCard: {
+    flex: 1,
+    minWidth: 0,
+    gap: 12,
+    padding: 14,
+    marginLeft: 8,
+    marginBottom: 12,
+    borderRadius: 22,
+    backgroundColor: colors.neutral[0],
+    borderWidth: 1,
+    borderColor: colors.neutral[200],
+  },
+  tlTop: { flexDirection: 'row', alignItems: 'center' },
+  kindChip: { flexDirection: 'row', alignItems: 'center', gap: 5, height: 24, paddingHorizontal: 9, borderRadius: radius.pill },
+  kindChipArrival: { backgroundColor: INK },
+  kindChipDeparture: { backgroundColor: colors.neutral[100] },
+  kindChipText: { fontFamily: typography.fontBodyBold, fontSize: 11, letterSpacing: 0.3, color: colors.neutral[700] },
+  kindChipTextArrival: { color: colors.lime[400] },
+  tlGuest: { flexDirection: 'row', alignItems: 'center', gap: 12 },
+  tlAvatar: { width: 42, height: 42, borderRadius: 21 },
+  tlAvatarEmpty: { backgroundColor: colors.forest[100], alignItems: 'center', justifyContent: 'center' },
+  tlAvatarText: { fontFamily: typography.fontBodyBold, fontSize: 14, color: INK },
+  tlName: { fontFamily: typography.fontBodyBold, fontSize: 16, color: colors.neutral[900] },
+  tlPlace: { fontFamily: typography.fontBody, fontSize: 12, color: colors.neutral[600], marginTop: 2 },
+  tlFacts: { flexDirection: 'row', gap: 14 },
+  fact: { flexDirection: 'row', alignItems: 'center', gap: 5 },
+  factText: { fontFamily: typography.fontBodySemiBold, fontSize: 12, color: colors.neutral[600] },
+  cashPill: {
+    alignSelf: 'flex-start',
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    height: 30,
+    paddingHorizontal: 11,
+    borderRadius: radius.pill,
+    backgroundColor: colors.gold[50],
+    borderWidth: 1,
+    borderColor: colors.gold[100],
+  },
+  cashPillText: { flexShrink: 1, fontFamily: typography.fontBodyBold, fontSize: 12, color: colors.gold[700] },
+  quiet: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+    padding: 16,
+    borderRadius: 24,
+    backgroundColor: colors.neutral[0],
+    borderWidth: 1,
+    borderColor: colors.neutral[200],
+  },
+  quietIcon: { width: 44, height: 44, borderRadius: 22, backgroundColor: INK, alignItems: 'center', justifyContent: 'center' },
+  quietTitle: { fontFamily: typography.fontDisplaySemiBold, fontSize: 17, color: colors.neutral[900] },
+  quietText: { fontFamily: typography.fontBody, fontSize: 12, lineHeight: 17, color: colors.neutral[600], marginTop: 2 },
+  quietBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 5,
+    height: 34,
+    paddingHorizontal: 12,
+    borderRadius: radius.pill,
+    backgroundColor: colors.lime[400],
+  },
+  quietBtnText: { fontFamily: typography.fontBodyBold, fontSize: 12, color: INK },
 });

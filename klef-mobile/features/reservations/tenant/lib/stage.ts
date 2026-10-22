@@ -111,6 +111,21 @@ export function stayHours(res: ReservationDetail): { arrival: string; departure:
   return { arrival: hourLabel(clock(res.dateDebut), '14h'), departure: hourLabel(clock(res.dateFin), '12h') };
 }
 
+/** Formule acompte : seul l'acompte passe par Paixi, le solde se règle sur place. */
+export function isDeposit(res: ReservationDetail): boolean {
+  return res.typePaiement?.toUpperCase() === 'DEPOSIT' && Number(res.montantSoldeRestant ?? 0) > 0;
+}
+
+/** Ce que Paixi détient pour ce séjour : l'acompte en formule acompte, sinon le total payé. */
+export function escrowAmount(res: ReservationDetail): number {
+  return isDeposit(res) ? Number(res.montantAcompte ?? 0) : Number(res.totalLocataire ?? 0);
+}
+
+/** Solde à régler à l'hôte sur place (0 si tout a été payé en ligne). */
+export function balanceDue(res: ReservationDetail): number {
+  return isDeposit(res) ? Number(res.montantSoldeRestant ?? 0) : 0;
+}
+
 /** Montant de l'acompte quand la réservation est en « acompte + solde le jour J ». */
 export function depositSplit(res: ReservationDetail): { paid: number; balance: number } | null {
   const balance = Number(res.montantSoldeRestant ?? 0);

@@ -28,7 +28,7 @@ export interface StatusTabConfig {
 }
 
 export const STATUS_TABS: StatusTabConfig[] = [
-  { id: 'ALL', label: 'Toutes', dotColor: colors.forest[600] },
+  { id: 'ALL', label: 'Tous', dotColor: colors.forest[600] },
   { id: 'PAID', label: 'À décider', dotColor: '#EAB308', isUrgent: true },
   { id: 'PENDING', label: 'En attente', dotColor: '#F59E0B', isUrgent: true },
   { id: 'CONFIRMED', label: 'Confirmées', dotColor: colors.forest[500] },
@@ -63,7 +63,7 @@ export function MobileOwnerReservationHeaderBar({
         <TextInput
           value={searchQuery}
           onChangeText={onSearchChange}
-          placeholder="Rechercher un logement ou locataire..."
+          placeholder="Voyageur, logement, quartier…"
           placeholderTextColor={colors.neutral[400]}
           style={styles.searchInput}
           autoCapitalize="none"
@@ -87,7 +87,8 @@ export function MobileOwnerReservationHeaderBar({
         showsHorizontalScrollIndicator={false}
         contentContainerStyle={styles.tabsScroll}
       >
-        {STATUS_TABS.map((tab) => {
+        {/* Seuls les statuts présents ont un filtre */}
+        {STATUS_TABS.filter((tab) => tab.id === 'ALL' || tab.id === activeTab || (counts.get(tab.id) ?? 0) > 0).map((tab) => {
           const isActive = activeTab === tab.id;
           const count = tab.id === 'ALL' ? totalCount : (counts.get(tab.id) ?? 0);
 
@@ -145,22 +146,16 @@ export function MobileOwnerReservationHeaderBar({
 const styles = StyleSheet.create({
   container: {
     gap: 12,
-    marginBottom: 12,
   },
   searchBox: {
     flexDirection: 'row',
     alignItems: 'center',
     backgroundColor: colors.neutral[0],
-    borderRadius: 16,
+    borderRadius: 999,
     borderWidth: 1,
     borderColor: colors.neutral[200],
-    paddingHorizontal: 14,
-    height: 46,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.04,
-    shadowRadius: 4,
-    elevation: 1,
+    paddingHorizontal: 16,
+    height: 48,
   },
   searchIcon: {
     marginRight: 10,

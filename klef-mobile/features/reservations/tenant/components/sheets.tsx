@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
-import { AlertTriangle, CircleEllipsis, CreditCard, Home, KeyRound, Lock } from 'lucide-react-native';
+import { AlertTriangle, CircleEllipsis, Home, KeyRound, Lock } from 'lucide-react-native';
 import { colors, radius, typography } from '../../../../shared/theme/tokens';
 import { BottomSheet } from '../../../calendar/components/BottomSheet';
 import { formatFCFA } from '../../../owner-home/lib/format';
@@ -87,7 +87,7 @@ export function RefuseCheckinSheet({
       {tooShort && comment.length > 0 && <Text style={styles.hint}>10 caractères minimum.</Text>}
 
       <InfoNote icon={<Lock size={15} color={colors.forest[600]} strokeWidth={2.2} />}>
-        Un litige est ouvert, l’hôte est prévenu et vos {amountLabel} restent gelés jusqu’à la décision de l’équipe Paixi.
+        Un litige est ouvert, l’hôte est prévenu et votre paiement ({amountLabel}) reste gelé jusqu’à la décision de l’équipe Paixi.
       </InfoNote>
     </BottomSheet>
   );
@@ -160,127 +160,47 @@ export function ReportProblemSheet({ visible, actions, onClose }: { visible: boo
   );
 }
 
-// ── Payer ou contester un supplément ─────────────────────────────────────────
-
-const METHODS = [
-  { key: 'WAVE', label: 'Wave', badge: 'W', color: '#1DC3F1' },
-  { key: 'ORANGE_MONEY', label: 'Orange Money', badge: 'OM', color: '#FF7900' },
-  { key: 'CARD', label: 'Carte bancaire', badge: null, color: INK },
-] as const;
+// ── Contester un supplément « voyageurs en plus » ────────────────────────────
 
 export function FeeSheet({
   fee,
-  initialMode = 'pay',
   hostName,
   actions,
   onClose,
 }: {
   fee: DemandeFraisReservation | null;
-  initialMode?: 'pay' | 'contest';
   hostName: string;
   actions: TenantActions;
   onClose: () => void;
 }) {
-  const [mode, setMode] = useState<'pay' | 'contest'>(initialMode);
-  const [method, setMethod] = useState<(typeof METHODS)[number]['key']>('WAVE');
-  const [phone, setPhone] = useState('');
   if (!fee) return null;
-
-  const needsPhone = method !== 'CARD';
   const amount = formatFCFA(fee.montant);
-
-  const submit = async () => {
-    const ok = mode === 'pay' ? await actions.payFee(fee.id, method, phone) : await actions.contestFee(fee.id, fee.titre);
-    if (ok) onClose();
-  };
 
   return (
     <BottomSheet
       visible
       onClose={onClose}
-      title={amount}
-      subtitle={`${fee.titre} · demandé par ${hostName}`}
+      title="Contester le supplément"
+      subtitle={`${fee.titre} · ${amount} · demandé par ${hostName}`}
       footer={
-        <PillButton
-          label={mode === 'pay' ? `Payer ${amount}` : 'Contester ce supplément'}
-          variant={mode === 'pay' ? 'lime' : 'danger'}
-          onPress={submit}
-          disabled={mode === 'pay' && needsPhone && phone.replace(/\D/g, '').length < 9}
-          loading={actions.pending === 'pay-fee' || actions.pending === 'contest-fee'}
-        />
+        <View style={styles.footer}>
+          <PillButton label="Retour" variant="ghost" onPress={onClose} />
+          <PillButton
+            label="Contester"
+            variant="danger"
+            flex={1.6}
+            loading={actions.pending === 'contest-fee'}
+            onPress={async () => {
+              if (await actions.contestFee(fee.id, fee.titre)) onClose();
+            }}
+          />
+        </View>
       }
     >
-      <View style={styles.segment} accessibilityRole="tablist">
-        {(
-          [
-            { key: 'pay', label: 'Payer' },
-            { key: 'contest', label: 'Contester' },
-          ] as const
-        ).map(({ key, label }) => (
-          <TouchableOpacity
-            key={key}
-            onPress={() => {
-              tap();
-              setMode(key);
-            }}
-            style={[styles.segmentItem, mode === key && styles.segmentItemActive]}
-            accessibilityRole="tab"
-            accessibilityState={{ selected: mode === key }}
-          >
-            <Text style={[styles.segmentText, mode === key && { color: colors.neutral[50] }]}>{label}</Text>
-          </TouchableOpacity>
-        ))}
-      </View>
-
       {fee.description ? <Text style={styles.quote}>« {fee.description} »</Text> : null}
-
-      {mode === 'pay' ? (
-        <>
-          <Text style={styles.label}>MOYEN DE PAIEMENT</Text>
-          {METHODS.map((m) => {
-            const active = method === m.key;
-            return (
-              <TouchableOpacity
-                key={m.key}
-                onPress={() => {
-                  tap();
-                  setMethod(m.key);
-                }}
-                style={[styles.method, active && styles.methodActive]}
-                accessibilityRole="radio"
-                accessibilityState={{ checked: active }}
-              >
-                <View style={[styles.methodBadge, { backgroundColor: m.color }]}>
-                  {m.badge ? <Text style={styles.methodBadgeText}>{m.badge}</Text> : <CreditCard size={16} color={colors.lime[400]} />}
-                </View>
-                <Text style={[styles.methodLabel, active && { fontFamily: typography.fontBodyBold }]}>{m.label}</Text>
-                <View style={[styles.radio, active && styles.radioActive]} />
-              </TouchableOpacity>
-            );
-          })}
-          {needsPhone && (
-            <>
-              <Text style={styles.label}>NUMÉRO {method === 'WAVE' ? 'WAVE' : 'ORANGE MONEY'}</Text>
-              <View style={styles.phone}>
-                <Text style={styles.phonePrefix}>+221</Text>
-                <TextInput
-                  value={phone}
-                  onChangeText={setPhone}
-                  keyboardType="phone-pad"
-                  placeholder="77 123 45 67"
-                  placeholderTextColor={colors.neutral[400]}
-                  style={styles.phoneInput}
-                  accessibilityLabel="Numéro de téléphone"
-                />
-              </View>
-            </>
-          )}
-        </>
-      ) : (
-        <InfoNote icon={<AlertTriangle size={15} color={colors.forest[600]} strokeWidth={2.2} />}>
-          Vous ne payez rien en attendant : l’équipe Paixi examine la demande et tranche avec vous et l’hôte.
-        </InfoNote>
-      )}
+      <InfoNote icon={<AlertTriangle size={15} color={colors.forest[600]} strokeWidth={2.2} />}>
+        Vous ne payez rien en attendant : un médiateur Paixi examine la demande avec vous et {hostName}, photos d’état des lieux à l’appui.
+      </InfoNote>
     </BottomSheet>
   );
 }
@@ -321,30 +241,5 @@ const styles = StyleSheet.create({
   chip: { height: 36, paddingHorizontal: 13, borderRadius: radius.pill, borderWidth: 1, borderColor: colors.neutral[200], justifyContent: 'center', backgroundColor: colors.neutral[0] },
   chipActive: { backgroundColor: INK, borderColor: INK },
   chipText: { fontFamily: typography.fontBodySemiBold, fontSize: 12, color: INK },
-  segment: { flexDirection: 'row', alignSelf: 'flex-start', padding: 3, borderRadius: radius.pill, backgroundColor: colors.forest[50], marginBottom: 12 },
-  segmentItem: { height: 34, paddingHorizontal: 16, borderRadius: radius.pill, justifyContent: 'center' },
-  segmentItemActive: { backgroundColor: INK },
-  segmentText: { fontFamily: typography.fontBodySemiBold, fontSize: 13, color: colors.neutral[600] },
   quote: { padding: 12, borderRadius: 14, backgroundColor: colors.gold[50], fontFamily: typography.fontBody, fontSize: 13, lineHeight: 19, color: colors.gold[800] },
-  method: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 12,
-    height: 60,
-    paddingHorizontal: 14,
-    borderRadius: 18,
-    borderWidth: 1,
-    borderColor: colors.neutral[200],
-    backgroundColor: colors.neutral[0],
-    marginBottom: 8,
-  },
-  methodActive: { borderWidth: 2, borderColor: INK },
-  methodBadge: { width: 34, height: 34, borderRadius: 10, alignItems: 'center', justifyContent: 'center' },
-  methodBadgeText: { fontFamily: typography.fontBodyBold, fontSize: 13, color: '#FFFFFF' },
-  methodLabel: { flex: 1, fontFamily: typography.fontBodySemiBold, fontSize: 14, color: INK },
-  radio: { width: 20, height: 20, borderRadius: 10, borderWidth: 2, borderColor: colors.neutral[300] },
-  radioActive: { borderWidth: 6, borderColor: INK },
-  phone: { flexDirection: 'row', height: 54, borderRadius: 16, borderWidth: 1.5, borderColor: colors.forest[600], backgroundColor: colors.neutral[0], overflow: 'hidden' },
-  phonePrefix: { paddingHorizontal: 14, alignSelf: 'center', fontFamily: typography.fontBodySemiBold, fontSize: 15, color: INK },
-  phoneInput: { flex: 1, paddingHorizontal: 14, borderLeftWidth: 1, borderLeftColor: colors.neutral[200], fontFamily: typography.fontBodyMedium, fontSize: 16, color: INK },
 });

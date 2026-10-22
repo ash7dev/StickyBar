@@ -12,6 +12,7 @@ import { apiClient } from '../../shared/api/api-client';
 import { getPrixDerniereMinute, getPrixPublic } from '../../shared/components/ui/TenantPriceDisplay';
 import type { ListingItem } from '../../shared/components/ui/TenantListingCard';
 import { useFavorite } from '../favorites/useFavorites';
+import { shareListing } from '../share/share';
 import { formatAmount } from '../owner-home/lib/format';
 import { INK, PAPER, tap } from '../reservations/tenant/components/ui';
 
@@ -19,7 +20,7 @@ const AUTOPLAY_KEY = 'klef_video_autoplay_v1';
 const HINT_KEY = 'klef_video_hint_seen_v1';
 
 /** Lecture automatique des vidéos (réglage mémorisé : économiser les données mobiles). */
-function useAutoplay(): [boolean, (v: boolean) => void] {
+export function useAutoplay(): [boolean, (v: boolean) => void] {
   const [on, setOn] = useState(true);
   useEffect(() => {
     AsyncStorage.getItem(AUTOPLAY_KEY).then((v) => v === 'off' && setOn(false)).catch(() => {});
@@ -230,7 +231,7 @@ function Reel({
         <RailButton label={muted ? 'Son' : 'Couper'} onPress={onToggleMute}>
           {muted ? <VolumeX size={21} color="#FFFFFF" /> : <Volume2 size={21} color="#FFFFFF" />}
         </RailButton>
-        <RailButton label="Partager" onPress={() => Share.share({ message: `${item.titre} sur Paixi` }).catch(() => {})}>
+        <RailButton label="Partager" onPress={() => shareListing({ id: item.id, titre: item.titre, ville: item.ville, quartier: item.quartier, prixSejour: item.prixSejour, nbNuits: item.nbNuits, nightly })}>
           <Share2 size={20} color="#FFFFFF" />
         </RailButton>
       </View>

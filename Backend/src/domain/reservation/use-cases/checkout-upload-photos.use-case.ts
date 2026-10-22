@@ -35,6 +35,10 @@ export class CheckOutUploadPhotosUseCase {
     if (photos.length === 0) {
       throw new BadRequestException('Au moins une photo de sortie est requise');
     }
+    // Une adresse locale (file://…) n'est visible que sur le téléphone qui a pris la photo
+    if (photos.some((url) => typeof url !== 'string' || !url.startsWith('https://'))) {
+      throw new BadRequestException("Photo invalide : elle doit d'abord être envoyée sur le serveur d'images (adresse https).");
+    }
 
     return await this.prisma.$transaction(async (tx) => {
       // 1. Nettoyer anciennes photos de checkout

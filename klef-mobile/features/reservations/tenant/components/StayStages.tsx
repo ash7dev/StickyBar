@@ -2,7 +2,7 @@ import React from 'react';
 import { Alert, Linking, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
 import { Image } from 'expo-image';
 import * as Clipboard from 'expo-clipboard';
-import { useRouter } from 'expo-router';
+import { router, useRouter } from 'expo-router';
 import {
   AlertTriangle,
   BookOpen,
@@ -22,11 +22,15 @@ import {
 } from 'lucide-react-native';
 import { colors, typography } from '../../../../shared/theme/tokens';
 import { formatFCFA } from '../../../owner-home/lib/format';
+import { WeekendStrip, useWeekendPicks } from '../../../booking/components/WeekendPicks';
 import type { DemandeFraisReservation, ReservationDetail } from '../../types/reservation-detail.types';
 import type { TenantActions } from '../hooks/useTenantActions';
 import {
   clock,
+  balanceDue,
   depositSplit,
+  escrowAmount,
+  isDeposit,
   hostPhoneUnlocked,
   reviewDaysLeft,
   stayHours,
@@ -62,7 +66,7 @@ export interface StageHandlers {
   onWelcomeGuide: () => void;
   onRefuse: () => void;
   onReportProblem: () => void;
-  onFee: (fee: DemandeFraisReservation, mode: 'pay' | 'contest') => void;
+  onFee: (fee: DemandeFraisReservation, mode: 'contest') => void;
   onDossier: () => void;
   onSupport: () => void;
 }
@@ -117,6 +121,11 @@ export function renderStage(
   const nights = `${res.nbNuits} nuit${res.nbNuits > 1 ? 's' : ''}`;
   const dates = `${shortDate(res.dateDebut)} → ${shortDate(res.dateFin)}`;
   const total = fcfa(res.totalLocataire);
+  // En acompte, Paixi ne détient que l'acompte : c'est lui qui est bloqué, versé ou remboursé
+  const deposit = isDeposit(res);
+  const paid = fcfa(escrowAmount(res));
+  const balance = balanceDue(res);
+  const paidWord = deposit ? `votre acompte de ${paid}` : paid;
   const { arrival, departure } = stayHours(res);
   const phoneLocked = !hostPhoneUnlocked(res, now);
   const canCall = !!host?.telephone && !phoneLocked;
@@ -144,7 +153,7 @@ export function renderStage(
       return {
         content: (
           <>
-            <StayHero photoUrl={photo} chip={<StatusChip label="Paiement en cours" tone="gold" />} title={titre} meta={`${dates} · ${nights} · ${total}`} />
+            <StayHero photoUrl={photo} chip={<StatusChip label="Paiement en cours" tone="gold" />} title={titre} meta={`${dates} · ${nights} · ${deposit ? `acompte ${paid}` : total}`} />
             <NowCard>
               <NowTitle>On confirme votre paiement {provider}</NowTitle>
               <Body>Quelques minutes en général. Vous pouvez fermer l’app : on vous prévient dès que c’est bon.</Body>
@@ -250,7 +259,7 @@ export function renderStage(
             <View style={styles.escrowLine}>
               <Lock size={14} color={colors.forest[600]} strokeWidth={2.2} />
               <Text style={styles.small}>
-                <Text style={styles.bold}>{total} bloqués</Text> · versés à {hostName} à votre arrivée
+                <Text style={styles.bold}>{deposit ? `Acompte de ${paid} bloqué` : `${paid} bloqués`}</Text> · versé{deposit ? '' : 's'} à {hostName} à votre arrivée
               </Text>
             </View>
           </>
@@ -319,7 +328,7 @@ export function renderStage(
               <Text style={styles.eyebrow}>SI VOUS SIGNALEZ</Text>
               <NumberedLine n={1} text={`${hostName} est prévenu immédiatement`} />
               <NumberedLine n={2} text={<>Il a <Text style={styles.bold}>2 h</Text> pour faire l’état des lieux</>} />
-              <NumberedLine n={3} highlight text={<>Sinon : séjour annulé, <Text style={styles.bold}>{total} remboursés</Text></>} />
+              <NumberedLine n={3} highlight text={<>Sinon : séjour annulé, <Text style={styles.bold}>{paid} remboursés</Text></>} />
               <Body>Il arrive finalement ? Vous pourrez lui accorder 2 h de plus en un geste.</Body>
             </NowCard>
           </>
@@ -361,7 +370,7 @@ export function renderStage(
                 items={[
                   { label: 'Absence signalée', meta: res.absenceSignaleeLe ? clock(res.absenceSignaleeLe) : undefined, state: 'done' },
                   { label: `${hostName} fait l’état des lieux`, meta: left ?? undefined, state: 'current' },
-                  { label: `Sinon : annulation et ${total} remboursés`, state: 'todo' },
+                  { label: `Sinon : annulation et ${paid} remboursés`, state: 'todo' },
                 ]}
               />
               <Body>{hostName} est arrivé mais a besoin d’un peu plus de temps ? Accordez-lui 2 h de plus.</Body>
@@ -407,7 +416,9 @@ export function renderStage(
               </View>
               <View style={styles.consequence}>
                 <View style={[styles.consequenceIcon, { backgroundColor: colors.forest[600] }]}><Check size={12} color={PAPER} strokeWidth={3.2} /></View>
-                <Text style={styles.consequenceText}><Text style={styles.bold}>Conforme :</Text> le séjour démarre, {total} sont versés à {hostName}.</Text>
+                <Text style={styles.consequenceText}>
+                  <Text style={styles.bold}>Conforme :</Text> le séjour démarre, {deposit ? `votre acompte de ${paid} est versé à ${hostName} et vous lui réglez ${fcfa(balance)} sur place.` : `${paid} sont versés à ${hostName}.`}
+                </Text>
               </View>
               <View style={[styles.consequence, { backgroundColor: colors.error[50] }]}>
                 <View style={[styles.consequenceIcon, { backgroundColor: colors.error[700] }]}><X size={12} color={PAPER} strokeWidth={3.2} /></View>
@@ -426,7 +437,7 @@ export function renderStage(
               icon={<Check size={17} color={INK} strokeWidth={2.6} />}
               loading={h.actions.pending === 'confirm-checkin'}
               onPress={() =>
-                Alert.alert('Tout est conforme ?', `En confirmant, ${total} sont versés à ${hostName}. Cette action est définitive.`, [
+                Alert.alert('Tout est conforme ?', `En confirmant, ${deposit ? `votre acompte de ${paid} est versé` : `${paid} sont versés`} à ${hostName}. Cette action est définitive.`, [
                   { text: 'Vérifier encore', style: 'cancel' },
                   { text: 'Je confirme', onPress: () => h.actions.confirmCheckin() },
                 ])
@@ -462,7 +473,7 @@ export function renderStage(
             </View>
 
             {fee ? (
-              <NowCard tone="gold" label="MAINTENANT · SUPPLÉMENT DEMANDÉ">
+              <NowCard tone="gold" label="MAINTENANT · VOYAGEURS EN PLUS">
                 <View style={styles.rowBetween}>
                   <View style={styles.flex}>
                     <Text style={styles.feeTitle}>{fee.titre}</Text>
@@ -471,10 +482,10 @@ export function renderStage(
                   <BigAmount amount={amountOnly(fee.montant)} size={26} />
                 </View>
                 {fee.description ? <Text style={styles.feeQuote}>« {fee.description} »</Text> : null}
-                <View style={styles.pairRow}>
-                  <PillButton label="Contester" variant="ghost" onPress={() => h.onFee(fee, 'contest')} />
-                  <PillButton label={`Payer ${amountOnly(fee.montant)}`} variant="ink" flex={1.6} onPress={() => h.onFee(fee, 'pay')} />
-                </View>
+                <Body style={{ color: colors.gold[700] }}>
+                  Calculé avec le tarif par voyageur de l’annonce. Réglez-le en espèces à {hostName} : il confirme la réception dans l’app.
+                </Body>
+                <PillButton label="Ce n’est pas juste ? Contester" variant="ghost" onPress={() => h.onFee(fee, 'contest')} />
               </NowCard>
             ) : (
               <NowCard>
@@ -503,7 +514,7 @@ export function renderStage(
               <ChevronRight size={16} color={colors.neutral[500]} />
             </TouchableOpacity>
 
-            <ReleasedLine amount={total} hostName={hostName} on={res.checkinLocataireLe} onPress={h.onDossier} />
+            <ReleasedLine amount={paidWord} hostName={hostName} on={res.checkinLocataireLe} onPress={h.onDossier} />
           </>
         ),
         sticky: null,
@@ -545,13 +556,22 @@ export function renderStage(
                 <ChevronRight size={16} color={colors.neutral[500]} />
               </TouchableOpacity>
             )}
+            {/* Avis clos (7 jours) : on donne envie de repartir, d'abord dans la même ville */}
+            {daysLeft === null && <Repartir city={res.logement?.ville} exclude={res.logement?.id} />}
           </>
         ),
-        sticky: (
-          <StickyBar>
-            <PillButton label="Signaler un problème" variant="ghost" onPress={h.onReportProblem} />
-          </StickyBar>
-        ),
+        // Un litige ne s'ouvre que 24 h après la clôture : ensuite, on propose de repartir
+        sticky:
+          res.closeLe && now.getTime() - new Date(res.closeLe).getTime() <= 86_400_000 ? (
+            <StickyBar>
+              <PillButton label="Signaler un problème" variant="ghost" onPress={h.onReportProblem} />
+            </StickyBar>
+          ) : (
+            <StickyBar>
+              {res.logement?.id ? <PillButton label="Revoir ce logement" variant="ghost" onPress={() => router.push(`/listing/${res.logement!.id}` as never)} /> : null}
+              <PillButton label="Mon prochain séjour" flex={1.3} onPress={() => router.navigate('/(tenant)/explorer' as never)} />
+            </StickyBar>
+          ),
       };
     }
 
@@ -594,8 +614,9 @@ export function renderStage(
     case 'cancelled':
     case 'expired': {
       const refund = res.refunds?.[0];
-      const refundAmount = refund ? Number(refund.montantLocataire) : stage === 'expired' ? Number(res.totalLocataire) : null;
-      const kept = refundAmount !== null ? Number(res.totalLocataire) - refundAmount : 0;
+      // Un remboursement porte sur ce qui a été payé en ligne (l'acompte en formule acompte)
+      const refundAmount = refund ? Number(refund.montantLocataire) : stage === 'expired' ? escrowAmount(res) : null;
+      const kept = refundAmount !== null ? Math.max(0, escrowAmount(res) - refundAmount) : 0;
       const refundDone = refund?.statut === 'EXECUTE';
       const policy = res.politiqueAppliquee ? POLICY_LABELS[res.politiqueAppliquee] ?? res.politiqueAppliquee : null;
       const expired = stage === 'expired';
@@ -621,7 +642,7 @@ export function renderStage(
                   <Body light>Frais compris. Ce n’est pas de votre fait : rien n’est retenu.</Body>
                 ) : (
                   <View style={styles.breakdown}>
-                    <BreakdownLine label="Payé" value={amountOnly(res.totalLocataire)} />
+                    <BreakdownLine label={deposit ? 'Acompte payé' : 'Payé'} value={amountOnly(escrowAmount(res))} />
                     {kept > 0 && <BreakdownLine label="Non remboursé" value={`− ${amountOnly(kept)}`} />}
                     {policy && <BreakdownLine label="Barème appliqué" value={policy} strong />}
                   </View>
@@ -654,9 +675,19 @@ export function renderStage(
 
 // ── Sous-composants ──────────────────────────────────────────────────────────
 
+/** « Envie de repartir ? » : logements libres ce week-end, dans la même ville si possible. */
+function Repartir({ city, exclude }: { city?: string | null; exclude?: string }) {
+  const local = useWeekendPicks(!!city, city);
+  const anywhere = useWeekendPicks(!local.isLoading && !(local.data ?? []).some((l) => l.id !== exclude));
+  const fromCity = (local.data ?? []).filter((l) => l.id !== exclude);
+  const items = fromCity.length ? fromCity : (anywhere.data ?? []).filter((l) => l.id !== exclude);
+  if (!items.length) return null;
+  return <WeekendStrip items={items} title="Envie de repartir ?" sub={fromCity.length && city ? `libres ce week-end à ${city}` : 'libres ce week-end'} />;
+}
+
 function PaymentCard({ res, step, note, onDossier }: { res: ReservationDetail; step: 'blocked' | 'released'; note: string; onDossier: () => void }) {
   return (
-    <NowCard label="PAIEMENT PROTÉGÉ" aside={fcfa(res.totalLocataire)}>
+    <NowCard label={isDeposit(res) ? 'ACOMPTE PROTÉGÉ' : 'PAIEMENT PROTÉGÉ'} aside={fcfa(escrowAmount(res))}>
       <EscrowTrack paidOn={shortDate(res.paiement?.confirmeLeWebhook ?? res.creeLe)} step={step} />
       <View style={styles.rowBetween}>
         <Text style={[styles.small, styles.flex]}>{note}</Text>
@@ -673,7 +704,9 @@ function ReleasedLine({ amount, hostName, on, onPress }: { amount: string; hostN
     <TouchableOpacity onPress={onPress} style={styles.released} accessibilityRole="button">
       <View style={styles.releasedIcon}><Check size={12} color={PAPER} strokeWidth={3.2} /></View>
       <Text style={[styles.small, styles.flex, { color: colors.forest[800] }]}>
-        <Text style={styles.bold}>{amount} versés à {hostName}</Text>
+        <Text style={styles.bold}>
+          {amount} versé{amount.startsWith('votre acompte') ? '' : 's'} à {hostName}
+        </Text>
         {on ? ` le ${shortDate(on)}` : ''}
       </Text>
       <Text style={styles.link}>Détail ›</Text>

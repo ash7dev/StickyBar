@@ -65,14 +65,14 @@ export function MobileOwnerListingSkeleton({ viewMode = 'grid' }: Props) {
 const styles = StyleSheet.create({
   gridCard: {
     backgroundColor: colors.neutral[0],
-    borderRadius: radius.card,
+    borderRadius: 28,
     borderWidth: 1,
     borderColor: colors.neutral[200],
     overflow: 'hidden',
     ...shadows.xs,
   },
   gridImage: {
-    height: 160,
+    height: 220,
     width: '100%',
     backgroundColor: colors.neutral[200],
   },
@@ -83,7 +83,7 @@ const styles = StyleSheet.create({
 
   listCard: {
     backgroundColor: colors.neutral[0],
-    borderRadius: radius.card,
+    borderRadius: 22,
     borderWidth: 1,
     borderColor: colors.neutral[200],
     padding: 14,
@@ -96,9 +96,9 @@ const styles = StyleSheet.create({
     gap: 12,
   },
   listThumb: {
-    width: 80,
-    height: 70,
-    borderRadius: radius.inner,
+    width: 84,
+    height: 84,
+    borderRadius: 16,
     backgroundColor: colors.neutral[200],
   },
   listContent: {

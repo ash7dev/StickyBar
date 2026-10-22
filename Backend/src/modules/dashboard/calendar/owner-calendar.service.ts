@@ -62,6 +62,11 @@ export interface CalendarReservationEvent {
   nbNuits: number;
   nbPersonnes: number;
   netProprietaire: number;
+  /** Formule acompte : solde que le voyageur règle à l'hôte sur place (0 sinon). */
+  soldeSurPlace: number;
+  /** Heures d'arrivée et de départ « HH:mm » (Dakar = UTC), fixées à la confirmation. */
+  heureArrivee: string;
+  heureDepart: string;
   locataire: { prenom: string; nomInitiale: string; avatarUrl: string | null };
 }
 
@@ -131,6 +136,8 @@ export class OwnerCalendarService {
           nbNuits: true,
           nbPersonnes: true,
           netProprietaire: true,
+          typePaiement: true,
+          montantSoldeRestant: true,
           locataire: { select: { prenom: true, nom: true, avatarUrl: true } },
         },
       }),
@@ -157,6 +164,9 @@ export class OwnerCalendarService {
           nbNuits: r.nbNuits,
           nbPersonnes: r.nbPersonnes,
           netProprietaire: Number(r.netProprietaire),
+          soldeSurPlace: r.typePaiement?.toUpperCase() === 'DEPOSIT' ? Number(r.montantSoldeRestant ?? 0) : 0,
+          heureArrivee: r.dateDebut.toISOString().slice(11, 16),
+          heureDepart: r.dateFin.toISOString().slice(11, 16),
           locataire: {
             prenom: r.locataire.prenom,
             nomInitiale: r.locataire.nom ? `${r.locataire.nom.charAt(0).toUpperCase()}.` : '',

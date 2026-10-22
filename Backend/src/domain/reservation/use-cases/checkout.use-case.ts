@@ -10,6 +10,7 @@ import { PrismaService } from '../../../infrastructure/prisma/prisma.service';
 import { ReservationStateMachine } from '../reservation.state-machine';
 
 import { NotificationsService } from '../../../modules/notifications/notifications.service';
+import { QueueService } from '../../../infrastructure/queue/queue.service';
 
 @Injectable()
 export class CheckoutUseCase {
@@ -19,6 +20,7 @@ export class CheckoutUseCase {
     private readonly prisma: PrismaService,
     private readonly stateMachine: ReservationStateMachine,
     private readonly notifications: NotificationsService,
+    private readonly queue: QueueService,
   ) {}
 
   async execute(reservationId: string, userId: string) {
@@ -73,12 +75,14 @@ export class CheckoutUseCase {
       return updatedRes;
     });
 
+    await this.queue.scheduleFenetreAvis(reservationId, new Date()).catch(() => {});
+
     // Envoi Push aux deux parties pour inviter à laisser un avis
     this.notifications.sendReservationPush(
       reservation.locataireId,
       'Séjour terminé ! 🏁',
       'Merci d\'avoir séjourné avec Paixi ! Laissez un avis sur votre expérience.',
-      '/reservations'
+      `/reservation/${reservationId}`
     ).catch((err) => this.logger.error(`Erreur Push checkout locataire: ${err.message}`));
 
     this.notifications.sendReservationPush(

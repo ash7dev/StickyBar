@@ -32,6 +32,11 @@ export interface OwnerCalendarReservationEvent {
   nbNuits: number;
   nbPersonnes: number;
   netProprietaire: number;
+  /** Formule acompte : solde à encaisser sur place (0 si tout est payé en ligne). */
+  soldeSurPlace?: number;
+  /** « 14:00 » / « 12:00 » */
+  heureArrivee?: string;
+  heureDepart?: string;
   locataire: { prenom: string; nomInitiale: string; avatarUrl: string | null };
 }
 

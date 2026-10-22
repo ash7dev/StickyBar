@@ -317,12 +317,8 @@ export function TenantReservationActionPanel({ id, res, onRefetch }: Props) {
             <ExtraFeesCard
               reservationId={res.id}
               demandesFrais={(res as unknown as { demandesFrais?: any[] }).demandesFrais || []}
-              isOwner={false}
-              hasResolvedDispute={!!res.litige && res.litige.statut !== 'EN_ATTENTE'}
+              hostName={res.proprietaire?.prenom ?? undefined}
               onRefresh={onRefetch}
-              onOpenDisputeWithMotif={(motif, description) => {
-                setShowRefuseModal(true);
-              }}
             />
           )}
 

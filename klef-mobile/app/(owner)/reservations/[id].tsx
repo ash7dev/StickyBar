@@ -216,7 +216,14 @@ export default function OwnerReservationDetailScreen() {
         actions={actions}
         onClose={() => setSheet(null)}
       />
-      <FeeCreateSheet visible={sheet === 'fee'} guestName={guestName} actions={actions} onClose={() => setSheet(null)} />
+      <FeeCreateSheet
+        visible={sheet === 'fee'}
+        reservationId={reservation.id}
+        guestName={guestName}
+        booked={reservation.nbPersonnes}
+        actions={actions}
+        onClose={() => setSheet(null)}
+      />
       <HostDisputeSheet
         key={disputeMotif ?? 'default'}
         visible={sheet === 'dispute'}

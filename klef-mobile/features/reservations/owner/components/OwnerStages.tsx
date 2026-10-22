@@ -89,10 +89,10 @@ const DISPUTE_LABELS: Record<string, string> = {
 };
 
 const FEE_STATUS: Record<string, { label: string; color: string }> = {
-  EN_ATTENTE: { label: 'En attente', color: colors.gold[700] },
+  EN_ATTENTE: { label: 'À régler sur place', color: colors.gold[700] },
   PAYE: { label: 'Payé', color: colors.forest[600] },
   REFUSE: { label: 'Contesté', color: colors.error[700] },
-  CONTESTE: { label: 'Contesté', color: colors.error[700] },
+  CONTESTE: { label: 'Contesté · examiné par Paixi', color: colors.error[700] },
 };
 
 const fcfa = (n: number | string | null | undefined) => formatFCFA(Number(n ?? 0));
@@ -771,7 +771,7 @@ function BalanceCard({ res, balance, guestName, onReport }: { res: ReservationDe
 
 function FeesCard({ fees, actions, onAdd }: { fees: DemandeFraisReservation[]; actions: OwnerActions; onAdd: () => void }) {
   return (
-    <NowCard label="SUPPLÉMENTS" aside={fees.length ? plural(fees.length, 'demande') : undefined}>
+    <NowCard label="VOYAGEURS EN PLUS" aside={fees.length ? plural(fees.length, 'demande') : undefined}>
       {fees.map((f) => {
         const st = FEE_STATUS[f.statut] ?? { label: f.statut, color: colors.neutral[600] };
         return (
@@ -781,6 +781,7 @@ function FeesCard({ fees, actions, onAdd }: { fees: DemandeFraisReservation[]; a
             </View>
             <View style={styles.flex}>
               <Text style={styles.feeTitle} numberOfLines={1}>{f.titre}</Text>
+              {f.description ? <Text style={styles.small} numberOfLines={1}>{f.description}</Text> : null}
               <Text style={[styles.small, { color: st.color }]}>
                 {st.label}
                 {f.statut === 'PAYE' && f.methodePaiement ? ` · ${f.methodePaiement === 'LIQUIDE' || f.methodePaiement === 'ESPECES' ? 'espèces' : f.methodePaiement.replace('_', ' ').toLowerCase()}` : ''}
@@ -805,12 +806,15 @@ function FeesCard({ fees, actions, onAdd }: { fees: DemandeFraisReservation[]; a
           </View>
         );
       })}
-      <TouchableOpacity onPress={() => { tap(); onAdd(); }} style={styles.addRow} accessibilityRole="button">
-        <View style={styles.addIcon}>
-          <Plus size={16} color={INK} strokeWidth={2.4} />
-        </View>
-        <Text style={styles.addText}>Demander un supplément</Text>
-      </TouchableOpacity>
+      {/* Un seul supplément voyageurs par séjour (sauf s'il a été contesté) */}
+      {!fees.some((f) => f.statut === 'EN_ATTENTE' || f.statut === 'PAYE') && (
+        <TouchableOpacity onPress={() => { tap(); onAdd(); }} style={styles.addRow} accessibilityRole="button">
+          <View style={styles.addIcon}>
+            <Plus size={16} color={INK} strokeWidth={2.4} />
+          </View>
+          <Text style={styles.addText}>Déclarer des voyageurs en plus</Text>
+        </TouchableOpacity>
+      )}
     </NowCard>
   );
 }

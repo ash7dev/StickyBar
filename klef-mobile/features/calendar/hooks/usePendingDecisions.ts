@@ -11,6 +11,10 @@ export interface PendingDecision {
   delaiConfirmation: string;
   /** Decimal Prisma sérialisé en chaîne */
   netProprietaire?: number | string;
+  typePaiement?: string | null;
+  montantAcompte?: number | string | null;
+  montantCommission?: number | string | null;
+  montantSoldeRestant?: number | string | null;
   locataire: { prenom: string; nom: string; avatarUrl?: string | null } | null;
   logement: { id: string; titre: string } | null;
 }
