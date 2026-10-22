@@ -105,8 +105,16 @@ export function AdminKycInspectionModal({ user, isOpen, onClose, onVerify, onRej
   const urlDe = (p: PieceId) =>
     (user[PIECES.find((x) => x.id === p)!.champ] as string | undefined) ?? undefined;
 
-  const manquantes = PIECES.filter((p) => !urlDe(p.id));
-  const toutControle = coches.size === CONTROLES.length;
+  // Le serveur exige le verso pour une CNI : recto sans verso = passeport (une seule page)
+  const estPasseport = !!urlDe('recto') && !urlDe('verso');
+  // Les apps ne demandent pas de selfie : il n'est ni manquant ni contrôlé quand il est absent
+  const aSelfie = !!urlDe('selfie');
+  const manquantes = PIECES.filter(
+    (p) => !urlDe(p.id) && !(estPasseport && p.id === 'verso') && p.id !== 'selfie',
+  );
+  const controles = CONTROLES.filter((c) => aSelfie || c.id !== 'visage');
+  const faits = controles.filter((c) => coches.has(c.id)).length;
+  const toutControle = faits === controles.length;
   const peutRejeter = motifs.size > 0 || precision.trim().length > 0;
 
   const bascule = (set: Set<string>, id: string) => {
@@ -171,7 +179,7 @@ export function AdminKycInspectionModal({ user, isOpen, onClose, onVerify, onRej
           <div className="flex min-h-0 flex-1 flex-col gap-3 bg-background-alt p-4">
             <div className="flex items-center justify-between gap-3">
               <div className="flex items-center gap-1 rounded-pill bg-background-card p-1">
-                {PIECES.map((p) => {
+                {PIECES.filter((p) => !(estPasseport && p.id === 'verso') && (aSelfie || p.id !== 'selfie')).map((p) => {
                   const actif = !comparaison && pieceActive === p.id;
                   const absente = !urlDe(p.id);
                   return (
@@ -189,7 +197,7 @@ export function AdminKycInspectionModal({ user, isOpen, onClose, onVerify, onRej
                           : 'text-foreground-muted hover:bg-background-alt hover:text-foreground',
                       )}
                     >
-                      {p.court}
+                      {estPasseport && p.id === 'recto' ? 'Passeport' : p.court}
                       {absente && (
                         <span
                           aria-label="manquante"
@@ -207,6 +215,7 @@ export function AdminKycInspectionModal({ user, isOpen, onClose, onVerify, onRej
               {/* Le geste central du contrôle KYC : la pièce et le visage
                   côte à côte. Le faire en basculant entre deux onglets oblige
                   à comparer de mémoire. */}
+              {aSelfie && (
               <button
                 type="button"
                 onClick={() => setComparaison((v) => !v)}
@@ -220,9 +229,10 @@ export function AdminKycInspectionModal({ user, isOpen, onClose, onVerify, onRej
                 <Columns2 className="h-3.5 w-3.5" aria-hidden />
                 Comparer
               </button>
+              )}
             </div>
 
-            {comparaison ? (
+            {comparaison && aSelfie ? (
               <div className="grid min-h-0 flex-1 grid-cols-2 gap-3">
                 <figure className="flex min-h-0 flex-col gap-2">
                   <DocumentViewer
@@ -278,7 +288,7 @@ export function AdminKycInspectionModal({ user, isOpen, onClose, onVerify, onRej
             <section>
               <h3 className="eyebrow text-[0.6875rem]">Points de contrôle</h3>
               <ul className="mt-3 space-y-1">
-                {CONTROLES.map((c) => {
+                {controles.map((c) => {
                   const coche = coches.has(c.id);
                   return (
                     <li key={c.id}>
@@ -328,11 +338,11 @@ export function AdminKycInspectionModal({ user, isOpen, onClose, onVerify, onRej
                 >
                   <span
                     className="block h-full rounded-pill bg-forest-600 transition-[width] duration-200"
-                    style={{ width: `${(coches.size / CONTROLES.length) * 100}%` }}
+                    style={{ width: `${(faits / controles.length) * 100}%` }}
                   />
                 </span>
                 <span className="text-xs tabular-nums text-foreground-muted">
-                  {coches.size}/{CONTROLES.length}
+                  {faits}/{controles.length}
                 </span>
               </div>
             </section>
@@ -408,7 +418,7 @@ export function AdminKycInspectionModal({ user, isOpen, onClose, onVerify, onRej
               <p className="text-xs text-foreground-muted">
                 {toutControle
                   ? 'Tous les points sont contrôlés.'
-                  : `Encore ${CONTROLES.length - coches.size} ${CONTROLES.length - coches.size > 1 ? 'points' : 'point'
+                  : `Encore ${controles.length - faits} ${controles.length - faits > 1 ? 'points' : 'point'
                   } à contrôler avant d’approuver.`}
               </p>
 

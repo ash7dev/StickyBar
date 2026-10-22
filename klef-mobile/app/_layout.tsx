@@ -1,5 +1,5 @@
 import React, { useEffect } from 'react';
-import { Stack } from 'expo-router';
+import { Stack, useSegments } from 'expo-router';
 import * as SplashScreen from 'expo-splash-screen';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
@@ -56,6 +56,20 @@ export default function RootLayout() {
     hydrate();
     loadRole();
   }, []);
+
+  // L'espace affiché fait foi : en espace voyageur on est voyageur, en espace hôte on est hôte.
+  // Plus aucun écran ne demande de « basculer » après coup (le rôle part dans X-Active-Role).
+  const segments = useSegments();
+  const space = segments[0];
+  const activeRole = useRoleStore((s) => s.activeRole);
+  const setActiveRole = useRoleStore((s) => s.setActiveRole);
+  useEffect(() => {
+    if (space === '(tenant)' && activeRole !== 'LOCATAIRE') {
+      setActiveRole('LOCATAIRE');
+    } else if (space === '(owner)' && activeRole === 'LOCATAIRE') {
+      setActiveRole('PROPRIETAIRE');
+    }
+  }, [space, activeRole, setActiveRole]);
 
   useEffect(() => {
     if (fontsLoaded || fontError) {

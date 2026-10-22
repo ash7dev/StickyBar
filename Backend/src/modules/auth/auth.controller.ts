@@ -28,12 +28,16 @@ import { Public } from '@shared/decorators/public.decorator';
 import { JwtAuthGuard } from '@shared/guards/jwt-auth.guard';
 import { CurrentUser } from '@shared/decorators/current-user.decorator';
 import { AuthUser } from '@shared/types/jwt-payload.type';
+import { UsersService } from '../users/users.service';
 
 @ApiTags('Auth')
 @UseGuards(JwtAuthGuard)
 @Controller('auth')
 export class AuthController {
-  constructor(private readonly authService: AuthService) {}
+  constructor(
+    private readonly authService: AuthService,
+    private readonly usersService: UsersService,
+  ) {}
 
   // ── Inscription ────────────────────────────────────────────────────────────
 
@@ -176,7 +180,7 @@ export class AuthController {
   @ApiBearerAuth()
   @ApiOperation({ summary: "Profil de l'utilisateur connecté" })
   me(@CurrentUser() user: AuthUser) {
-    return user;
+    return this.usersService.getProfile(user.id, user.activeRole);
   }
 
   // ── Validation token Supabase ───────────────────────────────────────────────────

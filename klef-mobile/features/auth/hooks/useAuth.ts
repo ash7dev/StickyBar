@@ -127,9 +127,7 @@ export function useAuth() {
   // 6. Récupération du profil courant `/auth/me`
   const fetchCurrentUser = async (): Promise<AuthUser | null> => {
     try {
-      const res = await apiClient.get<AuthUser>('/auth/me');
-      setUser(res.data);
-      return res.data;
+      return await useAuthStore.getState().refreshUser();
     } catch (err) {
       console.warn('[useAuth] Error fetching /auth/me:', err);
       return null;

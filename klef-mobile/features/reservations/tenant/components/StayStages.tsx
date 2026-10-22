@@ -147,6 +147,8 @@ export function renderStage(
     />
   );
 
+  // Supplément « voyageurs en plus » en attente : réglé en espèces ou contesté
+  const pendingFee = (res.demandesFrais ?? []).find((f) => f.statut === 'EN_ATTENTE');
   switch (stage) {
     // ── Paiement en cours de validation ─────────────────────────────────────
     case 'payment-pending':
@@ -400,6 +402,7 @@ export function renderStage(
               line1="Vous êtes sur place ?"
               line2="Vérifiez chaque pièce."
             />
+            {pendingFee && <PendingFeeCard fee={pendingFee} hostName={hostName} onContest={() => h.onFee(pendingFee, 'contest')} />}
             <NowCard label={`MAINTENANT · ${photos.length} PHOTO${photos.length > 1 ? 'S' : ''} DE ${hostName.toUpperCase()}`}>
               <View style={styles.photoGrid}>
                 {shown.map((p) => (
@@ -450,7 +453,7 @@ export function renderStage(
 
     // ── Séjour en cours ─────────────────────────────────────────────────────
     case 'in-stay': {
-      const fee = (res.demandesFrais ?? []).find((f) => f.statut === 'EN_ATTENTE');
+      const fee = pendingFee;
       const start = new Date(res.dateDebut).getTime();
       const night = Math.min(res.nbNuits, Math.max(1, Math.floor((now.getTime() - start) / 86_400_000) + 1));
       return {
@@ -473,20 +476,7 @@ export function renderStage(
             </View>
 
             {fee ? (
-              <NowCard tone="gold" label="MAINTENANT · VOYAGEURS EN PLUS">
-                <View style={styles.rowBetween}>
-                  <View style={styles.flex}>
-                    <Text style={styles.feeTitle}>{fee.titre}</Text>
-                    <Text style={[styles.small, { color: colors.gold[700] }]}>demandé par {hostName}</Text>
-                  </View>
-                  <BigAmount amount={amountOnly(fee.montant)} size={26} />
-                </View>
-                {fee.description ? <Text style={styles.feeQuote}>« {fee.description} »</Text> : null}
-                <Body style={{ color: colors.gold[700] }}>
-                  Calculé avec le tarif par voyageur de l’annonce. Réglez-le en espèces à {hostName} : il confirme la réception dans l’app.
-                </Body>
-                <PillButton label="Ce n’est pas juste ? Contester" variant="ghost" onPress={() => h.onFee(fee, 'contest')} />
-              </NowCard>
+              <PendingFeeCard fee={fee} hostName={hostName} onContest={() => h.onFee(fee, 'contest')} />
             ) : (
               <NowCard>
                 <NowTitle>Profitez de votre séjour</NowTitle>
@@ -535,6 +525,7 @@ export function renderStage(
               line2={place ? `à ${place}.` : 'avec Paixi.'}
             />
             <LitigeOutcome res={res} />
+            {pendingFee && <PendingFeeCard fee={pendingFee} hostName={hostName} onContest={() => h.onFee(pendingFee, 'contest')} />}
             {myReview ? (
               <NowCard label="VOTRE AVIS">
                 <StarsRow value={myReview.note} size={24} />
@@ -676,6 +667,24 @@ export function renderStage(
 // ── Sous-composants ──────────────────────────────────────────────────────────
 
 /** « Envie de repartir ? » : logements libres ce week-end, dans la même ville si possible. */
+function PendingFeeCard({ fee, hostName, onContest }: { fee: DemandeFraisReservation; hostName: string; onContest: () => void }) {
+  return (
+    <NowCard tone="gold" label="VOYAGEURS EN PLUS · À RÉGLER">
+      <View style={styles.rowBetween}>
+        <View style={styles.flex}>
+          <Text style={styles.feeTitle}>{fee.description || fee.titre}</Text>
+          <Text style={[styles.small, { color: colors.gold[700] }]}>déclaré par {hostName}</Text>
+        </View>
+        <BigAmount amount={amountOnly(fee.montant)} size={26} />
+      </View>
+      <Body style={{ color: colors.gold[700] }}>
+        Calculé avec le tarif par voyageur de l’annonce. Réglez-le en espèces à {hostName} : il confirme la réception dans l’app.
+      </Body>
+      <PillButton label="Ce n’est pas juste ? Contester" variant="ghost" onPress={onContest} />
+    </NowCard>
+  );
+}
+
 function Repartir({ city, exclude }: { city?: string | null; exclude?: string }) {
   const local = useWeekendPicks(!!city, city);
   const anywhere = useWeekendPicks(!local.isLoading && !(local.data ?? []).some((l) => l.id !== exclude));
@@ -906,7 +915,6 @@ const styles = StyleSheet.create({
   nightBar: { flexDirection: 'row', gap: 4 },
   nightSeg: { flex: 1, height: 6, borderRadius: 3, backgroundColor: 'rgba(248,251,244,0.15)' },
   feeTitle: { fontFamily: typography.fontBodyBold, fontSize: 15, color: INK },
-  feeQuote: { padding: 10, paddingHorizontal: 12, borderRadius: 14, backgroundColor: 'rgba(255,255,255,0.7)', fontFamily: typography.fontBody, fontSize: 13, lineHeight: 19, color: colors.gold[800] },
   tiles: { flexDirection: 'row', gap: 8 },
   tile: {
     flex: 1,

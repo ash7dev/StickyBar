@@ -22,7 +22,11 @@ export function useSwitchRole() {
   const { user, token, refreshToken, setSession } = useAuthStore();
 
   const switchRole = async (targetRole: UserRole): Promise<boolean> => {
-    if (activeRole === targetRole) return true;
+    // Déjà dans ce rôle : on emmène simplement dans le bon espace (pas de second basculement)
+    if (activeRole === targetRole) {
+      router.replace((targetRole === 'LOCATAIRE' ? '/(tenant)' : '/(owner)/dashboard') as any);
+      return true;
+    }
 
     try {
       setIsSwitching(true);
@@ -46,6 +50,8 @@ export function useSwitchRole() {
 
       // Mettre à jour le store de rôle actif
       await setActiveRole(data?.activeRole || targetRole);
+      // Le passage en hôte peut changer le profil (estProprietaire) : resynchronisation
+      useAuthStore.getState().refreshUser();
 
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => {});
 

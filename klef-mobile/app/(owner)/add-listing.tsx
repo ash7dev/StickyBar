@@ -15,7 +15,6 @@ import * as Haptics from 'expo-haptics';
 import { apiClient } from '../../shared/api/api-client';
 import { colors, radius, shadows, typography } from '../../shared/theme/tokens';
 import { useListingWizardFormStore, PhotoItem } from '../../features/listings/stores/useListingWizardFormStore';
-import { useRoleStore } from '../../shared/stores/role.store';
 import { MobileStepBien } from '../../features/listings/components/wizard/steps/MobileStepBien';
 import { MobileStepAnnonce } from '../../features/listings/components/wizard/steps/MobileStepAnnonce';
 import { MobileStepEquipements } from '../../features/listings/components/wizard/steps/MobileStepEquipements';
@@ -85,14 +84,8 @@ export default function AddListingScreen() {
     tarifsPersonnes,
   } = useListingWizardFormStore();
   
-  const { activeRole, setActiveRole } = useRoleStore();
+  // Le rôle hôte est posé par la synchronisation d'espace (app/_layout)
   const [isSaving, setIsSaving] = useState(false);
-
-  React.useEffect(() => {
-    if (activeRole !== 'PROPRIETAIRE' && activeRole !== 'GESTIONNAIRE') {
-      setActiveRole('PROPRIETAIRE').catch(() => {});
-    }
-  }, [activeRole, setActiveRole]);
 
   // ── Query listing detail if in Edit Mode ────────────────────────────
   const {

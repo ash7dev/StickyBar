@@ -30,8 +30,8 @@ const STEP_META: Record<GateStep, {
     shortLabel: 'Téléphone',
   },
   kyc: {
-    title:      'Pièce d\'identité',
-    subtitle:   'Uploadez votre carte d\'identité pour sécuriser votre compte.',
+    title:      'Vérifiez votre identité',
+    subtitle:   'Une seule fois, avec votre carte d’identité ou votre passeport. Ensuite, vous réservez en un clic.',
     icon:       FileText,
     shortLabel: 'Identité',
   },

@@ -101,6 +101,9 @@ export function Dossier({
   const guestName = res.locataire?.prenom ?? 'Le voyageur';
   const manager = res.logement?.gestionnaire;
   const paidFees = (res.demandesFrais ?? []).filter((f) => f.statut === 'PAYE');
+  // Suppléments réglés en espèces : hors « via Paixi » (l'arbitrage, lui, passe par le portefeuille)
+  const cashFees = paidFees.filter((f) => f.methodePaiement === 'ESPECES' || f.methodePaiement === 'LIQUIDE');
+  const walletFees = paidFees.filter((f) => !cashFees.includes(f));
   const photo = res.logement?.photos?.[0]?.url;
   const ref = `PX-${res.id.slice(0, 6).toUpperCase()}`;
   const checkin = (res.photosEtatLieu ?? []).filter((p) => p.type === 'CHECKIN');
@@ -217,11 +220,11 @@ export function Dossier({
           <View style={[styles.card, { gap: 12 }]}>
             <DottedLine label={`${amountOnly(res.prixNuitEffectif)} × ${res.nbNuits} nuit${res.nbNuits > 1 ? 's' : ''}`} value={amountOnly(res.totalBase)} />
             {Number(res.reductionNuits) > 0 && <DottedLine label="Réduction séjour long" value={`− ${amountOnly(res.reductionNuits)}`} />}
-            {paidFees.map((f) => <DottedLine key={f.id} label={f.titre} value={`+ ${amountOnly(f.montant)}`} />)}
+            {walletFees.map((f) => <DottedLine key={f.id} label={f.titre} value={`+ ${amountOnly(f.montant)}`} />)}
             <View style={styles.totalRow}>
               <Text style={styles.totalLabel}>Via Paixi</Text>
               <Text style={styles.totalValue}>
-                {amountOnly((payout ?? Number(res.netProprietaire)) + paidFees.reduce((s, f) => s + Number(f.montant), 0))} <Text style={styles.totalCur}>FCFA</Text>
+                {amountOnly((payout ?? Number(res.netProprietaire)) + walletFees.reduce((s, f) => s + Number(f.montant), 0))} <Text style={styles.totalCur}>FCFA</Text>
               </Text>
             </View>
             {res.montantSoldeRestant ? (
@@ -231,6 +234,14 @@ export function Dossier({
                 </Text>
               </View>
             ) : null}
+            {cashFees.map((f) => (
+              <View key={f.id} style={styles.methodBox}>
+                <Text style={styles.methodText}>
+                  Plus <Text style={styles.bold}>{amountOnly(f.montant)}</Text> réglés en espèces · {f.titre.toLowerCase()}
+                  {f.description ? ` (${f.description})` : ''}
+                </Text>
+              </View>
+            ))}
             <View style={styles.methodBox}>
               <Text style={styles.methodText}>
                 {isDeposit(res) ? (
@@ -272,6 +283,14 @@ export function Dossier({
               </Text>
             </View>
           )}
+          {paidFees.map((f) => (
+            <View key={f.id} style={styles.methodBox}>
+              <Text style={styles.methodText}>
+                {f.titre} : <Text style={styles.bold}>{amountOnly(f.montant)}</Text> {cashFees.includes(f) ? `réglés en espèces à ${host?.prenom ?? 'l’hôte'}` : 'fixés par l’arbitrage Paixi'}
+                {f.description ? ` (${f.description})` : ''}
+              </Text>
+            </View>
+          ))}
         </View>
         )}
       </View>

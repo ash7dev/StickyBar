@@ -14,11 +14,13 @@ export class UsersService {
     private readonly supabase: SupabaseService,
   ) {}
 
-  async getProfile(userId: string) {
+  /** Profil courant, même format que GET /auth/me et la réponse de connexion. */
+  async getProfile(userId: string, activeRole?: string) {
     const user = await this.prisma.utilisateur.findUnique({
       where: { id: userId },
       select: {
         id: true,
+        userId: true,
         prenom: true,
         nom: true,
         email: true,
@@ -29,10 +31,17 @@ export class UsersService {
         phoneVerified: true,
         statutKyc: true,
         estProprietaire: true,
+        _count: { select: { logements: true } },
       },
     });
     if (!user) throw new NotFoundException('Utilisateur introuvable');
-    return user;
+    const { _count, dateNaissance, ...rest } = user;
+    return {
+      ...rest,
+      dateNaissance: dateNaissance?.toISOString() ?? null,
+      ...(activeRole && { activeRole }),
+      hasAnnonce: _count.logements > 0,
+    };
   }
 
   /**

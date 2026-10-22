@@ -1,13 +1,12 @@
 import React from 'react';
 import { View, Text, StyleSheet } from 'react-native';
 import { useRouter } from 'expo-router';
-import { Lock, ShieldCheck, KeyRound, Building2, Repeat } from 'lucide-react-native';
+import { Lock, ShieldCheck, KeyRound } from 'lucide-react-native';
 import { colors, radius, typography } from '../../../shared/theme/tokens';
 import { AppCard } from '../../../shared/components/ui/AppCard';
 import { AppButton } from '../../../shared/components/ui/AppButton';
 import { AppBadge } from '../../../shared/components/ui/AppBadge';
 import { useAuthStore } from '../stores/auth.store';
-import { useRoleStore } from '../../../shared/stores/role.store';
 
 export interface AuthRequiredCardProps {
   title: string;
@@ -18,7 +17,6 @@ export interface AuthRequiredCardProps {
 export function AuthRequiredCard({ title, subtitle, redirectTo = '/(auth)/login' }: AuthRequiredCardProps) {
   const router = useRouter();
   const { isAuthenticated } = useAuthStore();
-  const { activeRole, setActiveRole } = useRoleStore();
 
   // Cas 1 : Non connecté
   if (!isAuthenticated) {
@@ -58,39 +56,6 @@ export function AuthRequiredCard({ title, subtitle, redirectTo = '/(auth)/login'
         <View style={styles.reassuranceRow}>
           <ShieldCheck size={16} color={colors.lime[300]} />
           <Text style={styles.reassuranceText}>Garantie Séquestre Paixi · Réservation 100% sécurisée</Text>
-        </View>
-      </AppCard>
-    );
-  }
-
-  // Cas 2 : Connecté en Mode Propriétaire sur un espace Locataire
-  if (activeRole === 'PROPRIETAIRE') {
-    return (
-      <AppCard style={styles.cardContainer} variant="inverse">
-        <View style={styles.badgeRow}>
-          <AppBadge
-            label="MODE PROPRIÉTAIRE ACTIF"
-            leftIcon={<Building2 size={12} color={colors.gold[400]} />}
-            variant="verified"
-          />
-        </View>
-
-        <View style={styles.iconBox}>
-          <Repeat size={26} color={colors.lime[300]} />
-        </View>
-
-        <Text style={styles.title}>Vous êtes en Mode Propriétaire</Text>
-        <Text style={styles.subtitle}>
-          Pour consulter vos voyages personnels et vos réservations locataire, basculez en un clic vers le Mode Locataire.
-        </Text>
-
-        <View style={styles.actions}>
-          <AppButton
-            label="Passer en Mode Locataire"
-            onPress={() => setActiveRole('LOCATAIRE')}
-            size="lg"
-            variant="action"
-          />
         </View>
       </AppCard>
     );

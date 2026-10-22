@@ -330,6 +330,7 @@ export function renderOwnerStage(
             {checkinPhotos.length > 0 && <PhotoStrip photos={checkinPhotos} onPress={() => h.onGallery('CHECKIN')} />}
             {guestRow}
             {balanceCardOnSite}
+            <FeesCard fees={fees} actions={h.actions} onAdd={h.onFee} />
             <InfoNote tone="white" icon={<Clock size={15} color={colors.neutral[600]} strokeWidth={2.2} />}>
               {guestName} n’est toujours pas là à {clock(noshowFrom)} ? Vous pourrez signaler son absence ici.
             </InfoNote>
@@ -516,7 +517,7 @@ export function renderOwnerStage(
               </NowCard>
             )}
             {balanceCardOnSite}
-            <FeesCard fees={fees} actions={h.actions} onAdd={h.onFee} />
+            <FeesCard fees={fees} actions={h.actions} onAdd={h.onFee} canAdd={now.getTime() <= new Date(res.dateFin).getTime()} />
             {guestRow}
           </>
         ),
@@ -548,11 +549,14 @@ export function renderOwnerStage(
             <StayHero photoUrl={photo} chip={<StatusChip label="Terminé" tone="grey" />} title="Séjour clôturé" meta={`${dates}${res.closeLe ? ` · le ${shortDate(res.closeLe)}` : ''}`} />
             <LitigeOutcome res={res} />
             <NowCard label="VOUS AVEZ GAGNÉ">
-              <BigAmount amount={amountOnly(payout + feesTotal)} size={34} />
-              <Line label={nights} value={amountOnly(payout)} />
-              {paidFees.map((f) => <Line key={f.id} label={f.titre} value={amountOnly(f.montant)} />)}
+              <BigAmount amount={amountOnly(payout + (balance ?? 0) + feesTotal)} size={34} />
+              <Line label={`${nights} · via Paixi`} value={amountOnly(payout)} />
               {balance ? <Line label="Solde réglé sur place" value={amountOnly(balance)} /> : null}
+              {paidFees.map((f) => (
+                <Line key={f.id} label={`${f.titre}${isCash(f) ? ' · espèces' : ' · via Paixi'}`} value={amountOnly(f.montant)} />
+              ))}
             </NowCard>
+            {fees.some((f) => f.statut === 'EN_ATTENTE') && <FeesCard fees={fees} actions={h.actions} onAdd={h.onFee} canAdd={false} />}
             {mine ? (
               <ReviewLine title="Votre avis" note={mine.note} text={mine.commentaire} />
             ) : daysLeft !== null ? (
@@ -769,7 +773,10 @@ function BalanceCard({ res, balance, guestName, onReport }: { res: ReservationDe
   );
 }
 
-function FeesCard({ fees, actions, onAdd }: { fees: DemandeFraisReservation[]; actions: OwnerActions; onAdd: () => void }) {
+/** Supplément réglé de la main à la main (le reste passe par le portefeuille, ex. arbitrage). */
+const isCash = (f: DemandeFraisReservation) => f.methodePaiement === 'ESPECES' || f.methodePaiement === 'LIQUIDE';
+
+function FeesCard({ fees, actions, onAdd, canAdd = true }: { fees: DemandeFraisReservation[]; actions: OwnerActions; onAdd: () => void; canAdd?: boolean }) {
   return (
     <NowCard label="VOYAGEURS EN PLUS" aside={fees.length ? plural(fees.length, 'demande') : undefined}>
       {fees.map((f) => {
@@ -784,7 +791,7 @@ function FeesCard({ fees, actions, onAdd }: { fees: DemandeFraisReservation[]; a
               {f.description ? <Text style={styles.small} numberOfLines={1}>{f.description}</Text> : null}
               <Text style={[styles.small, { color: st.color }]}>
                 {st.label}
-                {f.statut === 'PAYE' && f.methodePaiement ? ` · ${f.methodePaiement === 'LIQUIDE' || f.methodePaiement === 'ESPECES' ? 'espèces' : f.methodePaiement.replace('_', ' ').toLowerCase()}` : ''}
+                {f.statut === 'PAYE' && f.methodePaiement ? ` · ${isCash(f) ? 'espèces' : 'via Paixi'}` : ''}
               </Text>
             </View>
             <View style={{ alignItems: 'flex-end' }}>
@@ -807,7 +814,7 @@ function FeesCard({ fees, actions, onAdd }: { fees: DemandeFraisReservation[]; a
         );
       })}
       {/* Un seul supplément voyageurs par séjour (sauf s'il a été contesté) */}
-      {!fees.some((f) => f.statut === 'EN_ATTENTE' || f.statut === 'PAYE') && (
+      {canAdd && !fees.some((f) => f.statut === 'EN_ATTENTE' || f.statut === 'PAYE') && (
         <TouchableOpacity onPress={() => { tap(); onAdd(); }} style={styles.addRow} accessibilityRole="button">
           <View style={styles.addIcon}>
             <Plus size={16} color={INK} strokeWidth={2.4} />

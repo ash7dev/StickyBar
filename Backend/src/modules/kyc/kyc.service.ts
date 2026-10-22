@@ -45,8 +45,14 @@ export class KycService {
       data: {
         kycDocumentUrl: dto.kycDocumentUrl,
         kycDocumentPublicId: dto.kycDocumentPublicId,
-        kycVersoUrl: dto.kycVersoUrl,
-        kycVersoPublicId: dto.kycVersoPublicId,
+        // Passeport : une seule page, pas de verso (un ancien verso est effacé)
+        kycVersoUrl: dto.typeDocument === 'PASSEPORT' ? null : dto.kycVersoUrl,
+        kycVersoPublicId: dto.typeDocument === 'PASSEPORT' ? null : dto.kycVersoPublicId,
+        // Selfie du même envoi ; un nouveau dossier sans selfie efface l'ancien (pas de mélange)
+        kycSelfieUrl: dto.kycSelfieUrl ?? null,
+        kycSelfiePublicId: dto.kycSelfiePublicId ?? null,
+        selfieFaceDetected: dto.selfieFaceDetected ?? false,
+        selfieMatchScore: null,
         statutKyc: StatutKyc.EN_ATTENTE,
         kycRejectionReason: null, // Reset de la raison si nouvelle soumission
       },
@@ -87,14 +93,14 @@ export class KycService {
         kycSelfiePublicId: dto.kycSelfiePublicId,
         selfieFaceDetected: dto.selfieFaceDetected,
         selfieMatchScore: dto.selfieMatchScore ?? null,
-        selfieVerifiedAt: new Date(),
-        statutKyc: StatutKyc.VERIFIE,
+        // Le selfie complète le dossier : seule l'équipe Paixi peut le passer en VERIFIE
+        // (avant, cet appel validait le compte tout seul, sans aucun contrôle)
       },
     });
 
-    this.logger.log(`Selfie KYC soumis et validé pour l'utilisateur [${userId}]`);
+    this.logger.log(`Selfie KYC ajouté au dossier de l'utilisateur [${userId}]`);
     return {
-      message: 'Selfie KYC validé avec succès, votre compte est maintenant vérifié',
+      message: 'Selfie ajouté, votre dossier est en cours de vérification',
       statut: updated.statutKyc,
     };
   }

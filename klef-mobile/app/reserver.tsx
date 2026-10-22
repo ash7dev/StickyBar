@@ -62,9 +62,12 @@ export default function ReserverScreen() {
   // Profil, téléphone, identité : vérifiés ici aussi (le retour après connexion saute la fiche annonce)
   const gate = useGatedAction(useCallback(() => {}, []));
   const triggerGate = gate.trigger;
+  // Une seule vérification par utilisateur : la resynchronisation du profil modifie `user`
+  // et ne doit pas relancer la vérification en boucle
+  const userId = user?.id;
   useEffect(() => {
-    if (user) triggerGate();
-  }, [user, triggerGate]);
+    if (userId) triggerGate();
+  }, [userId, triggerGate]);
 
   const listingQ = useQuery({
     queryKey: ['listing-checkout', listingId],

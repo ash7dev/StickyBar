@@ -25,7 +25,7 @@ export class UsersController {
   @Get('me')
   @ApiOperation({ summary: 'Profil complet de l\'utilisateur connecté' })
   getProfile(@CurrentUser() user: AuthUser) {
-    return this.usersService.getProfile(user.id);
+    return this.usersService.getProfile(user.id, user.activeRole);
   }
 
   @Patch('me')

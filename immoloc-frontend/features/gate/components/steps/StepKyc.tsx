@@ -1,7 +1,7 @@
 'use client';
 
-import { useRef, useState, useCallback } from 'react';
-import { Upload, CheckCircle2, X, Loader2, CreditCard, ArrowRight, AlertCircle, ImageIcon } from 'lucide-react';
+import { useCallback, useEffect, useRef, useState } from 'react';
+import { BookOpen, Camera, Check, Clock, CreditCard, Loader2, Lock, ScanFace } from 'lucide-react';
 import { nestFetch } from '@/lib/nestjs/api-client';
 import { NEST_API } from '@/lib/nestjs/endpoints';
 import { useRoleStore } from '@/stores/role.store';
@@ -10,7 +10,40 @@ import { cn } from '@/lib/utils/cn';
 
 interface Props { onDone: () => void }
 
-type KycSubStep = 'recto' | 'verso';
+// ── Pièces acceptées : CNI ou passeport, comme dans l'app ────────────────────
+
+type DocType = 'CNI' | 'PASSEPORT';
+type Side = 'recto' | 'verso' | 'page' | 'selfie';
+
+const DOCS: Record<DocType, { label: string; hint: string; sides: Side[]; ratio: string; Icon: typeof CreditCard }> = {
+  CNI: { label: 'Carte d’identité', hint: 'CNI CEDEAO · recto et verso', sides: ['recto', 'verso'], ratio: 'aspect-[85.6/54]', Icon: CreditCard },
+  PASSEPORT: { label: 'Passeport', hint: 'La page avec votre photo', sides: ['page'], ratio: 'aspect-[125/88]', Icon: BookOpen },
+};
+
+const SIDE_LABEL: Record<Side, string> = {
+  recto: 'Recto · face avec la photo',
+  verso: 'Verso · face arrière',
+  page: 'Page avec la photo',
+  selfie: 'Votre visage',
+};
+
+const MAX_INPUT = 20 * 1024 * 1024;
+
+/** Réduit la photo (1600 px, JPEG) : le serveur refuse au-delà de 5 Mo. */
+async function shrink(file: File): Promise<File> {
+  try {
+    const bitmap = await createImageBitmap(file);
+    const scale = Math.min(1, 1600 / Math.max(bitmap.width, bitmap.height));
+    const canvas = document.createElement('canvas');
+    canvas.width = Math.round(bitmap.width * scale);
+    canvas.height = Math.round(bitmap.height * scale);
+    canvas.getContext('2d')?.drawImage(bitmap, 0, 0, canvas.width, canvas.height);
+    const blob = await new Promise<Blob | null>((res) => canvas.toBlob(res, 'image/jpeg', 0.82));
+    return blob ? new File([blob], 'kyc.jpg', { type: 'image/jpeg' }) : file;
+  } catch {
+    return file;
+  }
+}
 
 async function uploadKycFile(file: File, token: string): Promise<{ url: string; publicId: string }> {
   const form = new FormData();
@@ -23,321 +56,303 @@ async function uploadKycFile(file: File, token: string): Promise<{ url: string; 
   });
 }
 
+/**
+ * Vérification d'identité : choix de la pièce, une photo par face, envoi à
+ * l'équipe Paixi. L'hôte voit seulement « Identité vérifiée ».
+ */
 export function StepKyc({ onDone }: Props) {
   const { setGateStatus } = useRoleStore();
   const { refreshIfNeeded } = useNestToken();
+  const input = useRef<HTMLInputElement>(null);
+  const faceInput = useRef<HTMLInputElement>(null);
 
-  const rectoRef = useRef<HTMLInputElement>(null);
-  const versoRef = useRef<HTMLInputElement>(null);
-
-  const [subStep, setSubStep] = useState<KycSubStep>('recto');
-  const [rectoFile, setRectoFile] = useState<File | null>(null);
-  const [versoFile, setVersoFile] = useState<File | null>(null);
-  const [rectoPreview, setRectoPreview] = useState<string | null>(null);
-  const [versoPreview, setVersoPreview] = useState<string | null>(null);
+  const [doc, setDoc] = useState<DocType | null>(null);
+  const [files, setFiles] = useState<Partial<Record<Side, { file: File; preview: string }>>>({});
+  const [picking, setPicking] = useState<Side | null>(null);
   const [loading, setLoading] = useState(false);
+  const [sent, setSent] = useState(false);
   const [error, setError] = useState('');
 
-  const handleFileSelect = useCallback((file: File, side: KycSubStep) => {
-    // Validate file
-    const MAX_SIZE = 5 * 1024 * 1024; // 5 Mo
-    if (file.size > MAX_SIZE) {
-      setError('Le fichier est trop volumineux (max 5 Mo).');
-      return;
-    }
-    if (!['image/jpeg', 'image/png', 'image/webp'].includes(file.type)) {
-      setError('Format non pris en charge. Utilisez JPG, PNG ou WebP.');
-      return;
-    }
-    setError('');
+  // Libère les aperçus à la fermeture de l'étape
+  const previews = useRef<Partial<Record<Side, { file: File; preview: string }>>>({});
+  useEffect(() => {
+    previews.current = files;
+  }, [files]);
+  useEffect(() => () => Object.values(previews.current).forEach((f) => f && URL.revokeObjectURL(f.preview)), []);
 
-    // Create preview
-    const url = URL.createObjectURL(file);
-    if (side === 'recto') {
-      setRectoFile(file);
-      setRectoPreview(url);
-    } else {
-      setVersoFile(file);
-      setVersoPreview(url);
-    }
-  }, []);
+  const sides = doc ? DOCS[doc].sides : [];
+  const sequence: Side[] = doc ? [...sides, 'selfie'] : [];
+  const done = sequence.filter((s) => !!files[s]).length;
+  const ready = sequence.length > 0 && done === sequence.length;
 
-  const clearFile = useCallback((side: KycSubStep) => {
-    if (side === 'recto') {
-      if (rectoPreview) URL.revokeObjectURL(rectoPreview);
-      setRectoFile(null);
-      setRectoPreview(null);
-    } else {
-      if (versoPreview) URL.revokeObjectURL(versoPreview);
-      setVersoFile(null);
-      setVersoPreview(null);
-    }
-  }, [rectoPreview, versoPreview]);
+  const pick = (side: Side) => {
+    setPicking(side);
+    // Selfie : sur téléphone, le navigateur ouvre directement la caméra frontale
+    (side === 'selfie' ? faceInput : input).current?.click();
+  };
 
-  function handleContinueToVerso() {
-    if (!rectoFile) return;
-    setSubStep('verso');
-    setError('');
-  }
+  const onFile = useCallback(
+    async (raw: File | undefined) => {
+      if (!raw || !picking) return;
+      if (!['image/jpeg', 'image/png', 'image/webp'].includes(raw.type)) {
+        setError('Format non pris en charge : utilisez une photo JPG, PNG ou WebP.');
+        return;
+      }
+      if (raw.size > MAX_INPUT) {
+        setError('Photo trop lourde (20 Mo maximum).');
+        return;
+      }
+      setError('');
+      const file = await shrink(raw);
+      setFiles((prev) => {
+        const old = prev[picking];
+        if (old) URL.revokeObjectURL(old.preview);
+        return { ...prev, [picking]: { file, preview: URL.createObjectURL(file) } };
+      });
+    },
+    [picking],
+  );
 
-  async function handleSubmit() {
-    if (!rectoFile || !versoFile) return;
+  async function submit() {
+    if (!doc || !ready) return;
     setLoading(true);
     setError('');
     try {
       const token = (await refreshIfNeeded()) ?? '';
-      const [recto, verso] = await Promise.all([
-        uploadKycFile(rectoFile, token),
-        uploadKycFile(versoFile, token),
+      const [uploads, selfie] = await Promise.all([
+        Promise.all(sides.map((s) => uploadKycFile(files[s]!.file, token))),
+        uploadKycFile(files.selfie!.file, token),
       ]);
       await nestFetch(NEST_API.KYC.SUBMIT, {
         method: 'POST',
         token,
         body: JSON.stringify({
-          kycDocumentUrl:      recto.url,
-          kycDocumentPublicId: recto.publicId,
-          kycVersoUrl:         verso.url,
-          kycVersoPublicId:    verso.publicId,
+          typeDocument: doc,
+          kycDocumentUrl: uploads[0].url,
+          kycDocumentPublicId: uploads[0].publicId,
+          ...(doc === 'CNI' && { kycVersoUrl: uploads[1].url, kycVersoPublicId: uploads[1].publicId }),
+          kycSelfieUrl: selfie.url,
+          kycSelfiePublicId: selfie.publicId,
         }),
       });
       setGateStatus({ statutKyc: 'EN_ATTENTE' });
-      onDone();
+      setSent(true);
     } catch (e: unknown) {
-      setError((e as Error)?.message ?? 'Erreur lors de l\'envoi des documents');
+      setError((e as Error)?.message || 'L’envoi a échoué. Vérifiez votre connexion et réessayez.');
     } finally {
       setLoading(false);
     }
   }
 
-  const currentFile = subStep === 'recto' ? rectoFile : versoFile;
-  const currentPreview = subStep === 'recto' ? rectoPreview : versoPreview;
-  const currentRef = subStep === 'recto' ? rectoRef : versoRef;
+  if (sent && doc) {
+    return (
+      <div className="space-y-4">
+        <div className="relative flex flex-col items-center gap-3 overflow-hidden rounded-[1.75rem] bg-forest-950 px-6 pb-7 pt-8 text-center">
+          <span aria-hidden="true" className="absolute -top-16 h-72 w-72 rounded-full border border-lime-400/10" />
+          <span aria-hidden="true" className="absolute -top-2 h-44 w-44 rounded-full border border-lime-400/20" />
+          {/* Le dossier, en éventail */}
+          <div className="relative mb-2 h-28 w-52">
+            {sides.map((s, i) => (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img
+                key={s}
+                src={files[s]?.preview}
+                alt=""
+                className={cn(
+                  'absolute left-1/2 top-1/2 w-32 -translate-x-1/2 -translate-y-1/2 rounded-lg border-2 border-white/85 object-cover shadow-xl',
+                  DOCS[doc].ratio,
+                  i === 0 ? '-rotate-[8deg]' : 'rotate-[6deg]',
+                )}
+              />
+            ))}
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
+              src={files.selfie?.preview}
+              alt=""
+              className="absolute -bottom-2 right-1 h-[4.5rem] w-14 rounded-full border-[3px] border-lime-400 object-cover shadow-xl"
+            />
+          </div>
+          <span className="relative inline-flex h-7 items-center gap-1.5 rounded-pill bg-lime-400 px-3 text-[0.65rem] font-bold tracking-widest text-forest-950">
+            <Clock className="h-3.5 w-3.5" aria-hidden="true" /> EN VÉRIFICATION
+          </span>
+          <p className="relative font-display text-2xl font-semibold leading-tight text-white">
+            Dossier envoyé.
+            <br />
+            <em className="text-lime-400">On s’occupe du reste.</em>
+          </p>
+          <p className="relative text-sm leading-relaxed text-forest-200">
+            L’équipe Paixi vérifie votre pièce, en général en moins de 2 heures. Vous recevez une notification dès que c’est fait.
+          </p>
+        </div>
+        <button type="button" onClick={onDone} className="btn-action w-full justify-center">
+          Continuer
+        </button>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-4">
-
-      {/* ── Mini-stepper recto/verso ─────────────────────────────── */}
-      <div className="flex items-center justify-center gap-2">
-        <StepDot
-          label="Recto"
-          active={subStep === 'recto'}
-          done={subStep === 'verso'}
-        />
-        <span
-          aria-hidden="true"
-          className={cn(
-            'h-0.5 w-8 rounded-pill transition-all duration-300',
-            subStep === 'verso' ? 'bg-forest-600' : 'bg-border',
-          )}
-        />
-        <StepDot
-          label="Verso"
-          active={subStep === 'verso'}
-          done={false}
-        />
+      {/* 1. Quelle pièce */}
+      <p className="text-[0.6875rem] font-bold uppercase tracking-wider text-foreground-muted">1 · Votre pièce</p>
+      <div className="grid grid-cols-2 gap-3" role="radiogroup">
+        {(Object.keys(DOCS) as DocType[]).map((d) => {
+          const { label, hint, Icon } = DOCS[d];
+          const active = doc === d;
+          return (
+            <button
+              key={d}
+              type="button"
+              role="radio"
+              aria-checked={active}
+              onClick={() => {
+                setDoc(d);
+                // Le selfie reste valable si l'on change de pièce
+                setFiles((prev) => (prev.selfie ? { selfie: prev.selfie } : {}));
+                setError('');
+              }}
+              className={cn(
+                'relative flex flex-col items-start gap-1 rounded-card border-2 bg-background-card p-4 text-left transition-colors',
+                active ? 'border-forest-950' : 'border-border hover:border-border-hover',
+              )}
+            >
+              <span
+                className={cn(
+                  'mb-1.5 flex h-10 w-10 items-center justify-center rounded-full',
+                  active ? 'bg-forest-950 text-lime-400' : 'bg-background-alt text-forest-950',
+                )}
+              >
+                <Icon className="h-5 w-5" aria-hidden="true" />
+              </span>
+              <span className="text-sm font-bold text-foreground">{label}</span>
+              <span className="text-xs leading-snug text-foreground-muted">{hint}</span>
+              {active && (
+                <span className="absolute right-3 top-3 flex h-5 w-5 items-center justify-center rounded-full bg-lime-400 text-forest-950">
+                  <Check className="h-3 w-3" strokeWidth={3} aria-hidden="true" />
+                </span>
+              )}
+            </button>
+          );
+        })}
       </div>
 
-      {/* ── Zone d'upload premium ────────────────────────────────── */}
-      <div
-        key={subStep}
-        className="animate-in fade-in slide-in-from-right-3 duration-300"
-      >
-        <div className="space-y-3">
-          {/* Header */}
-          <div className="flex items-center gap-2.5">
-            <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-inner border border-forest-100 bg-forest-50 text-forest-700">
-              <CreditCard className="h-4 w-4" aria-hidden="true" />
-            </span>
-            <div className="min-w-0">
-              <p className="text-xs font-bold text-foreground">
-                {subStep === 'recto' ? 'Face avant (Recto)' : 'Face arrière (Verso)'}
-              </p>
-              <p className="text-[10px] text-foreground-muted">
-                {subStep === 'recto'
-                  ? 'Le côté avec votre photo et vos informations'
-                  : 'Le côté opposé de votre document'}
-              </p>
-            </div>
-          </div>
-
-          {/* Upload zone */}
-          <div
-            className={cn(
-              'relative rounded-card border-2 border-dashed transition-all overflow-hidden',
-              currentFile
-                ? 'border-forest-600 bg-forest-50/30'
-                : 'border-border bg-background-alt hover:border-forest-400 hover:bg-forest-50/10',
-            )}
-          >
-            {currentPreview ? (
-              /* ── Preview de l'image ── */
-              <div className="relative aspect-[16/10]">
-                {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img
-                  src={currentPreview}
-                  alt={`Aperçu ${subStep}`}
-                  className="h-full w-full object-cover"
-                />
-                {/* Overlay de succès */}
-                <div className="absolute inset-0 bg-forest-950/40 flex items-center justify-center">
-                  <div className="flex flex-col items-center gap-2 animate-in zoom-in-50 duration-300">
-                    <span className="flex h-12 w-12 items-center justify-center rounded-full bg-forest-600 text-neutral-0 shadow-lg">
-                      <CheckCircle2 className="h-6 w-6" />
-                    </span>
-                    <span className="text-xs font-bold text-neutral-0 bg-forest-950/60 px-3 py-1 rounded-pill">
-                      {currentFile?.name ?? 'Fichier sélectionné'}
-                    </span>
-                  </div>
-                </div>
-
-                {/* Bouton supprimer */}
-                <button
-                  type="button"
-                  onClick={() => clearFile(subStep)}
-                  className="absolute top-2.5 right-2.5 w-7 h-7 rounded-full bg-neutral-0/90 border border-border flex items-center justify-center hover:bg-error-50 hover:border-error-200 text-foreground-muted hover:text-error-600 transition-colors cursor-pointer shadow-sm"
-                >
-                  <X className="w-3.5 h-3.5" />
-                </button>
-              </div>
-            ) : (
-              /* ── Zone de drop vide ── */
-              <button
-                type="button"
-                onClick={() => currentRef.current?.click()}
-                className="w-full aspect-[16/10] flex flex-col items-center justify-center gap-3 cursor-pointer group"
-              >
-                <span className="flex h-14 w-14 items-center justify-center rounded-inner border-2 border-dashed border-border bg-background-card text-foreground-muted group-hover:border-forest-400 group-hover:text-forest-600 transition-all">
-                  {subStep === 'recto' ? (
-                    <CreditCard className="h-6 w-6" />
-                  ) : (
-                    <ImageIcon className="h-6 w-6" />
-                  )}
-                </span>
-                <div className="text-center">
-                  <p className="text-xs font-bold text-foreground group-hover:text-forest-700 transition-colors">
-                    Cliquez pour sélectionner
-                  </p>
-                  <p className="text-[10px] text-foreground-muted mt-0.5">
-                    ou glissez votre fichier ici
-                  </p>
-                </div>
-                <span className="inline-flex items-center gap-1 rounded-pill border border-border bg-background-card px-2.5 py-1 text-[10px] font-semibold text-foreground-muted">
-                  <Upload className="h-3 w-3" />
-                  JPG, PNG, WebP · Max 5 Mo
-                </span>
-              </button>
-            )}
-          </div>
-
-          {/* Consignes visuelles */}
-          <div className="flex items-start gap-2 p-2.5 rounded-inner bg-background-alt border border-border">
-            <AlertCircle className="h-3.5 w-3.5 text-foreground-muted shrink-0 mt-0.5" aria-hidden="true" />
-            <p className="text-[10px] leading-relaxed text-foreground-muted">
-              {subStep === 'recto'
-                ? 'Assurez-vous que votre photo, nom et numéro de document sont lisibles. Pas de reflet ni de doigt sur le document.'
-                : 'Vérifiez que tous les coins du document sont visibles et que le texte est lisible.'}
+      {/* 2. Les photos */}
+      {doc && (
+        <>
+          <div className="flex items-baseline justify-between">
+            <p className="text-[0.6875rem] font-bold uppercase tracking-wider text-foreground-muted">2 · Les photos</p>
+            <p className="font-display text-sm font-semibold text-forest-950">
+              {done}/{sequence.length}
             </p>
           </div>
-        </div>
+          <div className="flex gap-1.5" aria-hidden="true">
+            {sequence.map((s) => (
+              <span key={s} className={cn('h-1 flex-1 rounded-full transition-colors', files[s] ? 'bg-forest-950' : 'bg-border')} />
+            ))}
+          </div>
+          <div className="space-y-2.5">
+            {sequence.map((side) => {
+              const f = files[side];
+              const face = side === 'selfie';
+              const thumb = face ? 'mx-3 h-14 w-11 rounded-full' : cn('w-20 rounded-inner', DOCS[doc].ratio);
+              return (
+                <button
+                  key={side}
+                  type="button"
+                  onClick={() => pick(side)}
+                  className={cn(
+                    'flex w-full items-center gap-3 rounded-card border p-2.5 text-left transition-colors',
+                    f ? 'border-forest-200 bg-forest-50' : 'border-border bg-background-card hover:border-border-hover',
+                  )}
+                >
+                  {f ? (
+                    // eslint-disable-next-line @next/next/no-img-element
+                    <img src={f.preview} alt="" className={cn('shrink-0 object-cover', thumb)} />
+                  ) : (
+                    <span
+                      className={cn(
+                        'flex shrink-0 items-center justify-center border border-dashed border-border bg-background-alt text-forest-600',
+                        thumb,
+                      )}
+                    >
+                      {face ? <ScanFace className="h-4 w-4" aria-hidden="true" /> : <Camera className="h-4 w-4" aria-hidden="true" />}
+                    </span>
+                  )}
+                  <span className="min-w-0 flex-1">
+                    <span className="block text-sm font-bold text-foreground">{SIDE_LABEL[side]}</span>
+                    <span className={cn('block text-xs font-semibold', f ? 'text-forest-600' : 'text-foreground-muted')}>
+                      {f ? 'Ajoutée · cliquer pour la remplacer' : face ? 'De face, bien éclairé, sans lunettes' : 'Prendre ou choisir une photo'}
+                    </span>
+                  </span>
+                  {f ? (
+                    <span className="flex h-7 w-7 items-center justify-center rounded-full bg-forest-950 text-lime-400">
+                      <Check className="h-3.5 w-3.5" strokeWidth={3} aria-hidden="true" />
+                    </span>
+                  ) : (
+                    <span className="flex h-7 w-7 items-center justify-center rounded-full bg-lime-400 text-forest-950">
+                      <Camera className="h-3.5 w-3.5" aria-hidden="true" />
+                    </span>
+                  )}
+                </button>
+              );
+            })}
+          </div>
+          <p className="text-xs text-foreground-muted">Bonne lumière, sans reflet, pièce entière et texte lisible.</p>
+        </>
+      )}
+
+      <div className="flex items-start gap-2.5 rounded-card bg-forest-50 p-3">
+        <Lock className="mt-0.5 h-4 w-4 shrink-0 text-forest-600" aria-hidden="true" />
+        <p className="text-xs leading-relaxed text-forest-800">
+          Votre pièce et votre selfie sont chiffrés et vus uniquement par l’équipe Paixi. Votre hôte voit seulement « Identité vérifiée ».
+        </p>
       </div>
 
-      {/* ── Erreur ──────────────────────────────────────────────── */}
       {error && (
-        <p className="text-[11px] font-semibold text-error-600 bg-error-50 border border-error-500/30 rounded-inner px-3 py-2">
-          {error}
-        </p>
+        <p className="rounded-inner border border-error-500/30 bg-error-50 px-3 py-2 text-xs font-semibold text-error-700">{error}</p>
       )}
 
-      {/* ── Bouton d'action ──────────────────────────────────────── */}
-      {subStep === 'recto' ? (
-        <button
-          type="button"
-          onClick={handleContinueToVerso}
-          disabled={!rectoFile}
-          className="btn-action w-full text-xs justify-center cursor-pointer disabled:opacity-40"
-        >
-          <span>Continuer avec le verso</span>
-          <ArrowRight className="w-4 h-4" aria-hidden="true" />
-        </button>
-      ) : (
-        <div className="space-y-2">
-          <button
-            type="button"
-            onClick={handleSubmit}
-            disabled={loading || !rectoFile || !versoFile}
-            className="btn-action w-full text-xs justify-center cursor-pointer disabled:opacity-40"
-          >
-            {loading ? (
-              <><Loader2 className="w-4 h-4 animate-spin" /> Envoi en cours…</>
-            ) : (
-              <>
-                <CheckCircle2 className="w-4 h-4" aria-hidden="true" />
-                Soumettre mes pièces d&apos;identité
-              </>
-            )}
-          </button>
-
-          {/* Retour au recto */}
-          <button
-            type="button"
-            onClick={() => { setSubStep('recto'); setError(''); }}
-            className="w-full text-center text-[11px] font-semibold text-foreground-muted hover:text-foreground transition-colors cursor-pointer py-1"
-          >
-            ← Modifier le recto
-          </button>
-        </div>
-      )}
-
-      {/* Hidden file inputs */}
-      <input
-        ref={rectoRef}
-        type="file"
-        accept="image/jpeg,image/png,image/webp"
-        className="hidden"
-        onChange={(e) => { if (e.target.files?.[0]) handleFileSelect(e.target.files[0], 'recto'); }}
-      />
-      <input
-        ref={versoRef}
-        type="file"
-        accept="image/jpeg,image/png,image/webp"
-        className="hidden"
-        onChange={(e) => { if (e.target.files?.[0]) handleFileSelect(e.target.files[0], 'verso'); }}
-      />
-    </div>
-  );
-}
-
-/* ─── Step dot for mini-stepper ────────────────────────────────────────────── */
-
-function StepDot({ label, active, done }: { label: string; active: boolean; done: boolean }) {
-  return (
-    <div className="flex flex-col items-center gap-1">
-      <span
-        className={cn(
-          'flex h-6 w-6 items-center justify-center rounded-full border-2 text-[9px] font-bold transition-all duration-300',
-          done
-            ? 'border-forest-600 bg-forest-600 text-neutral-0'
-            : active
-              ? 'border-forest-600 bg-forest-50 text-forest-700 ring-2 ring-forest-500/15'
-              : 'border-border bg-background-alt text-foreground-faint',
-        )}
+      <button
+        type="button"
+        onClick={submit}
+        disabled={!ready || loading}
+        className="btn-action w-full justify-center disabled:opacity-40"
       >
-        {done ? (
-          <svg className="h-3 w-3" viewBox="0 0 16 16" fill="none">
-            <path d="M3.5 8.5L6.5 11.5L12.5 4.5" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" />
-          </svg>
+        {loading ? (
+          <>
+            <Loader2 className="h-4 w-4 animate-spin" aria-hidden="true" /> Envoi en cours…
+          </>
+        ) : !doc ? (
+          'Choisissez votre pièce'
+        ) : ready ? (
+          'Envoyer pour vérification'
         ) : (
-          <CreditCard className="h-3 w-3" />
+          `Encore ${sequence.length - done} photo${sequence.length - done > 1 ? 's' : ''}`
         )}
-      </span>
-      <span
-        className={cn(
-          'text-[9px] font-bold uppercase tracking-wider transition-colors',
-          done ? 'text-forest-700' : active ? 'text-foreground' : 'text-foreground-faint',
-        )}
-      >
-        {label}
-      </span>
+      </button>
+
+      {/* Sur téléphone, le navigateur propose l'appareil photo ou la galerie */}
+      <input
+        ref={input}
+        type="file"
+        accept="image/jpeg,image/png,image/webp"
+        className="hidden"
+        onChange={(e) => {
+          onFile(e.target.files?.[0]);
+          e.target.value = '';
+        }}
+      />
+      <input
+        ref={faceInput}
+        type="file"
+        accept="image/jpeg,image/png,image/webp"
+        capture="user"
+        className="hidden"
+        onChange={(e) => {
+          onFile(e.target.files?.[0]);
+          e.target.value = '';
+        }}
+      />
     </div>
   );
 }

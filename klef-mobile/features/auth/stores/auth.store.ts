@@ -1,4 +1,5 @@
 import { create } from 'zustand';
+import { AppState } from 'react-native';
 import * as SecureStore from 'expo-secure-store';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { AuthUser } from '../../../shared/contracts';
@@ -34,9 +35,31 @@ interface AuthState {
   // Actions
   setSession: (token: string, refreshToken: string, user: AuthUser) => Promise<void>;
   setUser: (user: AuthUser) => Promise<void>;
+  /**
+   * Relit le profil complet sur le serveur et le FUSIONNE dans le store (jamais
+   * d'écrasement par un objet partiel). Les appels simultanés partagent la même requête.
+   */
+  refreshUser: () => Promise<AuthUser | null>;
   setHasSeenOnboarding: (seen: boolean) => Promise<void>;
   logout: () => Promise<void>;
   hydrate: () => Promise<void>;
+}
+
+// ── Synchronisation du profil ───────────────────────────────────────────────
+let inFlight: Promise<AuthUser | null> | null = null;
+let lastRefresh = 0;
+let foregroundWatched = false;
+/** Au retour au premier plan, on relit le profil s'il date de plus de 2 minutes. */
+const FOREGROUND_REFRESH_MS = 2 * 60_000;
+
+function watchForeground(get: () => AuthState) {
+  if (foregroundWatched) return;
+  foregroundWatched = true;
+  AppState.addEventListener('change', (state) => {
+    if (state === 'active' && get().token && Date.now() - lastRefresh > FOREGROUND_REFRESH_MS) {
+      get().refreshUser();
+    }
+  });
 }
 
 export const useAuthStore = create<AuthState>((set, get) => ({
@@ -61,6 +84,8 @@ export const useAuthStore = create<AuthState>((set, get) => ({
         isAuthenticated: true,
         isLoading: false,
       });
+      lastRefresh = Date.now();
+      watchForeground(get);
     } catch (e) {
       console.error('[AuthStore] Error saving session to SecureStore:', e);
     }
@@ -78,6 +103,31 @@ export const useAuthStore = create<AuthState>((set, get) => ({
       console.error('[AuthStore] Error updating user in storage:', e);
       set({ user });
     }
+  },
+
+  refreshUser: () => {
+    if (inFlight) return inFlight;
+    inFlight = apiClient
+      .get<any>('/users/me')
+      .then(async (res) => {
+        const fresh = res.data?.data || res.data;
+        const current = get().user;
+        if (!fresh?.id || !get().token) return current;
+        // Ne garder que les champs connus du serveur : null efface, undefined ne touche à rien
+        const merged = { ...(current ?? {}), ...fresh } as AuthUser;
+        await get().setUser(merged);
+        lastRefresh = Date.now();
+        return merged;
+      })
+      .catch((err) => {
+        console.warn('[AuthStore] Synchronisation du profil impossible:', err?.message);
+        if (err?.response?.status === 401) get().logout();
+        return get().user;
+      })
+      .finally(() => {
+        inFlight = null;
+      });
+    return inFlight;
   },
 
   setHasSeenOnboarding: async (seen: boolean) => {
@@ -146,21 +196,9 @@ export const useAuthStore = create<AuthState>((set, get) => ({
           isLoading: false,
         });
 
-        // Background refresh: Interroger /auth/me pour garder les infos fraîches à chaque rechargement
-        apiClient
-          .get<any>('/auth/me')
-          .then((res) => {
-            const freshUser = res.data?.data || res.data;
-            if (freshUser && freshUser.id) {
-              get().setUser(freshUser);
-            }
-          })
-          .catch((err) => {
-            console.warn('[AuthStore] Background /auth/me sync error:', err?.message);
-            if (err.response?.status === 401) {
-              get().logout();
-            }
-          });
+        // Resynchronisation en arrière-plan : le profil en cache peut dater d'une autre session
+        get().refreshUser();
+        watchForeground(get);
       } else {
         set({
           token: null,

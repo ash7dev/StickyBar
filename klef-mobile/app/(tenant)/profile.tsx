@@ -43,7 +43,7 @@ function SectionDivider({ label }: { label: string }) {
 }
 
 export default function ProfileScreen() {
-  const { user: authUser, isAuthenticated, setUser } = useAuthStore();
+  const { user: authUser, isAuthenticated } = useAuthStore();
   const { activeRole } = useRoleStore();
 
   const [gateOpen, setGateOpen] = useState(false);
@@ -79,15 +79,8 @@ export default function ProfileScreen() {
   const { refetch: refetchUser, isRefetching: isRefetchingUser } = useQuery({
     queryKey: ['tenant', 'profile', 'me'],
     queryFn: async () => {
-      const res = await apiClient.get<any>('/users/me');
-      const u = res?.data?.data || res?.data;
-      if (u) {
-        setUser({
-          ...authUser,
-          ...u,
-        });
-      }
-      return u || null;
+      // Même source que le reste de l'app : fusion dans le store, requêtes simultanées partagées
+      return (await useAuthStore.getState().refreshUser()) ?? null;
     },
     enabled: isAuthenticated,
     staleTime: 5 * 60 * 1000,

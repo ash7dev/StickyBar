@@ -52,9 +52,9 @@ const STEP_META: Record<
     shortLabel: 'Téléphone',
   },
   kyc: {
-    title: 'Pièce d\'identité (CNI / Passeport)',
+    title: 'Vérifiez votre identité',
     subtitle:
-      'Ajoutez la face avant et la face arrière de votre pièce d\'identité.',
+      'Une seule fois, avec votre carte d’identité ou votre passeport. Ensuite, vous réservez en un clic.',
     icon: CreditCard,
     shortLabel: 'Identité',
   },

@@ -10,7 +10,6 @@ import { AlertCircle, ArrowRight, Check, ChevronRight, KeyRound, Search, Star } 
 import { colors, typography } from '../../shared/theme/tokens';
 import { apiClient } from '../../shared/api/api-client';
 import { useAuthStore } from '../../features/auth/stores/auth.store';
-import { useRoleStore } from '../../shared/stores/role.store';
 import { AuthRequiredCard } from '../../features/auth/components/AuthRequiredCard';
 import type { ReservationDetail } from '../../features/reservations/types/reservation-detail.types';
 import { tenantStage, timeLeft, type TenantStage } from '../../features/reservations/tenant/lib/stage';
@@ -81,8 +80,7 @@ function stageLine(r: Trip, s: TenantStage, userId?: string, now = new Date()): 
 export default function TripsScreen() {
   const insets = useSafeAreaInsets();
   const { isAuthenticated, user } = useAuthStore();
-  const { activeRole } = useRoleStore();
-  const guarded = !isAuthenticated || activeRole === 'PROPRIETAIRE';
+  const guarded = !isAuthenticated;
   const [segment, setSegment] = useState<Segment>('upcoming');
   const [cached, setCached] = useState<Trip[] | null>(null);
   const [now, setNow] = useState(() => new Date());
