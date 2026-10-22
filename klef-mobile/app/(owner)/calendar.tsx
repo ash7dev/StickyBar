@@ -1,6 +1,6 @@
 import React, { useMemo, useState } from 'react';
 import { ActivityIndicator, RefreshControl, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
-import { useRouter } from 'expo-router';
+import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Building2, ChevronLeft, Lock } from 'lucide-react-native';
 import * as Haptics from 'expo-haptics';
@@ -30,13 +30,15 @@ export default function OwnerCalendarScreen() {
   const insets = useSafeAreaInsets();
   const today = todayDay();
 
-  const [mode, setMode] = useState<Mode>('week');
+  // ?logementId=… ouvre directement le calendrier d'un bien (depuis l'écran Biens du gestionnaire)
+  const { logementId: initialLogementId } = useLocalSearchParams<{ logementId?: string }>();
+  const [mode, setMode] = useState<Mode>(initialLogementId ? 'logement' : 'week');
   const [backMode, setBackMode] = useState<'week' | 'month'>('week');
   const [weekStart, setWeekStart] = useState<Day>(() => startOfWeek(today));
   const [selectedDay, setSelectedDay] = useState<Day>(today);
   const [month, setMonth] = useState<Day>(() => startOfMonth(today));
   const [monthFilter, setMonthFilter] = useState<string | null>(null);
-  const [focusLogementId, setFocusLogementId] = useState<string | null>(null);
+  const [focusLogementId, setFocusLogementId] = useState<string | null>(initialLogementId ?? null);
   const [daySheet, setDaySheet] = useState<Day | null>(null);
   const [blockSheet, setBlockSheet] = useState<{ draft: BlockDraft | null } | null>(null);
   const [openedEvent, setOpenedEvent] = useState<OwnerCalendarEvent | null>(null);

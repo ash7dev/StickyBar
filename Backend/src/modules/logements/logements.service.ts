@@ -24,6 +24,7 @@ import { UpdateLogementDto } from './dto/update-logement.dto';
 import { SearchLogementsDto } from './dto/search-logements.dto';
 
 import { NotificationsService } from '../notifications/notifications.service';
+import { Role } from '../../shared/types/jwt-payload.type';
 
 export type LogementWithRelations = Logement & {
   photos: PhotoLogement[];
@@ -557,8 +558,14 @@ export class LogementsService implements OnModuleInit {
     return null;
   }
 
-  async create(userId: string, dto: CreateLogementDto): Promise<Logement> {
+  async create(userId: string, dto: CreateLogementDto, activeRole?: Role): Promise<Logement> {
     const { equipementIds, managedOwnerPhone, managedOwnerNom, managedOwnerPrenom, ...fields } = dto;
+
+    // Créer un bien au nom d'un autre propriétaire est réservé à l'espace gestionnaire
+    // (sinon un hôte pourrait rattacher une annonce au compte de n'importe qui via son numéro)
+    if (managedOwnerPhone?.trim() && activeRole !== Role.GESTIONNAIRE) {
+      throw new ForbiddenException('Seul un gestionnaire peut créer un bien pour le compte d’un propriétaire');
+    }
 
     let latitude = fields.latitude;
     let longitude = fields.longitude;

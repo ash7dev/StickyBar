@@ -57,6 +57,15 @@ export interface TarifNuits {
   prix: number;
 }
 
+/** Étape 0 de l'espace gestionnaire : le propriétaire pour qui le bien est créé. */
+export interface ManagedOwner {
+  mode: 'EXISTING' | 'NEW';
+  id?: string;
+  prenom: string;
+  nom: string;
+  telephone: string;
+}
+
 export interface ListingWizardFormState {
   currentStep: number;
   completedSteps: number[];
@@ -70,7 +79,10 @@ export interface ListingWizardFormState {
   tarifsNuits: TarifNuits[];
   photos: PhotoItem[];
   video?: VideoItem | null;
+  /** Renseigné seulement quand un gestionnaire crée un bien pour un propriétaire */
+  managedOwner: ManagedOwner | null;
 
+  setManagedOwner: (owner: ManagedOwner | null) => void;
   setStep: (step: number) => void;
   nextStep: () => void;
   prevStep: () => void;
@@ -136,7 +148,9 @@ export const useListingWizardFormStore = create<ListingWizardFormState>((set, ge
   tarifsPersonnes: [],
   tarifsNuits: [],
   photos: [],
+  managedOwner: null,
 
+  setManagedOwner: (owner) => set({ managedOwner: owner }),
   setStep: (step: number) => set({ currentStep: step }),
 
   nextStep: () => {
@@ -328,5 +342,6 @@ export const useListingWizardFormStore = create<ListingWizardFormState>((set, ge
       tarifsNuits: [],
       photos: [],
       video: null,
+      managedOwner: null,
     }),
 }));

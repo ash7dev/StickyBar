@@ -13,6 +13,7 @@ import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { ArrowLeft, ArrowRight, X, Check, Save, RefreshCw, AlertTriangle } from 'lucide-react-native';
 import * as Haptics from 'expo-haptics';
 import { apiClient } from '../../shared/api/api-client';
+import { useRoleStore } from '../../shared/stores/role.store';
 import { colors, radius, shadows, typography } from '../../shared/theme/tokens';
 import { useListingWizardFormStore, PhotoItem } from '../../features/listings/stores/useListingWizardFormStore';
 import { MobileStepBien } from '../../features/listings/components/wizard/steps/MobileStepBien';
@@ -82,7 +83,15 @@ export default function AddListingScreen() {
     photos,
     tarifsNuits,
     tarifsPersonnes,
+    managedOwner,
+    setManagedOwner,
   } = useListingWizardFormStore();
+  const activeRole = useRoleStore((st) => st.activeRole);
+
+  // Un parcours commencé dans l'espace gestionnaire ne doit pas suivre l'hôte dans le sien
+  React.useEffect(() => {
+    if (managedOwner && activeRole !== 'GESTIONNAIRE') setManagedOwner(null);
+  }, [managedOwner, activeRole, setManagedOwner]);
   
   // Le rôle hôte est posé par la synchronisation d'espace (app/_layout)
   const [isSaving, setIsSaving] = useState(false);
@@ -128,7 +137,7 @@ export default function AddListingScreen() {
             if (router.canGoBack()) {
               router.back();
             } else {
-              router.navigate('/(owner)/listings' as any);
+              router.navigate((managedOwner ? '/(manager)/biens' : '/(owner)/listings') as any);
             }
           },
         },
@@ -289,7 +298,7 @@ export default function AddListingScreen() {
                   if (router.canGoBack()) {
                     router.back();
                   } else {
-                    router.navigate('/(owner)/listings' as any);
+                    router.navigate((managedOwner ? '/(manager)/biens' : '/(owner)/listings') as any);
                   }
                 }}
                 style={styles.backErrBtn}
@@ -386,6 +395,15 @@ export default function AddListingScreen() {
             </Text>
           </View>
 
+          {managedOwner && !isEditMode && (
+            <View style={styles.ownerBanner}>
+              <Text style={styles.ownerBannerKicker}>ÉTAPE 0 · PROPRIÉTAIRE</Text>
+              <Text style={styles.ownerBannerName} numberOfLines={1}>
+                Pour {managedOwner.prenom} {managedOwner.nom}
+                {managedOwner.mode === 'NEW' ? ' · nouveau compte' : ''}
+              </Text>
+            </View>
+          )}
           <Text style={styles.stepTitle}>{titles[currentStep]}</Text>
           <Text style={styles.stepSubtitle}>{subtitles[currentStep]}</Text>
         </View>
@@ -730,4 +748,14 @@ const styles = StyleSheet.create({
     fontSize: 13.5,
     color: colors.forest[950],
   },
+  ownerBanner: {
+    alignSelf: 'flex-start',
+    marginBottom: 10,
+    paddingHorizontal: 12,
+    paddingVertical: 7,
+    borderRadius: radius.pill,
+    backgroundColor: colors.forest[950],
+  },
+  ownerBannerKicker: { fontFamily: typography.fontBodyBold, fontSize: 9.5, letterSpacing: 1, color: colors.lime[400] },
+  ownerBannerName: { fontFamily: typography.fontBodyBold, fontSize: 13, color: '#FFFFFF', marginTop: 1 },
 });

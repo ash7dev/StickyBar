@@ -67,7 +67,7 @@ export class LogementsController {
   @Roles(Role.PROPRIETAIRE, Role.GESTIONNAIRE)
   @ApiOperation({ summary: 'Créer un nouveau logement (statut DRAFT)' })
   create(@CurrentUser() user: AuthUser, @Body() dto: CreateLogementDto) {
-    return this.logements.create(user.id, dto);
+    return this.logements.create(user.id, dto, user.activeRole);
   }
 
   @Get('me')

@@ -15,6 +15,9 @@ export default function ManagerTabsLayout() {
         <Tabs.Screen name="proprietaires" options={{ title: 'Propriétaires' }} />
         <Tabs.Screen name="profile" options={{ title: 'Profil' }} />
         <Tabs.Screen name="sejour/[id]" options={{ href: null, tabBarStyle: { display: 'none' } }} />
+        <Tabs.Screen name="nouveau-bien" options={{ href: null, tabBarStyle: { display: 'none' } }} />
+        <Tabs.Screen name="add-listing" options={{ href: null, tabBarStyle: { display: 'none' } }} />
+        <Tabs.Screen name="calendrier" options={{ href: null, tabBarStyle: { display: 'none' } }} />
       </Tabs>
     </View>
   );

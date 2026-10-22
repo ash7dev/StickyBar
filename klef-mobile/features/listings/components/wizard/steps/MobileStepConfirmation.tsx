@@ -196,6 +196,7 @@ export function MobileStepConfirmation() {
     setDraftListingId,
     updatePhoto,
     reset,
+    managedOwner,
   } = useListingWizardFormStore();
 
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -283,6 +284,12 @@ export function MobileStepConfirmation() {
         ...(conditions.regimeElectricite?.trim() && { regimeElectricite: conditions.regimeElectricite.trim() }),
         ...(conditions.detailsElectricite?.trim() && { detailsElectricite: conditions.detailsElectricite.trim() }),
         ...(equipementIds && equipementIds.length > 0 && { equipementIds }),
+        // Espace gestionnaire : le bien est créé au nom du propriétaire choisi à l'étape 0
+        ...(managedOwner && {
+          managedOwnerPhone: managedOwner.telephone,
+          managedOwnerPrenom: managedOwner.prenom,
+          managedOwnerNom: managedOwner.nom,
+        }),
       };
 
       if (!listingId) {
@@ -434,7 +441,7 @@ export function MobileStepConfirmation() {
       setTimeout(() => {
         setIsSubmitting(false);
         reset();
-        router.replace('/(owner)/listings' as any);
+        router.replace((managedOwner ? '/(manager)/biens' : '/(owner)/listings') as any);
       }, 1000);
     } catch (err: any) {
       console.warn('[MobileStepConfirmation] Erreur lors de la soumission :', err);

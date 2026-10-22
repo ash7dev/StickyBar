@@ -9,6 +9,7 @@ export const managerKeys = {
   reservations: ['manager', 'reservations'] as const,
   leads: ['manager', 'leads'] as const,
   overview: ['manager', 'overview'] as const,
+  owners: ['manager', 'owners'] as const,
 };
 
 const unwrap = <T,>(data: any): T => (data?.data ?? data) as T;
@@ -19,6 +20,11 @@ export interface ManagedListing {
   ville?: string | null;
   quartier?: string | null;
   statut: string;
+  prixBase?: number | string;
+  derniereMinuteActive?: boolean;
+  note?: number | string;
+  totalAvis?: number;
+  rejectionReason?: string | null;
   latitude?: number | string | null;
   longitude?: number | string | null;
   proprietaireId: string;
@@ -92,6 +98,24 @@ export function useManagerLeads() {
     queryKey: managerKeys.leads,
     queryFn: async () =>
       unwrap<ManagedLead[]>((await apiClient.get('/gestionnaire/demandes-managed', { params: { statut: 'NOUVEAU' } })).data) ?? [],
+    staleTime: 60_000,
+  });
+}
+
+export interface ManagedOwnerWallet {
+  id: string;
+  prenom: string;
+  nom: string;
+  telephone?: string | null;
+  soldeDisponible: number;
+  logementsCount: number;
+}
+
+/** Propriétaires gérés et leur solde (wallet). */
+export function useManagedOwners() {
+  return useQuery({
+    queryKey: managerKeys.owners,
+    queryFn: async () => unwrap<ManagedOwnerWallet[]>((await apiClient.get('/gestionnaire/proprietaires')).data) ?? [],
     staleTime: 60_000,
   });
 }
