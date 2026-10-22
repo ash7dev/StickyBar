@@ -628,6 +628,8 @@ model Retrait {
   statut              StatutRetrait  @default(EN_ATTENTE)
   raisonRejet         String?
   transactionIdExterne String?       // ID de transaction Wave/Orange Money/Virement
+  // Traçabilité : qui a demandé le retrait (le propriétaire lui-même, ou son gestionnaire)
+  demandeParId        String?
   demandeeLe          DateTime       @default(now())
   traiteLe            DateTime?
 

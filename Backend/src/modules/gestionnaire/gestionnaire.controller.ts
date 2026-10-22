@@ -50,6 +50,12 @@ export class GestionnaireController {
     return this.walletService.getAllProprietaires();
   }
 
+  @Get('proprietaires/:ownerId')
+  @ApiOperation({ summary: 'Fiche d’un propriétaire géré : solde retirable et derniers reversements' })
+  async getManagedOwner(@CurrentUser() user: AuthUser, @Param('ownerId') ownerId: string) {
+    return this.walletService.getManagedOwnerDetail(user.id, ownerId);
+  }
+
   @Post('proprietaires/:ownerId/retrait')
   @ApiOperation({ summary: 'Déclencher une demande de retrait (payout) pour un propriétaire partenaire' })
   async requestOwnerWithdrawal(

@@ -107,8 +107,25 @@ export interface ManagedOwnerWallet {
   prenom: string;
   nom: string;
   telephone?: string | null;
+  email?: string | null;
+  isShadowAccount?: boolean;
   soldeDisponible: number;
+  /** Solde moins les fonds gelés par un litige et les pénalités dues : le plafond d'un reversement */
+  soldeRetirable: number;
+  soldeGeleLitige: number;
+  dettePenalites: number;
   logementsCount: number;
+}
+
+export interface OwnerPayout {
+  id: string;
+  montant: number;
+  methode: 'WAVE' | 'ORANGE_MONEY' | 'VIREMENT';
+  destinataire: string;
+  statut: string;
+  demandeeLe: string;
+  traiteLe?: string | null;
+  demandeParId?: string | null;
 }
 
 /** Propriétaires gérés et leur solde (wallet). */
@@ -117,5 +134,18 @@ export function useManagedOwners() {
     queryKey: managerKeys.owners,
     queryFn: async () => unwrap<ManagedOwnerWallet[]>((await apiClient.get('/gestionnaire/proprietaires')).data) ?? [],
     staleTime: 60_000,
+  });
+}
+
+/** Fiche d'un propriétaire : solde retirable et derniers reversements (avec leur auteur). */
+export function useManagedOwner(ownerId?: string) {
+  return useQuery({
+    queryKey: ['manager', 'owner', ownerId],
+    queryFn: async () =>
+      unwrap<ManagedOwnerWallet & { creeLe?: string | null; retraits: OwnerPayout[] }>(
+        (await apiClient.get(`/gestionnaire/proprietaires/${ownerId}`)).data,
+      ),
+    enabled: !!ownerId,
+    staleTime: 30_000,
   });
 }

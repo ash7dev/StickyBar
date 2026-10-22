@@ -1,5 +1,5 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { IsEnum, IsNotEmpty, IsNumber, IsString, Min } from 'class-validator';
+import { IsEnum, IsNotEmpty, IsNumber, IsOptional, IsString, MaxLength, Min } from 'class-validator';
 import { MethodeRetrait } from '@prisma/client';
 
 export class RequestWithdrawalDto {
@@ -16,4 +16,10 @@ export class RequestWithdrawalDto {
   @IsString()
   @IsNotEmpty()
   destinataire!: string;
+
+  @ApiProperty({ required: false, example: 'Awa Diop (sœur)', description: 'Bénéficiaire quand le gestionnaire verse sur un autre numéro que celui du propriétaire' })
+  @IsOptional()
+  @IsString()
+  @MaxLength(80)
+  beneficiaire?: string;
 }

@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { BadRequestException, ForbiddenException, Injectable } from '@nestjs/common';
 import { PrismaService } from '../../infrastructure/prisma/prisma.service';
 import { CreditWalletUseCase } from '../../domain/wallet/use-cases/credit-wallet.use-case';
 import { RequestWithdrawalUseCase } from '../../domain/wallet/use-cases/request-withdrawal.use-case';
@@ -297,13 +297,74 @@ export class WalletService {
     // Vérifier que le gestionnaire gère au moins un bien de ce propriétaire
     const isManagerOfOwner = await this.prisma.logement.findFirst({
       where: { gestionnaireId: managerId, proprietaireId: ownerId, archiveLe: null },
+      select: { id: true },
     });
-
     if (!isManagerOfOwner) {
-      throw new Error('Vous n’êtes pas le gestionnaire enregistré pour ce propriétaire');
+      throw new ForbiddenException('Vous n’êtes pas le gestionnaire enregistré pour ce propriétaire');
     }
 
-    return this.requestWithdrawalUseCase.execute(ownerId, dto);
+    // Plafond : le solde retirable (hors fonds gelés par un litige et pénalités dues)
+    const [owner] = await this.getManagedProprietairesAndWallets(managerId).then((all) => all.filter((o) => o.id === ownerId));
+    if (owner && dto.montant > owner.soldeRetirable) {
+      throw new BadRequestException(
+        `Montant supérieur au solde retirable (${owner.soldeRetirable.toLocaleString('fr-FR')} FCFA)`,
+      );
+    }
+
+    // Un autre numéro que celui du propriétaire (un proche, par exemple) est permis, mais nommé :
+    // c'est le seul cas où l'argent ne va pas au titulaire, le propriétaire doit savoir à qui.
+    const digits = (v?: string | null) => (v ?? '').replace(/\D/g, '').replace(/^221/, '');
+    const toOwner = !!owner?.telephone && digits(owner.telephone) === digits(dto.destinataire);
+    const beneficiaire = dto.beneficiaire?.trim();
+    if (!toOwner && dto.methode !== 'VIREMENT' && !beneficiaire) {
+      throw new BadRequestException('Indiquez le nom du bénéficiaire : ce numéro n’est pas celui du propriétaire');
+    }
+    const destinataire = toOwner || !beneficiaire ? dto.destinataire : `${dto.destinataire} (${beneficiaire})`;
+
+    const retrait = await this.requestWithdrawalUseCase.execute(ownerId, {
+      montant: dto.montant,
+      methode: dto.methode,
+      destinataire,
+      demandeParId: managerId,
+    });
+
+    const via = dto.methode === 'WAVE' ? 'Wave' : dto.methode === 'ORANGE_MONEY' ? 'Orange Money' : 'virement';
+    const masked = `${digits(dto.destinataire).slice(0, 2)} ••• •• ${digits(dto.destinataire).slice(-2)}`;
+    this.notifications
+      .sendReservationPush(
+        ownerId,
+        'Reversement demandé par votre gestionnaire',
+        toOwner
+          ? `${dto.montant.toLocaleString('fr-FR')} FCFA vont être versés sur votre ${via}.`
+          : `${dto.montant.toLocaleString('fr-FR')} FCFA vont être versés via ${via} à ${beneficiaire} (${masked}). Pas d’accord ? Contactez Paixi.`,
+        '/(owner)/wallet',
+      )
+      .catch(() => {});
+
+    return retrait;
+  }
+
+  /** Fiche d'un propriétaire géré : solde et derniers reversements (avec leur auteur). */
+  async getManagedOwnerDetail(managerId: string, ownerId: string) {
+    const managed = await this.getManagedProprietairesAndWallets(managerId);
+    const owner = managed.find((o) => o.id === ownerId);
+    if (!owner) throw new ForbiddenException('Vous n’êtes pas le gestionnaire enregistré pour ce propriétaire');
+
+    const [user, retraits] = await Promise.all([
+      this.prisma.utilisateur.findUnique({ where: { id: ownerId }, select: { creeLe: true } }),
+      this.prisma.retrait.findMany({
+        where: { wallet: { utilisateurId: ownerId } },
+        orderBy: { demandeeLe: 'desc' },
+        take: 10,
+        select: { id: true, montant: true, methode: true, destinataire: true, statut: true, demandeeLe: true, traiteLe: true, demandeParId: true },
+      }),
+    ]);
+
+    return {
+      ...owner,
+      creeLe: user?.creeLe ?? null,
+      retraits: retraits.map((r) => ({ ...r, montant: Number(r.montant) })),
+    };
   }
 
   async getAllProprietaires() {

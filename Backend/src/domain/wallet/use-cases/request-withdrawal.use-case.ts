@@ -13,6 +13,8 @@ export interface RequestWithdrawalInput {
   montant: number;
   methode: MethodeRetrait;
   destinataire: string;
+  /** Auteur de la demande quand ce n'est pas le titulaire du wallet (gestionnaire). */
+  demandeParId?: string;
 }
 
 @Injectable()
@@ -22,7 +24,7 @@ export class RequestWithdrawalUseCase {
   constructor(private readonly prisma: PrismaService) {}
 
   async execute(userId: string, input: RequestWithdrawalInput) {
-    const { montant, methode, destinataire } = input;
+    const { montant, methode, destinataire, demandeParId } = input;
 
     if (montant < MONTANT_MIN_FCFA) {
       throw new BadRequestException(
@@ -105,6 +107,7 @@ export class RequestWithdrawalUseCase {
           methode,
           destinataire,
           statut: StatutRetrait.EN_ATTENTE,
+          demandeParId: demandeParId ?? userId,
         },
       });
 
@@ -120,7 +123,7 @@ export class RequestWithdrawalUseCase {
           montant,
           sens: SensTransaction.DEBIT,
           soldeApres,
-          description: `Demande retrait via ${methode} — ${destinataire}`,
+          description: `Demande retrait via ${methode} — ${destinataire}${demandeParId && demandeParId !== userId ? ' · demandée par votre gestionnaire' : ''}`,
         },
       });
 
