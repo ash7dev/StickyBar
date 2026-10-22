@@ -86,12 +86,19 @@ export const useAuthStore = create<AuthState>((set, get) => ({
       });
       lastRefresh = Date.now();
       watchForeground(get);
+      if (user) {
+        useRoleStore.getState().setFlags({ estProprietaire: !!user.estProprietaire, estGestionnaire: !!user.estGestionnaire });
+      }
     } catch (e) {
       console.error('[AuthStore] Error saving session to SecureStore:', e);
     }
   },
 
   setUser: async (user: AuthUser) => {
+    // Droits du compte (hôte, gestionnaire) : une seule source, le profil serveur
+    if (user) {
+      useRoleStore.getState().setFlags({ estProprietaire: !!user.estProprietaire, estGestionnaire: !!user.estGestionnaire });
+    }
     try {
       if (user) {
         await AsyncStorage.setItem(USER_KEY, JSON.stringify(user));

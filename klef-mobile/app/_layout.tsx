@@ -64,11 +64,8 @@ export default function RootLayout() {
   const activeRole = useRoleStore((s) => s.activeRole);
   const setActiveRole = useRoleStore((s) => s.setActiveRole);
   useEffect(() => {
-    if (space === '(tenant)' && activeRole !== 'LOCATAIRE') {
-      setActiveRole('LOCATAIRE');
-    } else if (space === '(owner)' && activeRole === 'LOCATAIRE') {
-      setActiveRole('PROPRIETAIRE');
-    }
+    const expected = space === '(tenant)' ? 'LOCATAIRE' : space === '(owner)' ? 'PROPRIETAIRE' : space === '(manager)' ? 'GESTIONNAIRE' : null;
+    if (expected && activeRole !== expected) setActiveRole(expected);
   }, [space, activeRole, setActiveRole]);
 
   useEffect(() => {
@@ -94,6 +91,7 @@ export default function RootLayout() {
               <Stack.Screen name="(auth)/register" options={{ animation: 'slide_from_right' }} />
               <Stack.Screen name="(tenant)" options={{ animation: 'fade', gestureEnabled: false }} />
               <Stack.Screen name="(owner)" options={{ animation: 'fade', gestureEnabled: false }} />
+              <Stack.Screen name="(manager)" options={{ animation: 'fade', gestureEnabled: false }} />
               <Stack.Screen name="listing/[id]" options={{ headerShown: false, animation: 'slide_from_right' }} />
               <Stack.Screen name="hote/[id]" options={{ headerShown: false, animation: 'slide_from_right' }} />
               <Stack.Screen name="reservation/[id]" options={{ headerShown: false, animation: 'slide_from_right' }} />

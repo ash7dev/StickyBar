@@ -13,6 +13,10 @@ interface SwitchRoleResponse {
   activeRole: UserRole;
 }
 
+/** Écran d'accueil de chaque espace. */
+const spaceOf = (role: UserRole) =>
+  role === 'GESTIONNAIRE' ? '/(manager)' : role === 'PROPRIETAIRE' ? '/(owner)/dashboard' : '/(tenant)';
+
 export function useSwitchRole() {
   const router = useRouter();
   const [isSwitching, setIsSwitching] = useState(false);
@@ -24,7 +28,7 @@ export function useSwitchRole() {
   const switchRole = async (targetRole: UserRole): Promise<boolean> => {
     // Déjà dans ce rôle : on emmène simplement dans le bon espace (pas de second basculement)
     if (activeRole === targetRole) {
-      router.replace((targetRole === 'LOCATAIRE' ? '/(tenant)' : '/(owner)/dashboard') as any);
+      router.replace(spaceOf(targetRole) as any);
       return true;
     }
 
@@ -60,12 +64,8 @@ export function useSwitchRole() {
         router.dismissAll();
       }
 
-      // Redirection selon le rôle cible
-      if (targetRole === 'PROPRIETAIRE') {
-        router.replace('/(owner)/dashboard' as any);
-      } else if (targetRole === 'LOCATAIRE') {
-        router.replace('/(tenant)' as any);
-      }
+      // Redirection vers l'espace du rôle cible
+      router.replace(spaceOf(targetRole) as any);
 
       return true;
     } catch (err: any) {

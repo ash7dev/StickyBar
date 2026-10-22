@@ -9,6 +9,7 @@ export function MobileActiveRoleCard() {
   const { activeRole, isSwitching, error, switchRole } = useSwitchRole();
   const [modalVisible, setModalVisible] = useState(false);
   const isOwner = activeRole === 'PROPRIETAIRE';
+  const isManager = activeRole === 'GESTIONNAIRE';
   const targetRole = isOwner ? 'LOCATAIRE' : 'PROPRIETAIRE';
 
   const handleOpenModal = () => {
@@ -39,7 +40,7 @@ export function MobileActiveRoleCard() {
               <View style={styles.activePill}>
                 <Sparkles size={11} color={colors.forest[800]} />
                 <Text style={styles.activePillText} numberOfLines={1}>
-                  {isOwner ? 'Hôte' : 'Voyageur'}
+                  {isOwner ? 'Hôte' : isManager ? 'Gestionnaire' : 'Voyageur'}
                 </Text>
               </View>
             </View>
@@ -47,6 +48,8 @@ export function MobileActiveRoleCard() {
             <Text style={styles.subtitle} numberOfLines={1}>
               {isOwner
                 ? 'Gérez vos annonces et réservations reçues'
+                : isManager
+                ? 'Les biens que vous gérez pour leurs propriétaires'
                 : 'Explorez et réservez des logements d’exception'}
             </Text>
           </View>

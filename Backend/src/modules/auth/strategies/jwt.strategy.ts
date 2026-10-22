@@ -2,6 +2,7 @@ import { Injectable, UnauthorizedException } from '@nestjs/common';
 import { PassportStrategy } from '@nestjs/passport';
 import { ExtractJwt, Strategy } from 'passport-jwt';
 import { ConfigService } from '@nestjs/config';
+import { resolveRole } from '@shared/auth/role-policy';
 import { PrismaService } from '@infrastructure/prisma/prisma.service';
 import { RedisService } from '@infrastructure/redis/redis.service';
 import { AuthUser, JwtPayload, Role } from '@shared/types/jwt-payload.type';
@@ -56,6 +57,7 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
           prenom: true,
           nom: true,
           estProprietaire: true,
+          estGestionnaire: true,
           actif: true,
           bloqueJusqua: true,
           statutKyc: true,
@@ -108,21 +110,11 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
       );
     }
 
-    // Priorité au header X-Active-Role, puis JWT, puis fallback
+    // Priorité à l'en-tête X-Active-Role, puis au jeton : chacun n'est retenu que si le compte
+    // y a droit (ADMIN, GESTIONNAIRE, PROPRIETAIRE vérifiés en base). Un rôle refusé est
+    // simplement ignoré : jamais d'élévation, et pas de 401 qui déconnecterait l'app.
     const headerRole = req.headers?.['x-active-role'] as string | undefined;
-    let activeRole: Role;
-
-    if (headerRole && Object.values(Role).includes(headerRole as Role)) {
-      // Valider que l'utilisateur a le droit d'utiliser ce rôle
-      if (headerRole === Role.PROPRIETAIRE && !utilisateur.estProprietaire) {
-        throw new UnauthorizedException('Vous n\'êtes pas propriétaire');
-      }
-      activeRole = headerRole as Role;
-    } else if (payload.activeRole && Object.values(Role).includes(payload.activeRole)) {
-      activeRole = payload.activeRole;
-    } else {
-      activeRole = utilisateur.estProprietaire ? Role.PROPRIETAIRE : Role.LOCATAIRE;
-    }
+    const activeRole = resolveRole(utilisateur, headerRole, payload.activeRole);
 
     return {
       id: utilisateur.id,

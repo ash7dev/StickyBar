@@ -15,6 +15,7 @@ import { PrismaService } from '@infrastructure/prisma/prisma.service';
 import { RedisService } from '@infrastructure/redis/redis.service';
 import { SupabaseService } from '@shared/supabase/supabase.service';
 import { Role } from '@shared/types/jwt-payload.type';
+import { defaultRole, resolveRole } from '@shared/auth/role-policy';
 import { JwtService } from '@nestjs/jwt';
 import { ConfigService } from '@nestjs/config';
 import { randomUUID } from 'crypto';
@@ -109,8 +110,7 @@ export class AuthService {
     activeRole?: Role;
   }) {
     const sessionId = randomUUID();
-    const isAdminEmail = user.email?.toLowerCase().endsWith('@admin.com');
-    const activeRole = user.activeRole ?? (isAdminEmail ? Role.ADMIN : (user.estProprietaire ? Role.PROPRIETAIRE : Role.LOCATAIRE));
+    const activeRole = user.activeRole ?? defaultRole(user);
     const payload = {
       sub: user.id,
       supabaseUserId: user.userId,
@@ -366,9 +366,7 @@ export class AuthService {
 
     if (!user || !user.actif) throw new UnauthorizedException('Compte désactivé');
 
-    const activeRole = user.email?.toLowerCase().endsWith('@admin.com')
-      ? Role.ADMIN
-      : (user.estProprietaire ? Role.PROPRIETAIRE : Role.LOCATAIRE);
+    const activeRole = defaultRole(user);
 
     const tokens = await this.generateTokens({ ...user, activeRole });
 
@@ -939,11 +937,16 @@ export class AuthService {
         email: true,
         telephone: true,
         estProprietaire: true,
+        estGestionnaire: true,
         isShadowAccount: true,
         logements: { select: { id: true } },
       },
     });
     if (!utilisateur) throw new NotFoundException('Utilisateur introuvable');
+
+    if (dto.role === Role.GESTIONNAIRE && !utilisateur.estGestionnaire) {
+      throw new BadRequestException("Votre compte n'a pas accès à l'espace gestionnaire");
+    }
 
     const hasLogements = (utilisateur.logements?.length ?? 0) > 0;
     const isOwner = utilisateur.estProprietaire || hasLogements || utilisateur.isShadowAccount;
@@ -967,7 +970,7 @@ export class AuthService {
       userId: utilisateur.userId,
       email: utilisateur.email,
       telephone: utilisateur.telephone,
-      estProprietaire: true,
+      estProprietaire: utilisateur.estProprietaire || isOwner,
       activeRole: dto.role as Role,
     });
     return { ...tokens, activeRole: dto.role };
@@ -1235,13 +1238,12 @@ export class AuthService {
     }
 
     // Générer les tokens NestJS avec le rôle intégré
-    const isAdminEmail = utilisateur.email?.toLowerCase().endsWith('@admin.com');
-    let activeRole = isAdminEmail ? Role.ADMIN : (utilisateur.estProprietaire ? Role.PROPRIETAIRE : Role.LOCATAIRE);
-    if (activeRoleHeader && Object.values(Role).includes(activeRoleHeader as Role)) {
-      if (activeRoleHeader !== Role.PROPRIETAIRE || utilisateur.estProprietaire) {
-        activeRole = activeRoleHeader as Role;
-      }
-    }
+    // Le rôle demandé n'est retenu que si le compte y a droit (règle commune role-policy)
+    const flags = await this.prisma.utilisateur.findUnique({
+      where: { id: utilisateur.id },
+      select: { estGestionnaire: true },
+    });
+    const activeRole = resolveRole({ ...utilisateur, estGestionnaire: flags?.estGestionnaire }, activeRoleHeader);
     const tokens = await this.generateTokens({
       id: utilisateur.id,
       userId: utilisateur.userId,

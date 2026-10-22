@@ -16,7 +16,9 @@ export default function IndexScreen() {
     if (!hasSeenOnboarding) {
       router.replace('/(auth)/onboarding' as any);
     } else if (isAuthenticated) {
-      if (activeRole === 'PROPRIETAIRE' || activeRole === 'GESTIONNAIRE') {
+      if (activeRole === 'GESTIONNAIRE') {
+        router.replace('/(manager)' as any);
+      } else if (activeRole === 'PROPRIETAIRE') {
         router.replace('/(owner)/dashboard' as any);
       } else {
         router.replace('/(tenant)' as any);

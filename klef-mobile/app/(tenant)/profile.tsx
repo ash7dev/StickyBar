@@ -20,6 +20,7 @@ import { apiClient } from '../../shared/api/api-client';
 import { AuthRequiredCard } from '../../features/auth/components/AuthRequiredCard';
 import { MobileProfileHero } from '../../features/profile/components/MobileProfileHero';
 import { MobileActiveRoleCard } from '../../features/profile/components/MobileActiveRoleCard';
+import { ManagerSpaceCard } from '../../features/manager/components/ManagerSpaceCard';
 import { MobileProfileInfoCard } from '../../features/profile/components/MobileProfileInfoCard';
 import { MobileProfileKycCard } from '../../features/profile/components/MobileProfileKycCard';
 import { MobileKlefAssistanceCard } from '../../features/profile/components/MobileKlefAssistanceCard';
@@ -185,6 +186,7 @@ export default function ProfileScreen() {
 
             {/* 2. Espace Actif (Bascule Rôle Voyageur / Hôte) */}
             <MobileActiveRoleCard />
+            <ManagerSpaceCard />
 
             {/* Logements gardés avec le cœur */}
             <FavoritesEntryCard />

@@ -31,6 +31,7 @@ export class UsersService {
         phoneVerified: true,
         statutKyc: true,
         estProprietaire: true,
+        estGestionnaire: true,
         _count: { select: { logements: true } },
       },
     });

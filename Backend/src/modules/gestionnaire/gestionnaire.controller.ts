@@ -2,7 +2,8 @@ import { Controller, Get, Post, Body, Param, Query, UseGuards } from '@nestjs/co
 import { ApiTags, ApiBearerAuth, ApiOperation } from '@nestjs/swagger';
 import { JwtAuthGuard } from '../../shared/guards/jwt-auth.guard';
 import { CurrentUser } from '../../shared/decorators/current-user.decorator';
-import { AuthUser } from '../../shared/types/jwt-payload.type';
+import { AuthUser, Role } from '../../shared/types/jwt-payload.type';
+import { Roles } from '../../shared/decorators/roles.decorator';
 import { WalletService } from '../wallet/wallet.service';
 import { LogementsService } from '../logements/logements.service';
 import { GestionnaireService } from './gestionnaire.service';
@@ -11,6 +12,9 @@ import { RequestWithdrawalDto } from '../wallet/dto/withdrawal.dto';
 @ApiTags('Gestionnaire (Conciergerie)')
 @ApiBearerAuth()
 @UseGuards(JwtAuthGuard)
+// Réservé à l'espace gestionnaire (et aux admins) : ces routes exposent des propriétaires
+// et leurs soldes. Le rôle est vérifié en base (role-policy), jamais cru sur parole.
+@Roles(Role.GESTIONNAIRE, Role.ADMIN)
 @Controller('gestionnaire')
 export class GestionnaireController {
   constructor(
