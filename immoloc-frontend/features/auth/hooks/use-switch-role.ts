@@ -23,7 +23,7 @@ export function useSwitchRole() {
     options?: { redirectTo?: string | null }
   ) => {
     if (!estProprietaire && targetRole === 'PROPRIETAIRE') {
-      router.push('/become-host');
+      router.push('/proprietaires');
       return;
     }
 

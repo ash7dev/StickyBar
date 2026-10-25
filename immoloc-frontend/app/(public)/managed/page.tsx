@@ -1,15 +1,6 @@
-'use client';
+import { redirect } from 'next/navigation';
 
-import { KlefManagedHero } from '@/features/managed/components/KlefManagedHero';
-import { KlefManagedPillars } from '@/features/managed/components/KlefManagedPillars';
-import { KlefManagedLeadForm } from '@/features/managed/components/KlefManagedLeadForm';
-
-export default function KlefManagedLandingPage() {
-  return (
-    <div className="max-w-6xl mx-auto space-y-16 py-8 px-4 sm:px-6">
-      <KlefManagedHero />
-      <KlefManagedPillars />
-      <KlefManagedLeadForm />
-    </div>
-  );
+// Paixi Managed est présenté sur la page propriétaires, avec le formulaire de rappel
+export default function ManagedRoute() {
+  redirect('/proprietaires#rappel');
 }

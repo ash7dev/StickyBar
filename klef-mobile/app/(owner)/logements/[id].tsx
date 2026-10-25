@@ -25,7 +25,7 @@ import { MobileOwnerDetailReservations } from '../../../features/listings/compon
 import { MobileListingEditSkeleton } from '../../../features/listings/components/owner/MobileListingEditSkeleton';
 import { AnimatedScreenWrapper } from '../../../shared/components/animation/AnimatedScreenWrapper';
 
-export default function MobileOwnerListingDetailScreen() {
+function MobileOwnerListingDetailScreen() {
   const router = useRouter();
   const queryClient = useQueryClient();
   const { id } = useLocalSearchParams<{ id: string }>();
@@ -285,3 +285,12 @@ const styles = StyleSheet.create({
     color: colors.forest[950],
   },
 });
+
+/**
+ * Écran rangé parmi les onglets : il reste monté entre deux visites. La clé le remet
+ * à zéro pour chaque id (sinon l'onglet, les panneaux ouverts… du précédent restent).
+ */
+export default function MobileOwnerListingDetailScreenRoute() {
+  const { id } = useLocalSearchParams<{ id?: string }>();
+  return <MobileOwnerListingDetailScreen key={id ?? 'none'} />;
+}

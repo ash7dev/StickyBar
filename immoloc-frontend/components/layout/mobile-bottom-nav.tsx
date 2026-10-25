@@ -65,7 +65,7 @@ export function MobileBottomNav() {
     setSwitchError(false);
 
     if (!isAuthenticated) {
-      router.push(`/login?next=${encodeURIComponent('/become-host')}`);
+      router.push(`/login?next=${encodeURIComponent('/proprietaires')}`);
       return;
     }
     if (isOwner) {
@@ -78,7 +78,7 @@ export function MobileBottomNav() {
       catch { setSwitchError(true); }
       return;
     }
-    router.push('/become-host');
+    router.push('/proprietaires');
   }
 
   return createPortal(

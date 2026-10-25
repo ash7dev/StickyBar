@@ -1,6 +1,6 @@
 import React, { useMemo, useState } from 'react';
 import { ActivityIndicator, RefreshControl, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
-import { useLocalSearchParams, useRouter } from 'expo-router';
+import { useLocalSearchParams, useRouter, useSegments } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Building2, ChevronLeft, Lock } from 'lucide-react-native';
 import * as Haptics from 'expo-haptics';
@@ -25,8 +25,10 @@ type Mode = 'week' | 'month' | 'logement';
  * Semaine = carte de la semaine + frise des biens + journal du jour ;
  * Mois = grille tous biens ; un bien = ses nuits, prix et blocages.
  */
-export default function OwnerCalendarScreen() {
+function OwnerCalendarScreen() {
   const router = useRouter();
+  // Écran partagé avec l'espace gestionnaire (calendrier d'un bien géré)
+  const inManager = useSegments()[0] === '(manager)';
   const insets = useSafeAreaInsets();
   const today = todayDay();
 
@@ -52,12 +54,14 @@ export default function OwnerCalendarScreen() {
 
   const goBack = () => {
     tap();
-    if (mode === 'logement') {
+    // Ouvert directement sur un bien (Biens, fiche d'un séjour) : retour = écran d'origine
+    const openedOnListing = !!initialLogementId && focusLogementId === initialLogementId;
+    if (mode === 'logement' && !openedOnListing) {
       setMode(backMode);
       return;
     }
     if (router.canGoBack()) router.back();
-    else router.navigate('/(owner)/dashboard' as never);
+    else router.navigate((inManager ? '/(manager)/biens' : '/(owner)/dashboard') as never);
   };
 
   const switchMode = (next: 'week' | 'month') => {
@@ -108,7 +112,7 @@ export default function OwnerCalendarScreen() {
           <Building2 size={28} color={colors.neutral[500]} />
           <Text style={styles.stateTitle}>Aucun logement pour l’instant</Text>
           <Text style={styles.stateText}>Publiez votre premier bien pour gérer ses disponibilités ici.</Text>
-          <AppButton label="Publier un bien" onPress={() => router.navigate('/(owner)/add-listing' as never)} />
+          <AppButton label="Publier un bien" onPress={() => router.navigate((inManager ? '/(manager)/nouveau-bien' : '/(owner)/add-listing') as never)} />
         </View>
       );
     }
@@ -339,3 +343,12 @@ const styles = StyleSheet.create({
   },
   fabText: { fontFamily: typography.fontBodySemiBold, fontSize: 14, color: colors.neutral[50] },
 });
+
+/**
+ * Écran rangé parmi les onglets : il reste monté entre deux visites. La clé le remet
+ * à zéro pour chaque logementId (sinon l'onglet, les panneaux ouverts… du précédent restent).
+ */
+export default function OwnerCalendarScreenRoute() {
+  const { logementId } = useLocalSearchParams<{ logementId?: string }>();
+  return <OwnerCalendarScreen key={logementId ?? 'all'} />;
+}

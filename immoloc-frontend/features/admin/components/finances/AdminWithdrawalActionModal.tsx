@@ -83,7 +83,21 @@ export function AdminWithdrawalActionModal({
           <p className="text-foreground-muted">Demandeur : <strong className="text-foreground">{user?.prenom} {user?.nom}</strong></p>
           <p className="text-foreground-muted">Montant : <strong className="text-foreground text-sm font-display font-bold">{formatPrice(item.montant)}</strong></p>
           <p className="text-foreground-muted">Mode & Destination : <strong className="text-forest-800 font-mono">{item.methode} ({item.destinataire})</strong></p>
+          {item.parGestionnaire && (
+            <p className="text-foreground-muted">
+              Demandé par : <strong className="text-foreground">le gestionnaire {item.demandePar ? `${item.demandePar.prenom} ${item.demandePar.nom}` : ''}</strong>
+            </p>
+          )}
         </div>
+
+        {item.versTiers && !isRejection && (
+          <div className="rounded-inner border border-error-500/30 bg-error-50 p-3 text-xs text-error-700 flex items-start gap-2">
+            <AlertTriangle className="h-4 w-4 shrink-0 mt-0.5" />
+            <span>
+              Ce versement part vers un autre numéro que celui de {user?.prenom ?? 'l’hôte'} ({user?.telephone ?? 'numéro inconnu'}). Confirmez avec le titulaire avant de valider.
+            </span>
+          </div>
+        )}
 
         {isRejection && (
           <div className="rounded-inner border border-warning-200 bg-warning-50 p-3 text-xs text-warning-800 flex items-start gap-2">

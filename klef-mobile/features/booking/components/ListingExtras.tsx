@@ -4,12 +4,11 @@ import { Image } from 'expo-image';
 import { useQuery } from '@tanstack/react-query';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
-import { X } from 'lucide-react-native';
+import { ArrowRight, X } from 'lucide-react-native';
 import { colors, radius, typography } from '../../../shared/theme/tokens';
 import { apiClient } from '../../../shared/api/api-client';
-import { getPrixPublic } from '../../../shared/components/ui/TenantPriceDisplay';
+import { TenantListingCard, type ListingItem } from '../../../shared/components/ui/TenantListingCard';
 import { INK, tap } from '../../reservations/tenant/components/ui';
-import { formatAmount } from '../../owner-home/lib/format';
 
 // ── Galerie par pièce (catégories PhotoLogement de l'API) ───────────────────
 
@@ -168,46 +167,67 @@ export function ListingPhotosModal({ visible, photos, onClose }: { visible: bool
 
 // ── Logements dans la même ville ─────────────────────────────────────────────
 
-interface SimilarItem {
-  id: string;
-  titre: string;
-  prixBase: number | string;
-  quartier?: string | null;
-  ville?: string | null;
-  photos?: Array<{ url: string } | string>;
-  coverUrl?: string | null;
-}
+const SIMILAR_WIDTH = 236;
 
-export function SimilarListings({ currentId, ville }: { currentId: string; ville?: string | null }) {
-  const { data } = useQuery<SimilarItem[]>({
+/**
+ * « Aussi à … » : d'autres logements de la même ville, en cartes « affiche »
+ * (les mêmes que sur l'accueil), le même type d'abord.
+ */
+export function SimilarListings({ currentId, ville, type }: { currentId: string; ville?: string | null; type?: string | null }) {
+  const { data } = useQuery<ListingItem[]>({
     queryKey: ['similar-listings', ville],
     queryFn: async () => {
-      const res = await apiClient.get('/listings/search', { params: { ville, limit: 10 } });
+      const res = await apiClient.get('/listings/search', { params: { ville, limit: 12 } });
       const d = res.data?.data ?? res.data?.items ?? res.data ?? [];
       return Array.isArray(d) ? d : [];
     },
     enabled: !!ville,
     staleTime: 5 * 60_000,
   });
-  const items = (data ?? []).filter((l) => l.id !== currentId).slice(0, 8);
+  const items = (data ?? [])
+    .filter((l) => l.id !== currentId)
+    .sort((a, b) => Number(b.type === type) - Number(a.type === type))
+    .slice(0, 8);
   if (!items.length) return null;
 
   return (
     <View style={styles.section}>
-      <Text style={styles.h2}>{ville ? `Aussi à ${ville}` : 'Dans le même quartier'}</Text>
-      <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 10, paddingRight: 16 }}>
-        {items.map((l) => {
-          const photo = l.coverUrl ?? (typeof l.photos?.[0] === 'string' ? (l.photos[0] as string) : (l.photos?.[0] as { url: string } | undefined)?.url);
-          return (
-            <TouchableOpacity key={l.id} onPress={() => { tap(); router.push(`/listing/${l.id}` as never); }} style={styles.similar} accessibilityRole="button">
-              {photo ? <Image source={{ uri: photo }} style={styles.similarPhoto} contentFit="cover" /> : <View style={[styles.similarPhoto, { backgroundColor: colors.forest[100] }]} />}
-              <Text style={styles.similarTitle} numberOfLines={1}>{l.titre}</Text>
-              <Text style={styles.similarSub} numberOfLines={1}>
-                {formatAmount(getPrixPublic(l.prixBase))} FCFA / nuit{l.quartier ? ` · ${l.quartier}` : ''}
-              </Text>
-            </TouchableOpacity>
-          );
-        })}
+      <View style={styles.sectionHead}>
+        <View style={styles.flex}>
+          <Text style={styles.kicker}>À DÉCOUVRIR AUSSI</Text>
+          <Text style={styles.h2} numberOfLines={1}>
+            {ville ? `Aussi à ${ville}` : 'Dans le même quartier'}
+          </Text>
+        </View>
+        {ville ? (
+          <TouchableOpacity
+            onPress={() => {
+              tap();
+              router.navigate({ pathname: '/(tenant)/explorer', params: { ville } } as never);
+            }}
+            hitSlop={8}
+            style={styles.allPill}
+            accessibilityRole="button"
+            accessibilityLabel={`Voir tous les logements à ${ville}`}
+          >
+            <Text style={styles.allText}>Tout voir</Text>
+            <View style={styles.allArrow}>
+              <ArrowRight size={13} color={colors.lime[400]} strokeWidth={2.6} />
+            </View>
+          </TouchableOpacity>
+        ) : null}
+      </View>
+      <ScrollView
+        horizontal
+        showsHorizontalScrollIndicator={false}
+        decelerationRate="fast"
+        snapToInterval={SIMILAR_WIDTH + 12}
+        snapToAlignment="start"
+        contentContainerStyle={styles.rail}
+      >
+        {items.map((l) => (
+          <TenantListingCard key={l.id} listing={l} width={SIMILAR_WIDTH} onPress={() => router.push(`/listing/${l.id}` as never)} />
+        ))}
       </ScrollView>
     </View>
   );
@@ -232,11 +252,14 @@ const styles = StyleSheet.create({
   lbBottom: { position: 'absolute', left: 0, right: 0, bottom: 0, alignItems: 'center' },
   lbLabel: { overflow: 'hidden', paddingHorizontal: 14, paddingVertical: 6, borderRadius: 999, backgroundColor: 'rgba(255,255,255,0.14)', fontFamily: typography.fontBodySemiBold, fontSize: 13, color: '#FFFFFF' },
 
-  section: { gap: 12, paddingLeft: 16, marginTop: 18, marginBottom: 8 },
-  h2: { fontFamily: typography.fontDisplaySemiBold, fontSize: 22, letterSpacing: -0.4, color: INK },
-  similar: { width: 170 },
-  similarPhoto: { width: 170, height: 130, borderRadius: 20 },
-  similarTitle: { marginTop: 6, fontFamily: typography.fontBodyBold, fontSize: 13, color: INK },
-  similarSub: { fontFamily: typography.fontBody, fontSize: 12, color: colors.neutral[600] },
+  flex: { flex: 1, minWidth: 0 },
+  section: { gap: 14, marginTop: 22, marginBottom: 8 },
+  sectionHead: { flexDirection: 'row', alignItems: 'flex-end', gap: 12, paddingHorizontal: 16 },
+  kicker: { fontFamily: typography.fontBodyBold, fontSize: 10.5, letterSpacing: 1.3, color: colors.forest[600] },
+  h2: { fontFamily: typography.fontDisplaySemiBold, fontSize: 22, letterSpacing: -0.4, color: INK, marginTop: 2 },
+  allPill: { flexDirection: 'row', alignItems: 'center', gap: 8, height: 34, paddingLeft: 14, paddingRight: 4, borderRadius: radius.pill, backgroundColor: colors.neutral[0], borderWidth: 1, borderColor: colors.neutral[200] },
+  allText: { fontFamily: typography.fontBodyBold, fontSize: 12.5, color: INK },
+  allArrow: { width: 26, height: 26, borderRadius: 13, backgroundColor: INK, alignItems: 'center', justifyContent: 'center' },
+  rail: { gap: 12, paddingHorizontal: 16, paddingBottom: 16 },
 });
 

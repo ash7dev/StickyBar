@@ -1,6 +1,6 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { RefreshControl, ScrollView, StyleSheet, Text, View } from 'react-native';
-import { useLocalSearchParams, useRouter } from 'expo-router';
+import { useLocalSearchParams, useRouter, useSegments } from 'expo-router';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { AlertCircle } from 'lucide-react-native';
@@ -32,7 +32,7 @@ type Sheet = 'accept' | 'refuse' | 'cancel' | 'fee' | 'dispute' | 'noshow' | nul
  * Détail d'une réservation côté hôte : un écran qui suit l'étape du séjour.
  * « Séjour » = ce qu'il y a à faire maintenant ; « Dossier » = toute la traçabilité.
  */
-export default function OwnerReservationDetailScreen() {
+function OwnerReservationDetailScreen() {
   const router = useRouter();
   const queryClient = useQueryClient();
   const { id: reservationId = '' } = useLocalSearchParams<{ id: string }>();
@@ -105,10 +105,12 @@ export default function OwnerReservationDetailScreen() {
   const actions = useOwnerActions(reservationId, onDone);
   const stage = useMemo(() => (reservation ? ownerStage(reservation, now) : null), [reservation, now]);
 
+  // Écran partagé avec l'espace gestionnaire : on n'en sort jamais vers l'espace hôte
+  const inManager = useSegments()[0] === '(manager)';
   const goBack = useCallback(() => {
     if (router.canGoBack()) router.back();
-    else router.navigate('/(owner)/reservations' as never);
-  }, [router]);
+    else router.navigate((inManager ? '/(manager)/sejours' : '/(owner)/reservations') as never);
+  }, [router, inManager]);
 
   const openSupport = useCallback(() => {
     router.push({ pathname: '/assistance' as never, params: { reservationId, tab: 'new' } });
@@ -163,8 +165,15 @@ export default function OwnerReservationDetailScreen() {
       onGallery: setGallery,
       onDossier: () => setTab('dossier'),
       onSupport: openSupport,
-      onCalendar: () => router.navigate('/(owner)/calendar' as never),
-      onWallet: () => router.navigate('/(owner)/wallet' as never),
+      onCalendar: () =>
+        inManager
+          ? router.push({ pathname: '/(manager)/calendrier' as never, params: reservation?.logement?.id ? { logementId: reservation.logement.id } : {} })
+          : router.navigate('/(owner)/calendar' as never),
+      // Gestionnaire : l'argent est celui du propriétaire, on ouvre sa fiche
+      onWallet: () =>
+        inManager && reservation?.proprietaire?.id
+          ? router.push(`/(manager)/proprietaire/${reservation.proprietaire.id}` as never)
+          : router.navigate('/(owner)/wallet' as never),
     },
     now,
   );
@@ -266,3 +275,12 @@ const styles = StyleSheet.create({
   errorTitle: { fontFamily: typography.fontDisplaySemiBold, fontSize: 20, color: colors.forest[950] },
   errorText: { textAlign: 'center', fontFamily: typography.fontBody, fontSize: 13, color: colors.neutral[600] },
 });
+
+/**
+ * Écran rangé parmi les onglets : il reste monté entre deux visites. La clé le remet
+ * à zéro pour chaque id (sinon l'onglet, les panneaux ouverts… du précédent restent).
+ */
+export default function OwnerReservationDetailScreenRoute() {
+  const { id } = useLocalSearchParams<{ id?: string }>();
+  return <OwnerReservationDetailScreen key={id ?? 'none'} />;
+}

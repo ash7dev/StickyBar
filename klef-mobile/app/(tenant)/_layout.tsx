@@ -1,13 +1,15 @@
 import React from 'react';
 import { View, StyleSheet } from 'react-native';
 import { Tabs } from 'expo-router';
+import { useSpaceWarmup } from '../../features/warmup/useSpaceWarmup';
 import { TenantTopHeader } from '../../shared/components/layout/TenantTopHeader';
 import { TenantFloatingTabBar } from '../../shared/components/layout/TenantFloatingTabBar';
 
 export default function TenantTabsLayout() {
+  useSpaceWarmup('tenant');
   return (
     <View style={styles.container}>
-      <Tabs
+      <Tabs backBehavior="history"
         tabBar={(props) => <TenantFloatingTabBar {...props} />}
         screenOptions={{
           headerShown: true,

@@ -29,6 +29,10 @@ const shortDate = (iso: string) => {
   return `${d.getUTCDate()} ${MONTHS_SHORT[d.getUTCMonth()]}`;
 };
 const METHOD: Record<string, string> = { WAVE: 'Wave', ORANGE_MONEY: 'Orange Money', VIREMENT: 'Virement' };
+const METHOD_LOGO: Record<string, number> = {
+  WAVE: require('../../../assets/images/wavelogo.jpeg'),
+  ORANGE_MONEY: require('../../../assets/images/orangeMoneylogo.png'),
+};
 const STATUS: Record<string, { label: string; color: string; bg: string; done: boolean }> = {
   EN_ATTENTE: { label: 'En attente', color: colors.gold[700], bg: colors.gold[50], done: false },
   VALIDE: { label: 'Validé', color: colors.forest[600], bg: colors.forest[50], done: false },
@@ -242,9 +246,12 @@ export default function ManagerOwnerScreen() {
                       {st.done ? <Check size={14} color={st.color} strokeWidth={3} /> : r.statut === 'REJETE' ? <X size={14} color={st.color} /> : <Clock size={14} color={st.color} />}
                     </View>
                     <View style={styles.flex}>
-                      <Text style={styles.payoutTitle}>
-                        {fmt(r.montant)} FCFA · {METHOD[r.methode] ?? r.methode}
-                      </Text>
+                      <View style={styles.payoutTitleRow}>
+                        {METHOD_LOGO[r.methode] ? <Image source={METHOD_LOGO[r.methode]} style={styles.methodLogo} contentFit="cover" /> : null}
+                        <Text style={styles.payoutTitle}>
+                          {fmt(r.montant)} FCFA · {METHOD[r.methode] ?? r.methode}
+                        </Text>
+                      </View>
                       <Text style={styles.payoutMeta} numberOfLines={1}>
                         {shortDate(r.demandeeLe)}
                         {who ? ` · demandé par ${who}` : ''} · {r.destinataire}
@@ -317,6 +324,8 @@ const styles = StyleSheet.create({
   payoutBorder: { borderTopWidth: 1, borderTopColor: '#EEF2EA' },
   payoutIcon: { width: 32, height: 32, borderRadius: 16, alignItems: 'center', justifyContent: 'center' },
   payoutTitle: { fontFamily: typography.fontBodyBold, fontSize: 13.5, color: INK },
+  payoutTitleRow: { flexDirection: 'row', alignItems: 'center', gap: 6 },
+  methodLogo: { width: 18, height: 18, borderRadius: 5 },
   payoutMeta: { fontFamily: typography.fontBody, fontSize: 11.5, color: MUTED, marginTop: 1 },
   payoutStatus: { fontFamily: typography.fontBodyBold, fontSize: 11.5 },
   emptyPayout: { padding: 16, borderRadius: 20, backgroundColor: '#FFFFFF', borderWidth: 1, borderColor: LINE },

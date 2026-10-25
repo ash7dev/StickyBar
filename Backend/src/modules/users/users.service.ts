@@ -76,14 +76,22 @@ export class UsersService {
       where: {
         proprietaireId: owner.id,
         statut: 'PUBLISHED',
+        // Une annonce archivée ne doit plus apparaître sur le profil public
+        archiveLe: null,
       },
       select: {
         id: true,
         titre: true,
         description: true,
+        type: true,
         prixBase: true,
         ville: true,
         quartier: true,
+        nuitesMinimum: true,
+        isInstantBooking: true,
+        derniereMinuteActive: true,
+        videoUrl: true,
+        creeLe: true,
         capaciteMax: true,
         nombreChambres: true,
         nombreSallesBain: true,

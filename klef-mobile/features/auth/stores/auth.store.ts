@@ -4,6 +4,7 @@ import * as SecureStore from 'expo-secure-store';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { AuthUser } from '../../../shared/contracts';
 import { apiClient } from '../../../shared/api/api-client';
+import { resetQueryCache } from '../../../shared/api/query-client';
 import { useRoleStore } from '../../../shared/stores/role.store';
 
 const TOKEN_KEY = 'klef_auth_token';
@@ -152,6 +153,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
         SecureStore.deleteItemAsync(TOKEN_KEY).catch(() => {}),
         SecureStore.deleteItemAsync(REFRESH_TOKEN_KEY).catch(() => {}),
         AsyncStorage.multiRemove(USER_CACHE_KEYS).catch(() => {}),
+        resetQueryCache().catch(() => {}),
       ]);
       useRoleStore.getState().setActiveRole('LOCATAIRE').catch(() => {});
       set({

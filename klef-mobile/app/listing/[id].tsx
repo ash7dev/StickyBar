@@ -8,7 +8,6 @@ import {
   SafeAreaView,
 } from 'react-native';
 import { useLocalSearchParams, router } from 'expo-router';
-import { apiClient } from '../../shared/api/api-client';
 import { colors, radius, typography } from '../../shared/theme/tokens';
 import { TenantListingGallery } from '../../shared/components/layout/TenantListingGallery';
 import { TenantListingSpec } from '../../shared/components/layout/TenantListingSpec';
@@ -24,16 +23,18 @@ import { useAuthStore } from '../../features/auth/stores/auth.store';
 import { getPrixDerniereMinute, getPrixPublic } from '../../shared/components/ui/TenantPriceDisplay';
 import { DatesSheet, type StaySelection } from '../../features/booking/components/DatesSheet';
 import { BookingBar, CancellationCard, DatesCard, HowItWorks } from '../../features/booking/components/ListingBooking';
-import { usePricePreview } from '../../features/booking/lib/booking';
+import { prepareCheckout, usePricePreview } from '../../features/booking/lib/booking';
+import { useQueryClient } from '@tanstack/react-query';
 import { ListingPhotosModal, PhotoLightbox, SimilarListings, lightboxItems } from '../../features/booking/components/ListingExtras';
 import { formatAmount } from '../../features/owner-home/lib/format';
 import { TenantListingDetailSkeleton } from '../../shared/components/layout/TenantListingDetailSkeleton';
 import { useListingCacheStore } from '../../shared/stores/listing-cache.store';
+import { loadListingDetail } from '../../shared/lib/prefetch-listing';
 import { AlertCircle, ChevronLeft, RotateCw } from 'lucide-react-native';
 
 export default function ListingDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
-  const { getDetail, setDetail } = useListingCacheStore();
+  const { getDetail } = useListingCacheStore();
 
   const cachedEntry = id ? getDetail(id) : null;
   const [listing, setListing] = useState<any>(cachedEntry?.data || null);
@@ -45,6 +46,12 @@ export default function ListingDetailScreen() {
   // Dates et voyageurs choisis sur la fiche, transmis tels quels à l'écran de paiement
   const [stay, setStay] = useState<StaySelection>({ start: null, end: null, guests: 1 });
   const price = usePricePreview(listing?.id ?? id, stay.start, stay.end, stay.guests);
+  const queryClient = useQueryClient();
+  // Dates choisies : l'écran de paiement se prépare (fiche complète uniquement, jamais l'aperçu de la carte)
+  const fullListing = id && getDetail(id)?.isPartial === false ? listing : null;
+  useEffect(() => {
+    if (stay.start && stay.end && fullListing) prepareCheckout(queryClient, fullListing, !!useAuthStore.getState().token);
+  }, [stay.start, stay.end, fullListing, queryClient]);
 
   const reserverPath = `/reserver?listingId=${listing?.id ?? id}&dateDebut=${stay.start}&dateFin=${stay.end}&personnes=${stay.guests}`;
   const goToCheckout = useCallback(() => router.push(reserverPath as any), [reserverPath]);
@@ -69,32 +76,9 @@ export default function ListingDetailScreen() {
       }
       setError(null);
 
-      const [resListing, resCal] = await Promise.all([
-        apiClient.get<any>(`/listings/${id}`),
-        apiClient.get<any>(`/calendrier/${id}`).catch(() => null),
-      ]);
-
-      if (resListing) {
-        const payload = resListing.data?.data ? resListing.data.data : resListing.data;
-        const calData = resCal?.data?.data ? resCal.data.data : resCal?.data;
-
-        if (calData) {
-          const calIndispos = Array.isArray(calData.indisponibilites) ? calData.indisponibilites : [];
-          const calResas = Array.isArray(calData.reservations) ? calData.reservations : [];
-
-          payload.indisponibilites = [
-            ...(Array.isArray(payload.indisponibilites) ? payload.indisponibilites : []),
-            ...calIndispos,
-          ];
-          payload.reservations = [
-            ...(Array.isArray(payload.reservations) ? payload.reservations : []),
-            ...calResas,
-          ];
-        }
-
-        setListing(payload);
-        setDetail(id, payload, false);
-      }
+      // Souvent déjà en route : la carte l'a lancée au toucher
+      const payload = await loadListingDetail(id);
+      if (payload) setListing(payload);
     } catch (err: any) {
       const isTimeoutOrNetwork =
         err?.code === 'ECONNABORTED' ||
@@ -262,7 +246,7 @@ export default function ListingDetailScreen() {
         />
 
         {/* 8. Autres logements dans la même ville */}
-        <SimilarListings currentId={listing.id} ville={listing.ville} />
+        <SimilarListings currentId={listing.id} ville={listing.ville} type={listing.type} />
       </ScrollView>
 
       {/* Barre du bas : total du séjour dès que les dates sont choisies */}

@@ -166,8 +166,30 @@ export class WalletService {
     return this.processWithdrawalUseCase.execute(retraitId, adminId, input);
   }
 
+  /**
+   * Contrôle admin : qui a demandé le retrait (propriétaire ou gestionnaire) et s'il part
+   * vers un autre numéro que celui du titulaire. Ce sont les retraits à vérifier en priorité.
+   */
+  private async withRequester<T extends { demandeParId: string | null; destinataire: string; wallet: { utilisateurId: string; utilisateur: { telephone: string | null } | null } }>(rows: T[]) {
+    const ids = [...new Set(rows.map((r) => r.demandeParId).filter((id): id is string => !!id))];
+    const people = ids.length
+      ? await this.prisma.utilisateur.findMany({ where: { id: { in: ids } }, select: { id: true, prenom: true, nom: true } })
+      : [];
+    const byId = new Map(people.map((p) => [p.id, p]));
+    const digits = (v?: string | null) => (v ?? '').split(' (')[0].replace(/\D/g, '').replace(/^221/, '');
+    return rows.map((r) => {
+      const parGestionnaire = !!r.demandeParId && r.demandeParId !== r.wallet.utilisateurId;
+      return {
+        ...r,
+        demandePar: r.demandeParId ? byId.get(r.demandeParId) ?? null : null,
+        parGestionnaire,
+        versTiers: !!r.wallet.utilisateur?.telephone && digits(r.destinataire) !== digits(r.wallet.utilisateur.telephone),
+      };
+    });
+  }
+
   async getPendingWithdrawals() {
-    return this.prisma.retrait.findMany({
+    const rows = await this.prisma.retrait.findMany({
       where: { statut: 'EN_ATTENTE' },
       orderBy: { demandeeLe: 'asc' },
       include: {
@@ -181,10 +203,11 @@ export class WalletService {
         },
       },
     });
+    return this.withRequester(rows);
   }
 
   async getWithdrawalsHistoryForAdmin(statut?: any) {
-    return this.prisma.retrait.findMany({
+    const rows = await this.prisma.retrait.findMany({
       where: statut ? { statut } : {},
       orderBy: { demandeeLe: 'desc' },
       include: {
@@ -198,6 +221,7 @@ export class WalletService {
         },
       },
     });
+    return this.withRequester(rows);
   }
 
   async getManagedProprietairesAndWallets(managerId: string) {

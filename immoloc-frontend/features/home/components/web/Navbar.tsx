@@ -90,7 +90,7 @@ export function Navbar() {
     if (activeRole === 'PROPRIETAIRE' || useRoleStore.getState().estProprietaire) {
       router.push('/dashboard/annonces/nouvelle');
     } else {
-      router.push('/become-host');
+      router.push('/proprietaires');
     }
   }, [activeRole, router]);
 
@@ -99,7 +99,7 @@ export function Navbar() {
   const handlePublierClick = (e: React.MouseEvent<HTMLAnchorElement>) => {
     e.preventDefault();
     if (!isAuthenticated) {
-      router.push(`/login?next=${encodeURIComponent('/become-host')}`);
+      router.push(`/login?next=${encodeURIComponent('/proprietaires')}`);
     } else {
       triggerPublierGate();
     }
@@ -393,7 +393,7 @@ export function Navbar() {
             )}
 
             <Link
-              href="/become-host"
+              href="/proprietaires"
               onClick={handlePublierClick}
               className="btn-action !px-3 !py-2 !text-[0.8125rem] sm:!px-4 sm:!text-sm whitespace-nowrap hidden sm:inline-flex"
             >

@@ -265,7 +265,7 @@ export function Navbar() {
                         {/* Lien spécifique au rôle */}
                         {activeRole === 'PROPRIETAIRE' ? (
                           <Link
-                            href={hasAnnonce ? "/dashboard" : "/become-host"}
+                            href={hasAnnonce ? "/dashboard" : "/proprietaires"}
                             className="dropdown-item flex items-center gap-3 px-3 py-2.5 text-sm font-semibold text-emerald-700 rounded-xl"
                           >
                             <div className="w-8 h-8 rounded-lg bg-emerald-50 flex items-center justify-center">
@@ -286,7 +286,7 @@ export function Navbar() {
                           </button>
                         ) : (
                           <Link
-                            href="/become-host"
+                            href="/proprietaires"
                             className="dropdown-item flex items-center gap-3 px-3 py-2.5 text-sm font-semibold text-emerald-700 rounded-xl"
                           >
                             <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-emerald-50 to-accent-50 flex items-center justify-center">
@@ -433,7 +433,7 @@ export function Navbar() {
                   {/* Lien rôle-spécifique */}
                   {activeRole === 'PROPRIETAIRE' ? (
                     <Link
-                      href={hasAnnonce ? "/dashboard" : "/become-host"}
+                      href={hasAnnonce ? "/dashboard" : "/proprietaires"}
                       className="flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-semibold text-emerald-700 nav-link-active"
                     >
                       <div className="w-8 h-8 rounded-lg bg-emerald-100/60 flex items-center justify-center">
@@ -454,7 +454,7 @@ export function Navbar() {
                     </button>
                   ) : (
                     <Link
-                      href="/become-host"
+                      href="/proprietaires"
                       className="flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-semibold text-emerald-700 nav-link-active"
                     >
                       <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-emerald-50 to-accent-50 flex items-center justify-center">

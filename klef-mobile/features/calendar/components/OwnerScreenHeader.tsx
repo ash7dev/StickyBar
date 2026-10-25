@@ -31,10 +31,10 @@ export function OwnerScreenHeader({ title, subtitle, icon: Icon, right }: OwnerS
           onPress={goBack}
           style={styles.backBtn}
           accessibilityRole="button"
-          accessibilityLabel="Retour à l'accueil hôte"
+          accessibilityLabel="Retour"
         >
           <ArrowLeft size={16} color={colors.forest[800]} strokeWidth={2.4} />
-          <Text style={styles.backText}>Accueil Hôte</Text>
+          <Text style={styles.backText}>Retour</Text>
         </TouchableOpacity>
         {right}
       </View>

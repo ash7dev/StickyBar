@@ -1,6 +1,6 @@
 import React, { useEffect } from 'react';
 import { View, Text, StyleSheet, StatusBar, Pressable, TouchableOpacity } from 'react-native';
-import { useRouter } from 'expo-router';
+import { useLocalSearchParams, useRouter } from 'expo-router';
 import { Image } from 'expo-image';
 import { LinearGradient } from 'expo-linear-gradient';
 import * as Haptics from 'expo-haptics';
@@ -61,6 +61,9 @@ export default function OnboardingScreen() {
   const insets = useSafeAreaInsets();
   const reduceMotion = useReducedMotion();
   const setHasSeenOnboarding = useAuthStore((s) => s.setHasSeenOnboarding);
+  const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
+  // Rejouée depuis le profil : on revient simplement là où l'on était
+  const { replay } = useLocalSearchParams<{ replay?: string }>();
 
   // ── Ken Burns lent sur la photo ─────────────────────────────────────
   const heroScale = useSharedValue(reduceMotion ? 1 : 1.12);
@@ -77,7 +80,8 @@ export default function OnboardingScreen() {
   const handleStart = async () => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium).catch(() => {});
     await setHasSeenOnboarding(true);
-    router.replace('/(tenant)' as any);
+    if (replay && router.canGoBack()) router.back();
+    else router.replace('/(tenant)' as any);
   };
 
   const handleLogin = async () => {
@@ -171,11 +175,13 @@ export default function OnboardingScreen() {
             </Pressable>
           </Animated.View>
 
-          <TouchableOpacity activeOpacity={0.7} onPress={handleLogin} style={styles.login} accessibilityRole="button">
-            <Text style={styles.loginText}>
-              Déjà un compte ? <Text style={styles.loginBold}>Se connecter</Text>
-            </Text>
-          </TouchableOpacity>
+          {!isAuthenticated && (
+            <TouchableOpacity activeOpacity={0.7} onPress={handleLogin} style={styles.login} accessibilityRole="button">
+              <Text style={styles.loginText}>
+                Déjà un compte ? <Text style={styles.loginBold}>Se connecter</Text>
+              </Text>
+            </TouchableOpacity>
+          )}
         </Rise>
       </View>
     </View>

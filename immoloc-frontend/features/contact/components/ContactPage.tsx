@@ -324,7 +324,7 @@ export function ContactPage() {
                       { icon: HelpCircle, label: 'Comment ça marche', href: '/comment-ca-marche' },
                       { icon: FileText, label: 'Conditions générales', href: '/cgu' },
                       { icon: ShieldCheck, label: 'Confidentialité', href: '/legal/privacy' },
-                      { icon: Building2, label: 'Devenir hôte', href: '/become-host' },
+                      { icon: Building2, label: 'Devenir hôte', href: '/proprietaires' },
                     ].map(({ icon: Icon, label, href }) => (
                       <Link
                         key={href}

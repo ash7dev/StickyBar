@@ -1,14 +1,16 @@
 import React from 'react';
 import { StyleSheet, View } from 'react-native';
 import { Tabs } from 'expo-router';
+import { useSpaceWarmup } from '../../features/warmup/useSpaceWarmup';
 import { colors } from '../../shared/theme/tokens';
 import { ManagerTabBar } from '../../features/manager/components/ManagerTabBar';
 
 /** Espace gestionnaire : le terrain (journée, séjours, biens, propriétaires). Le reste se fait sur le web. */
 export default function ManagerTabsLayout() {
+  useSpaceWarmup('manager');
   return (
     <View style={styles.container}>
-      <Tabs tabBar={(props) => <ManagerTabBar {...props} />} screenOptions={{ headerShown: false }}>
+      <Tabs backBehavior="history" tabBar={(props) => <ManagerTabBar {...props} />} screenOptions={{ headerShown: false }}>
         <Tabs.Screen name="index" options={{ title: 'Aujourd’hui' }} />
         <Tabs.Screen name="sejours" options={{ title: 'Séjours' }} />
         <Tabs.Screen name="biens" options={{ title: 'Biens' }} />

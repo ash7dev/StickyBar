@@ -1,6 +1,6 @@
 import React, { useMemo, useState } from 'react';
 import { ActivityIndicator, KeyboardAvoidingView, Platform, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
-import { useRouter } from 'expo-router';
+import { useFocusEffect, useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useQuery } from '@tanstack/react-query';
 import * as Haptics from 'expo-haptics';
@@ -45,6 +45,18 @@ export default function ManagerNewListingOwnerStep() {
   const [prenom, setPrenom] = useState('');
   const [nom, setNom] = useState('');
   const [telephone, setTelephone] = useState('');
+
+  // Écran rangé parmi les onglets (il reste monté) : chaque visite repart d'une page blanche
+  useFocusEffect(
+    React.useCallback(() => {
+      setMode('EXISTING');
+      setQuery('');
+      setSelected(null);
+      setPrenom('');
+      setNom('');
+      setTelephone('');
+    }, []),
+  );
 
   const listingsQ = useManagedListings();
   const allOwnersQ = useQuery({

@@ -16,20 +16,15 @@ import { Image as ExpoImage } from 'expo-image';
 import { router, useLocalSearchParams } from 'expo-router';
 import {
   ChevronLeft,
-  ChevronRight,
   Share2,
   Star,
   ShieldCheck,
   Home,
   MessageSquare,
-  MapPin,
   Sparkles,
   Zap,
   Clock,
   Award,
-  BedDouble,
-  Bath,
-  Users,
   CheckCircle2,
   RotateCcw,
   Building2,
@@ -37,7 +32,7 @@ import {
 import * as Haptics from 'expo-haptics';
 import { colors, radius, shadows, typography } from '../../shared/theme/tokens';
 import { apiClient } from '../../shared/api/api-client';
-import { TenantPriceDisplay } from '../../shared/components/ui/TenantPriceDisplay';
+import { ExplorerListingCard } from '../../shared/components/layout/ExplorerListingCard';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 
@@ -75,6 +70,12 @@ interface HostProfileResponse {
     nombreSallesBain: number;
     note: number;
     totalAvis: number;
+    type?: string;
+    nuitesMinimum?: number;
+    isInstantBooking?: boolean;
+    derniereMinuteActive?: boolean;
+    videoUrl?: string | null;
+    creeLe?: string;
     photos: Array<{ url: string; estPrincipale: boolean; position: number }>;
   }>;
   avis: Array<{
@@ -435,97 +436,14 @@ export default function HostPublicProfileScreen() {
                 </View>
               ) : (
                 <View style={styles.logementsListStack}>
-                  {logements.map((item) => {
-                    const mainPhoto = item.photos?.[0]?.url || item.photos?.[0] || null;
-                    const locationText = [item.quartier, item.ville].filter(Boolean).join(', ');
-
-                    return (
-                      <TouchableOpacity
-                        key={item.id}
-                        activeOpacity={0.92}
-                        onPress={() => router.push(`/listing/${item.id}` as any)}
-                        style={styles.premiumListingCard}
-                      >
-                        {/* Image de couverture */}
-                        <View style={styles.cardImageWrapper}>
-                          {mainPhoto ? (
-                            <ExpoImage
-                              source={{ uri: typeof mainPhoto === 'string' ? mainPhoto : (mainPhoto as any)?.url }}
-                              style={styles.cardImage}
-                              contentFit="cover"
-                              transition={200}
-                            />
-                          ) : (
-                            <View style={styles.cardImagePlaceholder}>
-                              <Building2 size={32} color={colors.neutral[400]} />
-                            </View>
-                          )}
-
-                          {/* Location Tag Top Left */}
-                          {locationText ? (
-                            <View style={styles.cardLocationBadgeTop}>
-                              <MapPin size={11} color={colors.lime[400]} />
-                              <Text style={styles.cardLocationBadgeTopText} numberOfLines={1}>
-                                {locationText}
-                              </Text>
-                            </View>
-                          ) : null}
-
-                          {/* Rating Tag Top Right */}
-                          {item.note > 0 ? (
-                            <View style={styles.cardRatingBadge}>
-                              <Star size={11} color={colors.gold[500]} fill={colors.gold[500]} />
-                              <Text style={styles.cardRatingText}>
-                                {Number(item.note).toFixed(1)} {item.totalAvis ? `(${item.totalAvis})` : ''}
-                              </Text>
-                            </View>
-                          ) : null}
-                        </View>
-
-                        {/* Informations logement */}
-                        <View style={styles.cardBody}>
-                          <Text numberOfLines={1} style={styles.cardTitle}>
-                            {item.titre}
-                          </Text>
-
-                          {/* Specs icons row */}
-                          <View style={styles.specsRow}>
-                            {item.capaciteMax ? (
-                              <View style={styles.specChip}>
-                                <Users size={12} color={colors.forest[800]} />
-                                <Text style={styles.specChipText}>{item.capaciteMax} voy.</Text>
-                              </View>
-                            ) : null}
-
-                            {item.nombreChambres ? (
-                              <View style={styles.specChip}>
-                                <BedDouble size={12} color={colors.forest[800]} />
-                                <Text style={styles.specChipText}>{item.nombreChambres} ch.</Text>
-                              </View>
-                            ) : null}
-
-                            {item.nombreSallesBain ? (
-                              <View style={styles.specChip}>
-                                <Bath size={12} color={colors.forest[800]} />
-                                <Text style={styles.specChipText}>{item.nombreSallesBain} sdb</Text>
-                              </View>
-                            ) : null}
-                          </View>
-
-                          {/* Prix par nuit avec CTA arrow */}
-                          <View style={styles.cardPriceRow}>
-                            <TenantPriceDisplay
-                              prixBase={item.prixBase}
-                              size="md"
-                            />
-                            <View style={styles.cardCtaCircle}>
-                              <ChevronRight size={14} color={colors.forest[950]} strokeWidth={2.5} />
-                            </View>
-                          </View>
-                        </View>
-                      </TouchableOpacity>
-                    );
-                  })}
+                  {logements.map((item) => (
+                    <ExplorerListingCard
+                      key={item.id}
+                      hideHost
+                      listing={{ ...item, type: item.type ?? '', note: Number(item.note), photos: item.photos }}
+                      onPress={() => router.push(`/listing/${item.id}` as any)}
+                    />
+                  ))}
                 </View>
               )}
             </View>
@@ -1063,119 +981,10 @@ const styles = StyleSheet.create({
   },
 
   // ── Logements List Stack (Premium) ──────────────────────────────────
+  // La carte porte déjà son propre espacement
   logementsListStack: {
-    gap: 16,
+    gap: 0,
   },
-  premiumListingCard: {
-    backgroundColor: colors.neutral[0],
-    borderRadius: radius.card,
-    borderWidth: 1,
-    borderColor: colors.neutral[200],
-    overflow: 'hidden',
-    ...shadows.md,
-  },
-  cardImageWrapper: {
-    height: 210,
-    width: '100%',
-    position: 'relative',
-    backgroundColor: colors.neutral[100],
-  },
-  cardImage: {
-    width: '100%',
-    height: '100%',
-  },
-  cardImagePlaceholder: {
-    width: '100%',
-    height: '100%',
-    alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: colors.neutral[200],
-  },
-  cardLocationBadgeTop: {
-    position: 'absolute',
-    top: 12,
-    left: 12,
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 4,
-    backgroundColor: 'rgba(4, 25, 18, 0.76)',
-    paddingHorizontal: 10,
-    paddingVertical: 5,
-    borderRadius: radius.pill,
-  },
-  cardLocationBadgeTopText: {
-    fontFamily: typography.fontBodyBold,
-    fontSize: 11,
-    color: colors.neutral[0],
-  },
-  cardRatingBadge: {
-    position: 'absolute',
-    top: 12,
-    right: 12,
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 4,
-    backgroundColor: 'rgba(255, 255, 255, 0.94)',
-    paddingHorizontal: 9,
-    paddingVertical: 4,
-    borderRadius: radius.pill,
-    ...shadows.xs,
-  },
-  cardRatingText: {
-    fontFamily: typography.fontBodyBold,
-    fontSize: 11,
-    color: colors.forest[950],
-  },
-  cardBody: {
-    padding: 16,
-    gap: 8,
-  },
-  cardTitle: {
-    fontFamily: typography.fontDisplaySemiBold,
-    fontSize: 16,
-    color: colors.forest[950],
-  },
-  specsRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-  },
-  specChip: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 4,
-    backgroundColor: colors.forest[50],
-    borderWidth: 1,
-    borderColor: colors.forest[100],
-    paddingHorizontal: 9,
-    paddingVertical: 4,
-    borderRadius: radius.pill,
-  },
-  specChipText: {
-    fontFamily: typography.fontBodyBold,
-    fontSize: 11,
-    color: colors.forest[900],
-  },
-  cardPriceRow: {
-    marginTop: 4,
-    paddingTop: 10,
-    borderTopWidth: 1,
-    borderTopColor: colors.neutral[100],
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-  },
-  cardCtaCircle: {
-    width: 32,
-    height: 32,
-    borderRadius: 16,
-    backgroundColor: colors.lime[400],
-    alignItems: 'center',
-    justifyContent: 'center',
-    ...shadows.xs,
-  },
-
-  // ── Avis List Stack ─────────────────────────────────────────────────
   avisListStack: {
     gap: 12,
   },

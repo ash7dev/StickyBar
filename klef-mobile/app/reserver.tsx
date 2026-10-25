@@ -12,7 +12,7 @@ import { useAuthStore } from '../features/auth/stores/auth.store';
 import { BottomSheet } from '../features/calendar/components/BottomSheet';
 import { InfoNote, INK, PAPER, PillButton, Steps, tap } from '../features/reservations/tenant/components/ui';
 import { formatAmount } from '../features/owner-home/lib/format';
-import { apiMessage, depositOf, nightsBetween, rangeLabel, usePricePreview } from '../features/booking/lib/booking';
+import { apiMessage, depositOf, nightsBetween, rangeLabel, terangaCoinsQuery, usePricePreview } from '../features/booking/lib/booking';
 import { useGatedAction } from '../shared/hooks/useGatedAction';
 import { TenantActionGateModal } from '../shared/components/gate/TenantActionGateModal';
 
@@ -77,14 +77,7 @@ export default function ReserverScreen() {
     },
     enabled: !!listingId,
   });
-  const coinsQ = useQuery({
-    queryKey: ['teranga', 'me'],
-    queryFn: async () => {
-      const res = await apiClient.get('/teranga-club/me');
-      return Number((res.data?.data ?? res.data)?.soldeCoins ?? 0);
-    },
-    retry: false,
-  });
+  const coinsQ = useQuery(terangaCoinsQuery);
   const price = usePricePreview(listingId, start, end, guests);
 
   const listing = listingQ.data;

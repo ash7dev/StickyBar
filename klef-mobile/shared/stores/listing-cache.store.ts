@@ -93,13 +93,10 @@ export const useListingCacheStore = create<ListingCacheState>((set, get) => ({
                 data: {
                   ...item,
                   photos: photoArray,
-                  description:
-                    item.description ||
-                    `${item.type || 'Logement'} d'exception situé à ${item.ville || 'Dakar'}${
-                      item.quartier ? ` (${item.quartier})` : ''
-                    }. Cadre idéal pour vos séjours et vacances.`,
-                  note: item.note ?? 4.8,
-                  totalSejours: item.totalSejours ?? 1,
+                  // Rien d'inventé en attendant la fiche complète : pas de note ni de texte fictifs
+                  description: item.description ?? null,
+                  note: item.note ?? null,
+                  totalSejours: item.totalSejours ?? 0,
                   equipements: Array.isArray(item.equipements) ? item.equipements : [],
                   indisponibilites: existing?.data?.indisponibilites || [],
                   reservations: existing?.data?.reservations || [],

@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import * as WebBrowser from 'expo-web-browser';
 import * as Linking from 'expo-linking';
+import { router } from 'expo-router';
 import { apiClient } from '../../../shared/api/api-client';
 import { useAuthStore } from '../stores/auth.store';
 import { AuthTokensResponse, AuthUser } from '../../../shared/contracts';
@@ -212,6 +213,9 @@ export function useAuth() {
       await apiClient.post('/auth/logout').catch(() => {});
     } finally {
       await clearStoreSession();
+      // Retour à l'accueil voyageur, sans pouvoir revenir en arrière sur l'espace du compte quitté
+      if (router.canDismiss()) router.dismissAll();
+      router.replace('/(tenant)' as never);
     }
   };
 

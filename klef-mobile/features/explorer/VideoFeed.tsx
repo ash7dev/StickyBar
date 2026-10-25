@@ -297,7 +297,12 @@ function ReelVideo({ url, muted }: { url: string; muted: boolean }) {
   useEffect(() => {
     player.muted = muted;
   }, [muted, player]);
-  return <VideoView player={player} style={StyleSheet.absoluteFill} contentFit="cover" nativeControls={false} />;
+  // Le lecteur natif capte les gestes sur iOS : il ne doit pas empêcher de glisser vers la vidéo suivante
+  return (
+    <View style={StyleSheet.absoluteFill} pointerEvents="none">
+      <VideoView player={player} style={StyleSheet.absoluteFill} contentFit="cover" nativeControls={false} />
+    </View>
+  );
 }
 
 function RailButton({ label, active, onPress, children }: { label: string; active?: boolean; onPress: () => void; children: React.ReactNode }) {

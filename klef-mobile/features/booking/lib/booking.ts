@@ -1,4 +1,4 @@
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, type QueryClient } from '@tanstack/react-query';
 import { apiClient } from '../../../shared/api/api-client';
 
 /** Détail de prix calculé par l'API (GET /listings/:id/price-preview), seule source de vérité. */
@@ -87,4 +87,24 @@ export function usePricePreview(listingId: string | undefined, start?: string | 
     staleTime: 60_000,
     retry: false,
   });
+}
+
+/** Solde de coins Teranga affiché au paiement. */
+export const terangaCoinsQuery = {
+  queryKey: ['teranga', 'me'],
+  queryFn: async () => {
+    const res = await apiClient.get('/teranga-club/me');
+    return Number((res.data?.data ?? res.data)?.soldeCoins ?? 0);
+  },
+  retry: false,
+};
+
+/**
+ * Dates choisies sur la fiche : le prix se calcule déjà (même requête que le paiement).
+ * On prépare aussi le reste de l'écran de paiement, qui s'ouvre alors sans attente.
+ */
+export function prepareCheckout(qc: QueryClient, listing: { id: string } | null | undefined, signedIn: boolean) {
+  if (!listing?.id) return;
+  if (!qc.getQueryData(['listing-checkout', listing.id])) qc.setQueryData(['listing-checkout', listing.id], listing);
+  if (signedIn) qc.prefetchQuery(terangaCoinsQuery).catch(() => {});
 }

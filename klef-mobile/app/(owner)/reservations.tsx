@@ -7,7 +7,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { AlertCircle, ArrowRight, BellRing, CalendarDays, ChevronDown, Handshake, SearchX, ShieldCheck } from 'lucide-react-native';
 import * as Haptics from 'expo-haptics';
 import { colors, radius, typography } from '../../shared/theme/tokens';
-import { apiClient } from '../../shared/api/api-client';
+import { OWNER_RESERVATIONS_CACHE_KEY, fetchOwnerReservations, ownerReservationsKey } from '../../features/warmup/queries';
 import {
   MobileOwnerReservationHeaderBar,
   OwnerStatusTabId,
@@ -20,7 +20,7 @@ import {
 
 const INK = colors.forest[950];
 const ACTIVE_STATUSES = ['PENDING', 'PAID', 'CONFIRMED', 'CHECKED_IN', 'DISPUTED'];
-const RESERVATIONS_CACHE_KEY = 'klef_owner_reservations_cache_v1';
+const RESERVATIONS_CACHE_KEY = OWNER_RESERVATIONS_CACHE_KEY;
 const tap = () => Haptics.selectionAsync().catch(() => {});
 const fcfa = (n: number) => String(Math.round(n)).replace(/\B(?=(\d{3})+(?!\d))/g, ' ');
 const plural = (n: number, word: string) => `${n} ${word}${n > 1 ? 's' : ''}`;
@@ -87,20 +87,10 @@ export default function OwnerReservationsScreen() {
     refetch,
     error,
   } = useQuery<OwnerReservationItem[]>({
-    queryKey: ['reservations', 'mine'],
+    queryKey: ownerReservationsKey,
     queryFn: async () => {
       try {
-        let res: any = null;
-        try {
-          res = await apiClient.get<any[]>('/reservations/me');
-        } catch (err) {
-          res = await apiClient.get<any[]>('/reservations/owner');
-        }
-        const list = Array.isArray(res?.data) ? res.data : Array.isArray(res) ? res : res?.reservations ?? [];
-        if (list.length > 0) {
-          AsyncStorage.setItem(RESERVATIONS_CACHE_KEY, JSON.stringify(list)).catch(() => {});
-        }
-        return list;
+        return await fetchOwnerReservations<OwnerReservationItem>();
       } catch (err) {
         if (cachedReservations && cachedReservations.length > 0) return cachedReservations;
         throw err;

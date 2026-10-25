@@ -14,6 +14,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Plus, LayoutGrid, List, AlertCircle, ArrowRight, Star } from 'lucide-react-native';
 import * as Haptics from 'expo-haptics';
 import { apiClient } from '../../shared/api/api-client';
+import { OWNER_LISTINGS_CACHE_KEY, fetchOwnerListings, ownerListingsKey } from '../../features/warmup/queries';
 import { colors, radius, typography } from '../../shared/theme/tokens';
 import { MobileOwnerListingCard, MobileOwnerListingItem } from '../../features/listings/components/owner/MobileOwnerListingCard';
 import { MobileOwnerListingsFilterRail, ListingFilterTab } from '../../features/listings/components/owner/MobileOwnerListingsFilterRail';
@@ -31,7 +32,7 @@ const FILTERS = [
   { id: 'PAUSED', label: 'En pause' },
 ] as const;
 
-const LISTINGS_CACHE_KEY = 'klef_owner_listings_cache_v1';
+const LISTINGS_CACHE_KEY = OWNER_LISTINGS_CACHE_KEY;
 
 export default function OwnerListingsScreen() {
   const router = useRouter();
@@ -75,15 +76,10 @@ export default function OwnerListingsScreen() {
 
   // ── 2. Query avec SWR et Cache Persistant sur disque ─────────
   const { data: listingsData = [], isLoading, isFetching, isRefetching, refetch, error } = useQuery<MobileOwnerListingItem[]>({
-    queryKey: ['listings', 'mine'],
+    queryKey: ownerListingsKey,
     queryFn: async () => {
       try {
-        const response = await apiClient.get<MobileOwnerListingItem[]>('/listings/me');
-        const list = Array.isArray(response.data) ? response.data : [];
-        if (list.length > 0) {
-          AsyncStorage.setItem(LISTINGS_CACHE_KEY, JSON.stringify(list)).catch(() => {});
-        }
-        return list;
+        return await fetchOwnerListings<MobileOwnerListingItem>();
       } catch (err) {
         if (cachedListings && cachedListings.length > 0) {
           return cachedListings;

@@ -1,506 +1,353 @@
-import React, { useState, useRef, useCallback, useEffect } from 'react';
-import {
-  StyleSheet,
-  View,
-  Text,
-  TouchableOpacity,
-  Animated,
-  Dimensions,
-} from 'react-native';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { Animated, Dimensions, Pressable, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { Image as ExpoImage } from 'expo-image';
+import { LinearGradient } from 'expo-linear-gradient';
 import PagerView from 'react-native-pager-view';
-import {
-  Star,
-  Heart,
-  ShieldCheck,
-  Zap,
-  Video,
-  ImageOff,
-  MapPin,
-} from 'lucide-react-native';
+import { Bath, BedDouble, Heart, ImageOff, Play, Star, Users, Zap } from 'lucide-react-native';
 import * as Haptics from 'expo-haptics';
-import { colors, radius, shadows, typography } from '../../theme/tokens';
+import { colors, radius, typography } from '../../theme/tokens';
 import { useFavorite } from '../../../features/favorites/useFavorites';
 import { formatAmount } from '../../../features/owner-home/lib/format';
 import { ListingItem } from '../ui/TenantListingCard';
-import { TenantPriceDisplay } from '../ui/TenantPriceDisplay';
+import { getPrixDerniereMinute, getPrixPublic } from '../ui/TenantPriceDisplay';
+import { prefetchListing } from '../../lib/prefetch-listing';
 import { useSearchHistoryStore } from '../../stores/search-history.store';
 
+const INK = colors.forest[950];
+const LIME = colors.lime[400];
 const SCREEN_WIDTH = Dimensions.get('window').width;
-const PHOTO_ASPECT = 4 / 3; // Taller than 16/10 — more immersive
-const CARD_HORIZONTAL_PADDING = 16;
-const IMAGE_WIDTH = SCREEN_WIDTH - CARD_HORIZONTAL_PADDING * 2;
-const IMAGE_HEIGHT = IMAGE_WIDTH / PHOTO_ASPECT;
-const MAX_PHOTOS = 5;
+const CARD_WIDTH = SCREEN_WIDTH - 32;
+const PHOTO_HEIGHT = Math.round(CARD_WIDTH * 1.08);
+const MAX_PHOTOS = 6;
+const NEW_DAYS = 30;
+
+const TYPE_LABEL: Record<string, string> = {
+  APPARTEMENT: 'Appartement',
+  VILLA: 'Villa',
+  STUDIO: 'Studio',
+  MAISON: 'Maison',
+  CHAMBRE: 'Chambre',
+  DUPLEX: 'Duplex',
+};
 
 interface ExplorerListingCardProps {
   listing: ListingItem;
   onPress: () => void;
+  /** Masquer « Chez … » (inutile sur le profil de l'hôte lui-même) */
+  hideHost?: boolean;
 }
 
-export function ExplorerListingCard({ listing, onPress }: ExplorerListingCardProps) {
-  const [activePhotoIdx, setActivePhotoIdx] = useState(0);
+/**
+ * Carte d'annonce d'Explorer : la photo en grand format, les photos en barres « stories »,
+ * le prix posé sur un ticket sombre, l'hôte, et seulement des informations vraies.
+ */
+export function ExplorerListingCard({ listing, onPress, hideHost = false }: ExplorerListingCardProps) {
+  const [index, setIndex] = useState(0);
   const [isFavorite, toggleFavorite] = useFavorite(listing.id);
-  const heartScale = useRef(new Animated.Value(1)).current;
-  const pagerRef = useRef<PagerView>(null);
-
-  // ── Fade-in + slide-up entrance animation ──────────────────────────
-  const fadeAnim = useRef(new Animated.Value(0)).current;
-  const slideAnim = useRef(new Animated.Value(18)).current;
+  const pager = useRef<PagerView>(null);
+  const heart = useRef(new Animated.Value(1)).current;
+  const press = useRef(new Animated.Value(1)).current;
+  const enter = useRef(new Animated.Value(0)).current;
 
   useEffect(() => {
-    Animated.parallel([
-      Animated.timing(fadeAnim, {
-        toValue: 1,
-        duration: 380,
-        useNativeDriver: true,
-      }),
-      Animated.timing(slideAnim, {
-        toValue: 0,
-        duration: 380,
-        useNativeDriver: true,
-      }),
-    ]).start();
-  }, []);
+    Animated.timing(enter, { toValue: 1, duration: 420, useNativeDriver: true }).start();
+  }, [enter]);
 
-  // ── Normalize photos ──────────────────────────────────────────────────
-  const photos: string[] = React.useMemo(() => {
-    if (listing.photos && Array.isArray(listing.photos) && listing.photos.length > 0) {
-      return listing.photos
-        .slice(0, MAX_PHOTOS)
-        .map((p: any) => {
-          if (typeof p === 'string') return p;
-          return p?.url || p?.uri || p?.path || '';
-        })
-        .filter((url: string) => url.trim().length > 0);
-    }
-    return [];
-  }, [listing.photos]);
+  const photos = useMemo(
+    () =>
+      (listing.photos ?? [])
+        .map((p: any) => (typeof p === 'string' ? p : p?.url || p?.uri || ''))
+        .filter((u: string) => u.trim().length > 0)
+        .slice(0, MAX_PHOTOS),
+    [listing.photos],
+  );
 
-  // ── Handlers ──────────────────────────────────────────────────────────
-  const handleFavoritePress = useCallback(() => {
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium).catch(() => {});
-    // Micro-animation : spring bounce sur le cœur
-    Animated.sequence([
-      Animated.spring(heartScale, {
-        toValue: 1.35,
-        speed: 50,
-        bounciness: 12,
-        useNativeDriver: true,
-      }),
-      Animated.spring(heartScale, {
-        toValue: 1,
-        speed: 20,
-        bounciness: 8,
-        useNativeDriver: true,
-      }),
-    ]).start();
-    toggleFavorite();
-  }, [toggleFavorite]);
+  // ── Prix public (commission incluse), dernière minute appliquée ──
+  const base = getPrixPublic(listing.prixBase);
+  const promo = !!listing.derniereMinuteActive;
+  const nightly = promo ? getPrixDerniereMinute(base) : base;
+  const stay = listing.prixSejour && listing.nbNuits ? { total: listing.prixSejour, nights: listing.nbNuits } : null;
 
-  const handleCardPress = useCallback(() => {
+  const reviews = listing.totalAvis ?? 0;
+  const rating = reviews > 0 && typeof listing.note === 'number' && listing.note > 0 ? listing.note : null;
+  const isNew = !reviews && !!listing.creeLe && Date.now() - new Date(listing.creeLe).getTime() < NEW_DAYS * 86_400_000;
+  const place = [listing.quartier, listing.ville].filter(Boolean).join(' · ') || 'Sénégal';
+  const kind = TYPE_LABEL[(listing.type ?? '').toUpperCase()] ?? listing.type;
+  const host = hideHost ? null : listing.proprietaire;
+
+  const open = useCallback(() => {
     useSearchHistoryStore.getState().addRecentListing(listing);
     onPress();
   }, [listing, onPress]);
 
-  const scrollToPhoto = useCallback((idx: number) => {
-    pagerRef.current?.setPage(idx);
-    setActivePhotoIdx(idx);
-  }, []);
+  const onHeart = useCallback(() => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium).catch(() => {});
+    Animated.sequence([
+      Animated.spring(heart, { toValue: 1.32, speed: 50, bounciness: 14, useNativeDriver: true }),
+      Animated.spring(heart, { toValue: 1, speed: 20, bounciness: 8, useNativeDriver: true }),
+    ]).start();
+    toggleFavorite();
+  }, [heart, toggleFavorite]);
 
-  // ── Derived display data ──────────────────────────────────────────────
-  const locationLine = [listing.ville, listing.type].filter(Boolean).join(' · ');
-  const specsLine = [
-    listing.capaciteMax ? `${listing.capaciteMax} voy.` : null,
-    listing.nombreChambres ? `${listing.nombreChambres} ch.` : null,
-    listing.nombreSallesBain ? `${listing.nombreSallesBain} sdb` : null,
-    listing.nuitesMinimum && listing.nuitesMinimum > 1
-      ? `Min. ${listing.nuitesMinimum} nuits`
-      : null,
-  ]
-    .filter(Boolean)
-    .join(' · ');
-
-  const hasRating = typeof listing.note === 'number' && listing.note > 0;
-  const displayRating = hasRating ? Number(listing.note).toFixed(1) : null;
+  const pressTo = (v: number) => Animated.spring(press, { toValue: v, speed: 40, bounciness: 4, useNativeDriver: true }).start();
+  // Le toucher prépare la fiche : elle s'ouvre déjà remplie
+  const pressIn = () => {
+    pressTo(0.985);
+    prefetchListing(listing);
+  };
 
   return (
-    <Animated.View style={[styles.cardOuter, { opacity: fadeAnim, transform: [{ translateY: slideAnim }] }]}>
-      {/* ── PHOTO ZONE — Borderless full-width rounded ──────────────── */}
-      <TouchableOpacity activeOpacity={0.95} onPress={handleCardPress} style={styles.imageContainer}>
+    <Animated.View
+      style={[
+        styles.card,
+        {
+          opacity: enter,
+          transform: [{ translateY: enter.interpolate({ inputRange: [0, 1], outputRange: [18, 0] }) }, { scale: press }],
+        },
+      ]}
+    >
+      {/* ── Photo ─────────────────────────────────────────────── */}
+      <View style={styles.photo}>
         {photos.length > 0 ? (
-          <PagerView
-            ref={pagerRef}
-            style={styles.pager}
-            initialPage={0}
-            onPageSelected={(e) => setActivePhotoIdx(e.nativeEvent.position)}
-          >
+          <PagerView ref={pager} style={StyleSheet.absoluteFill} initialPage={0} onPageSelected={(e) => setIndex(e.nativeEvent.position)}>
             {photos.map((url, i) => (
-              <View key={`${url}-${i}`} style={styles.pageWrapper}>
-                <ExpoImage
-                  source={{ uri: url }}
-                  style={styles.image}
-                  contentFit="cover"
-                  transition={180}
-                  recyclingKey={`explorer-${listing.id}-${i}`}
-                />
-              </View>
+              <Pressable key={`${url}-${i}`} onPress={open} onPressIn={pressIn} onPressOut={() => pressTo(1)} style={styles.page}>
+                <ExpoImage source={{ uri: url }} style={StyleSheet.absoluteFill} contentFit="cover" transition={200} recyclingKey={`ex-${listing.id}-${i}`} />
+              </Pressable>
             ))}
           </PagerView>
         ) : (
-          <View style={styles.noImagePlaceholder}>
-            <ImageOff size={32} color={colors.neutral[400]} />
-          </View>
+          <Pressable onPress={open} style={[StyleSheet.absoluteFill, styles.noPhoto]}>
+            <ImageOff size={30} color={colors.forest[300]} />
+          </Pressable>
         )}
 
-        {/* ── Badges top-left ──────────────────────────────────────── */}
-        <View style={styles.badgesTopLeft} pointerEvents="none">
-          {listing.derniereMinuteActive && (
-            <View style={styles.lastMinBadge}>
-              <Zap size={10} color={colors.forest[950]} fill={colors.forest[950]} />
-              <Text style={styles.lastMinText}>Dernière Min.</Text>
-            </View>
-          )}
-          {listing.verifie && (
-            <View style={styles.verifiedBadge}>
-              <ShieldCheck size={10} color={colors.gold[300]} />
-              <Text style={styles.verifiedText}>Vérifié</Text>
-            </View>
-          )}
-          {listing.videoUrl && (
-            <View style={styles.videoBadge}>
-              <Video size={10} color={colors.lime[300]} />
-              <Text style={styles.videoText}>360°</Text>
-            </View>
-          )}
-        </View>
+        <LinearGradient
+          pointerEvents="none"
+          colors={['rgba(4,25,18,0.45)', 'rgba(4,25,18,0)', 'rgba(4,25,18,0)', 'rgba(4,25,18,0.88)']}
+          locations={[0, 0.22, 0.5, 1]}
+          style={StyleSheet.absoluteFill}
+        />
 
-        {/* ── Bouton Favori (cœur animé) ──────────────────────────── */}
-        <TouchableOpacity
-          activeOpacity={0.7}
-          onPress={(e) => {
-            e.stopPropagation?.();
-            handleFavoritePress();
-          }}
-          style={styles.favoriteBtn}
-          hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
-        >
-          <Animated.View style={{ transform: [{ scale: heartScale }] }}>
-            <Heart
-              size={18}
-              color={isFavorite ? colors.error[500] : colors.neutral[0]}
-              fill={isFavorite ? colors.error[500] : 'rgba(0,0,0,0.25)'}
-            />
-          </Animated.View>
-        </TouchableOpacity>
-
-        {/* ── Pagination Dots — Animated elongated style ──────────── */}
+        {/* Barres « stories » : combien de photos, laquelle on regarde */}
         {photos.length > 1 && (
-          <View style={styles.dotsContainer}>
+          <View style={styles.stories} pointerEvents="box-none">
             {photos.map((_, i) => (
               <TouchableOpacity
                 key={i}
-                activeOpacity={0.7}
-                onPress={() => scrollToPhoto(i)}
-                style={[
-                  styles.dot,
-                  i === activePhotoIdx ? styles.dotActive : styles.dotInactive,
-                ]}
+                onPress={() => {
+                  pager.current?.setPage(i);
+                  setIndex(i);
+                }}
+                hitSlop={{ top: 10, bottom: 10 }}
+                style={[styles.story, i <= index && styles.storyOn]}
+                accessibilityLabel={`Photo ${i + 1} sur ${photos.length}`}
               />
             ))}
           </View>
         )}
-      </TouchableOpacity>
 
-      {/* ── INFO ZONE — Airbnb-style flush layout ─────────────────── */}
-      <TouchableOpacity activeOpacity={0.8} onPress={handleCardPress} style={styles.infoContainer}>
-        {/* Ligne 1 : Localisation + Note */}
-        <View style={styles.locationRatingRow}>
-          <View style={styles.locationRow}>
-            <MapPin size={12} color={colors.forest[600]} strokeWidth={2.5} />
-            <Text style={styles.locationText} numberOfLines={1}>
-              {locationLine || 'Sénégal'}
-            </Text>
+        {/* Haut : signaux qui comptent + favori */}
+        <View style={styles.top} pointerEvents="box-none">
+          <View style={styles.topChips} pointerEvents="none">
+            {listing.videoUrl ? (
+              <View style={styles.glassChip}>
+                <View style={styles.playDot}>
+                  <Play size={8} color={INK} fill={INK} />
+                </View>
+                <Text style={styles.glassChipText}>Visite vidéo</Text>
+              </View>
+            ) : null}
+            {isNew && (
+              <View style={[styles.glassChip, { backgroundColor: LIME }]}>
+                <Text style={[styles.glassChipText, { color: INK }]}>Nouveau</Text>
+              </View>
+            )}
           </View>
+          <TouchableOpacity onPress={onHeart} style={styles.heart} hitSlop={8} accessibilityRole="button" accessibilityLabel={isFavorite ? 'Retirer des favoris' : 'Garder ce logement'}>
+            <Animated.View style={{ transform: [{ scale: heart }] }}>
+              <Heart size={19} color={isFavorite ? '#FF5A5F' : '#FFFFFF'} fill={isFavorite ? '#FF5A5F' : 'transparent'} strokeWidth={2.2} />
+            </Animated.View>
+          </TouchableOpacity>
+        </View>
 
-          {displayRating && (
-            <View style={styles.ratingPill}>
-              <Star size={11} color={colors.gold[400]} fill={colors.gold[400]} />
-              <Text style={styles.ratingText}>{displayRating}</Text>
-              {listing.totalSejours && listing.totalSejours > 0 ? (
-                <Text style={styles.ratingCount}>({listing.totalSejours})</Text>
-              ) : null}
+        {/* Bas : où, quoi */}
+        <View style={styles.bottom} pointerEvents="none">
+          <Text style={styles.kicker} numberOfLines={1}>
+            {place.toUpperCase()}
+            {kind ? `  ·  ${kind.toUpperCase()}` : ''}
+          </Text>
+          <Text style={styles.title} numberOfLines={2}>
+            {listing.titre}
+          </Text>
+        </View>
+
+        {/* Ticket de prix, posé sur le bord de la photo */}
+        <View style={styles.ticket} pointerEvents="none">
+          {promo && (
+            <View style={styles.promo}>
+              <Zap size={9} color={INK} fill={INK} />
+              <Text style={styles.promoText}>−15 %</Text>
             </View>
+          )}
+          {stay ? (
+            <>
+              <Text style={styles.ticketAmount}>
+                {formatAmount(stay.total)} <Text style={styles.ticketCur}>FCFA</Text>
+              </Text>
+              <Text style={styles.ticketSub}>
+                {stay.nights} nuit{stay.nights > 1 ? 's' : ''} · tout compris
+              </Text>
+            </>
+          ) : (
+            <>
+              {promo && <Text style={styles.ticketOld}>{formatAmount(base)}</Text>}
+              <Text style={styles.ticketAmount}>
+                {formatAmount(nightly)} <Text style={styles.ticketCur}>FCFA</Text>
+              </Text>
+              <Text style={styles.ticketSub}>par nuit</Text>
+            </>
+          )}
+        </View>
+      </View>
+
+      {/* ── Sous la photo : l'hôte, l'avis, l'essentiel ─────────── */}
+      <Pressable onPress={open} onPressIn={pressIn} onPressOut={() => pressTo(1)} style={styles.info}>
+        <View style={styles.infoTop}>
+          {host?.prenom ? (
+            <View style={styles.host}>
+              {host.avatarUrl ? (
+                <ExpoImage source={{ uri: host.avatarUrl }} style={styles.hostAvatar} contentFit="cover" />
+              ) : (
+                <View style={[styles.hostAvatar, styles.hostAvatarEmpty]}>
+                  <Text style={styles.hostInitial}>{host.prenom.charAt(0).toUpperCase()}</Text>
+                </View>
+              )}
+              <Text style={styles.hostText} numberOfLines={1}>
+                Chez <Text style={styles.hostName}>{host.prenom.charAt(0).toUpperCase() + host.prenom.slice(1).toLowerCase()}</Text>
+              </Text>
+            </View>
+          ) : (
+            <View style={styles.flex} />
+          )}
+          {rating ? (
+            <View style={styles.rating}>
+              <Star size={13} color={colors.gold[500]} fill={colors.gold[400]} />
+              <Text style={styles.ratingValue}>{rating.toFixed(1).replace('.', ',')}</Text>
+              <Text style={styles.ratingCount}>
+                · {reviews} avis
+              </Text>
+            </View>
+          ) : (
+            <Text style={styles.noReviews}>{isNew ? 'Nouveau sur Paixi' : 'Pas encore d’avis'}</Text>
           )}
         </View>
 
-        {/* Ligne 2 : Titre (headline) */}
-        <Text style={styles.titleText} numberOfLines={2}>
-          {listing.titre}
-        </Text>
-
-        {/* Ligne 3 : Specs inline */}
-        {specsLine.length > 0 && (
-          <Text style={styles.specsText} numberOfLines={1}>
-            {specsLine}
-          </Text>
-        )}
-
-        {/* Séparateur subtil */}
-        <View style={styles.priceSeparator} />
-
-        {/* Ligne 4 : Prix */}
-        <View style={styles.priceRow}>
-          {listing.prixSejour ? (
-            <Text style={styles.stayPrice}>
-              {formatAmount(listing.prixSejour)} FCFA{' '}
-              <Text style={styles.stayPriceSub}>
-                · {listing.nbNuits} nuit{(listing.nbNuits ?? 0) > 1 ? 's' : ''}, frais inclus
+        <View style={styles.specs}>
+          {!!listing.capaciteMax && (
+            <View style={styles.spec}>
+              <Users size={14} color={colors.forest[700]} />
+              <Text style={styles.specText}>{listing.capaciteMax} voyageurs</Text>
+            </View>
+          )}
+          {!!listing.nombreChambres && (
+            <View style={styles.spec}>
+              <BedDouble size={14} color={colors.forest[700]} />
+              <Text style={styles.specText}>
+                {listing.nombreChambres} ch.
               </Text>
-            </Text>
-          ) : (
-            <TenantPriceDisplay
-              prixBase={listing.prixBase}
-              derniereMinuteActive={listing.derniereMinuteActive}
-              size="sm"
-              reserveSpace={false}
-            />
+            </View>
+          )}
+          {!!listing.nombreSallesBain && (
+            <View style={styles.spec}>
+              <Bath size={14} color={colors.forest[700]} />
+              <Text style={styles.specText}>{listing.nombreSallesBain} sdb</Text>
+            </View>
           )}
           {listing.isInstantBooking && (
-            <View style={styles.instantChip}>
-              <Zap size={9} color={colors.forest[950]} fill={colors.forest[950]} />
-              <Text style={styles.instantChipText}>Instantané</Text>
+            <View style={styles.instant}>
+              <Zap size={10} color={INK} fill={INK} />
+              <Text style={styles.instantText}>Instantané</Text>
             </View>
           )}
         </View>
-      </TouchableOpacity>
+        {listing.nuitesMinimum && listing.nuitesMinimum > 1 ? (
+          <Text style={styles.minNights}>À partir de {listing.nuitesMinimum} nuits</Text>
+        ) : null}
+      </Pressable>
     </Animated.View>
   );
 }
 
 const styles = StyleSheet.create({
-  stayPrice: { fontFamily: typography.fontDisplaySemiBold, fontSize: 17, color: colors.forest[950] },
-  stayPriceSub: { fontFamily: typography.fontBody, fontSize: 12, color: colors.neutral[600] },
-  // ── Outer wrapper — no border, no card bg, clean spacing ─────────
-  cardOuter: {
-    marginBottom: 24,
-  },
+  flex: { flex: 1 },
+  card: { marginBottom: 28 },
 
-  // ── Photo section ────────────────────────────────────────────────
-  imageContainer: {
-    width: '100%',
-    height: IMAGE_HEIGHT,
-    borderRadius: 16,
+  photo: {
+    height: PHOTO_HEIGHT,
+    borderRadius: 30,
     overflow: 'hidden',
-    backgroundColor: colors.neutral[200],
-    position: 'relative',
+    backgroundColor: colors.forest[900],
+    shadowColor: INK,
+    shadowOpacity: 0.18,
+    shadowRadius: 22,
+    shadowOffset: { width: 0, height: 14 },
+    elevation: 6,
   },
-  pager: {
-    width: '100%',
-    height: '100%',
-  },
-  pageWrapper: {
-    flex: 1,
-  },
-  image: {
-    width: '100%',
-    height: '100%',
-  },
-  noImagePlaceholder: {
-    flex: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: colors.neutral[100],
-  },
+  page: { flex: 1 },
+  noPhoto: { alignItems: 'center', justifyContent: 'center', backgroundColor: colors.forest[900] },
 
-  // ── Badges ───────────────────────────────────────────────────────
-  badgesTopLeft: {
+  stories: { position: 'absolute', top: 12, left: 16, right: 16, flexDirection: 'row', gap: 4 },
+  story: { flex: 1, height: 3, borderRadius: 2, backgroundColor: 'rgba(255,255,255,0.35)' },
+  storyOn: { backgroundColor: '#FFFFFF' },
+
+  top: { position: 'absolute', top: 26, left: 14, right: 14, flexDirection: 'row', alignItems: 'flex-start', justifyContent: 'space-between' },
+  topChips: { flexDirection: 'row', gap: 6 },
+  glassChip: { flexDirection: 'row', alignItems: 'center', gap: 6, height: 28, paddingHorizontal: 10, borderRadius: 14, backgroundColor: 'rgba(4,25,18,0.55)' },
+  glassChipText: { fontFamily: typography.fontBodyBold, fontSize: 11.5, color: '#FFFFFF' },
+  playDot: { width: 16, height: 16, borderRadius: 8, backgroundColor: LIME, alignItems: 'center', justifyContent: 'center' },
+  heart: { width: 42, height: 42, borderRadius: 21, backgroundColor: 'rgba(4,25,18,0.45)', alignItems: 'center', justifyContent: 'center' },
+
+  bottom: { position: 'absolute', left: 18, right: 150, bottom: 18 },
+  kicker: { fontFamily: typography.fontBodyBold, fontSize: 10.5, letterSpacing: 1.3, color: LIME },
+  title: { fontFamily: typography.fontDisplaySemiBold, fontSize: 23, lineHeight: 27, letterSpacing: -0.5, color: '#FFFFFF', marginTop: 4 },
+
+  ticket: {
     position: 'absolute',
-    top: 12,
-    left: 12,
-    flexDirection: 'row',
-    gap: 6,
-    right: 52,
-    flexWrap: 'wrap',
-  },
-  lastMinBadge: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 4,
-    backgroundColor: colors.lime[400],
-    paddingHorizontal: 10,
-    paddingVertical: 5,
-    borderRadius: radius.pill,
-    ...shadows.xs,
-  },
-  lastMinText: {
-    fontFamily: typography.fontBodyExtraBold,
-    fontSize: 10,
-    color: colors.forest[950],
-    letterSpacing: -0.2,
-  },
-  verifiedBadge: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 4,
-    backgroundColor: 'rgba(4, 25, 18, 0.8)',
-    paddingHorizontal: 10,
-    paddingVertical: 5,
-    borderRadius: radius.pill,
+    right: 14,
+    bottom: 14,
+    minWidth: 120,
+    paddingHorizontal: 14,
+    paddingVertical: 10,
+    borderRadius: 20,
+    backgroundColor: INK,
     borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.12)',
+    borderColor: 'rgba(211,242,110,0.25)',
+    alignItems: 'flex-end',
   },
-  verifiedText: {
-    fontFamily: typography.fontBodyBold,
-    fontSize: 10,
-    color: colors.gold[300],
-  },
-  videoBadge: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 4,
-    backgroundColor: 'rgba(7, 42, 32, 0.9)',
-    paddingHorizontal: 10,
-    paddingVertical: 5,
-    borderRadius: radius.pill,
-    borderWidth: 1,
-    borderColor: 'rgba(211, 242, 110, 0.3)',
-  },
-  videoText: {
-    fontFamily: typography.fontBodyBold,
-    fontSize: 10,
-    color: colors.lime[300],
-  },
+  promo: { position: 'absolute', top: -11, right: 12, flexDirection: 'row', alignItems: 'center', gap: 3, height: 22, paddingHorizontal: 8, borderRadius: 11, backgroundColor: LIME },
+  promoText: { fontFamily: typography.fontBodyBold, fontSize: 10.5, color: INK },
+  ticketOld: { fontFamily: typography.fontBodySemiBold, fontSize: 11, color: colors.forest[300], textDecorationLine: 'line-through' },
+  ticketAmount: { fontFamily: typography.fontDisplaySemiBold, fontSize: 20, letterSpacing: -0.4, color: '#FFFFFF' },
+  ticketCur: { fontFamily: typography.fontBodyBold, fontSize: 10, color: LIME },
+  ticketSub: { fontFamily: typography.fontBodySemiBold, fontSize: 10.5, color: colors.forest[200], marginTop: 1 },
 
-  // ── Favorite button ──────────────────────────────────────────────
-  favoriteBtn: {
-    position: 'absolute',
-    top: 12,
-    right: 12,
-    width: 36,
-    height: 36,
-    borderRadius: 18,
-    backgroundColor: 'rgba(0,0,0,0.28)',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-
-  // ── Dots (Elongated active dot — signature Paixi) ─────────────────
-  dotsContainer: {
-    position: 'absolute',
-    bottom: 12,
-    alignSelf: 'center',
-    flexDirection: 'row',
-    gap: 5,
-  },
-  dot: {
-    height: 6,
-    borderRadius: 3,
-  },
-  dotActive: {
-    width: 18,
-    backgroundColor: colors.neutral[0],
-    // Subtle glow effect
-    shadowColor: '#FFFFFF',
-    shadowOffset: { width: 0, height: 0 },
-    shadowOpacity: 0.8,
-    shadowRadius: 3,
-    elevation: 2,
-  },
-  dotInactive: {
-    width: 6,
-    backgroundColor: 'rgba(255, 255, 255, 0.55)',
-  },
-
-  // ── Info section — flush, no card background ─────────────────────
-  infoContainer: {
-    paddingTop: 12,
-    paddingHorizontal: 2,
-    gap: 3,
-  },
-
-  // Location + Rating row
-  locationRatingRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    gap: 8,
-  },
-  locationRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 4,
-    flex: 1,
-  },
-  locationText: {
-    fontFamily: typography.fontBodySemiBold,
-    fontSize: 12,
-    color: colors.forest[700],
-    flex: 1,
-  },
-  ratingPill: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 3,
-  },
-  ratingText: {
-    fontFamily: typography.fontBodyBold,
-    fontSize: 12,
-    color: colors.neutral[900],
-  },
-  ratingCount: {
-    fontFamily: typography.fontBody,
-    fontSize: 11,
-    color: colors.neutral[500],
-  },
-
-  // Title
-  titleText: {
-    fontFamily: typography.fontDisplaySemiBold,
-    fontSize: typography.sizes.md,
-    color: colors.forest[950],
-    lineHeight: 20,
-    marginTop: 1,
-  },
-
-  // Specs inline
-  specsText: {
-    fontFamily: typography.fontBody,
-    fontSize: 12,
-    color: colors.neutral[500],
-    marginTop: 1,
-  },
-
-  // Price separator — subtle line like Airbnb between specs and price
-  priceSeparator: {
-    height: 1,
-    backgroundColor: colors.neutral[200],
-    marginTop: 8,
-    marginBottom: 6,
-    opacity: 0.7,
-  },
-
-  // Price row
-  priceRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-  },
-  instantChip: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 3,
-    backgroundColor: colors.lime[50],
-    paddingHorizontal: 8,
-    paddingVertical: 4,
-    borderRadius: radius.pill,
-    borderWidth: 1,
-    borderColor: colors.lime[200],
-  },
-  instantChipText: {
-    fontFamily: typography.fontBodyBold,
-    fontSize: 9,
-    color: colors.forest[800],
-    letterSpacing: -0.1,
-  },
+  info: { paddingHorizontal: 6, paddingTop: 14, gap: 10 },
+  infoTop: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 10 },
+  host: { flex: 1, minWidth: 0, flexDirection: 'row', alignItems: 'center', gap: 8 },
+  hostAvatar: { width: 28, height: 28, borderRadius: 14, borderWidth: 2, borderColor: LIME },
+  hostAvatarEmpty: { backgroundColor: INK, alignItems: 'center', justifyContent: 'center' },
+  hostInitial: { fontFamily: typography.fontBodyBold, fontSize: 11, color: LIME },
+  hostText: { flexShrink: 1, fontFamily: typography.fontBody, fontSize: 13, color: colors.neutral[600] },
+  hostName: { fontFamily: typography.fontBodyBold, color: INK },
+  rating: { flexDirection: 'row', alignItems: 'center', gap: 4 },
+  ratingValue: { fontFamily: typography.fontBodyBold, fontSize: 13.5, color: INK },
+  ratingCount: { fontFamily: typography.fontBody, fontSize: 12.5, color: colors.neutral[500] },
+  noReviews: { fontFamily: typography.fontBodySemiBold, fontSize: 12, color: colors.forest[600] },
+  specs: { flexDirection: 'row', flexWrap: 'wrap', alignItems: 'center', columnGap: 14, rowGap: 6 },
+  spec: { flexDirection: 'row', alignItems: 'center', gap: 5 },
+  specText: { fontFamily: typography.fontBodyMedium, fontSize: 12.5, color: colors.neutral[700] },
+  instant: { flexDirection: 'row', alignItems: 'center', gap: 4, height: 24, paddingHorizontal: 9, borderRadius: radius.pill, backgroundColor: colors.lime[100] },
+  instantText: { fontFamily: typography.fontBodyBold, fontSize: 11, color: INK },
+  minNights: { fontFamily: typography.fontBody, fontSize: 12, color: colors.neutral[500] },
 });

@@ -8,8 +8,8 @@ import { Image } from 'expo-image';
 import * as Haptics from 'expo-haptics';
 import { AlertCircle, ArrowRight, Check, ChevronRight, KeyRound, Search, Star } from 'lucide-react-native';
 import { colors, typography } from '../../shared/theme/tokens';
-import { apiClient } from '../../shared/api/api-client';
 import { useAuthStore } from '../../features/auth/stores/auth.store';
+import { TENANT_TRIPS_CACHE_KEY, fetchTenantTrips, tenantTripsKey } from '../../features/warmup/queries';
 import { AuthRequiredCard } from '../../features/auth/components/AuthRequiredCard';
 import type { ReservationDetail } from '../../features/reservations/types/reservation-detail.types';
 import { tenantStage, timeLeft, type TenantStage } from '../../features/reservations/tenant/lib/stage';
@@ -18,7 +18,7 @@ import { formatAmount } from '../../features/owner-home/lib/format';
 import { nameCase } from '../../features/home/lib/home';
 import { WeekendStrip, coverOf, useWeekendPicks } from '../../features/booking/components/WeekendPicks';
 
-const CACHE_KEY = 'klef_tenant_reservations_cache_v1';
+const CACHE_KEY = TENANT_TRIPS_CACHE_KEY;
 const MONTHS = ['janv.', 'févr.', 'mars', 'avr.', 'mai', 'juin', 'juil.', 'août', 'sept.', 'oct.', 'nov.', 'déc.'];
 const MONTHS_LONG = ['Janvier', 'Février', 'Mars', 'Avril', 'Mai', 'Juin', 'Juillet', 'Août', 'Septembre', 'Octobre', 'Novembre', 'Décembre'];
 const DAYS = ['dim.', 'lun.', 'mar.', 'mer.', 'jeu.', 'ven.', 'sam.'];
@@ -105,14 +105,8 @@ export default function TripsScreen() {
   }, []);
 
   const { data, isLoading, isRefetching, refetch, error } = useQuery<Trip[]>({
-    queryKey: ['tenant', 'reservations'],
-    queryFn: async () => {
-      const res = await apiClient.get('/reservations/me');
-      const d = res.data?.data ?? res.data?.items ?? res.data;
-      const list = Array.isArray(d) ? (d as Trip[]) : [];
-      AsyncStorage.setItem(CACHE_KEY, JSON.stringify(list)).catch(() => {});
-      return list;
-    },
+    queryKey: tenantTripsKey,
+    queryFn: () => fetchTenantTrips<Trip>(),
     enabled: !guarded,
     staleTime: 60_000,
   });

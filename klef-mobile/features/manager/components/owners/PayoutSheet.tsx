@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { ActivityIndicator, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
+import { Image } from 'expo-image';
 import * as Haptics from 'expo-haptics';
 import { Check, ShieldCheck } from 'lucide-react-native';
 import { colors, radius, typography } from '../../../../shared/theme/tokens';
@@ -11,8 +12,8 @@ import { INK, LIME, LINE, MUTED } from '../today/ui';
 
 const MIN = 10_000;
 const METHODS = [
-  { key: 'WAVE', label: 'Wave', badge: 'W', color: '#1DC3F1' },
-  { key: 'ORANGE_MONEY', label: 'Orange Money', badge: 'OM', color: '#FF7900' },
+  { key: 'WAVE', label: 'Wave', logo: require('../../../../assets/images/wavelogo.jpeg') },
+  { key: 'ORANGE_MONEY', label: 'Orange Money', logo: require('../../../../assets/images/orangeMoneylogo.png') },
 ] as const;
 
 /** Demander le reversement d'un solde propriétaire : montant, destination, puis Paixi vérifie et verse. */
@@ -152,9 +153,7 @@ export function PayoutSheet({
               accessibilityRole="radio"
               accessibilityState={{ checked: on }}
             >
-              <View style={[styles.badge, { backgroundColor: m.color }]}>
-                <Text style={styles.badgeText}>{m.badge}</Text>
-              </View>
+              <Image source={m.logo} style={styles.logo} contentFit="cover" accessibilityLabel={m.label} />
               <Text style={styles.methodLabel}>{m.label}</Text>
               <View style={[styles.radio, on && styles.radioOn]}>{on && <Check size={11} color={INK} strokeWidth={3.2} />}</View>
             </TouchableOpacity>
@@ -229,8 +228,7 @@ const styles = StyleSheet.create({
   methods: { flexDirection: 'row', gap: 8 },
   method: { flex: 1, flexDirection: 'row', alignItems: 'center', gap: 8, padding: 10, borderRadius: 16, borderWidth: 1, borderColor: LINE, backgroundColor: '#FFFFFF' },
   methodOn: { borderColor: INK, borderWidth: 1.5 },
-  badge: { width: 32, height: 32, borderRadius: 9, alignItems: 'center', justifyContent: 'center' },
-  badgeText: { fontFamily: typography.fontBodyBold, fontSize: 11, color: '#FFFFFF' },
+  logo: { width: 34, height: 34, borderRadius: 10, backgroundColor: '#FFFFFF' },
   methodLabel: { flex: 1, fontFamily: typography.fontBodyBold, fontSize: 13, color: INK },
   radio: { width: 20, height: 20, borderRadius: 10, borderWidth: 1.5, borderColor: colors.neutral[300], alignItems: 'center', justifyContent: 'center' },
   radioOn: { backgroundColor: LIME, borderColor: LIME },

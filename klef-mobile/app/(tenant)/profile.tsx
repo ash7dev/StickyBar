@@ -170,6 +170,7 @@ export default function ProfileScreen() {
               title="Connectez-vous pour accéder à vos paramètres"
               subtitle="Gérez vos informations personnelles, votre sécurité et la vérification de votre identité Paixi."
             />
+            <MobileProfileLegalCard />
           </View>
         ) : (
           <View style={styles.contentStack}>

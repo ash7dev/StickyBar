@@ -1,7 +1,7 @@
 import React from 'react';
 import { StyleSheet, View, Text, TouchableOpacity } from 'react-native';
 import { useRouter } from 'expo-router';
-import { FileText, ShieldCheck, ChevronRight, Lock } from 'lucide-react-native';
+import { FileText, ShieldCheck, ChevronRight, Lock, Sparkles } from 'lucide-react-native';
 import * as Haptics from 'expo-haptics';
 import { colors, radius, shadows, typography } from '../../../shared/theme/tokens';
 
@@ -16,6 +16,11 @@ export function MobileProfileLegalCard() {
   const handleOpenPrivacy = () => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {});
     router.push('/politique-confidentialite' as any);
+  };
+
+  const handleReplayOnboarding = () => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {});
+    router.push('/(auth)/onboarding?replay=1' as any);
   };
 
   return (
@@ -58,6 +63,26 @@ export function MobileProfileLegalCard() {
           <View style={styles.textStack}>
             <Text style={styles.linkTitle}>Politique de Confidentialité</Text>
             <Text style={styles.linkSub}>Protection des données, RGPD & DPO</Text>
+          </View>
+          <ChevronRight size={16} color={colors.neutral[400]} />
+        </TouchableOpacity>
+
+        <View style={styles.separator} />
+
+        {/* Revoir l'écran d'accueil de l'app */}
+        <TouchableOpacity
+          activeOpacity={0.8}
+          onPress={handleReplayOnboarding}
+          style={styles.linkRow}
+          accessibilityRole="button"
+          accessibilityLabel="Revoir la présentation de Paixi"
+        >
+          <View style={styles.iconCircle}>
+            <Sparkles size={16} color={colors.forest[700]} />
+          </View>
+          <View style={styles.textStack}>
+            <Text style={styles.linkTitle}>Revoir la présentation</Text>
+            <Text style={styles.linkSub}>L’écran d’accueil de Paixi, comme au premier lancement</Text>
           </View>
           <ChevronRight size={16} color={colors.neutral[400]} />
         </TouchableOpacity>

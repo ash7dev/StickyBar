@@ -8,7 +8,7 @@ import {
   TouchableOpacity,
   Alert,
 } from 'react-native';
-import { useRouter, useLocalSearchParams } from 'expo-router';
+import { useRouter, useLocalSearchParams, useSegments } from 'expo-router';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { ArrowLeft, ArrowRight, X, Check, Save, RefreshCw, AlertTriangle } from 'lucide-react-native';
 import * as Haptics from 'expo-haptics';
@@ -61,7 +61,7 @@ const STEP_SUBTITLES_EDIT = [
   'Consultez la synthèse et configurez vos réductions par durée',
 ];
 
-export default function AddListingScreen() {
+function AddListingScreen() {
   const router = useRouter();
   const queryClient = useQueryClient();
   const { id } = useLocalSearchParams<{ id?: string }>();
@@ -87,6 +87,8 @@ export default function AddListingScreen() {
     setManagedOwner,
   } = useListingWizardFormStore();
   const activeRole = useRoleStore((st) => st.activeRole);
+  // Création ou modification lancée depuis l'espace gestionnaire : on y reste
+  const inManager = useSegments()[0] === '(manager)';
 
   // Un parcours commencé dans l'espace gestionnaire ne doit pas suivre l'hôte dans le sien
   React.useEffect(() => {
@@ -137,7 +139,7 @@ export default function AddListingScreen() {
             if (router.canGoBack()) {
               router.back();
             } else {
-              router.navigate((managedOwner ? '/(manager)/biens' : '/(owner)/listings') as any);
+              router.navigate((inManager ? '/(manager)/biens' : '/(owner)/listings') as any);
             }
           },
         },
@@ -298,7 +300,7 @@ export default function AddListingScreen() {
                   if (router.canGoBack()) {
                     router.back();
                   } else {
-                    router.navigate((managedOwner ? '/(manager)/biens' : '/(owner)/listings') as any);
+                    router.navigate((inManager ? '/(manager)/biens' : '/(owner)/listings') as any);
                   }
                 }}
                 style={styles.backErrBtn}
@@ -759,3 +761,12 @@ const styles = StyleSheet.create({
   ownerBannerKicker: { fontFamily: typography.fontBodyBold, fontSize: 9.5, letterSpacing: 1, color: colors.lime[400] },
   ownerBannerName: { fontFamily: typography.fontBodyBold, fontSize: 13, color: '#FFFFFF', marginTop: 1 },
 });
+
+/**
+ * Écran rangé parmi les onglets : il reste monté entre deux visites. La clé le remet
+ * à zéro pour chaque id (sinon l'onglet, les panneaux ouverts… du précédent restent).
+ */
+export default function AddListingScreenRoute() {
+  const { id } = useLocalSearchParams<{ id?: string }>();
+  return <AddListingScreen key={id ?? 'new'} />;
+}

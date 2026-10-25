@@ -46,14 +46,15 @@ export function useFavoriteIds() {
   });
 }
 
+export const favoritesListQuery = (userId?: string) => ({
+  queryKey: listKey(userId),
+  queryFn: async () => unwrap<FavoriteItem[]>(await apiClient.get('/favorites')) ?? [],
+});
+
 export function useFavoritesList() {
   const token = useAuthStore((s) => s.token);
   const userId = useAuthStore((s) => s.user?.id);
-  return useQuery<FavoriteItem[]>({
-    queryKey: listKey(userId),
-    queryFn: async () => unwrap<FavoriteItem[]>(await apiClient.get('/favorites')) ?? [],
-    enabled: !!token,
-  });
+  return useQuery<FavoriteItem[]>({ ...favoritesListQuery(userId), enabled: !!token });
 }
 
 /**

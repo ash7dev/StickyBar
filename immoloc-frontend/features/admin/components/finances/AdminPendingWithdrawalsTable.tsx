@@ -11,6 +11,11 @@ export interface RetraitPendingItem {
   destinataire: string;
   statut: string;
   demandeeLe: string;
+  /** Traçabilité : auteur de la demande (le titulaire, ou son gestionnaire) */
+  demandePar?: { id: string; prenom: string; nom: string } | null;
+  parGestionnaire?: boolean;
+  /** Le numéro de destination n'est pas celui du titulaire : à vérifier avant de verser */
+  versTiers?: boolean;
   wallet: {
     utilisateurId: string;
     utilisateur: {
@@ -111,6 +116,16 @@ export function AdminPendingWithdrawalsTable({
                     <p className="text-[0.6875rem] font-mono font-bold text-forest-800 bg-forest-50 px-2 py-0.5 rounded-inner inline-block border border-forest-200">
                       {item.destinataire}
                     </p>
+                    {item.parGestionnaire && (
+                      <p className="text-[0.6875rem] font-semibold text-forest-700">
+                        Demandé par le gestionnaire {item.demandePar ? `${item.demandePar.prenom} ${item.demandePar.nom}` : ''}
+                      </p>
+                    )}
+                    {item.versTiers && (
+                      <p className="inline-block rounded-inner border border-error-500/30 bg-error-50 px-2 py-0.5 text-[0.6875rem] font-bold text-error-700">
+                        Vers un tiers : vérifier avec le titulaire
+                      </p>
+                    )}
                   </div>
                 </td>
 

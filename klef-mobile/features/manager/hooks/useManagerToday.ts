@@ -68,12 +68,14 @@ export interface ManagedLead {
   creeLe: string;
 }
 
+export const managedListingsQuery = {
+  queryKey: managerKeys.listings,
+  queryFn: async () => unwrap<ManagedListing[]>((await apiClient.get('/gestionnaire/logements')).data) ?? [],
+  staleTime: 5 * 60_000,
+};
+
 export function useManagedListings() {
-  return useQuery({
-    queryKey: managerKeys.listings,
-    queryFn: async () => unwrap<ManagedListing[]>((await apiClient.get('/gestionnaire/logements')).data) ?? [],
-    staleTime: 5 * 60_000,
-  });
+  return useQuery(managedListingsQuery);
 }
 
 export function useManagerReservations() {
@@ -129,12 +131,14 @@ export interface OwnerPayout {
 }
 
 /** Propriétaires gérés et leur solde (wallet). */
+export const managedOwnersQuery = {
+  queryKey: managerKeys.owners,
+  queryFn: async () => unwrap<ManagedOwnerWallet[]>((await apiClient.get('/gestionnaire/proprietaires')).data) ?? [],
+  staleTime: 60_000,
+};
+
 export function useManagedOwners() {
-  return useQuery({
-    queryKey: managerKeys.owners,
-    queryFn: async () => unwrap<ManagedOwnerWallet[]>((await apiClient.get('/gestionnaire/proprietaires')).data) ?? [],
-    staleTime: 60_000,
-  });
+  return useQuery(managedOwnersQuery);
 }
 
 /** Fiche d'un propriétaire : solde retirable et derniers reversements (avec leur auteur). */

@@ -52,7 +52,7 @@ export function MobileStatsHeader({
           style={styles.backBtn}
         >
           <ArrowLeft size={16} color={colors.forest[800]} strokeWidth={2.4} />
-          <Text style={styles.backBtnText}>Accueil Hôte</Text>
+          <Text style={styles.backBtnText}>Retour</Text>
         </TouchableOpacity>
 
         <TouchableOpacity

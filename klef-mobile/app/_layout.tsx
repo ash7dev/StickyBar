@@ -1,7 +1,8 @@
 import React, { useEffect } from 'react';
 import { Stack, useSegments } from 'expo-router';
 import * as SplashScreen from 'expo-splash-screen';
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { PersistQueryClientProvider } from '@tanstack/react-query-persist-client';
+import { persistOptions, queryClient } from '../shared/api/query-client';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { useAuthStore } from '../features/auth/stores/auth.store';
@@ -37,18 +38,6 @@ export default function RootLayout() {
     Inter_800ExtraBold,
   });
 
-  const [queryClient] = React.useState(
-    () =>
-      new QueryClient({
-        defaultOptions: {
-          queries: {
-            retry: 2,
-            staleTime: 1000 * 60 * 5, // 5 minutes
-          },
-        },
-      })
-  );
-
   const hydrate = useAuthStore((s) => s.hydrate);
   const loadRole = useRoleStore((s) => s.loadRole);
 
@@ -82,7 +71,7 @@ export default function RootLayout() {
     <GestureHandlerRootView style={{ flex: 1 }}>
       <SafeAreaProvider>
         <ErrorBoundary>
-          <QueryClientProvider client={queryClient}>
+          <PersistQueryClientProvider client={queryClient} persistOptions={persistOptions}>
             <Stack screenOptions={{ headerShown: false, animation: 'slide_from_right', animationDuration: 250 }}>
               <Stack.Screen name="index" />
               <Stack.Screen name="(auth)/onboarding" options={{ animation: 'fade' }} />
@@ -103,7 +92,7 @@ export default function RootLayout() {
               <Stack.Screen name="cgu" options={{ headerShown: false, animation: 'slide_from_right' }} />
               <Stack.Screen name="politique-confidentialite" options={{ headerShown: false, animation: 'slide_from_right' }} />
             </Stack>
-          </QueryClientProvider>
+          </PersistQueryClientProvider>
         </ErrorBoundary>
       </SafeAreaProvider>
     </GestureHandlerRootView>

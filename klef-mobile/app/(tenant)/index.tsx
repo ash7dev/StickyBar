@@ -1,4 +1,5 @@
-import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import React, { useCallback, useEffect, useLayoutEffect, useMemo, useState } from 'react';
+import { useNavigation } from 'expo-router';
 import { ActivityIndicator, StyleSheet, Text, View } from 'react-native';
 import { useQuery } from '@tanstack/react-query';
 import { apiClient } from '../../shared/api/api-client';
@@ -77,7 +78,14 @@ export default function HomeScreen() {
     favoritesQ.refetch();
   }, [reservationsQ, catalogQ, weekendQ, favoritesQ]);
 
-  if (!memory || (catalogQ.isLoading && !catalog.length)) {
+  // Écran de chargement plein écran : la barre d'onglets ne s'affiche qu'une fois l'accueil prêt
+  const booting = !memory || (catalogQ.isLoading && !catalog.length);
+  const navigation = useNavigation();
+  useLayoutEffect(() => {
+    navigation.setOptions({ tabBarStyle: booting ? { display: 'none' } : undefined });
+  }, [booting, navigation]);
+
+  if (booting) {
     return (
       <View style={styles.loading}>
         <PaixiLogo size={38} tone="inverse" />
