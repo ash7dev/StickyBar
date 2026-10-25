@@ -379,9 +379,9 @@ export function CGUPage() {
             <div className="space-y-3 my-5">
               {[
                 { step: '1', label: 'Sélection', desc: 'Le Locataire choisit le logement, les dates et le nombre de voyageurs.' },
-                { step: '2', label: 'Paiement', desc: 'Le montant total est débité et placé en séquestre par Paixi.' },
+                { step: '2', label: 'Paiement', desc: 'Le montant payé (totalité ou acompte selon l’annonce) est placé en séquestre par Paixi.' },
                 { step: '3', label: 'Confirmation', desc: 'Le Propriétaire dispose de 24h pour confirmer la réservation.' },
-                { step: '4', label: 'Check-in', desc: 'Les deux parties valident l\'arrivée via la Plateforme. Le séquestre est libéré après 48h.' },
+                { step: '4', label: 'Check-in', desc: 'Le voyageur confirme son arrivée via la Plateforme : le séquestre est alors versé au propriétaire.' },
               ].map(({ step, label, desc }) => (
                 <div key={step} className="flex gap-4 p-4 bg-background-card rounded-2xl border border-border shadow-xs">
                   <div className="w-8 h-8 rounded-full bg-forest-600 text-white font-bold text-sm flex items-center justify-center shrink-0">
@@ -433,9 +433,9 @@ export function CGUPage() {
               </div>
               <div className="space-y-3 text-sm text-forest-100/90 leading-relaxed font-sans">
                 <p>
-                  À la réservation, le montant total est <strong className="text-on-inverse-marker font-semibold">bloqué</strong> sur
-                  le compte de séquestre {BRAND.name}. Le Propriétaire ne reçoit son paiement qu&apos;après
-                  validation du check-in par les deux parties.
+                  À la réservation, le montant payé (totalité ou acompte) est <strong className="text-on-inverse-marker font-semibold">bloqué</strong> sur
+                  le compte de séquestre {BRAND.name}. Le Propriétaire le reçoit dès que le Locataire
+                  confirme son arrivée. Avec un acompte, le solde du séjour est réglé au Propriétaire à l&apos;arrivée.
                 </p>
                 <p>
                   En cas de litige, les fonds restent bloqués jusqu&apos;à résolution par notre équipe de
@@ -476,7 +476,7 @@ export function CGUPage() {
             </div>
 
             <InfoBox type="info">
-              <strong>Zéro frais caché pour le propriétaire :</strong> Lorsque vous fixez une nuitée à 50 000 FCFA, vous recevez exactement <strong>50 000 FCFA</strong> sur votre portefeuille Paixi dès la confirmation du check-in.
+              <strong>Zéro frais caché pour le propriétaire :</strong> Lorsque vous fixez une nuitée à 50 000 FCFA, vous recevez exactement <strong>50 000 FCFA</strong>, versés sur votre portefeuille Paixi dès la confirmation de l&apos;arrivée (avec un acompte : la part encaissée par Paixi sur votre portefeuille, le solde en main propre à l&apos;arrivée).
             </InfoBox>
 
             <Para>
@@ -496,9 +496,10 @@ export function CGUPage() {
             <p className="font-bold text-sm text-foreground mt-4 mb-2">1. Annulation par le Locataire :</p>
             <div className="space-y-3 my-3">
               {[
-                { name: 'Plus de 3 jours avant le séjour', color: 'bg-forest-50/80 border-forest-200/80', dot: 'bg-forest-500', rule: 'Remboursement à 100 % du prix de base. La commission de service Paixi (7 %) est retenue.' },
-                { name: 'Entre 24h et 3 jours avant le séjour', color: 'bg-warning-50/80 border-warning-500/30', dot: 'bg-warning-500', rule: 'Remboursement partiel à 75 % du montant total.' },
-                { name: 'Moins de 24h avant le séjour', color: 'bg-warning-50/80 border-warning-500/30', dot: 'bg-warning-600', rule: 'Remboursement partiel à 50 % du montant total.' },
+                { name: 'Demande pas encore acceptée par l’hôte', color: 'bg-forest-50/80 border-forest-200/80', dot: 'bg-forest-500', rule: 'Remboursement intégral de ce qui a été payé, frais de service compris.' },
+                { name: 'Plus de 3 jours avant le séjour', color: 'bg-forest-50/80 border-forest-200/80', dot: 'bg-forest-500', rule: 'Remboursement de tout ce qui a été payé, sauf les frais de service Paixi (7 %).' },
+                { name: 'Entre 24h et 3 jours avant le séjour', color: 'bg-warning-50/80 border-warning-500/30', dot: 'bg-warning-500', rule: 'Remboursement de 75 % de ce qui a été payé.' },
+                { name: 'Moins de 24h avant le séjour', color: 'bg-warning-50/80 border-warning-500/30', dot: 'bg-warning-600', rule: 'Remboursement de 50 % de ce qui a été payé.' },
               ].map(({ name, color, dot, rule }) => (
                 <div key={name} className={cn('flex gap-3 p-3.5 rounded-xl border shadow-xs', color)}>
                   <div className={cn('w-2 h-2 rounded-full shrink-0 mt-2', dot)} />
@@ -509,6 +510,11 @@ export function CGUPage() {
                 </div>
               ))}
             </div>
+            <Para>
+              Les montants se calculent sur ce que le Locataire a réellement payé (totalité ou acompte). Sur la part
+              non remboursée, {BRAND.name} conserve ses frais de service et le reste est versé au Propriétaire.
+              La part payée en Paixi Coins est rendue en coins.
+            </Para>
 
             <p className="font-bold text-sm text-foreground mt-6 mb-2">2. Annulation par le Propriétaire & Pénalités :</p>
             <Para>

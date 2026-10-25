@@ -2,7 +2,7 @@ import React from 'react';
 import { View, Text, StyleSheet } from 'react-native';
 import { Tag, TrendingDown, Moon, ShieldCheck, Zap, AlertCircle, Users, UserPlus, Sparkles, Coins } from 'lucide-react-native';
 import { colors, radius, shadows, typography } from '../../theme/tokens';
-import { getPrixPublic, getPrixDerniereMinute } from '../ui/TenantPriceDisplay';
+import { getPrixPublic } from '../ui/TenantPriceDisplay';
 
 export interface TarifNuit {
   nuitsMin?: number;
@@ -43,7 +43,8 @@ export function TenantListingPricingInfo({
   const pBase = personnesBase || 2;
   const nMin = nuitesMinimum || 1;
   const prixPublicBase = getPrixPublic(prixBase);
-  const prixHero = derniereMinuteActive ? getPrixDerniereMinute(prixPublicBase) : prixPublicBase;
+  // Sans dates, prix normal ; la remise dernière minute est annoncée avec sa condition (arrivée sous 48 h)
+  const prixHero = prixPublicBase;
 
   return (
     <View style={styles.card}>
@@ -59,7 +60,7 @@ export function TenantListingPricingInfo({
         {derniereMinuteActive && (
           <View style={styles.lastMinBadge}>
             <Zap size={11} color="#7D5200" fill="#FBBF24" />
-            <Text style={styles.lastMinText}>-15% Dern. Min.</Text>
+            <Text style={styles.lastMinText}>−15 % si arrivée sous 48 h</Text>
           </View>
         )}
       </View>
@@ -69,9 +70,6 @@ export function TenantListingPricingInfo({
         <View style={styles.priceStack}>
           <Text style={styles.eyebrow}>TARIF DE RÉFÉRENCE</Text>
           <View style={styles.priceValueRow}>
-            {derniereMinuteActive && (
-              <Text style={styles.oldHeroPrice}>{formatMoney(prixPublicBase)}</Text>
-            )}
             <Text style={styles.priceValue}>{formatMoney(prixHero)}</Text>
             <Text style={styles.priceUnit}>FCFA / nuit</Text>
           </View>
@@ -158,7 +156,7 @@ export function TenantListingPricingInfo({
             {tarifsNuits.map((tarif, idx) => {
               const nuits = tarif.nuitsMin || tarif.dureeMinNuits || 7;
               const pxPublic = getPrixPublic(tarif.prix);
-              const pxFinal = derniereMinuteActive ? getPrixDerniereMinute(pxPublic) : pxPublic;
+              const pxFinal = pxPublic;
               const reduction = tarif.pourcentageReduction || (prixPublicBase > 0 ? Math.round(((prixPublicBase - pxFinal) / prixPublicBase) * 100) : 0);
               const economie = Math.max(0, prixPublicBase - pxFinal);
 

@@ -20,7 +20,7 @@ import { TenantListingHostAndMap } from '../../shared/components/layout/TenantLi
 import { TenantActionGateModal } from '../../shared/components/gate/TenantActionGateModal';
 import { useGatedAction } from '../../shared/hooks/useGatedAction';
 import { useAuthStore } from '../../features/auth/stores/auth.store';
-import { getPrixDerniereMinute, getPrixPublic } from '../../shared/components/ui/TenantPriceDisplay';
+import { prixNuitAffiche } from '../../shared/components/ui/TenantPriceDisplay';
 import { DatesSheet, type StaySelection } from '../../features/booking/components/DatesSheet';
 import { BookingBar, CancellationCard, DatesCard, HowItWorks } from '../../features/booking/components/ListingBooking';
 import { prepareCheckout, usePricePreview } from '../../features/booking/lib/booking';
@@ -255,7 +255,7 @@ export default function ListingDetailScreen() {
         price={price.data}
         loading={price.isFetching}
         nightlyLabel={formatAmount(
-          listing.derniereMinuteActive ? getPrixDerniereMinute(getPrixPublic(listing.prixBase)) : getPrixPublic(listing.prixBase),
+          prixNuitAffiche(listing.prixBase, listing.derniereMinuteActive, stay.start),
         )}
         onChooseDates={() => setIsModalOpen(true)}
         onBook={book}

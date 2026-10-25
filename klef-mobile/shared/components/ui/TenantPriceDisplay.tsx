@@ -19,6 +19,25 @@ export function getPrixDerniereMinute(prixPublic: number): number {
   return Math.round(prixPublic * (1 - LAST_MINUTE_DISCOUNT));
 }
 
+/**
+ * Même règle que le serveur : la remise dernière minute ne vaut que pour une arrivée
+ * dans les 48 h. Sans date d'arrivée connue, on ne l'applique pas au prix affiché.
+ */
+export function remiseApplicable(derniereMinuteActive?: boolean | null, arrivee?: string | Date | null): boolean {
+  if (!derniereMinuteActive || !arrivee) return false;
+  const t = new Date(arrivee).getTime();
+  if (Number.isNaN(t)) return false;
+  return t - Date.now() <= 48 * 3600 * 1000;
+}
+
+/** Prix par nuit affiché au voyageur (frais inclus), remise comprise seulement si elle s'applique. */
+export function prixNuitAffiche(prixBase: number | string | null | undefined, derniereMinuteActive?: boolean | null, arrivee?: string | Date | null): number {
+  const pub = getPrixPublic(prixBase);
+  return remiseApplicable(derniereMinuteActive, arrivee) ? getPrixDerniereMinute(pub) : pub;
+}
+
+export const LAST_MINUTE_LABEL = '−15 % si arrivée sous 48 h';
+
 export interface TenantPriceDisplayProps {
   prixBase: number | string | null | undefined;
   derniereMinuteActive?: boolean;
@@ -40,8 +59,8 @@ export function TenantPriceDisplay({
 }: TenantPriceDisplayProps) {
   const { currencyInfo, formatPrice } = useCurrencyStore();
   const prixPublic = getPrixPublic(prixBase);
-  const isDiscounted = derniereMinuteActive && prixPublic > 0;
-  const prixFinal = isDiscounted ? getPrixDerniereMinute(prixPublic) : prixPublic;
+  // Pas de date d'arrivée ici : la remise n'est jamais garantie, on l'annonce sans barrer le prix
+  const hasLastMinute = !!derniereMinuteActive && prixPublic > 0;
 
   if (prixPublic <= 0) {
     return (
@@ -56,17 +75,12 @@ export function TenantPriceDisplay({
 
   return (
     <View style={styles.container}>
-      {isDiscounted ? (
+      {hasLastMinute && showBadge ? (
         <View style={styles.discountRow}>
-          <Text style={[styles.originalPrice, isSmall && styles.originalPriceSm]}>
-            {formatPrice(prixPublic)}
-          </Text>
-          {showBadge && (
-            <View style={styles.discountBadge}>
-              <Zap size={10} color={colors.forest[950]} fill={colors.forest[950]} />
-              <Text style={styles.discountBadgeText}>-15%</Text>
-            </View>
-          )}
+          <View style={styles.discountBadge}>
+            <Zap size={10} color={colors.forest[950]} fill={colors.forest[950]} />
+            <Text style={styles.discountBadgeText}>−15 % sous 48 h</Text>
+          </View>
         </View>
       ) : reserveSpace ? (
         <View
@@ -84,16 +98,10 @@ export function TenantPriceDisplay({
             styles.finalPrice,
             isSmall && styles.finalPriceSm,
             isLarge && styles.finalPriceLg,
-            isInverse
-              ? isDiscounted
-                ? styles.inverseDiscountedPrice
-                : styles.inversePrice
-              : isDiscounted
-                ? styles.discountedPrice
-                : styles.normalPrice,
+            isInverse ? styles.inversePrice : styles.normalPrice,
           ]}
         >
-          {formatPrice(prixFinal)}
+          {formatPrice(prixPublic)}
         </Text>
         {period ? (
           <Text

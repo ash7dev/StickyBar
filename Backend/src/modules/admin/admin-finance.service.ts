@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../../infrastructure/prisma/prisma.service';
 import { RefundPaymentUseCase } from '../../domain/payment/use-cases/refund-payment.use-case';
 import { SystemLedgerService } from '../../domain/system-ledger/system-ledger.service';
@@ -106,12 +106,21 @@ export class AdminFinanceService {
     });
 
     if (!refund) throw new NotFoundException(`Remboursement ${refundId} introuvable`);
+    if (refund.statut === 'EXECUTE') {
+      throw new BadRequestException('Ce remboursement a déjà été versé : rien à relancer.');
+    }
 
-    const result = await this.refundPayment.execute(refund.reservationId);
+    // Relance du même montant que celui prévu, jamais un remboursement intégral par défaut
+    const result = await this.refundPayment.execute(refund.reservationId, {
+      montant: Number(refund.montantTotal),
+      motif: refund.motif,
+      declenchePar: refund.declenchePar ?? 'ADMIN_RETRY',
+    });
+    await this.prisma.refund.update({ where: { id: refund.id }, data: { statut: 'ANNULE', echecRaison: `Relancé : ${result.refundId ?? 'rien à rembourser'}` } });
     return {
       success: true,
-      refundId: refund.id,
-      result,
+      refundId: result.refundId,
+      result: { argent: result.cash, coins: result.coins },
       message: 'Relance de remboursement exécutée',
     };
   }
@@ -146,44 +155,53 @@ export class AdminFinanceService {
     };
   }
 
-  async adjustWalletBalance(dto: { utilisateurId: string; montant: number; sens: 'CREDIT' | 'DEBIT'; description: string }) {
-    const user = await this.prisma.utilisateur.findUnique({ where: { id: dto.utilisateurId } });
+  /**
+   * Ajustement manuel d'un portefeuille : atomique, jamais en dessous de zéro,
+   * et chaque mouvement garde l'identité de l'administrateur qui l'a fait.
+   */
+  async adjustWalletBalance(
+    adminId: string,
+    dto: { utilisateurId: string; montant: number; sens: 'CREDIT' | 'DEBIT'; description: string },
+  ) {
+    const montant = Math.round(Number(dto.montant));
+    if (!(montant > 0)) throw new BadRequestException('Le montant doit être positif');
+    if (!dto.description?.trim()) throw new BadRequestException('Indiquez la raison de l’ajustement');
+
+    const user = await this.prisma.utilisateur.findUnique({ where: { id: dto.utilisateurId }, select: { id: true } });
     if (!user) throw new NotFoundException(`Utilisateur ${dto.utilisateurId} introuvable`);
 
-    const wallet = await this.prisma.wallet.upsert({
-      where: { utilisateurId: dto.utilisateurId },
-      create: { utilisateurId: dto.utilisateurId, soldeDisponible: 0 },
-      update: {},
-    });
+    return this.prisma.$transaction(async (tx) => {
+      const [w] = await tx.$queryRaw<Array<{ id: string; soldeDisponible: Prisma.Decimal }>>`
+        SELECT id, "soldeDisponible" FROM "Wallet" WHERE "utilisateurId" = ${dto.utilisateurId} FOR UPDATE
+      `;
+      const wallet = w ?? (await tx.wallet.create({ data: { utilisateurId: dto.utilisateurId, soldeDisponible: 0 } }));
+      const solde = Number(wallet.soldeDisponible);
+      const isCredit = dto.sens === 'CREDIT';
+      if (!isCredit && montant > solde) {
+        throw new BadRequestException(`Solde insuffisant : ${solde.toLocaleString('fr-FR')} FCFA disponibles`);
+      }
+      const nouveauSolde = isCredit ? solde + montant : solde - montant;
 
-    const isCredit = dto.sens === 'CREDIT';
-    const amountChange = isCredit ? dto.montant : -dto.montant;
+      await tx.wallet.update({ where: { id: wallet.id }, data: { soldeDisponible: nouveauSolde } });
+      const transaction = await tx.transactionWallet.create({
+        data: {
+          walletId: wallet.id,
+          type: isCredit ? 'REMBOURSEMENT' : 'DEBIT_PENALITE',
+          montant,
+          sens: dto.sens,
+          soldeApres: nouveauSolde,
+          description: `[AJUSTEMENT ADMIN ${adminId}] ${dto.description.trim()}`,
+        },
+      });
 
-    const updatedWallet = await this.prisma.wallet.update({
-      where: { id: wallet.id },
-      data: {
-        soldeDisponible: { increment: amountChange },
-      },
-    });
-
-    const transaction = await this.prisma.transactionWallet.create({
-      data: {
+      return {
+        success: true,
         walletId: wallet.id,
-        type: isCredit ? 'REMBOURSEMENT' : 'DEBIT_PENALITE',
-        montant: dto.montant,
-        sens: dto.sens,
-        soldeApres: updatedWallet.soldeDisponible,
-        description: `[AJUSTEMENT ADMIN] ${dto.description}`,
-      },
-    });
-
-    return {
-      success: true,
-      walletId: wallet.id,
-      nouveauSolde: updatedWallet.soldeDisponible,
-      transactionId: transaction.id,
-      message: `Portefeuille ${dto.sens === 'CREDIT' ? 'crédité' : 'débité'} avec succès`,
-    };
+        nouveauSolde,
+        transactionId: transaction.id,
+        message: `Portefeuille ${isCredit ? 'crédité' : 'débité'} avec succès`,
+      };
+    }, { isolationLevel: 'Serializable' });
   }
 
   async getFinancialStats(dto: { startDate?: string; endDate?: string; ville?: string; type?: string }) {

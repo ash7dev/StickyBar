@@ -1,5 +1,5 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { getPrixDerniereMinute, getPrixPublic } from '../../../shared/components/ui/TenantPriceDisplay';
+import { getPrixPublic } from '../../../shared/components/ui/TenantPriceDisplay';
 import type { ListingItem } from '../../../shared/components/ui/TenantListingCard';
 import { toLocalISODate } from '../../booking/lib/booking';
 
@@ -139,7 +139,7 @@ export interface Escale {
   videoUrl?: string | null;
 }
 
-const nightly = (l: ListingItem) => (l.derniereMinuteActive ? getPrixDerniereMinute(getPrixPublic(l.prixBase)) : getPrixPublic(l.prixBase));
+const nightly = (l: ListingItem) => getPrixPublic(l.prixBase);
 export const coverOf = (l?: ListingItem) => {
   const p = l?.photos?.[0] as unknown;
   return typeof p === 'string' ? p : (p as { url?: string } | undefined)?.url;

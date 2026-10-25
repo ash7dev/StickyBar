@@ -1,10 +1,12 @@
 import { Injectable, Logger } from '@nestjs/common';
-import { StatutReservation, StatutPaiement, StatutLogement, SensTransaction, TypeTransactionWallet, ResultatAnnulation } from '@prisma/client';
+import { StatutReservation, StatutLogement, TypeTransactionWallet, ResultatAnnulation } from '@prisma/client';
 import { PrismaService } from '../../../infrastructure/prisma/prisma.service';
 import { ReservationStateMachine } from '../reservation.state-machine';
 import { RefundPaymentUseCase } from '../../payment/use-cases/refund-payment.use-case';
 import { RedisService } from '../../../infrastructure/redis/redis.service';
 import { NotificationsService } from '../../../modules/notifications/notifications.service';
+import { SystemLedgerService } from '../../system-ledger/system-ledger.service';
+import { debitWallet } from '../../wallet/wallet-moves';
 
 @Injectable()
 export class ProprioAbsentExpireUseCase {
@@ -16,6 +18,7 @@ export class ProprioAbsentExpireUseCase {
     private readonly refundPayment: RefundPaymentUseCase,
     private readonly redis: RedisService,
     private readonly notifications: NotificationsService,
+    private readonly systemLedger: SystemLedgerService,
   ) {}
 
   async execute(reservationId: string) {
@@ -51,26 +54,23 @@ export class ProprioAbsentExpireUseCase {
         },
       });
 
-      // 2. Remboursement 100% au locataire
-      if (reservation.paiement && reservation.paiement.statut === StatutPaiement.CONFIRME) {
-        await tx.paiement.update({
-          where: { reservationId },
-          data: {
-            statut: StatutPaiement.REMBOURSE,
-            rembourseLe: now,
-            montantRembourse: reservation.totalLocataire,
-          },
-        });
-      }
+      // 2. Remboursement de tout ce que le locataire a payé (argent et coins)
+      await this.refundPayment.refundInTx(tx, reservationId, {
+        montant: Number.MAX_SAFE_INTEGER,
+        motif: ResultatAnnulation.ABSENCE_PROPRIO,
+        declenchePar: 'SYSTEM_ABSENCE',
+        montantPenaliteProprio: PENALITE_ABSENCE,
+      });
 
-      // 3. Pénalité et incrémentation compteur fautes
-      const wallet = await tx.wallet.findUnique({ where: { utilisateurId: reservation.proprietaireId } });
-      if (wallet) {
-        await tx.wallet.update({
-          where: { id: wallet.id },
-          data: { dettePenalites: { increment: PENALITE_ABSENCE } },
-        });
-      }
+      // 3. Pénalité (solde puis dette) et incrémentation compteur fautes
+      await debitWallet(tx, {
+        utilisateurId: reservation.proprietaireId,
+        reservationId,
+        montant: PENALITE_ABSENCE,
+        type: TypeTransactionWallet.DEBIT_PENALITE,
+        description: 'Pénalité : absence le jour de l’arrivée',
+      });
+      await this.systemLedger.recordOwnerPenalty(tx, reservationId, PENALITE_ABSENCE);
 
       const updatedUser = await tx.utilisateur.update({
         where: { id: reservation.proprietaireId },
@@ -115,10 +115,7 @@ export class ProprioAbsentExpireUseCase {
       this.logger.log(`Réservation [${reservationId}] annulée pour absence proprio. Pénalité appliquée.`);
 
       return updated;
-    }, { isolationLevel: 'RepeatableRead' });
-
-    // Déclencher le remboursement financier réel après la TX
-    await this.refundPayment.execute(reservationId);
+    }, { isolationLevel: 'Serializable' });
 
     // Notifier les deux parties
     this.notifications.sendReservationPush(

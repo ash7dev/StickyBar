@@ -9,7 +9,7 @@ import { colors, radius, typography } from '../../theme/tokens';
 import { useFavorite } from '../../../features/favorites/useFavorites';
 import { formatAmount } from '../../../features/owner-home/lib/format';
 import { ListingItem } from '../ui/TenantListingCard';
-import { getPrixDerniereMinute, getPrixPublic } from '../ui/TenantPriceDisplay';
+import { getPrixPublic } from '../ui/TenantPriceDisplay';
 import { prefetchListing } from '../../lib/prefetch-listing';
 import { useSearchHistoryStore } from '../../stores/search-history.store';
 
@@ -65,7 +65,8 @@ export function ExplorerListingCard({ listing, onPress, hideHost = false }: Expl
   // ── Prix public (commission incluse), dernière minute appliquée ──
   const base = getPrixPublic(listing.prixBase);
   const promo = !!listing.derniereMinuteActive;
-  const nightly = promo ? getPrixDerniereMinute(base) : base;
+  // La remise ne vaut que pour une arrivée sous 48 h : sans dates, on affiche le prix normal
+  const nightly = base;
   const stay = listing.prixSejour && listing.nbNuits ? { total: listing.prixSejour, nights: listing.nbNuits } : null;
 
   const reviews = listing.totalAvis ?? 0;
@@ -187,7 +188,7 @@ export function ExplorerListingCard({ listing, onPress, hideHost = false }: Expl
           {promo && (
             <View style={styles.promo}>
               <Zap size={9} color={INK} fill={INK} />
-              <Text style={styles.promoText}>−15 %</Text>
+              <Text style={styles.promoText}>−15 % sous 48 h</Text>
             </View>
           )}
           {stay ? (
@@ -201,7 +202,6 @@ export function ExplorerListingCard({ listing, onPress, hideHost = false }: Expl
             </>
           ) : (
             <>
-              {promo && <Text style={styles.ticketOld}>{formatAmount(base)}</Text>}
               <Text style={styles.ticketAmount}>
                 {formatAmount(nightly)} <Text style={styles.ticketCur}>FCFA</Text>
               </Text>

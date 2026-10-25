@@ -6,7 +6,7 @@ import {
   CalendarDays, Navigation, Armchair, ChefHat, Wifi, Shield, Trees, Accessibility, Sparkles, TrendingDown, UserPlus,
 } from 'lucide-react';
 import type { Listing, TarifNuit, TarifPersonne } from '@/lib/nestjs';
-import { getPrixPublic, getPrixDerniereMinute } from '@/lib/pricing';
+import { getPrixPublic } from '@/lib/pricing';
 
 interface Props {
   listing: Listing;
@@ -75,7 +75,8 @@ function NightTierBar({
   const nuits = tier.nuitsMin || tier.dureeMinNuits || 7;
   const prixPublicBase = getPrixPublic(prixBase);
   const pxPublicTier = getPrixPublic(tier.prix);
-  const pxFinal = derniereMinuteActive ? getPrixDerniereMinute(pxPublicTier) : pxPublicTier;
+  // Paliers dégressifs : la remise dernière minute (arrivée sous 48 h) n'est pas cumulée à l'affichage
+  const pxFinal = pxPublicTier;
   const reduction = tier.pourcentageReduction || (prixPublicBase > 0 ? Math.round(((prixPublicBase - pxFinal) / prixPublicBase) * 100) : 0);
   const economie = Math.max(0, prixPublicBase - pxFinal);
 

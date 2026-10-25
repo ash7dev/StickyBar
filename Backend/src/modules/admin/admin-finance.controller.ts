@@ -8,6 +8,8 @@ import { AdminFinanceService } from './admin-finance.service';
 import { AdminFinanceQueryDto, AdminFinanceStatsQueryDto, AdminRefundsQueryDto, AdminWebhooksQueryDto } from './dto/admin-finance-query.dto';
 import { Body } from '@nestjs/common';
 import { WalletAdjustmentDto } from './dto/wallet-adjustment.dto';
+import { CurrentUser } from '../../shared/decorators/current-user.decorator';
+import { AuthUser } from '../../shared/types/jwt-payload.type';
 
 @ApiTags('Admin — Financial Ledger & Webhooks')
 @ApiBearerAuth()
@@ -50,7 +52,7 @@ export class AdminFinanceController {
 
   @Post('wallet-adjustment')
   @ApiOperation({ summary: 'Créditer ou débiter manuellement le portefeuille d\'un utilisateur' })
-  adjustWalletBalance(@Body() dto: WalletAdjustmentDto) {
-    return this.service.adjustWalletBalance(dto);
+  adjustWalletBalance(@CurrentUser() admin: AuthUser, @Body() dto: WalletAdjustmentDto) {
+    return this.service.adjustWalletBalance(admin.id, dto);
   }
 }

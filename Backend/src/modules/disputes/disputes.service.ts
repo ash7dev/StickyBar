@@ -13,14 +13,15 @@ import {
   StatutLitige,
   RoleLitige,
   TypeFaute,
-  TypeTransactionWallet,
-  TypeTransactionTeranga,
-  SensTransaction,
   StatutRetrait,
+  ResultatAnnulation,
 } from '@prisma/client';
 import { RefundPaymentUseCase } from '../../domain/payment/use-cases/refund-payment.use-case';
 import { NotificationsService } from '../notifications/notifications.service';
-import { SystemLedgerService } from '../../domain/system-ledger/system-ledger.service';
+import { paidOf } from '../../domain/payment/refund-plan';
+
+/** Titre des suppléments créés par une décision d'arbitrage : ils ne peuvent pas être contestés à nouveau. */
+export const ARBITRAGE_PREFIX = 'Dédommagement décidé par Paixi';
 
 @Injectable()
 export class DisputesService {
@@ -30,7 +31,6 @@ export class DisputesService {
     private readonly prisma: PrismaService,
     private readonly refundPayment: RefundPaymentUseCase,
     private readonly notifications: NotificationsService,
-    private readonly systemLedger: SystemLedgerService,
   ) {}
 
 
@@ -199,7 +199,8 @@ export class DisputesService {
     }
 
     const { reservation } = litige;
-    const totalMontant = Number(reservation.totalLocataire || 0);
+    // Toujours sur ce que le locataire a réellement payé (acompte ou totalité, argent et coins)
+    const totalMontant = paidOf(reservation).total;
 
     // Calcul du montant de compensation et du taux effectif de remboursement
     let effectiveTaux = 0;
@@ -282,94 +283,19 @@ export class DisputesService {
             },
           });
 
-          // Recréditer les Paixi Coins au locataire et enregistrer au SystemLedger
+          // Remboursement (argent sur le portefeuille, coins en coins) et, si l'hôte avait déjà été payé,
+          // reprise de sa part au prorata + frais Paixi rendus
           if (calculatedCompensation > 0) {
-            const coinsDeduites = Number(reservation.coinsDeduites || 0);
-            const cashPaye = Number(reservation.montantPayeCash || 0);
-            const cashRefund = Math.min(calculatedCompensation, cashPaye > 0 ? cashPaye : calculatedCompensation);
-            const coinsRefund = Math.max(0, Math.min(coinsDeduites, calculatedCompensation - cashRefund));
-
-            if (coinsRefund > 0) {
-              const terangaAccount = await tx.terangaAccount.findUnique({
-                where: { utilisateurId: reservation.locataireId },
-              });
-
-              if (terangaAccount) {
-                const soldeApres = terangaAccount.soldeCoins + coinsRefund;
-                await tx.terangaAccount.update({
-                  where: { id: terangaAccount.id },
-                  data: { soldeCoins: soldeApres },
-                });
-
-                await tx.terangaTransaction.create({
-                  data: {
-                    terangaAccountId: terangaAccount.id,
-                    montantCoins: coinsRefund,
-                    type: TypeTransactionTeranga.CREDIT_ANNULATION,
-                    description: `Recrédit Paixi Coins suite au litige fondé #${reservation.id.slice(0, 8).toUpperCase()}`,
-                    reservationId: reservation.id,
-                    soldeApres,
-                  },
-                });
-              }
-            }
-
-            await this.systemLedger.recordRefund(
-              tx,
-              reservation.id,
-              cashRefund,
-              coinsRefund,
-            );
-          }
-
-          // Régularisation financière côté propriétaire s'il avait déjà perçu les fonds
-          const hostWallet = await tx.wallet.findUnique({
-            where: { utilisateurId: reservation.proprietaireId },
-          });
-
-          if (hostWallet && calculatedCompensation > 0) {
-            const alreadyCredited = await tx.transactionWallet.findUnique({
-              where: {
-                reservationId_type: {
-                  reservationId: reservation.id,
-                  type: TypeTransactionWallet.CREDIT_LOCATION,
-                },
-              },
+            const refund = await this.refundPayment.refundAnyStageInTx(tx, reservation.id, {
+              montant: calculatedCompensation,
+              motif: ResultatAnnulation.NON_CONFORMITE_LOGEMENT,
+              declenchePar: adminId,
+              cloture: nouveauStatutResa === StatutReservation.CANCELLED,
             });
-
-            if (alreadyCredited) {
-              const soldeDispo = Number(hostWallet.soldeDisponible);
-              const montantAImputer = calculatedCompensation;
-              const montantADebiterSolde = Math.min(soldeDispo, montantAImputer);
-              const montantEnDette = montantAImputer - montantADebiterSolde;
-
-              await tx.wallet.update({
-                where: { id: hostWallet.id },
-                data: {
-                  ...(montantADebiterSolde > 0 && { soldeDisponible: { decrement: montantADebiterSolde } }),
-                  ...(montantEnDette > 0 && { dettePenalites: { increment: montantEnDette } }),
-                },
-              });
-
-              const soldeApres = soldeDispo - montantADebiterSolde;
-              await tx.transactionWallet.create({
-                data: {
-                  walletId: hostWallet.id,
-                  reservationId: reservation.id,
-                  type: TypeTransactionWallet.DEBIT_PENALITE,
-                  montant: montantAImputer,
-                  sens: SensTransaction.DEBIT,
-                  soldeApres,
-                  description: `Régularisation litige FONDÉ (${effectiveTaux}% remboursé locataire)` +
-                    (montantEnDette > 0 ? ` [Dette générée : ${montantEnDette.toLocaleString('fr-FR')} FCFA]` : ''),
-                },
-              });
-
-              this.logger.log(
-                `Régularisation wallet hôte ${reservation.proprietaireId} : ` +
-                `Solde débité: ${montantADebiterSolde} FCFA | Dette ajoutée: ${montantEnDette} FCFA`
-              );
-            }
+            this.logger.log(
+              `Litige [${id}] : ${refund.cash} FCFA + ${refund.coins} coins rendus au locataire, ` +
+              `reprise hôte ${refund.repriseHote} FCFA, frais Paixi rendus ${refund.repriseFraisPaixi} FCFA`,
+            );
           }
         } else {
           // Proprio victime (ex: dommages ou dépassement personnes)
@@ -387,42 +313,16 @@ export class DisputesService {
             },
           });
 
-          // Si dédommagement accordé au propriétaire (ex: dégâts)
+          // Dédommagement accordé à l'hôte (ex : dégâts) : c'est le locataire qui le doit.
+          // Il apparaît comme un supplément, réglé auprès de l'hôte ; plus aucun argent créé à partir de rien.
           if (calculatedCompensation > 0) {
-            const hostWallet = await tx.wallet.upsert({
-              where: { utilisateurId: reservation.proprietaireId },
-              create: {
-                utilisateurId: reservation.proprietaireId,
-                soldeDisponible: calculatedCompensation,
-              },
-              update: {
-                soldeDisponible: { increment: calculatedCompensation },
-              },
-            });
-
-            const soldeApres = Number(hostWallet.soldeDisponible);
-            await tx.transactionWallet.create({
-              data: {
-                walletId: hostWallet.id,
-                reservationId: reservation.id,
-                type: TypeTransactionWallet.CREDIT_LOCATION,
-                montant: calculatedCompensation,
-                sens: SensTransaction.CREDIT,
-                soldeApres,
-                description: `Dédommagement litige FONDÉ (${calculatedCompensation.toLocaleString('fr-FR')} FCFA) — résa ${reservation.id.slice(0, 8).toUpperCase()}`,
-              },
-            });
-
-            // Enregistrer l'élément dans demandesFrais pour affichage sur ExtraFeesCard
             await tx.demandeFrais.create({
               data: {
                 reservationId: reservation.id,
-                titre: `Supplément litige (${litige.motif})`,
-                description: dto.decisionAdmin || 'Montant accordé par l\'arbitrage Paixi',
+                titre: `${ARBITRAGE_PREFIX} (${litige.motif})`,
+                description: dto.decisionAdmin || 'Montant décidé par l\'arbitrage Paixi',
                 montant: calculatedCompensation,
-                statut: 'PAYE',
-                payeLe: new Date(),
-                methodePaiement: 'ARBITRAGE_ADMIN',
+                statut: 'EN_ATTENTE',
               },
             });
           }
@@ -459,20 +359,6 @@ export class DisputesService {
       this.logger.log(`Litige [${id}] résolu par l'admin [${adminId}] : ${dto.statut} (Taux: ${effectiveTaux}%)`);
       return { updatedLitige, litige };
     });
-
-    // 3. Après la transaction : Initier le remboursement selon le taux calculé
-    if (dto.statut === StatutLitige.FONDE && result.litige.declarePar === RoleLitige.LOCATAIRE && effectiveTaux > 0) {
-      try {
-        await this.refundPayment.execute(result.litige.reservationId, effectiveTaux);
-        this.logger.log(`Remboursement de ${effectiveTaux}% (${calculatedCompensation} FCFA) initié pour la réservation ${result.litige.reservationId} suite au litige ${id}`);
-      } catch (error) {
-        const err = error as Error;
-        this.logger.error(
-          `Échec du remboursement pour le litige ${id} (réservation ${result.litige.reservationId}): ${err.message}`,
-          err.stack
-        );
-      }
-    }
 
     // Notifications Push aux deux parties
     this.notifications.sendDisputePush(

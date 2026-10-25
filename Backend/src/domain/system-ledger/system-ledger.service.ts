@@ -139,21 +139,27 @@ export class SystemLedgerService {
   }
 
   /**
-   * Remboursement lors d'une annulation
+   * Remboursement au locataire.
+   * - SEQUESTRE : l'argent était encore bloqué (annulation, litige avant versement) ; la part
+   *   coins sort aussi du séquestre et retourne dans la réserve Teranga.
+   * - APRES_VERSEMENT : le séjour avait déjà été versé à l'hôte ; le séquestre n'est plus concerné
+   *   (l'hôte et Paixi rendent leur part, voir recordCommissionReversal).
    */
   async recordRefund(
     tx: Prisma.TransactionClient,
     reservationId: string,
     cashRefund: number,
     coinsRefund: number,
+    source: 'SEQUESTRE' | 'APRES_VERSEMENT' = 'SEQUESTRE',
   ) {
     await this.ensureLedgerExists(tx);
 
+    const fromEscrow = source === 'SEQUESTRE' ? cashRefund + coinsRefund : 0;
     const ledger = await tx.systemLedger.update({
       where: { id: SYSTEM_LEDGER_SINGLETON_ID },
       data: {
-        soldeSequestre: { decrement: cashRefund },
-        soldePoolTeranga: coinsRefund > 0 ? { increment: coinsRefund } : undefined,
+        ...(fromEscrow > 0 && { soldeSequestre: { decrement: fromEscrow } }),
+        ...(coinsRefund > 0 && { soldePoolTeranga: { increment: coinsRefund } }),
       },
     });
 
@@ -189,44 +195,82 @@ export class SystemLedgerService {
   }
 
   /**
+   * Revenus Paixi rendus au locataire (frais de service remboursés après un litige fondé).
+   */
+  async recordCommissionReversal(tx: Prisma.TransactionClient, reservationId: string, amount: number) {
+    if (amount <= 0) return;
+    await this.ensureLedgerExists(tx);
+    const ledger = await tx.systemLedger.update({
+      where: { id: SYSTEM_LEDGER_SINGLETON_ID },
+      data: { soldeCommissionsCumulees: { decrement: amount } },
+    });
+    await tx.transactionSystemLedger.create({
+      data: {
+        reservationId,
+        type: TypeTransactionSysteme.COMMISSION_ACQUISE,
+        montant: amount,
+        sens: SensTransaction.CREDIT,
+        soldeSequestreApres: Number(ledger.soldeSequestre),
+        description: `Frais Paixi rendus au locataire après litige (${amount.toLocaleString('fr-FR')} FCFA)`,
+      },
+    });
+  }
+
+  /**
+   * Pénalité d'annulation de l'hôte : revenu Paixi (déduite de son portefeuille ou de ses prochains versements).
+   */
+  async recordOwnerPenalty(tx: Prisma.TransactionClient, reservationId: string, amount: number) {
+    if (amount <= 0) return;
+    await this.ensureLedgerExists(tx);
+    const ledger = await tx.systemLedger.update({
+      where: { id: SYSTEM_LEDGER_SINGLETON_ID },
+      data: { soldeCommissionsCumulees: { increment: amount } },
+    });
+    await tx.transactionSystemLedger.create({
+      data: {
+        reservationId,
+        type: TypeTransactionSysteme.COMMISSION_ACQUISE,
+        montant: amount,
+        sens: SensTransaction.DEBIT,
+        soldeSequestreApres: Number(ledger.soldeSequestre),
+        description: `Pénalité d'annulation hôte (${amount.toLocaleString('fr-FR')} FCFA)`,
+      },
+    });
+  }
+
+  /**
    * Obtient l'état courant de la trésorerie plateforme Paixi
    * Calcule dynamiquement le séquestre réel, le cumul des commissions et le pool Teranga
    */
   async getLedgerSummary() {
     const ledger = await this.ensureLedgerExists();
 
-    const [pendingEscrowDeposit, pendingEscrowFull, checkedInCommissions, totalPenalties, totalSubventions] = await Promise.all([
-      this.prisma.reservation.aggregate({
-        where: { statut: { in: ['PAID', 'CONFIRMED'] }, typePaiement: 'DEPOSIT' },
-        _sum: { montantAcompte: true },
-      }),
-      this.prisma.reservation.aggregate({
-        where: { statut: { in: ['PAID', 'CONFIRMED'] }, typePaiement: 'FULL' },
-        _sum: { totalLocataire: true },
-      }),
-      this.prisma.reservation.aggregate({
-        where: { statut: { in: ['CHECKED_IN', 'COMPLETED'] } },
-        _sum: { montantCommission: true },
-      }),
-      this.prisma.transactionWallet.aggregate({
-        where: { type: 'DEBIT_PENALITE' },
+    // Le grand livre est tenu à chaque mouvement : c'est la source de vérité.
+    // Le contrôle recalcule l'argent bloqué depuis les réservations pour repérer un écart.
+    const [encaisse, rembourse, verse] = await Promise.all([
+      this.prisma.transactionSystemLedger.aggregate({
+        where: { type: { in: [TypeTransactionSysteme.ENCAISSEMENT_SEQUESTRE_CASH, TypeTransactionSysteme.SUBVENTION_TERANGA_INJECTEE] } },
         _sum: { montant: true },
       }),
-      this.prisma.terangaAccount.aggregate({
-        _sum: { soldeCoins: true },
+      this.prisma.transactionSystemLedger.aggregate({
+        where: { type: { in: [TypeTransactionSysteme.REMBOURSEMENT_LOCATAIRE_CASH, TypeTransactionSysteme.REMBOURSEMENT_LOCATAIRE_COINS] } },
+        _sum: { montant: true },
+      }),
+      this.prisma.transactionSystemLedger.aggregate({
+        where: { type: TypeTransactionSysteme.REVERSEMENT_PROPRIETAIRE },
+        _sum: { montant: true },
       }),
     ]);
 
-    const realSequestre = Number(pendingEscrowDeposit._sum.montantAcompte || 0) + Number(pendingEscrowFull._sum.totalLocataire || 0) + Number(ledger.soldeSequestre);
-    const realCommissions = Number(checkedInCommissions._sum.montantCommission || 0) + Number(totalPenalties._sum.montant || 0) + Number(ledger.soldeCommissionsCumulees);
-    const INITIAL_POOL = 10000000;
-    const activeUserCoins = Number(totalSubventions._sum.soldeCoins || 0);
-    const realPool = INITIAL_POOL - activeUserCoins;
-
     return {
-      soldeSequestre: Math.max(0, realSequestre),
-      soldeCommissionsCumulees: Math.max(0, realCommissions),
-      soldePoolTeranga: Math.max(0, realPool),
+      soldeSequestre: Number(ledger.soldeSequestre),
+      soldeCommissionsCumulees: Number(ledger.soldeCommissionsCumulees),
+      soldePoolTeranga: Number(ledger.soldePoolTeranga),
+      controle: {
+        encaisse: Number(encaisse._sum.montant ?? 0),
+        rembourse: Number(rembourse._sum.montant ?? 0),
+        verseAuxHotes: Number(verse._sum.montant ?? 0),
+      },
     };
   }
 }

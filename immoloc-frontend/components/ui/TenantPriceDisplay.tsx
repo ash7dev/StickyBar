@@ -5,7 +5,6 @@ import { Zap } from 'lucide-react';
 import { cn } from '@/lib/utils/cn';
 import {
   getPrixPublic,
-  getPrixDerniereMinute,
 } from '@/lib/pricing';
 import { useCurrencyStore } from '@/stores/currency.store';
 
@@ -46,10 +45,10 @@ export function TenantPriceDisplay({
 }: TenantPriceDisplayProps) {
   const { currency, getFormattedPrice } = useCurrencyStore();
   const prixPublic = getPrixPublic(prixBase);
-  const isDiscounted = derniereMinuteActive && prixPublic > 0;
-  const prixFinal = isDiscounted ? getPrixDerniereMinute(prixPublic) : prixPublic;
+  // Pas de date d'arrivée ici : la remise n'est pas garantie, on l'annonce sans barrer le prix
+  const hasLastMinute = Boolean(derniereMinuteActive) && prixPublic > 0;
+  const prixFinal = prixPublic;
 
-  const publicFmt = getFormattedPrice(prixPublic);
   const finalFmt = getFormattedPrice(prixFinal);
 
   if (prixPublic <= 0) {
@@ -86,16 +85,15 @@ export function TenantPriceDisplay({
   }[size];
 
   const defaultFinalColor = isInverse
-    ? (isDiscounted ? 'text-lime-300' : 'text-neutral-0')
-    : (isDiscounted ? 'text-forest-950' : 'text-foreground');
+    ? 'text-neutral-0'
+    : 'text-foreground';
 
   const activeFinalColor = textColor || defaultFinalColor;
   const activePeriodColor = isInverse ? 'text-forest-200 font-normal ml-1 text-xs sm:text-sm' : sizeStyles.period;
-  const activeOriginalColor = isInverse ? 'text-white/60 line-through tabular-nums text-xs font-medium' : sizeStyles.original;
 
   return (
     <div className={cn('flex flex-col min-w-0 justify-end', className)}>
-      {isDiscounted ? (
+      {hasLastMinute && showBadge ? (
         <div
           className={cn(
             'flex items-center gap-1.5 mb-0.5',
@@ -103,20 +101,15 @@ export function TenantPriceDisplay({
             layout === 'inline' ? 'flex-row' : 'flex-row items-center',
           )}
         >
-          <span className={activeOriginalColor}>
-            {publicFmt.fullStr}
+          <span
+            className={cn(
+              'inline-flex items-center gap-0.5 rounded-pill bg-action text-on-action tracking-wide shadow-2xs',
+              sizeStyles.badge,
+            )}
+          >
+            <Zap className="h-3 w-3 fill-forest-950 text-forest-950 shrink-0" />
+            −15 % sous 48 h
           </span>
-          {showBadge && (
-            <span
-              className={cn(
-                'inline-flex items-center gap-0.5 rounded-pill bg-action text-on-action uppercase tracking-wider shadow-2xs',
-                sizeStyles.badge,
-              )}
-            >
-              <Zap className="h-3 w-3 fill-forest-950 text-forest-950 shrink-0" />
-              -15%
-            </span>
-          )}
         </div>
       ) : reserveSpace && layout === 'stacked' ? (
         <div className={cn('mb-0.5 opacity-0 pointer-events-none aria-hidden', sizeStyles.topSlotHeight)} />

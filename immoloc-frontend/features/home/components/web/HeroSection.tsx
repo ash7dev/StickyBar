@@ -8,7 +8,7 @@ import { createPortal } from 'react-dom';
 import { CalendarDays, MapPin, Search, ShieldCheck, SlidersHorizontal, X, RotateCcw, Check } from 'lucide-react';
 import { DateRangeCalendar, shortLabel, type DateRange } from './date-range-calendar';
 import type { Listing } from '@/lib/nestjs/types';
-import { formatPrixPublic, getPrixPublic, formatPrixDerniereMinute } from '@/lib/pricing';
+import { formatPrixPublic, getPrixPublic, LAST_MINUTE_LABEL } from '@/lib/pricing';
 
 /**
  * HeroSection
@@ -561,7 +561,6 @@ function ListingCard({
 
   const derniereMinuteActive = Boolean((listing as { derniereMinuteActive?: boolean }).derniereMinuteActive);
   const prixPublicNum = price ? getPrixPublic(price) : 0;
-  const prixDerniereMinute = formatPrixDerniereMinute(prixPublicNum);
 
   const verified = Boolean((listing as { verifie?: boolean }).verifie);
   const slug = (listing as { slug?: string }).slug ?? listing.id;
@@ -599,21 +598,12 @@ function ListingCard({
 
         <div className="glass-dark absolute inset-x-3 bottom-3 rounded-inner px-3 py-2.5">
           <p className="truncate text-xs text-forest-100">{listing.titre}</p>
-          {derniereMinuteActive && prixPublicNum > 0 ? (
-            <div className="mt-0.5 flex flex-col">
-              <span className="text-[11px] font-medium text-white/65 line-through tabular-nums leading-none">
-                {formatPrixPublic(price)} FCFA
-              </span>
-              <p className="text-base font-black tabular-nums text-amber-300">
-                {prixDerniereMinute}
-                <span className="ml-1 text-xs font-normal text-forest-200">FCFA / nuit</span>
-              </p>
-            </div>
-          ) : (
-            <p className="mt-0.5 text-base font-semibold tabular-nums text-neutral-50">
-              {price ? formatPrixPublic(price) : '—'}
-              <span className="ml-1 text-xs font-normal text-forest-200">FCFA / nuit</span>
-            </p>
+          <p className="mt-0.5 text-base font-semibold tabular-nums text-neutral-50">
+            {price ? formatPrixPublic(price) : '—'}
+            <span className="ml-1 text-xs font-normal text-forest-200">FCFA / nuit</span>
+          </p>
+          {derniereMinuteActive && prixPublicNum > 0 && (
+            <p className="text-[11px] font-semibold text-amber-300">{LAST_MINUTE_LABEL}</p>
           )}
         </div>
       </div>

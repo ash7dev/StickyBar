@@ -49,9 +49,10 @@ export interface RefundTier {
 }
 
 export const REFUND_TIERS: RefundTier[] = [
-    { id: 'full', percentage: 100, short: '100 %', window: 'Plus de 3 jours', label: 'Remboursement du prix de base' },
-    { id: 'half', percentage: 75, short: '75 %', window: '24 h à 3 jours', label: 'Remboursement partiel (75 %)' },
-    { id: 'quarter', percentage: 50, short: '50 %', window: 'Moins de 24 h', label: 'Remboursement partiel (50 %)' },
+    // Même règle que le serveur, sur ce que vous avez réellement payé (acompte ou totalité)
+    { id: 'full', percentage: 100, short: '100 %', window: 'Plus de 3 jours', label: 'Tout ce que vous avez payé, sauf les frais de service' },
+    { id: 'half', percentage: 75, short: '75 %', window: '24 h à 3 jours', label: '75 % de ce que vous avez payé' },
+    { id: 'quarter', percentage: 50, short: '50 %', window: 'Moins de 24 h', label: '50 % de ce que vous avez payé' },
 ];
 
 /** Palier applicable, en heures restantes avant le check-in. */

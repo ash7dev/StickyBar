@@ -12,7 +12,7 @@ import { Star, ChevronRight, RefreshCw, Heart, Play, Search, X } from 'lucide-re
 import * as Haptics from 'expo-haptics';
 import { colors, radius, typography } from '../../theme/tokens';
 import { ListingItem } from '../ui/TenantListingCard';
-import { TenantPriceDisplay, getPrixDerniereMinute, getPrixPublic } from '../ui/TenantPriceDisplay';
+import { TenantPriceDisplay, getPrixPublic } from '../ui/TenantPriceDisplay';
 import { useFavorite, useFavoriteIds } from '../../../features/favorites/useFavorites';
 import { formatAmount } from '../../../features/owner-home/lib/format';
 import { useListingCacheStore } from '../../stores/listing-cache.store';
@@ -43,7 +43,7 @@ interface TenantExplorerMapViewProps {
 function pinPrice(l: ListingItem): string {
   if (l.prixSejour) return formatAmount(l.prixSejour);
   const pub = getPrixPublic(l.prixBase);
-  return formatAmount(l.derniereMinuteActive ? getPrixDerniereMinute(pub) : pub);
+  return formatAmount(pub);
 }
 
 const CITY_COORDINATES: Record<string, { lat: number; lng: number }> = {

@@ -23,7 +23,7 @@ import {
 } from 'lucide-react-native';
 import { colors, radius, shadows, typography } from '../../theme/tokens';
 import { AppDateRangeCalendar, DisabledDateItem } from '../ui/AppDateRangeCalendar';
-import { getPrixPublic, getPrixDerniereMinute } from '../ui/TenantPriceDisplay';
+import { getPrixPublic, getPrixDerniereMinute, remiseApplicable } from '../ui/TenantPriceDisplay';
 import { router } from 'expo-router';
 import { useGatedAction } from '../../hooks/useGatedAction';
 import { TenantActionGateModal } from '../gate/TenantActionGateModal';
@@ -100,7 +100,7 @@ export function TenantReservationModal({
 
   const nights = calculateNights();
   const prixPublic = getPrixPublic(prixBase);
-  const prixParNuit = derniereMinuteActive ? getPrixDerniereMinute(prixPublic) : prixPublic;
+  const prixParNuit = remiseApplicable(derniereMinuteActive, startDate) ? getPrixDerniereMinute(prixPublic) : prixPublic;
   const effectiveNights = nights > 0 ? nights : minNuits;
   const sousTotalNuits = prixParNuit * effectiveNights;
 

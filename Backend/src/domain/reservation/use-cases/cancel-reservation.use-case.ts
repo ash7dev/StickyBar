@@ -8,12 +8,9 @@ import {
 } from '@nestjs/common';
 import {
   StatutReservation,
-  StatutPaiement,
   StatutLogement,
   ResultatAnnulation,
-  SensTransaction,
   TypeTransactionWallet,
-  TypeTransactionTeranga,
   TypeFaute,
 } from '@prisma/client';
 import { PrismaService } from '../../../infrastructure/prisma/prisma.service';
@@ -23,6 +20,8 @@ import { RefundPaymentUseCase } from '../../payment/use-cases/refund-payment.use
 import { NotificationsService } from '../../../modules/notifications/notifications.service';
 import { RedisService } from '../../../infrastructure/redis/redis.service';
 import { SystemLedgerService } from '../../system-ledger/system-ledger.service';
+import { creditWallet, debitWallet } from '../../wallet/wallet-moves';
+import { ownerCancelPenalty, paidOf, tenantCancelPlan } from '../../payment/refund-plan';
 
 @Injectable()
 export class CancelReservationUseCase {
@@ -57,43 +56,34 @@ export class CancelReservationUseCase {
     this.stateMachine.transition(reservation.statut, StatutReservation.CANCELLED);
 
     const now = new Date();
-    const diffMs = reservation.dateDebut.getTime() - now.getTime();
-    const diffDays = diffMs / (1000 * 60 * 60 * 24);
-    const diffHours = diffMs / (1000 * 60 * 60);
+    const hoursBeforeCheckin = (reservation.dateDebut.getTime() - now.getTime()) / 3_600_000;
+    const confirmed =
+      reservation.statut === StatutReservation.CONFIRMED || reservation.statut === StatutReservation.CHECKED_IN;
+    // Tout se calcule sur ce que le locataire a réellement payé (acompte ou totalité, argent et coins)
+    const paid = paidOf(reservation);
 
-    let politique: ResultatAnnulation = ResultatAnnulation.UC2_LOCATAIRE_PLUS_3J;
-    let montantRembourse = 0;
+    let politique: ResultatAnnulation;
+    let montantRembourse: number;
+    let partHote = 0;
+    let partPaixi = 0;
     let penaliteProprio = 0;
 
     if (isProprio) {
-      politique = ResultatAnnulation.UC4_PROPRIO_MOINS_3J;
-      montantRembourse = Number(reservation.totalLocataire);
-
-      // Les pénalités d'annulation et le décompte de fautes ne s'appliquent QUE si la réservation était déjà CONFIRMÉE.
-      // Refuser une demande en attente (statut PAID ou PENDING) est un droit de l'hôte et ne génère AUCUNE pénalité.
-      const wasConfirmed =
-        reservation.statut === StatutReservation.CONFIRMED ||
-        reservation.statut === StatutReservation.CHECKED_IN;
-
-      if (wasConfirmed) {
-        if (diffDays > 3) penaliteProprio = 0;
-        else if (diffHours >= 24) penaliteProprio = 2500;
-        else penaliteProprio = 10000;
-      } else {
-        penaliteProprio = 0;
-      }
+      // L'hôte (ou son gestionnaire) annule : le locataire récupère tout
+      politique = confirmed ? ResultatAnnulation.UC4_PROPRIO_MOINS_3J : ResultatAnnulation.UC3_PROPRIO_REFUSE;
+      montantRembourse = paid.total;
+      // Refuser une demande en attente est un droit de l'hôte : pénalité seulement après confirmation
+      penaliteProprio = ownerCancelPenalty(confirmed, hoursBeforeCheckin);
     } else {
-      if (diffDays > 3) {
-        politique = ResultatAnnulation.UC2_LOCATAIRE_PLUS_3J;
-        montantRembourse = Number(reservation.totalBase || reservation.totalLocataire);
-      } else if (diffHours >= 24) {
-        politique = ResultatAnnulation.UC2_LOCATAIRE_1_3J;
-        montantRembourse = Number(reservation.totalLocataire) * 0.75;
-      } else {
-        politique = ResultatAnnulation.UC2_LOCATAIRE_BLOQUE;
-        montantRembourse = Number(reservation.totalLocataire) * 0.5;
-      }
+      const plan = tenantCancelPlan(paid, { confirmed, hoursBeforeCheckin });
+      politique = ResultatAnnulation[plan.policy];
+      montantRembourse = plan.refund;
+      partHote = plan.host;
+      partPaixi = plan.paixi;
     }
+
+    // La pénalité et les fautes visent toujours le propriétaire, même si c'est son gestionnaire qui annule
+    const ownerId = reservation.proprietaireId;
 
     const result = await this.prisma.$transaction(async (tx) => {
       const updated = await tx.reservation.update({
@@ -107,131 +97,62 @@ export class CancelReservationUseCase {
         },
       });
 
-      if (reservation.paiement && reservation.paiement.statut === StatutPaiement.CONFIRME) {
-        await tx.paiement.update({
-          where: { reservationId },
-          data: {
-            statut: StatutPaiement.REMBOURSE,
-            rembourseLe: now,
-            montantRembourse: montantRembourse,
-          },
-        });
-      }
+      const refund = await this.refundPayment.refundInTx(tx, reservationId, {
+        montant: montantRembourse,
+        motif: politique,
+        declenchePar: userId,
+        montantPenaliteProprio: penaliteProprio,
+        montantCommissionPaixi: partPaixi,
+      });
 
-      // Ventilation du remboursement cash vs recrédit Paixi Coins
-      const coinsDeduites = Number(reservation.coinsDeduites || 0);
-      const cashPaye = Number(reservation.montantPayeCash || 0);
-      const cashRefund = Math.min(montantRembourse, cashPaye > 0 ? cashPaye : montantRembourse);
-      const coinsRefund = Math.max(0, Math.min(coinsDeduites, montantRembourse - cashRefund));
-
-      if (coinsRefund > 0) {
-        const terangaAccount = await tx.terangaAccount.findUnique({
-          where: { utilisateurId: reservation.locataireId },
-        });
-
-        if (terangaAccount) {
-          const soldeApres = terangaAccount.soldeCoins + coinsRefund;
-          await tx.terangaAccount.update({
-            where: { id: terangaAccount.id },
-            data: { soldeCoins: soldeApres },
-          });
-
-          await tx.terangaTransaction.create({
-            data: {
-              terangaAccountId: terangaAccount.id,
-              montantCoins: coinsRefund,
-              type: TypeTransactionTeranga.CREDIT_ANNULATION,
-              description: `Recrédit Paixi Coins suite à l'annulation de la réservation #${reservationId.slice(0, 8).toUpperCase()}`,
-              reservationId,
-              soldeApres,
-            },
+      // Part retenue sur une annulation tardive du locataire : Paixi garde ses frais, l'hôte reçoit le reste
+      if (refund.refundId !== null || montantRembourse === 0) {
+        if (partHote > 0) {
+          await creditWallet(tx, {
+            utilisateurId: ownerId,
+            reservationId,
+            montant: partHote,
+            type: TypeTransactionWallet.CREDIT_LOCATION,
+            description: `Compensation annulation tardive du voyageur — résa ${reservationId.slice(0, 8).toUpperCase()}`,
           });
         }
+        if (partHote > 0 || partPaixi > 0) {
+          await this.systemLedger.recordCheckinRelease(tx, reservationId, partHote, partPaixi);
+        }
       }
-
-      // Traçabilité Refund
-      if (reservation.paiement) {
-        await tx.refund.create({
-          data: {
-            reservationId,
-            paiementId: reservation.paiement.id,
-            motif: politique,
-            montantTotal: montantRembourse,
-            montantLocataire: cashRefund,
-            montantPenaliteProprio: penaliteProprio,
-            montantCommissionImmoLoc: Number(reservation.montantCommission || 0),
-            declenchePar: userId,
-            statut: 'EXECUTE',
-            executeLe: now,
-            methodeRemboursement: reservation.paiement.fournisseur,
-          },
-        });
-      }
-
-      // Enregistrement au Grand Livre Système Paixi
-      await this.systemLedger.recordRefund(
-        tx,
-        reservationId,
-        cashRefund,
-        coinsRefund,
-      );
 
       if (isProprio && penaliteProprio > 0) {
-        // Pessimistic lock: SELECT FOR UPDATE pour éviter les race conditions sur le wallet
-        const wallet = await tx.$queryRaw<Array<{ id: string; soldeDisponible: number; dettePenalites: number }>>`
-          SELECT id, "soldeDisponible", "dettePenalites"
-          FROM "Wallet"
-          WHERE "utilisateurId" = ${userId}
-          FOR UPDATE
-        `.then(rows => rows[0]);
+        await debitWallet(tx, {
+          utilisateurId: ownerId,
+          reservationId,
+          montant: penaliteProprio,
+          type: TypeTransactionWallet.DEBIT_PENALITE,
+          description: `Pénalité d'annulation — résa ${reservationId.slice(0, 8).toUpperCase()}`,
+        });
+        await this.systemLedger.recordOwnerPenalty(tx, reservationId, penaliteProprio);
 
-        if (wallet) {
-          const solde = Number(wallet.soldeDisponible);
-          if (solde >= penaliteProprio) {
-            const newSolde = solde - penaliteProprio;
-            await tx.wallet.update({
-              where: { id: wallet.id },
-              data: { soldeDisponible: newSolde },
-            });
-            await tx.transactionWallet.create({
-              data: {
-                walletId: wallet.id,
-                reservationId,
-                type: TypeTransactionWallet.DEBIT_PENALITE,
-                montant: penaliteProprio,
-                sens: SensTransaction.DEBIT,
-                soldeApres: newSolde,
-                description: `Pénalité annulation réservation ${reservationId}`,
-              },
-            });
-          } else {
-            await tx.wallet.update({
-              where: { id: wallet.id },
-              data: { dettePenalites: { increment: penaliteProprio } },
-            });
-          }
-        }
-
-        // Incrémenter le compteur d'annulations et tracer la faute
         const updatedProprio = await tx.utilisateur.update({
-          where: { id: userId },
+          where: { id: ownerId },
           data: { nbAnnulations: { increment: 1 } },
         });
 
         await tx.compteurFaute.create({
           data: {
-            utilisateurId: userId,
+            utilisateurId: ownerId,
             type: TypeFaute.ANNULATION_APRES_CONFIRMATION,
             reservationId,
             penalite: penaliteProprio,
-            description: `Annulation par le propriétaire — réservation ${reservationId}`,
+            description:
+              userId === ownerId
+                ? `Annulation par le propriétaire — réservation ${reservationId}`
+                : `Annulation par le gestionnaire ${userId} — réservation ${reservationId}`,
           },
         });
 
         // Suspension automatique après 7 annulations
         if (updatedProprio.nbAnnulations >= 7) {
           await tx.logement.updateMany({
-            where: { proprietaireId: userId, statut: StatutLogement.PUBLISHED },
+            where: { proprietaireId: ownerId, statut: StatutLogement.PUBLISHED },
             data: {
               statut: StatutLogement.SUSPENDED,
               rejectionReason: 'Suspension automatique : 7 annulations de réservations confirmées atteintes.',
@@ -239,7 +160,7 @@ export class CancelReservationUseCase {
           });
           await this.redis.getClient().incr('listings:search:version');
           await this.redis.del('listings:feed:all');
-          this.logger.error(`PROPRIÉTAIRE SUSPENDU [${userId}] pour annulations répétées.`);
+          this.logger.error(`PROPRIÉTAIRE SUSPENDU [${ownerId}] pour annulations répétées.`);
         }
       }
 
@@ -250,7 +171,16 @@ export class CancelReservationUseCase {
           nouveauStatut: StatutReservation.CANCELLED,
           modifiePar: userId,
           raison: `Annulation par ${isProprio ? 'le propriétaire' : 'le locataire'}: ${raison}`,
-          metadonnees: { politique, montantRembourse, penaliteProprio },
+          metadonnees: {
+            politique,
+            paye: paid.total,
+            montantRembourse: refund.cash + refund.coins,
+            rembourseArgent: refund.cash,
+            rembourseCoins: refund.coins,
+            partHote,
+            partPaixi,
+            penaliteProprio,
+          },
         },
       });
 
@@ -259,16 +189,10 @@ export class CancelReservationUseCase {
       return {
         id: updated.id,
         statut: updated.statut,
-        montantRembourse,
+        montantRembourse: refund.cash + refund.coins,
         penaliteAppliquee: penaliteProprio,
       };
     }, { isolationLevel: 'Serializable' });
-
-    // Déclencher le remboursement financier réel après la TX (appel API externe)
-    if (montantRembourse > 0) {
-      const percentage = (montantRembourse / Number(reservation.totalLocataire)) * 100;
-      await this.refundPayment.execute(reservationId, percentage);
-    }
 
     // Notification Push à l'autre partie
     const targetUserId = isLocataire ? reservation.proprietaireId : reservation.locataireId;

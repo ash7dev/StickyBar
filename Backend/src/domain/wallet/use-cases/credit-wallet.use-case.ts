@@ -3,6 +3,7 @@ import { SensTransaction, TypeTransactionWallet } from '@prisma/client';
 import { PrismaService } from '../../../infrastructure/prisma/prisma.service';
 import { AwardBookingCashbackUseCase } from '../../teranga-club/use-cases/award-booking-cashback.use-case';
 import { SystemLedgerService } from '../../system-ledger/system-ledger.service';
+import { checkinPayout, paidOf } from '../../payment/refund-plan';
 
 @Injectable()
 export class CreditWalletUseCase {
@@ -23,9 +24,12 @@ export class CreditWalletUseCase {
           netProprietaire: true,
           montantCommission: true,
           typePaiement: true,
+          totalLocataire: true,
           montantAcompte: true,
           montantPayeCash: true,
+          coinsDeduites: true,
           subventionKlef: true,
+          paiement: { select: { montantRembourse: true } },
         },
       });
 
@@ -56,14 +60,13 @@ export class CreditWalletUseCase {
         );
       }
 
-      // Pour DEPOSIT : l'acompte encaisse (ex: 70,6K FCFA) contient la commission Paixi (ex: 15,4K FCFA).
-      // Le net crédité au portefeuille du propriétaire = acompte - commission Paixi.
-      // Le solde restant du séjour est payé en espèces au propriétaire à l'arrivée.
+      // Ce que Paixi a encaissé (acompte ou totalité), moins un éventuel remboursement partiel
+      // décidé avant l'arrivée ; les frais Paixi sont prélevés en premier, l'hôte reçoit le reste.
+      // Avec un acompte, le solde du séjour est payé en espèces à l'hôte à l'arrivée.
       const isDeposit = reservation.typePaiement?.toUpperCase() === 'DEPOSIT';
-      const commNum = Number(reservation.montantCommission || 0);
-      const montantBrut = isDeposit
-        ? Math.max(0, Number(reservation.montantAcompte || 0) - commNum)
-        : Number(reservation.netProprietaire || 0);
+      const payout = checkinPayout(paidOf(reservation), Number(reservation.paiement?.montantRembourse ?? 0));
+      const commNum = payout.paixi;
+      const montantBrut = payout.host;
       const dette = Number(wallet.dettePenalites);
       const aDeduire = dette > 0 ? Math.min(montantBrut, dette) : 0;
       const montantNet = montantBrut - aDeduire;
@@ -112,9 +115,7 @@ export class CreditWalletUseCase {
       });
 
       // Libération des fonds depuis le Grand Livre Système Paixi
-      const hostEscrowPayout = isDeposit
-        ? Math.max(0, Number(reservation.montantAcompte || 0) - commNum)
-        : Number(reservation.netProprietaire || 0);
+      const hostEscrowPayout = montantBrut;
 
       await this.systemLedger.recordCheckinRelease(
         tx,
@@ -129,15 +130,11 @@ export class CreditWalletUseCase {
         (aDeduire > 0 ? ` | dette déduite : ${aDeduire} FCFA` : ''),
       );
 
-      // Crédit automatique des Paixi Coins pour le locataire via Teranga Club
-      try {
-        const awardUseCase = new AwardBookingCashbackUseCase(this.prisma);
-        const coinsGagnes = await awardUseCase.execute(reservationId);
-        if (coinsGagnes > 0) {
-          this.logger.log(`Paixi Coins crédités [locataire: ${reservation.locataireId}] +${coinsGagnes} Coins`);
-        }
-      } catch (terangaErr) {
-        this.logger.warn(`Erreur lors du crédit Teranga Coins pour la résa ${reservationId}: ${(terangaErr as Error).message}`);
+      // Paixi Coins du locataire, dans la même transaction : pas de coins si le versement échoue
+      const awardUseCase = new AwardBookingCashbackUseCase(tx as never);
+      const coinsGagnes = await awardUseCase.execute(reservationId);
+      if (coinsGagnes > 0) {
+        this.logger.log(`Paixi Coins crédités [locataire: ${reservation.locataireId}] +${coinsGagnes} Coins`);
       }
     }, { isolationLevel: 'Serializable' });
   }

@@ -40,6 +40,19 @@ export function getPrixDerniereMinute(prixPublic: number): number {
 }
 
 /**
+ * Même règle que le serveur : la remise dernière minute ne vaut que pour une arrivée
+ * dans les 48 h. Sans date d'arrivée connue, on ne l'applique pas au prix affiché.
+ */
+export function remiseApplicable(derniereMinuteActive?: boolean | null, arrivee?: string | Date | null): boolean {
+  if (!derniereMinuteActive || !arrivee) return false;
+  const t = new Date(arrivee).getTime();
+  if (Number.isNaN(t)) return false;
+  return t - Date.now() <= 48 * 3600 * 1000;
+}
+
+export const LAST_MINUTE_LABEL = '−15 % si arrivée sous 48 h';
+
+/**
  * Formate le prix réduit "Dernière Minute" dans la devise active.
  */
 export function formatPrixDerniereMinute(prixPublic: number): string {

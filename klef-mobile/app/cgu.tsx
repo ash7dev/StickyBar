@@ -224,7 +224,7 @@ export default function CGUScreen() {
             </View>
 
             <Text style={styles.paragraph}>
-              Moyens de paiement acceptés : Wave & Orange Money. Les fonds sont conservés sous le numéro de référence séquestre <Text style={styles.bold}>SEQ-XXXXXXXX</Text> jusqu'au check-in.
+              Moyens de paiement acceptés : Wave & Orange Money. Le montant payé (totalité ou acompte) est conservé sous le numéro de référence séquestre <Text style={styles.bold}>SEQ-XXXXXXXX</Text> et versé à l'hôte dès que le voyageur confirme son arrivée.
             </Text>
           </View>
 
@@ -241,9 +241,13 @@ export default function CGUScreen() {
             </View>
 
             <Text style={styles.subHeading}>Barème Voyageur :</Text>
-            <Text style={styles.bulletItem}>• Plus de 3 jours avant le séjour : Remboursement 100% (frais de service retenus)</Text>
-            <Text style={styles.bulletItem}>• Entre 24h et 3 jours : Remboursement partiel 75%</Text>
-            <Text style={styles.bulletItem}>• Moins de 24h : Remboursement partiel 50%</Text>
+            <Text style={styles.bulletItem}>• Demande pas encore acceptée par l'hôte : remboursement intégral</Text>
+            <Text style={styles.bulletItem}>• Plus de 3 jours avant le séjour : tout ce qui a été payé, sauf les frais de service (7 %)</Text>
+            <Text style={styles.bulletItem}>• Entre 24h et 3 jours : 75 % de ce qui a été payé</Text>
+            <Text style={styles.bulletItem}>• Moins de 24h : 50 % de ce qui a été payé</Text>
+            <Text style={styles.paragraph}>
+              Les montants se calculent sur ce que le voyageur a réellement payé (totalité ou acompte). Sur la part non remboursée, Paixi conserve ses frais de service et le reste est versé à l'hôte. La part payée en Paixi Coins est rendue en coins.
+            </Text>
           </View>
 
           {/* Contact Legal */}

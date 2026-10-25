@@ -20,6 +20,7 @@ import { NotificationsService } from '../notifications/notifications.service';
 import { StatutReservation, TypeAvis, RoleLitige, MotifLitige, StatutLitige, TypeTransactionWallet, SensTransaction } from '@prisma/client';
 import { Decimal } from '@prisma/client/runtime/library';
 import { traceAction } from '../../domain/reservation/trace';
+import { ARBITRAGE_PREFIX } from '../disputes/disputes.service';
 import { computeExtraGuests } from './extra-guests';
 
 /** Fenêtre pour noter l'autre partie après la clôture (cf. job fermer-fenetre-avis). */
@@ -701,6 +702,9 @@ export class ReservationsService {
     }
     if (demande.statut !== 'EN_ATTENTE') {
       throw new ConflictException('Ce supplément a déjà été traité');
+    }
+    if (demande.titre.startsWith(ARBITRAGE_PREFIX)) {
+      throw new ConflictException('Ce montant a été décidé par l’arbitrage Paixi et ne peut plus être contesté');
     }
 
     const updated = await this.prisma.$transaction(async (tx) => {

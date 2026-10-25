@@ -8,7 +8,7 @@ import { BedDouble, ChevronLeft, ChevronRight, Heart, ImageOff, MapPin, Moon, Ro
 import type { Listing } from '@/lib/nestjs/types';
 import { cn } from '@/lib/utils/cn';
 
-import { getPrixPublic, getPrixDerniereMinute } from '@/lib/pricing';
+import { getPrixPublic } from '@/lib/pricing';
 import { TenantPriceDisplay } from '@/components/ui/TenantPriceDisplay';
 
 const money = new Intl.NumberFormat('fr-FR', { maximumFractionDigits: 0 });
@@ -114,7 +114,8 @@ function ListingRow({
 
   const derniereMinuteActive = Boolean((listing as { derniereMinuteActive?: boolean }).derniereMinuteActive);
   const prix = getPrixPublic(listing.prixBase);
-  const prixFinal = derniereMinuteActive ? getPrixDerniereMinute(prix) : prix;
+  // Remise dernière minute : seulement pour une arrivée sous 48 h, annoncée par le badge du prix
+  const prixFinal = prix;
   const hasNote = typeof listing.note === 'number' && listing.note > 0;
 
   const verifie = Boolean((listing as { verifie?: boolean }).verifie);

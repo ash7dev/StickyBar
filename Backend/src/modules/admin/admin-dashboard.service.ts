@@ -37,7 +37,10 @@ export class AdminDashboardService {
     ]);
 
     const gmv = Number(aggregateRes._sum.totalLocataire ?? 0);
-    const commissions = Number(aggregateRes._sum.montantCommission ?? 0);
+    // Commissions réellement gagnées : celles libérées au check-in (et parts retenues sur annulation),
+    // moins les frais rendus après litige ; tenues par le grand livre, pas recalculées sur des séjours à venir
+    const ledger = await this.prisma.systemLedger.findFirst({ select: { soldeCommissionsCumulees: true } });
+    const commissions = Number(ledger?.soldeCommissionsCumulees ?? 0);
     const payoutsNet = Number(aggregateRes._sum.netProprietaire ?? 0);
 
     return {

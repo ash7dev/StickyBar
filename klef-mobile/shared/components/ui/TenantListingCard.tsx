@@ -9,7 +9,7 @@ import { router } from 'expo-router';
 import { colors, typography } from '../../theme/tokens';
 import { useFavorite } from '../../../features/favorites/useFavorites';
 import { formatAmount } from '../../../features/owner-home/lib/format';
-import { getPrixDerniereMinute, getPrixPublic } from './TenantPriceDisplay';
+import { getPrixPublic } from './TenantPriceDisplay';
 import { prefetchListing } from '../../lib/prefetch-listing';
 import { useSearchHistoryStore } from '../../stores/search-history.store';
 
@@ -91,7 +91,8 @@ export function TenantListingCard({ listing, width = 270, onPress }: TenantListi
 
   const base = getPrixPublic(listing.prixBase);
   const promo = !!listing.derniereMinuteActive;
-  const nightly = promo ? getPrixDerniereMinute(base) : base;
+  // La remise ne vaut que pour une arrivée sous 48 h : sans dates, on affiche le prix normal
+  const nightly = base;
   const reviews = listing.totalAvis ?? 0;
   const rating = reviews > 0 && typeof listing.note === 'number' && listing.note > 0 ? listing.note : null;
   const isNew = !reviews && !!listing.creeLe && Date.now() - new Date(listing.creeLe).getTime() < NEW_DAYS * 86_400_000;
@@ -163,7 +164,7 @@ export function TenantListingCard({ listing, width = 270, onPress }: TenantListi
           {promo ? (
             <View style={[styles.chip, { backgroundColor: LIME }]}>
               <Zap size={10} color={INK} fill={INK} />
-              <Text style={[styles.chipText, { color: INK }]}>−15 %</Text>
+              <Text style={[styles.chipText, { color: INK }]}>−15 % sous 48 h</Text>
             </View>
           ) : null}
           {listing.videoUrl ? (
@@ -204,7 +205,6 @@ export function TenantListingCard({ listing, width = 270, onPress }: TenantListi
               </Text>
             ) : (
               <Text style={styles.price} numberOfLines={1}>
-                {promo && <Text style={styles.priceOld}>{formatAmount(base)} </Text>}
                 {formatAmount(nightly)} <Text style={styles.priceUnit}>FCFA / nuit</Text>
               </Text>
             )}

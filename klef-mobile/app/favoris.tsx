@@ -6,7 +6,7 @@ import { Image } from 'expo-image';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Bath, BedDouble, Check, ChevronLeft, ChevronRight, Heart, MapPin, Minus, Play, Search, Sparkles, Star, Users } from 'lucide-react-native';
 import { colors, radius, typography } from '../shared/theme/tokens';
-import { getPrixDerniereMinute, getPrixPublic } from '../shared/components/ui/TenantPriceDisplay';
+import { getPrixPublic } from '../shared/components/ui/TenantPriceDisplay';
 import { INK, PAPER, PillButton, tap } from '../features/reservations/tenant/components/ui';
 import { formatAmount } from '../features/owner-home/lib/format';
 import { prefetchListing } from '../shared/lib/prefetch-listing';
@@ -15,10 +15,8 @@ import { useFavorite, useFavoritesList, type FavoriteItem } from '../features/fa
 type View_ = 'list' | 'compare';
 type Logement = FavoriteItem['logement'];
 
-const nightly = (l: Logement) => {
-  const pub = getPrixPublic(l.prixBase);
-  return l.derniereMinuteActive ? getPrixDerniereMinute(pub) : pub;
-};
+// Prix normal : la remise dernière minute ne vaut que pour une arrivée sous 48 h, connue seulement à la réservation
+const nightly = (l: Logement) => getPrixPublic(l.prixBase);
 const rating = (l: Logement) => (l.note ? Number(l.note) : 0);
 const fmtRating = (n: number) => n.toFixed(1).replace('.', ',');
 const placeOf = (l: Logement) => [l.quartier, l.ville].filter(Boolean).join(', ');
@@ -253,7 +251,7 @@ function KeptCard({ item, best, onOpen }: { item: FavoriteItem; best: boolean; o
           ) : null}
           {l.derniereMinuteActive && !unavailable ? (
             <View style={[styles.tag, { backgroundColor: colors.gold[400] }]}>
-              <Text style={[styles.tagText, { color: INK }]}>−15 %</Text>
+              <Text style={[styles.tagText, { color: INK }]}>−15 % sous 48 h</Text>
             </View>
           ) : null}
         </View>
@@ -293,7 +291,6 @@ function KeptCard({ item, best, onOpen }: { item: FavoriteItem; best: boolean; o
         </View>
         {!unavailable ? (
           <View style={{ alignItems: 'flex-end' }}>
-            {l.derniereMinuteActive ? <Text style={styles.strike}>{formatAmount(getPrixPublic(l.prixBase))}</Text> : null}
             <Text style={styles.price}>
               {formatAmount(nightly(l))} <Text style={styles.priceUnit}>F / nuit</Text>
             </Text>
@@ -325,7 +322,7 @@ const ROWS: Array<{ label: string; value: (l: Logement) => React.ReactNode; scor
   { label: 'Chambres', value: (l) => l.nombreChambres, score: (l) => l.nombreChambres },
   { label: 'Salles de bain', value: (l) => l.nombreSallesBain ?? '—', score: (l) => l.nombreSallesBain ?? 0 },
   { label: 'Vidéo', value: (l) => (l.videoUrl ? <Check size={16} color={colors.forest[600]} strokeWidth={3} /> : <Minus size={16} color={colors.neutral[300]} />) },
-  { label: 'Dernière min.', value: (l) => (l.derniereMinuteActive ? '−15 %' : <Minus size={16} color={colors.neutral[300]} />) },
+  { label: 'Dernière min.', value: (l) => (l.derniereMinuteActive ? '−15 % · 48 h' : <Minus size={16} color={colors.neutral[300]} />) },
 ];
 
 function CompareTable({ items, bestId, onOpen }: { items: FavoriteItem[]; bestId?: string; onOpen: (id: string) => void }) {

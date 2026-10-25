@@ -12,7 +12,7 @@ import { colors, typography } from '../../../shared/theme/tokens';
 import { PaixiLogo } from '../../../shared/components/brand/PaixiLogo';
 import { apiClient } from '../../../shared/api/api-client';
 import type { ListingItem } from '../../../shared/components/ui/TenantListingCard';
-import { getPrixDerniereMinute, getPrixPublic } from '../../../shared/components/ui/TenantPriceDisplay';
+import { getPrixPublic } from '../../../shared/components/ui/TenantPriceDisplay';
 import { useFavorite } from '../../favorites/useFavorites';
 import { useAutoplay } from '../../explorer/VideoFeed';
 import { prefetchListing } from '../../../shared/lib/prefetch-listing';
@@ -342,7 +342,7 @@ function ResultRow({ l }: { l: ListingItem }) {
           {l.note ? ` · ★ ${Number(l.note).toFixed(1).replace('.', ',')}` : ''}
         </Text>
         <Text style={styles.rowPrice}>
-          {l.prixSejour ? formatAmount(l.prixSejour) : formatAmount(l.derniereMinuteActive ? getPrixDerniereMinute(getPrixPublic(l.prixBase)) : getPrixPublic(l.prixBase))}
+          {l.prixSejour ? formatAmount(l.prixSejour) : formatAmount(getPrixPublic(l.prixBase))}
           <Text style={styles.rowSub}>{l.prixSejour ? ` · ${l.nbNuits} nuit${(l.nbNuits ?? 0) > 1 ? 's' : ''}, frais inclus` : ' / nuit'}</Text>
         </Text>
       </View>
@@ -384,7 +384,7 @@ function slidesOf(e?: Escale): ListingItem[] {
   return e.listings.filter((l) => coverOf(l) || l.videoUrl).sort((a, b) => Number(!!b.videoUrl) - Number(!!a.videoUrl));
 }
 
-const nightlyOf = (l: ListingItem) => (l.derniereMinuteActive ? getPrixDerniereMinute(getPrixPublic(l.prixBase)) : getPrixPublic(l.prixBase));
+const nightlyOf = (l: ListingItem) => getPrixPublic(l.prixBase);
 
 /** Fond de l'escale active : fondu d'un logement à l'autre, lent zoom, vidéo si le logement est filmé. */
 function Backdrop({ listing, fallback, autoplay }: { listing?: ListingItem; fallback?: string; autoplay: boolean }) {

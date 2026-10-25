@@ -9,7 +9,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Heart, MapPin, Play, Share2, Star, Volume2, VolumeX, Zap } from 'lucide-react-native';
 import { colors, typography } from '../../shared/theme/tokens';
 import { apiClient } from '../../shared/api/api-client';
-import { getPrixDerniereMinute, getPrixPublic } from '../../shared/components/ui/TenantPriceDisplay';
+import { getPrixPublic } from '../../shared/components/ui/TenantPriceDisplay';
 import type { ListingItem } from '../../shared/components/ui/TenantListingCard';
 import { useFavorite } from '../favorites/useFavorites';
 import { shareListing } from '../share/share';
@@ -204,7 +204,7 @@ function Reel({
   const [playRequested, setPlayRequested] = useState(false);
   const poster = typeof item.photos?.[0] === 'string' ? (item.photos[0] as unknown as string) : item.photos?.[0]?.url;
   const playing = active && (autoplay || playRequested);
-  const nightly = item.derniereMinuteActive ? getPrixDerniereMinute(getPrixPublic(item.prixBase)) : getPrixPublic(item.prixBase);
+  const nightly = getPrixPublic(item.prixBase);
 
   // Reprendre la vidéo au toucher seulement pour le logement à l'écran
   useEffect(() => {
@@ -242,7 +242,7 @@ function Reel({
         {item.derniereMinuteActive && (
           <View style={styles.deal}>
             <Zap size={11} color={INK} fill={INK} />
-            <Text style={styles.dealText}>−15 % DERNIÈRE MINUTE</Text>
+            <Text style={styles.dealText}>−15 % SI ARRIVÉE SOUS 48 H</Text>
           </View>
         )}
         <Text style={styles.title} numberOfLines={2}>{item.titre}</Text>

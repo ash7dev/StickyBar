@@ -10,7 +10,7 @@ import {
   UtensilsCrossed, Waves, Wifi, WashingMachine, Wind, Zap,
 } from 'lucide-react';
 import type { Listing } from '@/lib/nestjs';
-import { formatPrixPublic, getPrixPublic, getPrixDerniereMinute } from '@/lib/pricing';
+import { formatPrixPublic, getPrixPublic } from '@/lib/pricing';
 import { useRecentlyViewed } from '@/lib/hooks/useRecentlyViewed';
 import { ListingVideoSection } from './ListingVideoSection';
 import { ListingLocationMap } from './ListingLocationMap';
@@ -243,8 +243,9 @@ export function ListingDetailSpec({ listing }: ListingDetailSpecProps) {
               <ul className="space-y-1">
                 {listing.tarifsNuits.map((t, i) => {
                   const pxPublic = getPrixPublic(t.prix);
-                  const pxReduit = getPrixDerniereMinute(pxPublic);
-                  const derniereMinute = Boolean((listing as { derniereMinuteActive?: boolean }).derniereMinuteActive);
+                  // Paliers au prix normal : la remise dernière minute ne vaut que pour une arrivée sous 48 h
+                  const pxReduit = pxPublic;
+                  const derniereMinute = false;
                   return (
                     <li key={i} className="text-xs text-success-700">
                       Dès {t.nuitsMin} nuits&nbsp;:{' '}

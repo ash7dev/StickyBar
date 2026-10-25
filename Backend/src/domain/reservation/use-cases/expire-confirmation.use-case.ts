@@ -1,5 +1,5 @@
 import { Injectable, Logger } from '@nestjs/common';
-import { StatutReservation, StatutPaiement, ResultatAnnulation } from '@prisma/client';
+import { StatutReservation, ResultatAnnulation } from '@prisma/client';
 import { PrismaService } from '../../../infrastructure/prisma/prisma.service';
 import { ReservationStateMachine } from '../reservation.state-machine';
 import { RefundPaymentUseCase } from '../../payment/use-cases/refund-payment.use-case';
@@ -50,16 +50,12 @@ export class ExpireConfirmationUseCase {
         },
       });
 
-      if (reservation.paiement && reservation.paiement.statut === StatutPaiement.CONFIRME) {
-        await tx.paiement.update({
-          where: { reservationId },
-          data: {
-            statut: StatutPaiement.REMBOURSE,
-            rembourseLe: new Date(),
-            montantRembourse: reservation.totalLocataire,
-          },
-        });
-      }
+      // L'hôte n'a jamais accepté : le locataire récupère tout ce qu'il a payé (argent et coins)
+      await this.refundPayment.refundInTx(tx, reservationId, {
+        montant: Number.MAX_SAFE_INTEGER,
+        motif: ResultatAnnulation.UC1_LOCATAIRE_NON_CONFIRMEE,
+        declenchePar: 'SYSTEM_CONFIRMATION_EXPIRY',
+      });
 
       await tx.reservationHistorique.create({
         data: {
@@ -70,9 +66,8 @@ export class ExpireConfirmationUseCase {
           raison: 'Délai de confirmation dépassé — remboursement 100% au locataire',
         },
       });
-    });
+    }, { isolationLevel: 'Serializable' });
 
-    await this.refundPayment.execute(reservationId);
     this.logger.log(`Réservation [${reservationId}] expirée : proprio n'a pas confirmé dans le délai imparti`);
 
     // Push au locataire

@@ -7,15 +7,13 @@ import {
 import {
   Prisma,
   ResultatAnnulation,
-  SensTransaction,
   StatutLogement,
-  StatutPaiement,
   StatutReservation,
   StatutKyc,
-  TypeTransactionWallet,
 } from '@prisma/client';
 import { PrismaService } from '../../infrastructure/prisma/prisma.service';
 import { RedisService } from '../../infrastructure/redis/redis.service';
+import { RefundPaymentUseCase } from '../../domain/payment/use-cases/refund-payment.use-case';
 import { AdminListingsQueryDto } from './dto/admin-listings-query.dto';
 
 @Injectable()
@@ -25,6 +23,7 @@ export class AdminListingsService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly redis: RedisService,
+    private readonly refundPayment: RefundPaymentUseCase,
   ) {}
 
   async listForReview(dto: AdminListingsQueryDto) {
@@ -260,41 +259,11 @@ export class AdminListingsService {
           },
         });
 
-        // 3b. Mark paiement REMBOURSE
-        if (reservation.paiement) {
-          await tx.paiement.update({
-            where: { reservationId: reservation.id },
-            data: {
-              statut: StatutPaiement.REMBOURSE,
-              rembourseLe: now,
-              montantRembourse: reservation.totalLocataire,
-            },
-          });
-        }
-
-        // 3c. Upsert wallet + credit locataire (100% remboursement)
-        const wallet = await tx.wallet.upsert({
-          where: { utilisateurId: reservation.locataireId },
-          create: {
-            utilisateurId: reservation.locataireId,
-            soldeDisponible: reservation.totalLocataire,
-          },
-          update: {
-            soldeDisponible: { increment: reservation.totalLocataire },
-          },
-        });
-
-        // 3d. TransactionWallet — trace du remboursement
-        await tx.transactionWallet.create({
-          data: {
-            walletId: wallet.id,
-            reservationId: reservation.id,
-            type: TypeTransactionWallet.CREDIT_LOCATION,
-            montant: reservation.totalLocataire,
-            sens: SensTransaction.CREDIT,
-            soldeApres: wallet.soldeDisponible,
-            description: `Remboursement intégral — annonce suspendue par l'administrateur`,
-          },
+        // 3b. Remboursement de tout ce que le locataire a payé (argent sur son portefeuille, coins en coins)
+        await this.refundPayment.refundInTx(tx, reservation.id, {
+          montant: Number.MAX_SAFE_INTEGER,
+          motif: ResultatAnnulation.ABSENCE_PROPRIO,
+          declenchePar: adminId,
         });
 
         // 3e. Audit trail

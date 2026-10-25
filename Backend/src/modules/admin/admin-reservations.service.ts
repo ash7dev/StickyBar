@@ -2,7 +2,8 @@ import { Injectable, NotFoundException, BadRequestException } from '@nestjs/comm
 import { PrismaService } from '../../infrastructure/prisma/prisma.service';
 import { RefundPaymentUseCase } from '../../domain/payment/use-cases/refund-payment.use-case';
 import { AdminReservationsQueryDto, ForceCancelReservationDto } from './dto/admin-reservations-query.dto';
-import { Prisma, StatutReservation, StatutPaiement, ResultatAnnulation } from '@prisma/client';
+import { Prisma, StatutReservation, ResultatAnnulation } from '@prisma/client';
+import { paidOf } from '../../domain/payment/refund-plan';
 
 @Injectable()
 export class AdminReservationsService {
@@ -118,8 +119,9 @@ export class AdminReservationsService {
       throw new BadRequestException(`Impossible d'annuler une réservation déjà ${reservation.statut}`);
     }
 
-    const tauxRemboursement = dto.tauxRemboursementLocataire ?? 100;
-    const montantRembourse = (Number(reservation.totalLocataire) * tauxRemboursement) / 100;
+    const tauxRemboursement = Math.min(Math.max(dto.tauxRemboursementLocataire ?? 100, 0), 100);
+    // Pourcentage de ce que le locataire a réellement payé (acompte ou totalité), pas du prix total
+    const montantRembourse = Math.round((paidOf(reservation).total * tauxRemboursement) / 100);
 
     const now = new Date();
 
@@ -135,16 +137,12 @@ export class AdminReservationsService {
         },
       });
 
-      if (reservation.paiement && reservation.paiement.statut === StatutPaiement.CONFIRME) {
-        await tx.paiement.update({
-          where: { reservationId: id },
-          data: {
-            statut: StatutPaiement.REMBOURSE,
-            rembourseLe: now,
-            montantRembourse: montantRembourse,
-          },
-        });
-      }
+      const refund = await this.refundPayment.refundAnyStageInTx(tx, id, {
+        montant: montantRembourse,
+        motif: ResultatAnnulation.FORCE_MAJEURE,
+        declenchePar: adminId,
+        cloture: true,
+      });
 
       await tx.reservationHistorique.create({
         data: {
@@ -153,25 +151,24 @@ export class AdminReservationsService {
           nouveauStatut: StatutReservation.CANCELLED,
           modifiePar: adminId,
           raison: `Annulation forcée par l'administrateur (${tauxRemboursement}% remboursé) : ${dto.raison}`,
+          metadonnees: {
+            taux: tauxRemboursement,
+            rembourseArgent: refund.cash,
+            rembourseCoins: refund.coins,
+            repriseHote: refund.repriseHote,
+            repriseFraisPaixi: refund.repriseFraisPaixi,
+          },
         },
       });
 
-      return updated;
-    });
-
-    if (montantRembourse > 0) {
-      try {
-        await this.refundPayment.execute(id, tauxRemboursement);
-      } catch (err) {
-        // Enregistrer l'échec financier sans bloquer l’annulation de la réservation
-      }
-    }
+      return { updated, rendu: refund.cash + refund.coins };
+    }, { isolationLevel: 'Serializable' });
 
     return {
       success: true,
-      reservationId: result.id,
-      statut: result.statut,
-      montantRembourse,
+      reservationId: result.updated.id,
+      statut: result.updated.statut,
+      montantRembourse: result.rendu,
       message: `Réservation annulée avec succès par l'administrateur.`,
     };
   }

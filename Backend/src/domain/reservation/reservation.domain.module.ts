@@ -2,7 +2,6 @@ import { Module } from '@nestjs/common';
 import { CreateReservationUseCase } from './use-cases/create-reservation.use-case';
 import { ConfirmReservationUseCase } from './use-cases/confirm-reservation.use-case';
 import { CancelReservationUseCase } from './use-cases/cancel-reservation.use-case';
-import { ProcessRefundUseCase } from './use-cases/process-refund.use-case';
 import { CheckInUploadPhotosUseCase } from './use-cases/checkin-upload-photos.use-case';
 import { CheckInConfirmUseCase } from './use-cases/checkin-confirm.use-case';
 import { CheckInRefuseUseCase } from './use-cases/checkin-refuse.use-case';
@@ -35,7 +34,6 @@ const USE_CASES = [
   CreateReservationUseCase,
   ConfirmReservationUseCase,
   CancelReservationUseCase,
-  ProcessRefundUseCase,
   CheckInUploadPhotosUseCase,
   CheckInConfirmUseCase,
   CheckInRefuseUseCase,
